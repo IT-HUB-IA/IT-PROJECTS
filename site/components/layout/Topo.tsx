@@ -27,8 +27,7 @@ export function Topo() {
     <header className={"topo" + (rolou ? " rolou" : "")}>
       <div className="container topo-in">
         <a href="#inicio" className="topo-marca" aria-label="IT.IA, voltar ao início">
-          <Logo className="h-[22px] w-auto" titulo="" />
-          <span className="rotulo topo-nome">IT.IA</span>
+          <Logo className="h-[24px] w-auto" titulo="" />
         </a>
         <nav aria-label="Principal" className="topo-nav">
           {LINKS.map(l => <a key={l.href} href={l.href} className="link">{l.txt}</a>)}
