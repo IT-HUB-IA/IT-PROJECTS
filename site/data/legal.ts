@@ -18,7 +18,7 @@ export const termos: { resumo: string; secoes: Secao[] } = {
       p("Ao navegar no Site, você concorda com estes Termos. Se não concordar, pedimos que não use o Site."),
     ] },
     { id: "uso", titulo: "Uso do Site", blocos: [
-      p("O Site é aberto e não exige cadastro. Você pode usá-lo para conhecer a IT.IA, os produtos do catálogo e as formas de falar com a gente."),
+      p("O Site é aberto e não exige cadastro. Você pode usá-lo para conhecer a IT.IA, os produtos do catálogo e as formas de entrar em contato conosco."),
       p("Não é permitido:"),
       lista(
         "tentar acessar áreas, sistemas ou dados que não são públicos;",
@@ -32,7 +32,7 @@ export const termos: { resumo: string; secoes: Secao[] } = {
       p("Você pode compartilhar o endereço do Site e citar trechos com indicação da fonte. Qualquer outro uso depende de autorização por escrito da IT.IA."),
     ] },
     { id: "informativo", titulo: "Caráter informativo", blocos: [
-      p("O que está no Site descreve a IT.IA e os seus sistemas de forma geral. As condições de cada projeto sob medida são combinadas diretamente com cada cliente, por escrito. As exemplificações de telas e conversas no Site são ilustrativas."),
+      p("O que está no Site descreve a IT.IA e os seus sistemas de forma geral. As condições de cada projeto sob medida são combinadas diretamente com cada cliente, por escrito. Os exemplos de telas e conversas exibidos no Site são ilustrativos."),
       p("Trabalhamos para manter o Site correto e no ar, mas ele pode ficar indisponível por manutenção ou por motivos fora do nosso controle, e o conteúdo pode mudar sem aviso."),
     ] },
     { id: "produtos", titulo: "Produtos da IT.IA", blocos: [
@@ -81,7 +81,7 @@ export const privacidade: { resumo: string; secoes: Secao[] } = {
     ] },
     { id: "compartilhamento", titulo: "Com quem compartilhamos", blocos: [
       p("Usamos fornecedores para hospedar o Site e para receber e-mails. Eles tratam dados apenas para prestar esses serviços à IT.IA, com obrigações de segurança e confidencialidade."),
-      p("Quando você fala com a gente pelo WhatsApp ou pelo Instagram, essas plataformas também tratam os dados da conversa, conforme as políticas delas."),
+      p("Quando você entra em contato conosco pelo WhatsApp ou pelo Instagram, essas plataformas também tratam os dados da conversa, conforme as políticas delas."),
       p("Podemos compartilhar dados quando a lei ou uma ordem judicial exigir."),
     ] },
     { id: "internacional", titulo: "Transferência internacional", blocos: [

@@ -4,7 +4,7 @@ export const contato = {
   email: "contato@it-ia.tec.br",
   suporte: "suporte@it-ia.tec.br",
   privacidade: "privacidade@it-ia.tec.br",
-  whatsapp: "https://wa.me/5511960288595?text=" + encodeURIComponent("Olá, IT.IA! Vim pelo site e quero conversar sobre um sistema para a minha empresa."),
+  whatsapp: "https://wa.me/5511960288595?text=" + encodeURIComponent("Olá, IT.IA! Vim pelo site e gostaria de conversar sobre um sistema para a minha empresa."),
   whatsappTexto: "(11) 96028-8595",
   instagram: "https://www.instagram.com/it.ia_official/",
   instagramTexto: "@it.ia_official",
@@ -24,7 +24,7 @@ export const produtos: Produto[] = [
     serie: "IT-001",
     nome: "CicloDev",
     estado: "em produção",
-    frase: "Gestão do desenvolvimento de software, do primeiro pedido à entrega, com um P.O. de IA dentro.",
+    frase: "Plataforma de gestão do desenvolvimento de software, do primeiro pedido à entrega, com IA integrada.",
     link: "https://ciclodev.it-ia.tec.br",
   },
 ];
@@ -36,40 +36,40 @@ export type Frente = { rot: string; nome: string; texto: string; itens: string[]
 export const sobMedida = {
   rot: "Sob medida",
   nome: "Sistemas feitos para a sua operação",
-  texto: "Entendemos como o trabalho acontece e construímos o sistema em volta dele, não o contrário.",
+  texto: "Compreendemos como o trabalho acontece e desenvolvemos o sistema a partir dele, e não o contrário.",
   formatos: ["Sistema web", "Aplicativo", "Integração", "Automação"],
-  hoje: ["Dados espalhados em planilhas", "Processo que depende de uma pessoa", "Ferramentas que não conversam", "Retrabalho para achar uma informação"],
-  depois: ["Cada informação em um lugar só", "Processo com regras e etapas claras", "Tudo integrado, sem copiar e colar", "Histórico de quem fez o quê"],
+  hoje: ["Informações dispersas em planilhas", "Processos que dependem de uma única pessoa", "Ferramentas que não se integram", "Retrabalho para localizar informações"],
+  depois: ["Cada informação em um único lugar", "Processos com regras e etapas definidas", "Integração completa, sem retrabalho manual", "Histórico de todas as alterações"],
 };
 
 export const frentes: Frente[] = [
-  { rot: "Produtos", nome: "Produtos próprios, prontos para usar", texto: "Quando resolvemos bem um problema que muitas empresas têm, ele vira produto no catálogo.", itens: ["CicloDev: gestão do desenvolvimento de software", "Novos produtos em desenvolvimento"], link: { href: "#catalogo", txt: "Ver o catálogo" } },
-  { rot: "IA aplicada", nome: "Inteligência artificial dentro do sistema", texto: "Agentes que trabalham com os dados do próprio sistema, respeitam a permissão de cada pessoa e só agem com confirmação.", itens: ["Planejamento e priorização de projetos", "Revisão de segurança de código e banco de dados", "Atendimento e rotinas automatizadas"], link: { href: "#regras", txt: "Ver as regras da casa" } },
-  { rot: "Laboratório", nome: "Pesquisa aplicada em IA", texto: "Testamos cada avanço de inteligência artificial antes de levar para os sistemas. As análises ficam abertas no Instagram.", itens: ["Análise dos novos modelos e ferramentas", "Aplicações validadas em sistemas reais"], link: { href: "https://www.instagram.com/it.ia_official/", txt: "Seguir @it.ia_official", externo: true } },
+  { rot: "Produtos", nome: "Produtos próprios, prontos para usar", texto: "Quando uma solução resolve um problema comum a muitas empresas, ela se torna um produto do nosso catálogo.", itens: ["CicloDev: gestão do desenvolvimento de software", "Novos produtos em desenvolvimento"], link: { href: "#catalogo", txt: "Ver o catálogo" } },
+  { rot: "IA integrada", nome: "Inteligência artificial integrada aos sistemas", texto: "Agentes que operam com os dados do próprio sistema, respeitam as permissões de cada usuário e só executam ações com confirmação.", itens: ["Planejamento e priorização de projetos", "Revisão de segurança de código e banco de dados", "Atendimento e rotinas automatizadas"], link: { href: "#regras", txt: "Ver as regras da casa" } },
+  { rot: "Laboratório", nome: "Pesquisa aplicada em IA", texto: "Avaliamos cada avanço da inteligência artificial antes de aplicá-lo em nossos sistemas. As análises são publicadas no Instagram.", itens: ["Análise de novos modelos e ferramentas", "Aplicações validadas em sistemas reais"], link: { href: "https://www.instagram.com/it.ia_official/", txt: "Seguir @it.ia_official", externo: true } },
 ];
 
 // o CicloDev no catálogo: só o essencial, o resto fica no site dele
-export const ciclodevDestaques = [
-  "Estrutura moldada: cliente, projeto, produto, aplicação e frente",
-  "Painel, Board, Lista, Tabela, Calendário e Linha do tempo",
-  "Etapas com trava e prova para avançar",
-  "DevIT, o agente de IA que atua como P.O. do projeto",
+export const ciclodevFicha = [
+  { rot: "Estrutura", texto: "Moldada ao seu trabalho: cliente, projeto, produto, aplicação e frente." },
+  { rot: "Visões", texto: "Painel, Board, Lista, Tabela, Calendário e Linha do tempo, sempre sincronizados." },
+  { rot: "Governança", texto: "Etapas com trava: cada fase exige comprovação para avançar." },
+  { rot: "IA integrada", texto: "DevIT, o agente que atua como Product Owner do projeto.", destaque: true },
 ];
 
 // regras da casa: valem para todo sistema que sai da IT.IA
 export const regras = [
-  { nome: "Registro de tudo", texto: "Quem mudou o quê e quando. O histórico nunca se perde." },
-  { nome: "Cada um vê o que é seu", texto: "Permissões por pessoa e por trabalho, conferidas no próprio banco de dados." },
-  { nome: "IA só age com confirmação", texto: "Criar, editar e apagar sempre esperam o ok de quem pediu." },
-  { nome: "Testado antes de ir para o ar", texto: "Nada é entregue sem verificação de ponta a ponta." },
+  { nome: "Registro completo", texto: "Todas as alterações são registradas: quem alterou, o quê e quando." },
+  { nome: "Acesso por permissão", texto: "Cada pessoa acessa apenas o que lhe cabe, com permissões verificadas no próprio banco de dados." },
+  { nome: "IA com confirmação", texto: "Criação, edição e exclusão de dados sempre dependem da aprovação de quem solicitou." },
+  { nome: "Testado antes da publicação", texto: "Nenhuma entrega é feita sem verificação de ponta a ponta." },
 ];
 
 export const metodo = [
-  { n: "01", nome: "Escopo", texto: "O que é, para quem e o que fica de fora." },
-  { n: "02", nome: "Fontes", texto: "Tudo que já existe: sistemas, planilhas, pessoas." },
-  { n: "03", nome: "Uso", texto: "Como o trabalho acontece de verdade, no dia a dia." },
-  { n: "04", nome: "Evidências", texto: "Números e provas antes de qualquer opinião." },
-  { n: "05", nome: "Desenho", texto: "Arquitetura, dados e telas no papel." },
-  { n: "06", nome: "Protótipo", texto: "Algo clicável, cedo, para errar barato." },
-  { n: "07", nome: "Verificação", texto: "Testado de ponta a ponta antes de ir para o ar." },
+  { n: "01", nome: "Escopo", texto: "O que será feito, para quem e o que fica fora do projeto." },
+  { n: "02", nome: "Fontes", texto: "Levantamento do que já existe: sistemas, planilhas e pessoas." },
+  { n: "03", nome: "Uso", texto: "Como o trabalho acontece de fato, no dia a dia." },
+  { n: "04", nome: "Evidências", texto: "Dados e comprovações antes de qualquer decisão." },
+  { n: "05", nome: "Desenho", texto: "Arquitetura, dados e telas definidos antes do código." },
+  { n: "06", nome: "Protótipo", texto: "Uma versão navegável, desde cedo, para validar rapidamente." },
+  { n: "07", nome: "Verificação", texto: "Testes de ponta a ponta antes da publicação." },
 ];

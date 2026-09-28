@@ -8,7 +8,7 @@ export function Regras() {
       <div className="container rg-in">
         <div className="secao-cab">
           <Rotulo>Regras da casa</Rotulo>
-          <Titulo id="rg-titulo">Valem para todo sistema nosso</Titulo>
+          <Titulo id="rg-titulo">Válidas para todos os nossos sistemas</Titulo>
         </div>
         <div className="tabela-rolo">
           <table className="tabela">

@@ -16,7 +16,7 @@ export function Abertura() {
             Sistemas<br />em série<span className="titulo-ponto" aria-hidden="true" />
           </motion.h1>
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.15 }}>
-            <p className="ab-apoio">A IT.IA cria sistemas com método, inteligência artificial e registro de tudo. Alguns viram produtos nossos. Outros viram o sistema da sua empresa.</p>
+            <p className="ab-apoio">Desenvolvemos sistemas com método, IA integrada e registro completo de cada etapa. Alguns se tornam produtos da IT.IA; outros, o sistema da sua empresa.</p>
             <div className="ab-ctas">
               <Botao href={contato.whatsapp} estilo="claro" externo>Falar com a IT.IA</Botao>
               <Botao href="#catalogo" estilo="contorno">Ver o catálogo</Botao>

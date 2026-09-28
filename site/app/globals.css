@@ -166,12 +166,18 @@ a { color: inherit; }
 .cat-card { padding: 0; }
 .cat-card-cab { display: flex; justify-content: space-between; gap: 16px; padding: 14px 24px; border-bottom: 1px solid var(--linha); background: var(--papel); }
 .cat-estado { color: var(--preto); }
-.cat-card-corpo { display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); gap: 40px; padding: 32px 24px; align-items: start; }
+.cat-card-corpo { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 40px; padding: 32px 24px; align-items: stretch; }
 .cat-nome { font-size: clamp(44px, 5.6vw, 72px); }
 .cat-frase { font-size: 17px; color: var(--tinta-2); max-width: 480px; margin: 14px 0 24px; }
-.cat-destaques { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--linha); }
-.cat-destaques li { display: flex; gap: 12px; padding: 13px 0; border-bottom: 1px solid var(--linha); font-size: 15px; }
-.cat-destaques li::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--vermelho); flex: 0 0 6px; margin-top: 9px; }
+.cat-info { display: flex; flex-direction: column; }
+.cat-acoes { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: auto; }
+.cat-url { color: var(--tinta-3); text-transform: none; letter-spacing: .06em; }
+.cat-ficha { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; margin: 0; background: var(--linha); border: 1px solid var(--linha); }
+.cat-ficha > div { background: var(--branco); padding: 20px; display: grid; gap: 8px; align-content: start; }
+.cat-ficha dd { margin: 0; font-size: 15px; color: var(--tinta-2); }
+.cat-ficha-ia { background: var(--preto) !important; }
+.cat-ficha-ia dt { color: var(--branco); }
+.cat-ficha-ia dd { color: var(--nevoa); }
 .cat-nota { margin: 16px 0 0; font-family: var(--font-mono); font-size: 12px; letter-spacing: .06em; color: var(--tinta-3); }
 
 /* método */
@@ -250,7 +256,9 @@ a { color: inherit; }
   .fr-compara { grid-template-columns: 1fr; }
   .fr-destaque { padding: 24px; }
   .cat-card-corpo { grid-template-columns: 1fr; gap: 24px; padding: 24px 20px; }
-  .cat-card-cab { padding: 12px 20px; }
+  .cat-card-cab { padding: 12px 20px; flex-wrap: wrap; }
+  .cat-ficha { grid-template-columns: 1fr; }
+  .cat-acoes { margin-top: 0; }
   .mt-painel { padding: 24px 20px 24px 44px; }
   .mt-trilho { display: block; left: 22px; right: auto; top: 24px; bottom: 24px; width: 1px; height: auto; }
   .mt-bola { left: 50%; top: var(--pos); }

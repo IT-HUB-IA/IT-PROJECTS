@@ -15,7 +15,7 @@ export function Metodo() {
         <div className="secao-cab">
           <Rotulo>Método</Rotulo>
           <Titulo id="mt-titulo">Todo sistema passa pelas mesmas etapas</Titulo>
-          <p className="lead">O que aprendemos em um sistema vira padrão no próximo. Qualidade não depende de sorte: depende de método.</p>
+          <p className="lead">O que aprendemos em cada sistema torna-se padrão no próximo. Qualidade não depende de sorte, e sim de método.</p>
         </div>
         <div className="cartao mt-painel" ref={ref}>
           <div className="mt-trilho" aria-hidden="true"><motion.span className="mt-bola" style={{ ["--pos" as string]: pos }} /></div>

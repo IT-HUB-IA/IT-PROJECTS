@@ -2,11 +2,11 @@ import { contato } from "@/data/site";
 import { Titulo } from "@/components/ui/Capa";
 import { Botao } from "@/components/ui/Botao";
 
-// o que acontece depois do clique: tira o medo de "vou cair num vendedor"
+// o que acontece depois do clique: deixa claro o próximo passo
 const PASSOS = [
-  { n: "01", nome: "Você conta como é hoje", texto: "Pelo WhatsApp ou por e-mail: o processo, a planilha, o sistema que trava." },
-  { n: "02", nome: "Mapeamos com você", texto: "Uma conversa para entender quem faz o quê, onde o tempo se perde e o que precisa mudar." },
-  { n: "03", nome: "Você recebe o caminho", texto: "Uma proposta com o escopo, as etapas e o que entra primeiro no ar." },
+  { n: "01", nome: "Você apresenta o cenário atual", texto: "Por WhatsApp ou e-mail: o processo, as planilhas e os sistemas que limitam a operação." },
+  { n: "02", nome: "Mapeamos o processo com você", texto: "Uma conversa para entender quem faz o quê, onde o tempo se perde e o que precisa mudar." },
+  { n: "03", nome: "Você recebe o plano", texto: "Uma proposta com escopo, etapas e as primeiras entregas." },
 ];
 
 export function SobMedida() {
@@ -17,11 +17,11 @@ export function SobMedida() {
       <div className="container sm-in">
         <div className="sm-texto-col">
           <p className="rotulo com-ponto claro">Sob medida</p>
-          <Titulo id="sm-titulo" className="sm-titulo">Conte o problema. A gente desenha o sistema</Titulo>
-          <p className="sm-texto">Você fala direto com quem constrói. Em uma conversa, entendemos como o trabalho acontece hoje e mostramos o que automatizar, o que integrar e por onde começar.</p>
+          <Titulo id="sm-titulo" className="sm-titulo">Apresente o desafio. Nós desenhamos o sistema</Titulo>
+          <p className="sm-texto">Você conversa diretamente com quem desenvolve. Compreendemos como o trabalho acontece hoje e indicamos o que automatizar, o que integrar e por onde começar.</p>
           <div className="sm-acoes">
             <Botao href={contato.whatsapp} estilo="claro" externo>Quero conversar sobre o meu sistema</Botao>
-            <p className="sm-micro">Conversa sem compromisso. Prefere e-mail? <span className="sm-email">{contato.email}</span></p>
+            <p className="sm-micro">Conversa sem compromisso. Se preferir, escreva para <span className="sm-email">{contato.email}</span></p>
           </div>
         </div>
         <ol className="sm-passos" aria-label="O que acontece depois">

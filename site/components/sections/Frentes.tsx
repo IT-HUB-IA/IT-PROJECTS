@@ -11,7 +11,7 @@ export function Frentes() {
         <div className="secao-cab">
           <Rotulo>O que fazemos</Rotulo>
           <Titulo id="fr-titulo">Uma linha de produção de software</Titulo>
-          <p className="lead">Tudo o que sai da IT.IA passa pelo mesmo método. Muda o destino: a sua empresa, o nosso catálogo ou o conteúdo que publicamos.</p>
+          <p className="lead">Tudo o que a IT.IA desenvolve segue o mesmo método. O que muda é o destino: a sua empresa, o nosso catálogo ou o conteúdo que publicamos.</p>
         </div>
         <div className="fr-grade">
           {/* a peça principal: o antes e depois que o cliente reconhece */}
