@@ -75,7 +75,7 @@ do $$ declare w uuid; e uuid; m uuid; begin
 end $$;
 
 -- ---------- 3. espaco_id em tudo o que é do sistema da pessoa ----------
-create or replace function interno.espaco_do_william() returns uuid language sql stable as $$
+create or replace function interno.espaco_do_william() returns uuid language sql stable set search_path = public, pg_temp as $$
   select e.id from public.espacos e where e.pessoal and not e.modelo order by e.criado_em limit 1
 $$;
 do $$ declare t text; esp uuid := interno.espaco_do_william(); begin
