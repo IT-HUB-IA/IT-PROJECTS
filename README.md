@@ -13,7 +13,7 @@ Gestão de projetos, entregas e custos da IT.IA, feita no CicloDev. Cliente atua
 ## Gerar a página
 
 ```
-cd fonte && python3 build.py && cp vercel/index.html ../publico/index.html
+cd fonte && python3 build.py   (gera publico/index.html = apresentação e publico/entrar.html = sistema)
 ```
 
 ## Login

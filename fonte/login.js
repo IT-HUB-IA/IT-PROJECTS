@@ -318,6 +318,8 @@ sb.auth.onAuthStateChange((evento, sessao) => {
     return aviso(raiz.querySelector('[data-etapa="login"]'), 'erro', /expired/i.test(erroLink) ? 'Esse link já venceu ou já foi usado. Peça um novo em "Esqueci minha senha".' : 'Esse link não é válido. Peça um novo em "Esqueci minha senha".');
   }
   if (trocandoSenha) return mostrarTrocar();
-  if (data.session) entrar(data.session); else mostrar('login');
+  if (data.session) entrar(data.session);
+  else if (location.hash === '#criar-conta'){ history.replaceState(null, '', location.pathname); mostrar('cadastro'); irPasso(1); }
+  else mostrar('login');
 })();
 })();

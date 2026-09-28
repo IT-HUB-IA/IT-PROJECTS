@@ -164,3 +164,10 @@ _v = '<!doctype html>\n<html lang="pt-BR"><head><meta charset="utf-8"><meta name
 assert _login_html[:20] in _v and 'com-login' in _v
 open('vercel/index.html', 'w', encoding='utf-8').write(_v)
 print('vercel/index.html', len(_v))
+
+# publicação: a apresentação do CicloDev fica na raiz (/) e o sistema, com o login, em /entrar
+import shutil as _sh
+_pub = _os.path.join('..', 'publico')
+_sh.copyfile('vercel/index.html', _os.path.join(_pub, 'entrar.html'))
+_sh.copyfile('landing.html', _os.path.join(_pub, 'index.html'))
+print('publico/entrar.html e publico/index.html')

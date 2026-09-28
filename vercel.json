@@ -21,7 +21,12 @@
         {
           "key": "Permissions-Policy",
           "value": "camera=(), geolocation=()"
-        },
+        }
+      ]
+    },
+    {
+      "source": "/entrar",
+      "headers": [
         {
           "key": "X-Robots-Tag",
           "value": "noindex, nofollow"

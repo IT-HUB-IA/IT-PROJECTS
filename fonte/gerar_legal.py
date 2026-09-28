@@ -46,7 +46,7 @@ th{background:var(--preto);color:var(--branco);font-family:var(--mono);font-weig
 def pagina(arq, titulo, olho, resumo, secoes, ativo):
     ind = ''.join(f'<li><a href="#s{i+1}">{html.escape(t)}</a></li>' for i,(t,_) in enumerate(secoes))
     sec = ''.join(f'<section id="s{i+1}"><h2><span>{i+1:02d}</span>{html.escape(t)}</h2>{c}</section>' for i,(t,c) in enumerate(secoes))
-    nav = ''.join(f'<a href="{h}"' + (' aria-current="page"' if h == ativo else '') + f'>{n}</a>' for h,n in [('/termos','Termos de Uso'),('/privacidade','Privacidade'),('/','Entrar no sistema')])
+    nav = ''.join(f'<a href="{h}"' + (' aria-current="page"' if h == ativo else '') + f'>{n}</a>' for h,n in [('/termos','Termos de Uso'),('/privacidade','Privacidade'),('/entrar','Entrar no sistema')])
     doc = f'''<!doctype html>
 <html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{html.escape(titulo)} · CicloDev</title><meta name="description" content="{html.escape(titulo)} do CicloDev."><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png"><link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest"><meta name="theme-color" content="#0B0B0C">
