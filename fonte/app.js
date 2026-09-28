@@ -661,6 +661,23 @@ function arvoreHTML(){
 const VIEWS = [
   ['dashboard','Dashboard','painel analítico'],['board','Board','quadro kanban'],['table','Table','tabela editável'],['list','List','lista agrupada'],['calendar','Calendar','calendário'],['timeline','Timeline','linha do tempo com barras de duração'],['workload','Workload','carga de trabalho por pessoa'],['whiteboard','Whiteboard','quadro visual livre, o canvas'],['custos','Costs','custos e receitas: o que já foi gasto e cobrado, com a linha do tempo'],['sheet','Tech sheet','ficha técnica'],['stages','Stages','etapas obrigatórias']
 ];
+/* o "i" de cada view de Operações: o que ela faz, em uma frase */
+const EXPL_VIEW = {
+  dashboard:'Dashboard (painel): o resumo do que está escolhido na estrutura. Mostra quanto já foi feito, o que está atrasado, os avisos e as mudanças recentes.',
+  board:'Board (quadro): os itens em colunas pela situação (a fazer, em andamento, em revisão, feito). Arraste o cartão de uma coluna para outra para mudar a situação.',
+  table:'Table (tabela): os itens em linhas e colunas, como numa planilha, para ver e mudar vários campos de uma vez.',
+  list:'List (lista): os itens agrupados por situação, pessoa ou prioridade, para ler rápido tudo o que existe.',
+  calendar:'Calendar (calendário): os itens nos dias do prazo, por mês, semana, dia ou em forma de agenda.',
+  timeline:'Timeline (linha do tempo): cada item vira uma barra do início até o prazo, para ver o que acontece ao mesmo tempo e o que depende do quê.',
+  workload:'Workload (carga de trabalho): quantas horas cada pessoa tem em cada dia ou semana, comparado com o quanto ela aguenta, para ninguém ficar sobrecarregado.',
+  sprints:'Sprints (ciclos): períodos curtos, de 1 ou 2 semanas, com uma meta e os itens escolhidos para aquele período.',
+  mywork:'My Work (meu trabalho): só os itens que estão com você, separados em atrasados, de hoje e próximos.',
+  whiteboard:'Whiteboard (quadro visual): uma área livre para desenhar, colar notas e ligar ideias. As notas podem virar itens.',
+  custos:'Costs (custos): quanto este ponto da estrutura já gastou e já cobrou, os custos de cada fornecedor e a previsão dos próximos meses.',
+  sheet:'Tech sheet (ficha técnica): as informações técnicas guardadas, como linguagem, banco, integrações, regras do cliente e arquivos.',
+  stages:'Stages (etapas): as etapas obrigatórias do processo (entrada, escopo, descoberta e as outras) e o que já foi cumprido em cada uma, com a prova.'
+};
+const abaView = v => '<span class="view-casa"><button class="view-b" type="button" role="tab" data-view="' + v[0] + '" aria-selected="' + (UI.view === v[0]) + '">' + v[1] + '</button>' + (EXPL_VIEW[v[0]] ? I(EXPL_VIEW[v[0]]) : '') + '</span>';
 function rOperacoes(){
   const el = $('#m-operacoes');
   const [tipo, id] = UI.sel.split(':');
@@ -685,7 +702,7 @@ function rOperacoes(){
             (tipo === 'app' && podeEditar() ? '<button class="btn sec so-master" type="button" data-acao="mover-app" data-id="' + id + '">Mover</button>' : '') +
           '</div></div>' +
         (obj.status === 'on_hold' ? '<div class="aviso-faixa"><b>On Hold</b><span>' + esc(obj.motivo || 'Sem motivo registrado') + '</span></div>' : '') +
-        '<div class="views" role="tablist" aria-label="Views">' + viewsDisp.map(v => '<button class="view-b" type="button" role="tab" data-view="' + v[0] + '" aria-selected="' + (UI.view === v[0]) + '">' + v[1] + '</button>').join('') + '</div>' +
+        '<div class="views" role="tablist" aria-label="Views">' + viewsDisp.map(abaView).join('') + '</div>' +
       '</div>' +
       '<div class="ops-corpo" id="ops-corpo"></div>' +
     '</div></div>';

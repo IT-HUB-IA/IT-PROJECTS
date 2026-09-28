@@ -390,7 +390,7 @@ rOperacoes = function(){
   if (UI.sel === 'all'){ rEverything(); return; }
   _rOperacoes();
   const [tipo, id] = UI.sel.split(':');
-  if (!cadeia(UI.sel).project){ const b = $('.view-b[data-view="sprints"]'); if (b) b.remove(); if (UI.view === 'sprints'){ UI.view = 'dashboard'; rView(); } }
+  if (!cadeia(UI.sel).project){ const b = $('.view-b[data-view="sprints"]'); if (b) (b.closest('.view-casa') || b).remove(); if (UI.view === 'sprints'){ UI.view = 'dashboard'; rView(); } }
   const arv = $('.ops-arvore [role="tree"]');
   if (arv) arv.insertAdjacentHTML('afterbegin', '<div class="no-arv rc-tudo" data-rc-tudo role="treeitem" aria-selected="false" style="padding-left:8px"><span class="seta"></span><span class="nome">Everything</span><span class="tipo">tudo</span></div>');
   if (tipo === 'app' && podeEditar()){ const a = byId('apps', id); const ac = $('.ops-cab .acoes');
@@ -407,7 +407,7 @@ function rEverything(){
   const cab = $('.ops-cab');
   if (cab) cab.innerHTML = '<nav class="ops-trilha" aria-label="Breadcrumb"><button type="button" data-rc-tudo>Everything</button></nav>' +
     '<div class="ops-titulo"><div class="titulo-esq"><h1>Everything<small>tudo</small>' + I('Everything (visão de tudo): todos os itens de todos os clientes e projetos numa tela só, com as mesmas views, filtros e visões salvas') + '</h1></div></div>' +
-    '<div class="views" role="tablist" aria-label="Views">' + disp.map(v => '<button class="view-b" type="button" role="tab" data-view="' + v[0] + '" aria-selected="' + (UI.view === v[0]) + '">' + v[1] + '</button>').join('') + '</div>';
+    '<div class="views" role="tablist" aria-label="Views">' + disp.map(abaView).join('') + '</div>';
   $$('.ops-arvore .no-arv.escolhido').forEach(n => n.classList.remove('escolhido'));
   const arv = $('.ops-arvore [role="tree"]');
   if (arv) arv.insertAdjacentHTML('afterbegin', '<div class="no-arv rc-tudo escolhido" data-rc-tudo role="treeitem" aria-selected="true" style="padding-left:8px"><span class="seta"></span><span class="nome">Everything</span><span class="tipo">tudo</span></div>');

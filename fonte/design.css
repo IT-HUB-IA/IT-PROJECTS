@@ -462,3 +462,9 @@
 
 /* Estrutura: as linhas pontilhadas passam por baixo; o item não gruda no vizinho */
 .ops-arvore .no-arv{margin-bottom:0}
+
+/* "i" de cada view de Operações, ao lado do nome da aba */
+.view-casa{display:inline-flex;align-items:center}
+.view-casa .info{margin:0 8px 0 -8px;flex:none}
+.ops-cab .view-casa .info{border-color:var(--grafite);color:var(--nevoa)}
+.ops-cab .view-casa .info:hover,.ops-cab .view-casa .info:focus-visible{border-color:var(--nevoa);color:#fff}
