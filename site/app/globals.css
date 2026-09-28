@@ -183,13 +183,43 @@ a { color: inherit; }
 .cat-ficha-ia dd { color: var(--nevoa); }
 .cat-nota { margin: 16px 0 0; font-family: var(--font-mono); font-size: 12px; letter-spacing: .06em; color: var(--tinta-3); }
 
-/* método */
-.mt-painel { position: relative; padding: 32px 24px 28px; }
-.mt-trilho { position: absolute; left: 24px; right: 24px; top: 40px; height: 1px; background: var(--linha-f); }
-.mt-bola { position: absolute; top: 50%; left: var(--pos); width: 12px; height: 12px; border-radius: 50%; background: var(--vermelho); transform: translate(-50%, -50%); box-shadow: 0 0 0 5px rgba(255,0,0,.14); }
-.mt-lista { list-style: none; margin: 0; padding: 28px 0 0; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 20px; }
-.mt-lista b { display: block; font-family: var(--font-display); font-weight: 600; font-size: 19px; letter-spacing: -.02em; margin: 8px 0 6px; }
-.mt-lista p { margin: 0; font-size: 14px; color: var(--tinta-2); }
+/* método: painel fixo guiado pela rolagem (--p vai de 0 a 1) */
+.mt { padding: 0; }
+.mt-cab { margin-bottom: 28px; }
+.mt-cab .titulo { font-size: clamp(32px, 3.6vw, 48px); }
+.mt-trilho { --p: 0; position: relative; height: calc(100vh + var(--n) * 34vh); }
+.mt-fixo { position: sticky; top: calc(64px + env(safe-area-inset-top, 0px)); height: calc(100vh - 64px); display: flex; align-items: center; }
+.mt-fixo > .container { width: 100%; }
+.mt-painel { padding: 28px 28px 32px; display: grid; gap: 0; }
+.mt-grupos { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 0 12px; margin-bottom: 14px; }
+.mt-grupos span { border-top: 1px solid var(--linha-f); padding-top: 8px; color: var(--tinta-3); transition: color .35s var(--ease), border-color .35s var(--ease); }
+.mt-grupos span.on { color: var(--preto); border-top: 2px solid var(--preto); padding-top: 7px; }
+.mt-grupos span.feito { color: var(--tinta-2); }
+.mt-linha { position: relative; height: 2px; background: var(--linha); margin: 6px 0 0; }
+.mt-enche { position: absolute; inset: 0; background: var(--vermelho); transform-origin: left center; transform: scaleX(var(--p)); }
+.mt-fases { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 12px; }
+.mt-fases button { all: unset; box-sizing: border-box; cursor: pointer; display: grid; gap: 6px; width: 100%; padding: 0 0 18px; position: relative; }
+.mt-fases button:focus-visible { outline: 2px solid var(--vermelho); outline-offset: 4px; }
+.mt-marca { width: 12px; height: 12px; border-radius: 50%; background: var(--branco); border: 2px solid var(--linha-f); margin: -7px 0 8px; transition: background-color .3s var(--ease), border-color .3s var(--ease), transform .3s var(--ease), box-shadow .3s var(--ease); }
+.mt-fases b { font-family: var(--font-display); font-weight: 600; font-size: 15px; letter-spacing: -.01em; color: var(--tinta-3); transition: color .3s var(--ease); hyphens: manual; line-height: 1.2; }
+.mt-fases .rotulo { color: var(--tinta-3); transition: color .3s var(--ease); }
+.mt-fases li.feita .mt-marca { background: var(--preto); border-color: var(--preto); }
+.mt-fases li.feita b { color: var(--tinta-2); }
+.mt-fases li.ativa .mt-marca { background: var(--vermelho); border-color: var(--vermelho); transform: scale(1.35); box-shadow: 0 0 0 6px rgba(255,0,0,.14); }
+.mt-fases li.ativa b, .mt-fases li.ativa .rotulo { color: var(--preto); }
+.mt-fases button:hover b { color: var(--preto); }
+.mt-fase-txt { display: none; }
+.mt-detalhe { display: grid; border-top: 1px solid var(--linha); padding-top: 24px; min-height: 180px; }
+.mt-det { grid-area: 1 / 1; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 32px; align-items: start; opacity: 0; transform: translateY(18px); clip-path: inset(0 0 100% 0); transition: opacity .45s var(--ease), transform .55s var(--ease), clip-path .55s var(--ease); pointer-events: none; }
+.mt-det.antes { transform: translateY(-18px); clip-path: inset(100% 0 0 0); }
+.mt-det.on { opacity: 1; transform: none; clip-path: inset(0 0 0 0); pointer-events: auto; }
+.mt-num { font-family: var(--font-display); font-weight: 600; font-size: clamp(72px, 9vw, 132px); line-height: .82; letter-spacing: -.05em; color: var(--preto); }
+.mt-det-txt { display: grid; gap: 10px; max-width: 560px; }
+.mt-det-txt h3 { font-family: var(--font-display); font-weight: 600; font-size: clamp(30px, 3.4vw, 46px); letter-spacing: -.03em; line-height: 1; margin: 0; }
+.mt-det-txt p:last-child { margin: 0; font-size: 17px; color: var(--tinta-2); }
+.mt-res { margin: 0; display: grid; gap: 8px; justify-items: start; align-self: end; background: var(--preto); color: var(--branco); padding: 16px 18px; min-width: 200px; box-shadow: inset 0 2px 0 var(--vermelho); }
+.mt-res .rotulo { color: var(--nevoa); }
+.mt-res b { font-family: var(--font-display); font-weight: 600; font-size: 19px; letter-spacing: -.01em; }
 
 /* regras da casa: tabela como a do Playbook */
 .tabela-rolo { overflow-x: auto; border: 1px solid var(--linha); }
@@ -238,8 +268,6 @@ a { color: inherit; }
   .fr-destaque { grid-template-columns: 1fr; }
   .fr-c:not(.fr-destaque) { grid-column: span 3; }
   .fr-c:not(.fr-destaque):last-child { grid-column: span 6; }
-  .mt-lista { grid-template-columns: repeat(4, minmax(0, 1fr)); row-gap: 28px; }
-  .mt-trilho { display: none; }
   .ro-ficha { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
@@ -262,16 +290,31 @@ a { color: inherit; }
   .cat-card-cab { padding: 12px 20px; flex-wrap: wrap; }
   .cat-ficha { grid-template-columns: 1fr; }
   .cat-acoes { margin-top: 0; }
-  .mt-painel { padding: 24px 20px 24px 44px; }
-  .mt-trilho { display: block; left: 22px; right: auto; top: 24px; bottom: 24px; width: 1px; height: auto; }
-  .mt-bola { left: 50%; top: var(--pos); }
-  .mt-lista { grid-template-columns: 1fr; padding-top: 0; row-gap: 22px; }
   .tabela tbody th { width: 40%; }
   .lab-in, .sm-in, .ro-in { grid-template-columns: 1fr; }
   .ro-ficha { grid-template-columns: 1fr; }
 }
 
+/* método no celular e em telas estreitas: lista vertical, a linha enche para baixo */
+@media (max-width: 860px) {
+  .mt { padding: 72px 0; }
+  .mt-cab { margin-bottom: 24px; }
+  .mt-trilho { height: auto; }
+  .mt-fixo { position: static; height: auto; display: block; }
+  .mt-painel { padding: 24px 20px 24px 48px; position: relative; }
+  .mt-grupos, .mt-detalhe { display: none; }
+  .mt-linha { position: absolute; left: 25px; top: 30px; bottom: 30px; width: 2px; height: auto; margin: 0; }
+  .mt-enche { transform-origin: top center; transform: scaleY(var(--p)); }
+  .mt-fases { grid-template-columns: 1fr; gap: 0; }
+  .mt-fases button { padding: 14px 0; }
+  .mt-marca { position: absolute; left: -29px; top: 18px; margin: 0; }
+  .mt-fases li.ativa .mt-marca { transform: scale(1.25); }
+  .mt-fases b { font-size: 19px; }
+  .mt-fase-txt { display: grid; gap: 8px; font-size: 15px; color: var(--tinta-2); }
+  .mt-fase-txt em { font-style: normal; display: flex; gap: 10px; align-items: baseline; font-family: var(--font-display); font-weight: 600; color: var(--preto); font-size: 14px; }
+}
 @media (prefers-reduced-motion: reduce) {
+  .mt-det { transition: none; }
   html { scroll-behavior: auto; }
   .listras-movendo { animation: none; }
   *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }

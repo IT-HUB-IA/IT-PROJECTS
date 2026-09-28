@@ -64,12 +64,22 @@ export const regras = [
   { nome: "Testado antes da publicação", texto: "Nenhuma entrega é feita sem verificação de ponta a ponta." },
 ];
 
+// o método completo, do escopo à entrega, agrupado em quatro fases
+export const fasesMetodo = [
+  { nome: "Entender", de: 0, ate: 3 },
+  { nome: "Projetar", de: 4, ate: 5 },
+  { nome: "Construir", de: 6, ate: 7 },
+  { nome: "Entregar", de: 8, ate: 9 },
+];
 export const metodo = [
-  { n: "01", nome: "Escopo", texto: "O que será feito, para quem e o que fica fora do projeto." },
-  { n: "02", nome: "Fontes", texto: "Levantamento do que já existe: sistemas, planilhas e pessoas." },
-  { n: "03", nome: "Uso", texto: "Como o trabalho acontece de fato, no dia a dia." },
-  { n: "04", nome: "Evidências", texto: "Dados e comprovações antes de qualquer decisão." },
-  { n: "05", nome: "Desenho", texto: "Arquitetura, dados e telas definidos antes do código." },
-  { n: "06", nome: "Protótipo", texto: "Uma versão navegável, desde cedo, para validar rapidamente." },
-  { n: "07", nome: "Verificação", texto: "Testes de ponta a ponta antes da publicação." },
+  { n: "01", nome: "Escopo", texto: "Definimos o que será feito, para quem e o que fica fora do projeto.", resultado: "Escopo aprovado" },
+  { n: "02", nome: "Fontes", texto: "Levantamos tudo o que já existe: sistemas, planilhas, documentos e pessoas-chave.", resultado: "Mapa das fontes" },
+  { n: "03", nome: "Uso", texto: "Acompanhamos como o trabalho acontece de fato, no dia a dia de quem vai usar o sistema.", resultado: "Fluxos reais do processo" },
+  { n: "04", nome: "Evidências", texto: "Reunimos dados e comprovações que orientam cada decisão do projeto.", resultado: "Requisitos validados" },
+  { n: "05", nome: "Desenho", texto: "Definimos arquitetura, modelo de dados, regras de acesso e telas antes de escrever o código.", resultado: "Arquitetura e telas" },
+  { n: "06", nome: "Protótipo", texto: "Uma versão navegável, desde cedo, para validar a solução com quem vai usá-la.", resultado: "Protótipo aprovado" },
+  { n: "07", nome: "Desenvolvimento", curto: "Desenvol\u00advimento", texto: "Construção em ciclos curtos, com cada entrega registrada e acompanhada no CicloDev.", resultado: "Versões incrementais" },
+  { n: "08", nome: "Verificação", texto: "Testes de ponta a ponta, revisão de código e análise de segurança.", resultado: "Sistema testado" },
+  { n: "09", nome: "Homologação", texto: "Você valida o sistema com dados e situações reais antes da publicação.", resultado: "Aceite do cliente" },
+  { n: "10", nome: "Entrega", texto: "Publicação, migração dos dados e treinamento da equipe que vai usar o sistema.", resultado: "Sistema em produção" },
 ];
