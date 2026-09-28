@@ -862,7 +862,7 @@ function domSemente(){
   D.dominios = [{id:'dm_1', nome:'it-ia.tec.br', no_id:null, registrador:'Registro.br', dns_em:'Cloudflare', servidores_dns:['karsyn.ns.cloudflare.com','kellen.ns.cloudflare.com'],
     comprado_em:'2026-09-09', vence_em:'2036-09-09', renovacao_automatica:null, custo_operacao_id:null, custo_tecnico_id:null, email_provedor:'Google (Gmail)', acesso_onde:null,
     observacoes:'Domínio da própria IT.IA. Envio de e-mails do sistema pelo Resend (domínio verificado).',
-    registros:[r('system','CNAME','cname.vercel-dns.com','Vercel','CicloDev (system.it-ia.tec.br)'), r('conversor','Túnel','conversor-billy','Cloudflare Tunnel','Conversor do Billy',true),
+    registros:[r('ciclodev','CNAME','cname.vercel-dns.com','Vercel','CicloDev (ciclodev.it-ia.tec.br)'), r('system','CNAME','cname.vercel-dns.com','Vercel','Endereço antigo do CicloDev: leva para ciclodev.it-ia.tec.br'), r('conversor','Túnel','conversor-billy','Cloudflare Tunnel','Conversor do Billy',true),
       r('@','MX','smtp.google.com','Google','Receber e-mails do domínio'), r('@','TXT','v=spf1 include:_spf.google.com ~all','Google','SPF: quem pode enviar e-mail pelo domínio'),
       r('_dmarc','TXT','v=DMARC1; p=reject;','E-mail','DMARC: recusar e-mail falso com o domínio'), r('@','TXT','google-site-verification (valor no Cloudflare)','Google','Prova de que o domínio é nosso para o Google'),
       r('resend._domainkey','TXT','chave DKIM do Resend (valor no Cloudflare)','Resend','Assinatura dos e-mails enviados pelo Resend'),
@@ -986,7 +986,7 @@ function domFormReg(d, r){
   const apps = DOM.cache.donos.filter(o => o.tipo === 'aplicacao');
   modal((r.id ? 'Editar registro de ' : 'Novo registro em ') + esc(d.nome),
     '<div class="grade-form">' +
-    '<label class="lb">Nome' + I('Nome: a parte antes do domínio. Para system.it-ia.tec.br, escreva system. Para o próprio domínio, escreva @') + '<span class="com-suf"><input class="campo" id="dr-n" value="' + esc(r.nome || '') + '" placeholder="system"><span>.' + esc(d.nome) + '</span></span></label>' +
+    '<label class="lb">Nome' + I('Nome: a parte antes do domínio. Para ciclodev.it-ia.tec.br, escreva ciclodev. Para o próprio domínio, escreva @') + '<span class="com-suf"><input class="campo" id="dr-n" value="' + esc(r.nome || '') + '" placeholder="system"><span>.' + esc(d.nome) + '</span></span></label>' +
     '<label class="lb">Tipo' + I('Tipo do registro: CNAME aponta para outro endereço; A aponta para um número de IP; MX recebe e-mail; TXT guarda verificações') + '<select class="sel" id="dr-t">' + DOM_TIPOS.map(t => '<option' + (r.tipo === t ? ' selected' : '') + '>' + t + '</option>').join('') + '</select></label>' +
     '<label class="lb">Aponta para<input class="campo" id="dr-a" value="' + esc(r.aponta_para || '') + '" placeholder="cname.vercel-dns.com"></label>' +
     '<label class="lb">Serviço<input class="campo" id="dr-s" value="' + esc(r.servico || '') + '" placeholder="Vercel, Google, Resend"></label>' +

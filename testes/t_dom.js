@@ -12,7 +12,7 @@ const { chromium } = require('/opt/node22/lib/node_modules/playwright');
   ok(await p.isVisible('text=it-ia.tec.br'), 'aba Domínios mostra it-ia.tec.br');
   await p.click('[data-dm-abrir]'); await p.waitForTimeout(200);
   ok((await p.locator('.dm-det tbody tr').count()) === 9, '9 registros no detalhe');
-  ok(await p.isVisible('text=system.it-ia.tec.br'), 'subdomínio system aparece com o endereço completo');
+  ok(await p.isVisible('text=ciclodev.it-ia.tec.br'), 'subdomínio ciclodev aparece com o endereço completo');
   await p.screenshot({path:'../dominios.png', fullPage:false});
   await p.click('[data-dm=novo]'); await p.fill('#dm-n', 'exemplo com espaço'); await p.click('dialog [data-b="1"]'); await p.waitForTimeout(100);
   ok(await p.isVisible('dialog'), 'nome inválido não salva');

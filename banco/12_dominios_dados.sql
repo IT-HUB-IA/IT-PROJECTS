@@ -11,7 +11,8 @@ insert into public.dominios_registros (dominio_id, nome, tipo, aponta_para, serv
 select d.id, r.nome, r.tipo, r.aponta_para, r.servico, r.para_que, r.proxy
   from public.dominios d
   cross join (values
-    ('system',            'CNAME', 'cname.vercel-dns.com',            'Vercel',            'CicloDev (system.it-ia.tec.br)',            false),
+    ('ciclodev',          'CNAME', 'cname.vercel-dns.com',            'Vercel',            'CicloDev (ciclodev.it-ia.tec.br)',          false),
+    ('system',            'CNAME', 'cname.vercel-dns.com',            'Vercel',            'Endereço antigo do CicloDev: leva para ciclodev.it-ia.tec.br', false),
     ('conversor',         'Túnel', 'conversor-billy',                 'Cloudflare Tunnel', 'Conversor do Billy',                             true),
     ('@',                 'MX',    'smtp.google.com',                 'Google',            'Receber e-mails do domínio',                     false),
     ('@',                 'TXT',   'v=spf1 include:_spf.google.com ~all', 'Google',        'SPF: quem pode enviar e-mail pelo domínio',      false),

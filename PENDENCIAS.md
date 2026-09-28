@@ -28,7 +28,7 @@ Um lugar no sistema para guardar cada domínio do grupo e tudo o que depende del
 
 | Informação | Exemplo |
 |---|---|
-| Subdomínio | `system.it-ia.tec.br` |
+| Subdomínio | `ciclodev.it-ia.tec.br` (o antigo `system.it-ia.tec.br` leva para ele) |
 | Para que serve | CicloDev |
 | Aponta para | Vercel (projeto `sistema-itia`) |
 | Tipo de registro | CNAME para `cname.vercel-dns.com`, com o proxy do Cloudflare desligado |
@@ -44,5 +44,5 @@ Um lugar no sistema para guardar cada domínio do grupo e tudo o que depende del
 **Onde fica na tela:** uma aba "Domínios" dentro de Costs, ou um módulo próprio. Decidir com o William quando for fazer.
 
 **Domínios já conhecidos para cadastrar:**
-- `it-ia.tec.br`: Registro.br, DNS no Cloudflare, comprado em 09/09/2026, vence em 09/09/2036. Subdomínio `system` para o CicloDev.
+- `it-ia.tec.br`: Registro.br, DNS no Cloudflare, comprado em 09/09/2026, vence em 09/09/2036. Subdomínio `ciclodev` para o CicloDev (o antigo `system` leva para ele).
 - Domínios das empresas do grupo (YOU, Realizze, BEEC, Blanco & Lisboa...): levantar com o William.
