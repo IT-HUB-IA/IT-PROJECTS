@@ -219,3 +219,11 @@ revoke execute on function public.sou_dono_sistema(), public.admin_resumo(), pub
   public.admin_telas(integer), public.admin_historico(uuid, integer), public.admin_banco() from public, anon;
 grant execute on function public.sou_dono_sistema(), public.admin_resumo(), public.admin_usuarios(), public.admin_uso_diario(integer),
   public.admin_telas(integer), public.admin_historico(uuid, integer), public.admin_banco() to authenticated;
+
+-- Política de Privacidade: o registro de uso fica no máximo 12 meses (rotina diária; só no Supabase, onde existe pg_cron)
+do $$ begin
+  if exists (select 1 from pg_extension where extname = 'pg_cron') then
+    perform cron.unschedule(jobid) from cron.job where jobname = 'itia_limpar_uso';
+    perform cron.schedule('itia_limpar_uso', '17 3 * * *', $c$delete from public.uso_eventos where em < now() - interval '12 months'$c$);
+  end if;
+end $$;

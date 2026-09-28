@@ -139,3 +139,6 @@ body.com-login.logado #entrada{display:none}
 .entrada-social:disabled{opacity:.6;cursor:wait}
 .entrada-ou{margin:0;display:flex;align-items:center;gap:12px;font-size:12px;color:var(--grafite);text-transform:uppercase;letter-spacing:.12em;font-family:var(--font-mono)}
 .entrada-ou::before,.entrada-ou::after{content:"";flex:1;height:1px;background:var(--nevoa)}
+
+.entrada-rodape a{color:inherit;text-decoration:none}.entrada-rodape a:hover{color:var(--branco);text-decoration:underline}
+.entrada-aceite a{color:inherit;text-decoration:underline;text-underline-offset:2px}
