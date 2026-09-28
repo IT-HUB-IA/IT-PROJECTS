@@ -2,10 +2,10 @@
 import { motion } from "framer-motion";
 import type { ReactNode } from "react";
 
-// entrada padrão da marca: sobe 12px e aparece, rápido, uma vez só
+// entrada padrão da marca: sobe 12px, rápido, uma vez só. O conteúdo nunca fica invisível esperando a animação.
 export function Revelar({ children, atraso = 0, className }: { children: ReactNode; atraso?: number; className?: string }) {
   return (
-    <motion.div className={className} initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-60px" }} transition={{ duration: 0.5, ease: [0.2, 0.7, 0.2, 1], delay: atraso }}>
+    <motion.div className={className} initial={{ y: 12 }} whileInView={{ y: 0 }} viewport={{ once: true, amount: 0.1 }} transition={{ duration: 0.5, ease: [0.2, 0.7, 0.2, 1], delay: atraso }}>
       {children}
     </motion.div>
   );

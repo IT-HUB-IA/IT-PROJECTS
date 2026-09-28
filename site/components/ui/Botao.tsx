@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
 
-type Estilo = "cheio" | "vazio" | "preto";
-export function Botao({ href, children, estilo = "cheio", externo = false }: { href: string; children: ReactNode; estilo?: Estilo; externo?: boolean }) {
+// claro e contorno ficam sobre as capas pretas; escuro fica sobre o papel
+type Estilo = "claro" | "contorno" | "escuro" | "vazio";
+export function Botao({ href, children, estilo = "escuro", externo = false }: { href: string; children: ReactNode; estilo?: Estilo; externo?: boolean }) {
   return (
     <a className={"btn btn-" + estilo} href={href} {...(externo ? { target: "_blank", rel: "noopener noreferrer" } : {})}>
       <span className="ponto-sm" aria-hidden="true" />

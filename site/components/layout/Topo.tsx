@@ -3,9 +3,8 @@ import { useEffect, useState } from "react";
 import { Logo } from "@/components/ui/Logo";
 
 const LINKS = [
+  { href: "#frentes", txt: "O que fazemos" },
   { href: "#catalogo", txt: "Catálogo" },
-  { href: "#ciclodev", txt: "CicloDev" },
-  { href: "#devit", txt: "DevIT" },
   { href: "#metodo", txt: "Método" },
   { href: "#laboratorio", txt: "Laboratório" },
 ];
@@ -34,13 +33,13 @@ export function Topo() {
         <nav aria-label="Principal" className="topo-nav">
           {LINKS.map(l => <a key={l.href} href={l.href} className="link">{l.txt}</a>)}
         </nav>
-        <a href="#catalogo" className="btn btn-cheio topo-cta"><span className="ponto-sm" aria-hidden="true" /><span className="txt">Ver o catálogo</span></a>
+        <a href="#contato" className="btn btn-claro topo-cta"><span className="ponto-sm" aria-hidden="true" /><span className="txt">Falar com a IT.IA</span></a>
         <button type="button" className="topo-menu" aria-expanded={aberto} aria-controls="menu-celular" onClick={() => setAberto(a => !a)}>
           <span className="sr-only">{aberto ? "Fechar menu" : "Abrir menu"}</span>
           <span aria-hidden="true" className={"hamb" + (aberto ? " x" : "")}><i /><i /></span>
         </button>
       </div>
-      <div id="menu-celular" className="menu-celular listras" hidden={!aberto}>
+      <div id="menu-celular" className="menu-celular" hidden={!aberto}>
         <nav aria-label="Principal no celular" className="container">
           {LINKS.map((l, i) => (
             <a key={l.href} href={l.href} onClick={() => setAberto(false)}><span className="rotulo">0{i + 1}</span>{l.txt}</a>

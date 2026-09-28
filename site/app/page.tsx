@@ -1,15 +1,12 @@
 import { Topo } from "@/components/layout/Topo";
 import { Rodape } from "@/components/layout/Rodape";
 import { Abertura } from "@/components/sections/Abertura";
-import { Serie } from "@/components/sections/Serie";
-import { Manifesto } from "@/components/sections/Manifesto";
+import { Frentes } from "@/components/sections/Frentes";
 import { Catalogo } from "@/components/sections/Catalogo";
-import { CicloDev } from "@/components/sections/CicloDev";
-import { DevIT } from "@/components/sections/DevIT";
 import { Metodo } from "@/components/sections/Metodo";
-import { SobMedida } from "@/components/sections/SobMedida";
+import { Regras } from "@/components/sections/Regras";
 import { Laboratorio } from "@/components/sections/Laboratorio";
-import { Fechamento } from "@/components/sections/Fechamento";
+import { SobMedida } from "@/components/sections/SobMedida";
 
 export default function Inicio() {
   return (
@@ -17,15 +14,12 @@ export default function Inicio() {
       <Topo />
       <main id="conteudo">
         <Abertura />
-        <Serie />
-        <Manifesto />
+        <Frentes />
         <Catalogo />
-        <CicloDev />
-        <DevIT />
         <Metodo />
-        <SobMedida />
+        <Regras />
         <Laboratorio />
-        <Fechamento />
+        <SobMedida />
       </main>
       <Rodape />
     </>

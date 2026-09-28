@@ -1,35 +1,36 @@
-import { produtos, naLinha } from "@/data/site";
+import { produtos, ciclodevDestaques } from "@/data/site";
+import { Rotulo, Titulo } from "@/components/ui/Capa";
 import { Revelar } from "@/components/ui/Revelar";
+import { Botao } from "@/components/ui/Botao";
 
+// o catálogo apresenta cada produto num container só; a apresentação completa fica no site do produto
 export function Catalogo() {
+  const p = produtos[0];
   return (
-    <section id="catalogo" className="cat" aria-labelledby="cat-titulo">
+    <section id="catalogo" className="secao secao-branca" aria-labelledby="cat-titulo">
       <div className="container">
-        <div className="cat-cab">
-          <p className="rotulo">Catálogo · edição 2026</p>
-          <h2 id="cat-titulo" className="display cat-titulo">Cada sistema tem<br />número de série<span className="ponto" aria-hidden="true" /></h2>
-          <p className="cat-apoio">Produtos próprios da IT.IA, prontos para usar. A lista cresce: quando um sistema sai da linha, ele ganha o próximo número.</p>
+        <div className="secao-cab">
+          <Rotulo>Catálogo</Rotulo>
+          <Titulo id="cat-titulo">Sistemas que já saíram da linha</Titulo>
+          <p className="lead">Produtos próprios da IT.IA, prontos para usar.</p>
         </div>
-        <ol className="cat-lista">
-          {produtos.map(p => (
-            <li key={p.serie}>
-              <Revelar className="cat-item">
-                <span className="cat-serie rotulo">{p.serie}</span>
-                <span className="cat-nome display">{p.nome}</span>
-                <span className="cat-frase">{p.frase}</span>
-                <span className="cat-estado rotulo"><span className="ponto-sm" aria-hidden="true" /> {p.estado}</span>
-                <a className="cat-link" href="#ciclodev">Ver o {p.nome}<span aria-hidden="true"> ↓</span></a>
-              </Revelar>
-            </li>
-          ))}
-          {naLinha.map(n => (
-            <li key={n} className="cat-vazio">
-              <span className="cat-serie rotulo">{n}</span>
-              <span className="cat-nome display">Na linha de produção</span>
-              <span className="cat-estado rotulo">em breve</span>
-            </li>
-          ))}
-        </ol>
+        <Revelar className="cartao cat-card">
+          <div className="cat-card-cab">
+            <span className="rotulo">{p.serie}</span>
+            <span className="rotulo com-ponto cat-estado">{p.estado}</span>
+          </div>
+          <div className="cat-card-corpo">
+            <div>
+              <h3 className="titulo cat-nome">Ciclo<span className="vermelho">Dev</span><span className="titulo-ponto" aria-hidden="true" /></h3>
+              <p className="cat-frase">{p.frase}</p>
+              <Botao href={p.link!} estilo="escuro" externo>Conhecer o CicloDev</Botao>
+            </div>
+            <ul className="cat-destaques">
+              {ciclodevDestaques.map(d => <li key={d}>{d}</li>)}
+            </ul>
+          </div>
+        </Revelar>
+        <p className="cat-nota">Próximos sistemas estão na linha de produção.</p>
       </div>
     </section>
   );
