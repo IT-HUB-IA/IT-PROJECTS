@@ -4702,7 +4702,7 @@ window.addEventListener('resize', pedirEsticar);
 function linhasArvore(){
   const nos = [...document.querySelectorAll('.ops-arvore .no-arv[data-no]')];
   const nivel = nos.map(n => Math.max(0, Math.round((parseFloat(n.style.paddingLeft) - 8) / 14)));
-  const cor = 'rgba(46,46,49,.45)';
+  const cor = getComputedStyle(document.documentElement).getPropertyValue('--vermelho').trim() || '#FF0000';
   const v = (x, alto) => ['repeating-linear-gradient(to bottom,' + cor + ' 0 1px,transparent 1px 3px)', x + 'px 0', '1px ' + alto, 'no-repeat'];
   const h = x => ['repeating-linear-gradient(to right,' + cor + ' 0 1px,transparent 1px 3px)', x + 'px 50%', '7px 1px', 'no-repeat'];
   // a linha do nível k continua depois do item i se aparece outro item do nível k antes de algum de nível menor
