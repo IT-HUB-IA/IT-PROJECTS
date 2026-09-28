@@ -35,7 +35,7 @@ export const frentes = [
   { rot: "Sob medida", nome: "Sistemas para a sua operação", texto: "Entendemos como o trabalho acontece e entregamos o sistema feito para ele: web, app, integração ou robô.", itens: ["Processos que hoje vivem em planilha", "Sistemas antigos que travam a operação", "Integração entre ferramentas que não conversam"] },
   { rot: "Produtos", nome: "Sistemas prontos da IT.IA", texto: "Cada problema que resolvemos bem vira produto, com número de série no catálogo.", itens: ["CicloDev, gestão do desenvolvimento de software", "Novos sistemas na linha de produção"] },
   { rot: "IA aplicada", nome: "Agentes dentro dos sistemas", texto: "Inteligência artificial que trabalha com os dados do sistema, respeita as permissões de cada pessoa e só age com confirmação.", itens: ["Planejamento e análise", "Segurança e revisão", "Atendimento e rotinas"] },
-  { rot: "Laboratório", nome: "IA estudada em público", texto: "O que aprendemos construindo vira conteúdo aberto no Instagram.", itens: ["Novidades de IA, sem enrolação", "O que funciona na prática"] },
+  { rot: "Laboratório", nome: "Pesquisa aplicada em IA", texto: "Testamos cada avanço de inteligência artificial antes de levar para os sistemas. As análises ficam abertas no Instagram.", itens: ["Análise dos novos modelos e ferramentas", "Aplicações validadas em sistemas reais"] },
 ];
 
 // o CicloDev no catálogo: só o essencial, o resto fica no site dele
