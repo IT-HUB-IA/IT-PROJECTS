@@ -1,0 +1,10 @@
+const { chromium } = require('/opt/node22/lib/node_modules/playwright');
+const FALSO = `window.supabase = { createClient(){ return { auth:{ async getSession(){ return {data:{session:null}}; }, onAuthStateChange(){ return {data:{subscription:{unsubscribe(){}}}}; } }, from(){ return {}; }, async rpc(){ return {data:null}; } }; } };`;
+(async () => { const b = await chromium.launch(); const p = await b.newPage();
+  await p.route('**/supabase-js@*/**', r => r.fulfill({ contentType: 'text/javascript', body: FALSO }));
+  await p.goto('file://' + process.cwd() + '/vercel/index.html'); await p.waitForTimeout(800);
+  await p.click('text=Criar conta grátis'); const c = '[data-etapa="cadastro"]';
+  await p.fill(c + ' [name=nome]', 'Joana Teste Silva'); await p.fill(c + ' [name=nascimento]', '2012-05-05'); await p.type(c + ' [name=cpf]', '11144477735'); await p.fill(c + ' [name=email]', 'j@t.com');
+  await p.click(c + ' .entrada-botao'); console.log('menor:', await p.innerText(c + ' [data-erro]'));
+  await p.fill(c + ' [name=nascimento]', '1990-05-05'); await p.click(c + ' .entrada-botao'); console.log('adulto passa para o endereço:', await p.isVisible(c + ' [data-passo="2"]'));
+  await b.close(); })();

@@ -3673,6 +3673,17 @@ create policy muda on public.pessoas_privado for update to authenticated using (
 revoke all on public.pessoas_privado from anon, public;
 grant select, insert, update on public.pessoas_privado to authenticated;
 grant all on public.pessoas_privado to service_role;
+-- idade mínima de 18 anos (Termos de Uso e Política de Privacidade)
+create or replace function interno.conferir_idade() returns trigger
+language plpgsql set search_path = public, pg_temp as $$
+begin
+  if new.data_nascimento is not null and new.data_nascimento > current_date - interval '18 years' then
+    raise exception 'É preciso ter 18 anos ou mais para usar o CicloDev' using errcode = '23514';
+  end if;
+  return new;
+end $$;
+drop trigger if exists pessoas_privado_idade on public.pessoas_privado;
+create trigger pessoas_privado_idade before insert or update of data_nascimento on public.pessoas_privado for each row execute function interno.conferir_idade();
 drop trigger if exists pessoas_privado_carimbo on public.pessoas_privado;
 create trigger pessoas_privado_carimbo before update on public.pessoas_privado for each row execute function interno.carimbar_atualizacao();
 

@@ -131,6 +131,7 @@ function passoOk(n){
     if (nome.length < 3 || nome.split(' ').length < 2) return erroCampo(f.nome, 'Escreva o seu nome completo (nome e sobrenome).');
     const i = idade(f.nascimento.value);
     if (!f.nascimento.value || i < 0 || i > 120) return erroCampo(f.nascimento, 'Digite uma data de nascimento válida.');
+    if (i < 18) return erroCampo(f.nascimento, 'É preciso ter 18 anos ou mais para usar o CicloDev.');
     if (!cpfValido(f.cpf.value)) return erroCampo(f.cpf, 'Esse CPF não é válido. Confira os números.');
     if (!completando() && !emailOk(f.email.value.trim())) return erroCampo(f.email, 'Digite um e-mail válido.');
   }
