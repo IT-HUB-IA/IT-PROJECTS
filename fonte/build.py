@@ -4,7 +4,7 @@ pb=open('parte_playbook.html',encoding='utf-8').read().replace('class="conteudo"
 js=open('app.js',encoding='utf-8').read()
 _fim='\nabrirModulo(UI.modulo);\n})();'
 assert js.rstrip().endswith(_fim.strip()), 'final do app.js mudou'
-js=js.rstrip()[:-len(_fim.strip())]+'\n'+open('recursos.js',encoding='utf-8').read()+'\n'+_fim.strip()+'\n'
+js=js.rstrip()[:-len(_fim.strip())]+'\n'+open('recursos.js',encoding='utf-8').read()+'\n'+open('board.js',encoding='utf-8').read()+'\n'+_fim.strip()+'\n'
 import json, html as _h
 from explicacoes import EXPL
 js='window.EXPL = '+json.dumps(EXPL, ensure_ascii=False)+';\n'+js

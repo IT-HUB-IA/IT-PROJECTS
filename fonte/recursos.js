@@ -1511,8 +1511,9 @@ async function gravarNoBanco(){
       const antes = SYNC.base[t].get(k);
       if (!antes){
         if (t === 'notificacoes') continue;
-        const {error} = natural ? await sb.from(t).upsert(row, {onConflict:pk.join(',')}) : await sb.from(t).insert(row);
-        if (error) falha(t, 'incluir', error.message); else { SYNC.base[t].set(k, row); if (t === 'itens') mexeuItens = true; }
+        const {data:inc, error} = natural ? await sb.from(t).upsert(row, {onConflict:pk.join(',')}) : t === 'itens' ? await sb.from(t).insert(row).select('id,chave') : await sb.from(t).insert(row);
+        if (error) falha(t, 'incluir', error.message);
+        else { SYNC.base[t].set(k, row); if (t === 'itens'){ mexeuItens = true; const r0 = inc && inc[0]; const it = r0 && D.issues.find(x => x.id === r0.id); if (it && r0.chave){ it.chave = r0.chave; SYNC.chavesNovas = true; } } }
         continue;
       }
       const mud = {}; Object.keys(row).forEach(c => { if (!pk.includes(c) && !igual(row[c], antes[c])) mud[c] = row[c]; });
@@ -1528,6 +1529,7 @@ async function gravarNoBanco(){
   if (SYNC.erros.length){ selo('Erro ao salvar', true); const c = $('.chip-exemplo'); if (c) c.title = 'Não gravou: ' + SYNC.erros.join(' · ');
     const txt = SYNC.erros.join('|'); if (txt !== SYNC.ultimoErro) toast('Não deu para gravar tudo no banco: ' + SYNC.erros[0] + (SYNC.erros.length > 1 ? ' (e mais ' + (SYNC.erros.length - 1) + ')' : '')); SYNC.ultimoErro = txt; }
   else { SYNC.ultimoErro = ''; selo('Dados do banco'); const c = $('.chip-exemplo'); if (c) c.title = 'Tudo gravado no banco'; if (BANCO.arquivosFora){ BANCO.arquivosFora = false; toast('Os links foram gravados. Arquivos (imagem, áudio, vídeo) ainda não vão para o banco.'); } }
+  if (SYNC.chavesNovas){ SYNC.chavesNovas = false; if (!document.querySelector('dialog[open]')) rView(); }
   if (SYNC.deNovo){ SYNC.deNovo = false; return gravarNoBanco(); }
   // as automações rodam no banco: se mexeu em itens e há automação ligada, relê para mostrar o resultado
   if (mexeuItens && D.automacoes.some(a => a.ativa !== false)) setTimeout(() => { if (!document.querySelector('dialog[open]') && !SYNC.rodando) carregarDoBanco(null).then(render); }, 600);

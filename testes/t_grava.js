@@ -13,11 +13,12 @@ function executar(p){
     if (op === 'select') sql = 'select coalesce(json_agg(x), \'[]\') from (select * from ' + T + ' order by 1 offset ' + (de || 0) + ' limit ' + ((ate || 999) - (de || 0) + 1) + ') x';
     else if (op === 'insert' || op === 'upsert'){ const cs = Object.keys(row);
       sql = 'insert into ' + T + ' (' + cs.join(',') + ') select ' + cs.join(',') + ' from json_populate_record(null::' + T + ', ' + lit(row) + ')' +
-        (op === 'upsert' ? ' on conflict (' + conflito + ') do update set ' + (cs.filter(c => !conflito.split(',').includes(c)).map(c => c + '=excluded.' + c).join(',') || conflito.split(',')[0] + '=excluded.' + conflito.split(',')[0]) : '') + ' returning 1'; }
+        (op === 'upsert' ? ' on conflict (' + conflito + ') do update set ' + (cs.filter(c => !conflito.split(',').includes(c)).map(c => c + '=excluded.' + c).join(',') || conflito.split(',')[0] + '=excluded.' + conflito.split(',')[0]) : '') + ' returning *';
+      sql = 'with u as (' + sql + ') select coalesce(json_agg(u), \'[]\') from u'; }
     else if (op === 'update'){ const cs = Object.keys(row); sql = 'with u as (update ' + T + ' set ' + (cs.length === 1 ? cs[0] + ' = (select ' + cs[0] : '(' + cs.join(',') + ') = (select ' + cs.join(',')) + ' from json_populate_record(null::' + T + ', ' + lit(row) + ')) where ' + onde(filtro) + ' returning *) select coalesce(json_agg(u), \'[]\') from u'; }
     else if (op === 'delete') sql = 'delete from ' + T + ' where ' + onde(filtro);
     const out = psql(sql).trim(); ops.push(op + ' ' + t);
-    return {data: op === 'select' || op === 'update' ? JSON.parse(out || '[]') : [], error: null};
+    return {data: op === 'delete' ? [] : JSON.parse(out || '[]'), error: null};
   } catch (e) { const m = String(e.stderr || e.message).split('\n').find(l => /ERROR/.test(l)) || String(e.message); ops.push('ERRO ' + op + ' ' + t + ': ' + m); return {data: null, error: {message: m.replace(/^.*ERROR:\s*/, '')}}; }
 }
 const FALSO = `
@@ -146,6 +147,27 @@ window.supabase = { createClient(){ let sess = {user:{id:'u1', email:'admin@it-i
   if (a1 !== a2) console.log('     antes ', a1, '\n     depois', a2);
   ops.length = 0; await p.evaluate(() => window.itiaGravarAgora()); await espera();
   ok(!ops.some(o => !o.startsWith('select')), 'e nada fica pendente depois de recarregar ' + JSON.stringify(ops.filter(o => !o.startsWith('select')).slice(0, 6)));
+
+  // 6c) Board no formato Jira: sinal, pessoas, etiquetas, ordem, colunas e equipes
+  await p.evaluate(() => { const D = window.itiaDados(); const i = D.issues[0], pj = D.projects[0];
+    i.sinal = new Date().toISOString(); i.motivoSinal = 'Esperando acesso'; i.membros = [D.people[0].id]; i.observadores = [D.people[0].id]; i.votos = [D.people[0].id];
+    i.etiquetas = [D.tags[0].id]; i.ordem = 12.5; i.restante = 3; i.resolucao = 'feito'; if (i.check[0]){ i.check[0].grupo = 'Revisão'; i.check[0].prazo = '2026-10-10'; }
+    D.boards['project:' + pj.id] = {tipo:'scrum', estimativa:'horas', backlog:true, subtarefas:false, colunas:[{id:crypto.randomUUID(), nome:'A fazer', ordem:0, min:null, max:5, status:['backlog','todo']}, {id:crypto.randomUUID(), nome:'Fazendo', ordem:1, min:1, max:3, status:['doing','review','blocked']}, {id:crypto.randomUUID(), nome:'Pronto', ordem:2, min:null, max:null, status:['done']}]};
+    D.equipes.push({id:crypto.randomUUID(), nome:'Time do teste', desc:'teste', cor:'#123456', ativa:true, membros:[{pessoa:D.people[0].id, papel:'lider'}], nos:[{no:'project:' + pj.id, papel:'dev'}]});
+    window.itiaGravarAgora(); });
+  await espera(); await semErro('gravar sinal, pessoas, etiquetas, ordem, colunas do Board e equipe sem erro');
+  const s1 = await p.evaluate(() => { const D = window.itiaDados(); const i = D.issues.find(x => x.sinal); const b = Object.values(D.boards)[0]; const q = D.equipes.find(x => x.nome === 'Time do teste');
+    return JSON.stringify([i && i.motivoSinal, i && i.membros.length, i && i.observadores.length, i && i.votos.length, i && i.etiquetas.length, i && i.ordem, i && i.restante, i && i.resolucao, b && b.tipo, b && b.colunas.map(c => c.nome + ':' + c.status.join('+') + ':' + c.max).join('|'), q && q.membros.length, q && q.nos.length]); });
+  await p.reload(); await p.waitForTimeout(2500);
+  const s2 = await p.evaluate(() => { const D = window.itiaDados(); const i = D.issues.find(x => x.sinal); const b = Object.values(D.boards)[0]; const q = D.equipes.find(x => x.nome === 'Time do teste');
+    return JSON.stringify([i && i.motivoSinal, i && i.membros.length, i && i.observadores.length, i && i.votos.length, i && i.etiquetas.length, i && i.ordem, i && i.restante, i && i.resolucao, b && b.tipo, b && b.colunas.map(c => c.nome + ':' + c.status.join('+') + ':' + c.max).join('|'), q && q.membros.length, q && q.nos.length]); });
+  ok(s1 === s2, 'Board no formato Jira volta igual do banco: ' + s2);
+  ops.length = 0; await p.evaluate(() => window.itiaGravarAgora()); await espera();
+  ok(!ops.some(o => !o.startsWith('select')), 'e nada fica pendente ' + JSON.stringify(ops.filter(o => !o.startsWith('select')).slice(0, 5)));
+  ok(await p.evaluate(() => window.itiaDados().issues.every(i => !!i.chave)), 'todo item tem chave vinda do banco (BL-123)');
+  await p.evaluate(() => { const D = window.itiaDados(); const ws = D.ws[0]; const ni = {id:crypto.randomUUID(), ws:ws.id, tipo:'task', titulo:'Item com chave nova', desc:'', status:'todo', prio:'lowest', resp:null, rep:null, ini:null, fim:null, alvo:null, est:null, vis:'interno', pai:null, check:[], links:[], coments:[], tempo:[], refs:[], bloco:null, membros:[], observadores:[], votos:[], etiquetas:[], ordem:1}; D.issues.push(ni); window.itiaGravarAgora(); });
+  await espera(); await semErro('criar item com prioridade Lowest');
+  ok(await p.evaluate(() => /^[A-Z0-9]+-\d+$/.test((window.itiaDados().issues.find(i => i.titulo === 'Item com chave nova') || {}).chave || '')), 'o item novo recebe a chave do banco na hora: ' + await p.evaluate(() => (window.itiaDados().issues.find(i => i.titulo === 'Item com chave nova') || {}).chave));
 
   // 7) apagar: item, frente e cliente somem do banco
   await p.evaluate(ids => { const D = window.itiaDados(); D.issues = D.issues.filter(i => ![ids.it, ids.ep].includes(i.id) && i.ws !== ids.ws);
