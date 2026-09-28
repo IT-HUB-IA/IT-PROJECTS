@@ -1140,32 +1140,35 @@ function montarDados(T, eu){
     const esc1 = (part.get(p.id) || []).map(x => chave(x.no_id)).filter(Boolean)[0];
     d.people.push({id:p.id, nome:p.nome, funcao:p.funcao || '', skills:p.habilidades || [], cap:+p.capacidade_h || 0, acesso:p.papel === 'master' ? 'owner' : p.papel,
       email:p.email || '', ativo:p.ativo, escopo:p.papel === 'stakeholder' ? (esc1 || 'all') : undefined,
-      custo: c ? {vinculo:DE_VINC[c.vinculo] || c.vinculo, salario:+c.salario || 0, prolabore:+c.prolabore || 0, valorPJ:+c.valor_pj || 0, beneficios:+c.beneficios || 0} : undefined});
+      custo: c ? {vinculo:DE_VINC[c.vinculo] || c.vinculo, salario:+c.salario || 0, prolabore:+c.prolabore || 0, valorPJ:+c.valor_pj || 0, beneficios:+c.beneficios || 0, _id:c.id, _desde:c.vigente_desde} : undefined});
   });
 
   d.tags = T.etiquetas.map(t => ({id:t.id, nome:t.nome, cor:t.cor, cat:t.categoria || '', desc:t.descricao || ''}));
   d.tagLinks = T.etiquetas_nos.map(l => { const k = chave(l.no_id); return k ? {tag:l.etiqueta_id, tipo:k.split(':')[0], id:l.no_id} : null; }).filter(Boolean);
-  d.statusCustom = T.status_fluxo.filter(s => s.no_id).sort(porOrdem).map(s => ({id:s.id, no:chave(s.no_id), nome:s.nome, cor:s.cor, grupo:s.grupo}));
+  d.statusCustom = T.status_fluxo.filter(s => s.no_id).sort(porOrdem).map(s => ({id:s.id, no:chave(s.no_id), nome:s.nome, cor:s.cor, grupo:s.grupo, _chave:s.chave}));
+  BANCO.stPadrao = Object.fromEntries(T.status_fluxo.filter(s => !s.no_id).map(s => [s.chave, s.id]));
+  BANCO.reqIds = Object.fromEntries(T.requisitos.map(q => [q.nome, q.id]));
+  BANCO.fonteIds = Object.fromEntries(T.agentes_fontes.map(f => [f.agente_id + '|' + f.nome, f.id]));
   const stPorId = um(T.status_fluxo, 'id');
   T.requisitos.slice().sort(porOrdem).forEach(q => { d.baseline[q.nome] = !!q.padrao; });
 
   const reqNome = um(T.requisitos, 'id'), cob = agrupar(T.servicos_cobranca.slice().sort(porOrdem), 'servico_id'), sreq = agrupar(T.servicos_requisitos, 'servico_id');
   d.catalog = T.servicos.map(s => ({id:s.id, cat:s.categoria, nome:s.nome, desc:s.descricao || '', entrega:s.entregaveis || [], frentes:s.frentes_padrao || [],
-    horas:[+s.horas_min || 0, +s.horas_max || 0], preco:(cob.get(s.id) || []).map(c => Object.assign({m:DE_MOD[c.modelo] || c.modelo}, c.parametros || {})),
-    req:(sreq.get(s.id) || []).map(x => (reqNome.get(x.requisito_id) || {}).nome).filter(Boolean), sla:s.sla || '', check:s.checklist_inicio || [], ativo:s.ativo !== false}));
+    horas:[+s.horas_min || 0, +s.horas_max || 0], preco:(cob.get(s.id) || []).map(c => Object.assign({m:DE_MOD[c.modelo] || c.modelo}, c.parametros || {}, {_id:c.id})),
+    req:(sreq.get(s.id) || []).map(x => (reqNome.get(x.requisito_id) || {}).nome).filter(Boolean), sla:s.sla || '', check:s.checklist_inicio || [], ativo:s.ativo !== false, _codigo:s.codigo}));
 
   const R = T.regras_calculo.slice().sort((a, b) => String(b.vigente_desde).localeCompare(String(a.vigente_desde)))[0];
   if (R) d.regras = {regime:R.regime, impostos:{simples:+R.aliq_simples, presumido:+R.aliq_presumido, real:+R.aliq_real},
     encargos:{inss:+R.inss_patronal, rat:+R.rat, terceiros:+R.terceiros, fgts:+R.fgts, ferias:+R.ferias, terco:+R.terco_ferias, decimo:+R.decimo_terceiro, multaFgts:+R.multa_fgts},
     horasMes:+R.horas_mes, faturavel:+R.faturavel_pct, margem:+R.margem_pct, risco:+R.contingencia_pct, cambio:+R.cambio_usd, complexidade:R.complexidade || {'Média':1},
-    urgencia:R.urgencia || {Normal:1}, manutencaoAnual:+R.manutencao_pct, reservaOverhead:+R.folga_rateio_pct};
+    urgencia:R.urgencia || {Normal:1}, manutencaoAnual:+R.manutencao_pct, reservaOverhead:+R.folga_rateio_pct, _desde:R.vigente_desde};
 
   d.opCustos = T.custos_operacao.map(o => ({id:o.id, nome:o.nome, cat:o.categoria, valor:+o.valor, moeda:o.moeda, rec:DE_REC[o.recorrencia] || o.recorrencia, meses:o.meses_depreciacao, inicio:o.inicio, fim:o.fim || ''}));
   const usos = agrupar(T.custos_uso.slice().sort((a, b) => String(a.mes).localeCompare(String(b.mes))), 'custo_id');
   d.custos = T.custos_tecnicos.map(c => { const n = nos.get(c.no_id);
     return {id:c.id, cliente:acima(c.no_id, 'cliente'), app:n && n.tipo === 'aplicacao' ? n.id : '', fornecedor:c.fornecedor, cat:c.categoria, desc:c.descricao || '', rec:DE_REC[c.recorrencia] || c.recorrencia,
       moeda:c.moeda, valor:+c.valor, repasse:!!c.repasse, markup:+c.taxa_repasse_pct || 0, inicio:c.inicio, fim:c.fim || '',
-      uso: c.unidade ? {unidade:c.unidade, hist:(usos.get(c.id) || []).map(u => +u.quantidade), limite:c.limite == null ? null : +c.limite, plano:c.plano || '',
+      uso: c.unidade ? {unidade:c.unidade, hist:(usos.get(c.id) || []).map(u => +u.quantidade), _meses:(usos.get(c.id) || []).map(u => String(u.mes).slice(0, 10)), limite:c.limite == null ? null : +c.limite, plano:c.plano || '',
         prox: c.proximo_plano ? {nome:c.proximo_plano, valor:+c.proximo_valor || 0, extraUnidade:c.extra_por_unidade == null ? null : +c.extra_por_unidade} : null} : null}; });
   d.receitas = T.receitas.map(r => { const n = nos.get(r.no_id);
     return {id:r.id, cliente:acima(r.no_id, 'cliente'), project:acima(r.no_id, 'projeto'), app:n && n.tipo === 'aplicacao' ? n.id : '', servico:r.servico_id || '', desc:r.descricao,
@@ -1186,37 +1189,37 @@ function montarDados(T, eu){
     return {id:i.id, ws:i.frente_id, tipo:i.tipo, titulo:i.titulo, desc:i.descricao || '', status:custom ? st.grupo : (st.chave || 'backlog'), st:custom ? st.id : undefined,
       prio:i.prioridade, resp:i.responsavel_id || null, rep:i.relator_id || null, ini:i.inicio, fim:i.prazo, alvo:i.data_prevista, est:i.estimativa_h == null ? null : +i.estimativa_h,
       pontos:i.pontos == null ? undefined : +i.pontos, vis:i.visivel_cliente ? 'cliente' : 'interno', pai:i.pai_id || null,
-      check:(chk.get(i.id) || []).map(c => ({t:c.texto, f:!!c.feito})), links:(lig.get(i.id) || []).map(l => ({tipo:TL[l.tipo] || 'Relates to', alvo:l.destino_id})),
-      coments:(com.get(i.id) || []).map(c => ({quem:c.autor_id, txt:c.texto, quando:diaDe(c.criado_em), cliente:!!c.visivel_cliente})),
-      tempo:(tmp.get(i.id) || []).map(t => ({ini:new Date(t.inicio).getTime(), fim:t.fim ? new Date(t.fim).getTime() : null, quem:t.pessoa_id, origem:t.origem || ''})),
-      bloco: b ? {data:diaDe(b.inicio), ini:horaDe(b.inicio), fim:horaDe(b.fim)} : null,
-      refs:(anxItem.get(i.id) || []).map(x => ({nome:x.nome, tipo:DE_ANEXO[x.tipo] || x.tipo, url:x.url || undefined, tam:x.tamanho_bytes || undefined})),
+      check:(chk.get(i.id) || []).map(c => ({t:c.texto, f:!!c.feito, _id:c.id})), links:(lig.get(i.id) || []).map(l => ({tipo:TL[l.tipo] || 'Relates to', alvo:l.destino_id})),
+      coments:(com.get(i.id) || []).map(c => ({quem:c.autor_id, txt:c.texto, quando:diaDe(c.criado_em), cliente:!!c.visivel_cliente, _id:c.id})),
+      tempo:(tmp.get(i.id) || []).map(t => ({ini:new Date(t.inicio).getTime(), fim:t.fim ? new Date(t.fim).getTime() : null, quem:t.pessoa_id, origem:t.origem || '', _id:t.id})),
+      bloco: b ? {data:diaDe(b.inicio), ini:horaDe(b.inicio), fim:horaDe(b.fim), _id:b.id} : null,
+      refs:(anxItem.get(i.id) || []).map(x => ({nome:x.nome, tipo:DE_ANEXO[x.tipo] || x.tipo, url:x.url || undefined, tam:x.tamanho_bytes || undefined, _id:x.id, _banco:true})),
       cf:Object.fromEntries((cmp.get(i.id) || []).map(x => [x.campo_id, x.valor])),
       criado:diaDe(i.criado_em), iniciado:diaDe(i.iniciado_em), feito:diaDe(i.concluido_em), sprint:i.sprint_id || undefined, marco:i.marco_id || undefined,
-      arquivado:i.arquivado_em ? true : undefined}; });
+      arquivado:i.arquivado_em ? true : undefined, _arq:i.arquivado_em || undefined}; });
 
   T.ficha_campos.forEach(f => { const k = chave(f.no_id); if (!k) return; const s = d.sheets[k] || (d.sheets[k] = {campos:{}, custom:[], arquivos:[]});
     if (f.personalizado) s.custom.push({nome:f.campo, tipo:'Texto', valor:f.valor || ''}); else s.campos[f.secao + '|' + f.campo] = f.valor || ''; });
   T.anexos.filter(x => x.no_id && !x.item_id).forEach(x => { const k = chave(x.no_id); if (!k) return; const s = d.sheets[k] || (d.sheets[k] = {campos:{}, custom:[], arquivos:[]}); s.arquivos.push({nome:x.nome, tipo:DE_ANEXO[x.tipo] || x.tipo, url:x.url || undefined}); });
 
   const itensEt = agrupar(T.etapas_modelo_itens.slice().sort(porOrdem), 'etapa_id');
-  d.template = T.etapas_modelo.slice().sort(porOrdem).map(e => ({id:e.id, nome:e.nome, expl:e.explicacao || '', lente:e.lente || '', entrega:e.entrega || '',
+  d.template = T.etapas_modelo.slice().sort(porOrdem).map(e => ({id:e.id, _chave:e.chave, _ordem:e.ordem, nome:e.nome, expl:e.explicacao || '', lente:e.lente || '', entrega:e.entrega || '',
     itens:(itensEt.get(e.id) || []).map(it => ({id:it.id, texto:it.texto, modo:DE_MODO[it.modo] || 'Aviso', obrig:!!it.obrigatorio, prova:DE_PROVA[it.prova_tipo] || 'Nenhuma', quem:DE_QUEM[it.quem_cumpre] || 'Qualquer pessoa do time', terceiros:!!it.so_terceiros}))}));
   const provas = new Map(T.provas.map(p => [p.no_id + '|' + p.item_modelo_id, p]));
   T.etapas_nos.forEach(e => { const k = chave(e.no_id); if (!k) return; const s = d.stages[k] || (d.stages[k] = {});
     if (e.situacao === 'dispensado') s[e.item_modelo_id] = {dispensa:e.motivo_dispensa || 'Dispensado', quem:e.cumprido_por, quando:diaDe(e.cumprido_em)};
-    else if (e.situacao === 'cumprido'){ const p = provas.get(e.no_id + '|' + e.item_modelo_id); s[e.item_modelo_id] = {feito:true, quem:e.cumprido_por, quando:diaDe(e.cumprido_em), prova: p ? {tipo:DE_PROVA[p.tipo] || p.tipo, valor:p.valor} : undefined}; } });
+    else if (e.situacao === 'cumprido'){ const p = provas.get(e.no_id + '|' + e.item_modelo_id); s[e.item_modelo_id] = {feito:true, quem:e.cumprido_por, quando:diaDe(e.cumprido_em), prova: p ? {tipo:DE_PROVA[p.tipo] || p.tipo, valor:p.valor, _id:p.id} : undefined}; } });
 
   const fontes = agrupar(T.agentes_fontes, 'agente_id'), ferr = agrupar(T.agentes_ferramentas, 'agente_id');
-  d.agents = T.agentes.map(a => ({id:a.id, nome:a.nome, papel:a.papel || '', instr:a.instrucoes || '', fontes:(fontes.get(a.id) || []).map(f => f.nome), ferramentas:(ferr.get(a.id) || []).map(f => [f.ferramenta, DE_PERM[f.permissao] || f.permissao]), passa:a.regras_passagem || ''}));
+  d.agents = T.agentes.map(a => ({id:a.id, _codigo:a.codigo, nome:a.nome, papel:a.papel || '', instr:a.instrucoes || '', fontes:(fontes.get(a.id) || []).map(f => f.nome), ferramentas:(ferr.get(a.id) || []).map(f => [f.ferramenta, DE_PERM[f.permissao] || f.permissao]), passa:a.regras_passagem || ''}));
 
   const msgs = agrupar(T.pedidos_mensagens.slice().sort((a, b) => String(a.criado_em).localeCompare(String(b.criado_em))), 'pedido_id'), anxPed = agrupar(T.anexos.filter(x => x.pedido_id), 'pedido_id');
   d.requests = T.pedidos.slice().sort((a, b) => String(b.criado_em).localeCompare(String(a.criado_em))).map(r => ({id:r.id, cliente:acima(r.no_id, 'cliente'), app:r.no_id, tipo:DE_PT[r.tipo] || r.tipo,
     grav:DE_GR[r.gravidade] || r.gravidade, status:DE_PS[r.status] || r.status, titulo:r.titulo, quando:diaDe(r.criado_em), autor:r.autor_id || null,
     anexos:(anxPed.get(r.id) || []).map(x => ({nome:x.nome, tipo:DE_ANEXO[x.tipo] || x.tipo})), contexto:(r.contexto && r.contexto.resumo) || '', issue:r.item_id || null,
-    msgs:(msgs.get(r.id) || []).map(m => ({de:m.autor_tipo === 'equipe' ? 'voce' : m.autor_tipo, txt:m.texto}))}));
+    msgs:(msgs.get(r.id) || []).map(m => ({de:m.autor_tipo === 'equipe' ? 'voce' : m.autor_tipo, txt:m.texto, _id:m.id, _banco:true})), _resolvido:r.resolvido_em || undefined}));
 
-  d.notifs = T.notificacoes.map(n => ({id:n.id, pessoa:n.pessoa_id, titulo:n.titulo, txt:n.texto || '', item:n.item_id || '', quando:new Date(n.criado_em).getTime(), lida:!!n.lida_em}));
+  d.notifs = T.notificacoes.map(n => ({id:n.id, pessoa:n.pessoa_id, titulo:n.titulo, txt:n.texto || '', item:n.item_id || '', quando:new Date(n.criado_em).getTime(), lida:!!n.lida_em, _banco:true, _lidaEm:n.lida_em || undefined}));
 
   const primeiro = papel => (d.people.find(p => p.acesso === (papel === 'master' ? 'owner' : papel)) || {}).id || '';
   EU_IDS = {master:primeiro('master'), dev:primeiro('dev'), stakeholder:primeiro('stakeholder')};
@@ -1228,6 +1231,7 @@ async function carregarDoBanco(eu){
   const sb = window.itiaBanco; if (!sb) return;
   const T = {}; BANCO.erros = [];
   await Promise.all(TABELAS_BANCO.map(async t => { try { T[t] = await lerTabela(sb, t); } catch(e){ T[t] = []; BANCO.erros.push(e.message); } }));
+  clearTimeout(SYNC.timer);
   D = montarDados(T, eu);
   const ok = id => D.projects.some(p => 'project:' + p.id === id) || D.products.some(p => 'product:' + p.id === id) || D.apps.some(p => 'app:' + p.id === id) || D.ws.some(p => 'ws:' + p.id === id) || D.clients.some(p => 'client:' + p.id === id);
   if (!ok(UI.sel)) UI.sel = D.projects[0] ? 'project:' + D.projects[0].id : (D.clients[0] ? 'client:' + D.clients[0].id : 'all');
@@ -1235,7 +1239,9 @@ async function carregarDoBanco(eu){
   // a árvore começa aberta até os produtos, como no exemplo (as chaves antigas do exemplo não servem mais)
   const abertos = Object.keys(UI.abertos || {}).filter(k => UI.abertos[k] && ok(k));
   if (!abertos.length){ UI.abertos = {}; D.clients.forEach(x => { UI.abertos['client:' + x.id] = true; }); D.projects.forEach(x => { UI.abertos['project:' + x.id] = true; }); D.products.forEach(x => { UI.abertos['product:' + x.id] = true; }); }
+  BANCO.regrasDoBanco = !!(T.regras_calculo && T.regras_calculo.length);
   BANCO.carregado = true; BANCO.quando = new Date(); DOM.cache = null; DOM.aberto = null;
+  marcarBase();
   const chip = $('.chip-exemplo'); if (chip){ chip.textContent = 'Dados do banco'; chip.classList.add('do-banco'); chip.title = 'Tudo nesta tela vem do banco (Supabase), lido em ' + BANCO.quando.toLocaleString('pt-BR'); }
   if (BANCO.erros.length){ console.warn('Tabelas que não deu para ler:', BANCO.erros); toast('Algumas partes do banco não puderam ser lidas (' + BANCO.erros.length + '). Veja em Settings.'); }
 }
@@ -1249,7 +1255,7 @@ function painelBanco(){
     '<p class="sec" style="font-size:13px;margin:0 0 10px">Tudo o que aparece no sistema vem do banco (Supabase)' + (b.quando ? ', lido em ' + esc(b.quando.toLocaleString('pt-BR')) : '') + '. Nada de exemplo e nada guardado no navegador.</p>' +
     '<div class="tabela-rolo"><table class="tabela"><thead><tr><th>O quê</th><th>No banco</th></tr></thead><tbody>' + cont.map(([n, q]) => '<tr><td>' + n + '</td><td>' + q + '</td></tr>').join('') + '</tbody></table></div>' +
     (b.erros.length ? '<p class="sec" style="font-size:13px;color:var(--vermelho,#FF0000)">Não deu para ler: ' + b.erros.map(esc).join(' · ') + '</p>' : '') +
-    '<div class="acoes"><button class="btn sec" type="button" data-acao="reler-banco">Ler o banco de novo</button><span class="sec" style="font-size:13px">Por enquanto, as mudanças feitas nas telas (fora da aba Domínios) ainda não são gravadas no banco e somem ao recarregar.</span></div>';
+    '<div class="acoes"><button class="btn sec" type="button" data-acao="reler-banco">Ler o banco de novo</button><span class="sec" style="font-size:13px">Tudo o que você muda nas telas é gravado no banco na hora (o selo embaixo do menu mostra "Salvando..."). Arquivos (imagem, áudio, vídeo) ainda não vão para o banco; links vão.</span></div>';
 }
 
 /* ---------- Clients: ficha completa numa janela (cadastro, projetos e o painel de cada projeto) ---------- */
@@ -1348,3 +1354,189 @@ document.addEventListener('click', ev => {
   if (ev.target.closest('[data-fc-operacoes]')){ const k = FC.sel; FC.dlg.close(); FC.dlg.remove(); FC.dlg = null; UI.sel = k; UI.view = 'dashboard'; abrirArvore(k); abrirModulo('operacoes'); return; }
 }, true);
 document.addEventListener('change', ev => { if (FC.dlg && ev.target.matches('[data-fc-projeto]')){ FC.sel = ev.target.value; fcDesenhar(); } });
+
+/* ---------- versão com login: GRAVAR no banco o que muda na tela ----------
+   Cada vez que a tela chama salvar(), comparamos os dados da tela (já traduzidos para as tabelas) com a última
+   versão gravada e mandamos só a diferença: linha nova vira insert, linha mudada vira update só das colunas que
+   mudaram, linha que sumiu vira delete. O banco continua cuidando de automações, datas de início e conclusão e das regras. */
+const PARA_ST_NO = inverter(ST_NO), PARA_MOD = inverter(DE_MOD), PARA_VINC = inverter(DE_VINC), PARA_REC = inverter(DE_REC), PARA_FORMA = inverter(DE_FORMA);
+const PARA_MODO = inverter(DE_MODO), PARA_PROVA = inverter(DE_PROVA), PARA_QUEM = inverter(DE_QUEM), PARA_PERM = inverter(DE_PERM), PARA_PT = inverter(DE_PT), PARA_GR = inverter(DE_GR);
+const PARA_PS = Object.assign(inverter(DE_PS), {'Resolvido pela IA':'resolvido'});
+const PARA_ANEXO = {'áudio':'audio', 'vídeo':'video', imagem:'imagem', audio:'audio', video:'video', link:'link'};
+// ordem de gravação: quem é pai vem antes; a exclusão segue a ordem contrária
+const GRAVAR = [
+  ['pessoas',['id']], ['nos',['id']], ['clientes',['no_id']], ['projetos',['no_id']], ['aplicacoes',['no_id']], ['frentes',['no_id']],
+  ['participacoes',['pessoa_id','no_id'],1], ['pessoas_custos',['id']], ['etiquetas',['id']], ['etiquetas_nos',['etiqueta_id','no_id'],1], ['status_fluxo',['id']],
+  ['requisitos',['id']], ['servicos',['id']], ['servicos_cobranca',['id']], ['servicos_requisitos',['servico_id','requisito_id'],1], ['regras_calculo',['vigente_desde'],1],
+  ['custos_operacao',['id']], ['custos_tecnicos',['id']], ['custos_uso',['custo_id','mes'],1], ['receitas',['id']], ['slas',['no_id','gravidade'],1],
+  ['sprints',['id']], ['marcos',['id']], ['automacoes',['id']], ['campos_personalizados',['id']],
+  ['itens',['id']], ['itens_campos',['item_id','campo_id'],1], ['itens_checklist',['id']], ['itens_ligacoes',['origem_id','destino_id','tipo'],1], ['comentarios',['id']],
+  ['blocos_agenda',['id']], ['tempo_registros',['id']], ['anexos',['id']], ['ficha_campos',['no_id','secao','campo'],1],
+  ['etapas_modelo',['id']], ['etapas_modelo_itens',['id']], ['etapas_nos',['no_id','item_modelo_id'],1], ['provas',['id']],
+  ['agentes',['id']], ['agentes_fontes',['id']], ['agentes_ferramentas',['agente_id','ferramenta'],1], ['pedidos',['id']], ['pedidos_mensagens',['id']], ['notificacoes',['id']]
+];
+const hex8 = id => String(id).replace(/[^a-f0-9]/g, '').slice(0, 8) || Math.random().toString(16).slice(2, 10);
+const semVazio = v => (v === undefined || v === '' ? null : v);
+const quando = (dia, hora) => dia ? new Date(dia + 'T' + (hora || '12:00') + ':00').toISOString() : null;
+const idNo = chaveNo => chaveNo && chaveNo.includes(':') ? chaveNo.split(':')[1] : null;
+const mesUm = off => { const d = new Date(HOJE.getFullYear(), HOJE.getMonth() + off, 1); return iso(d); };
+const semPrivado = o => Object.fromEntries(Object.entries(o || {}).filter(([k, v]) => !k.startsWith('_') && v !== undefined));
+const garantirId = o => o._id || (o._id = novoUuid());
+
+function linhasDaTela(d){
+  const L = Object.fromEntries(GRAVAR.map(([t]) => [t, []]));
+  const eu = idEu('master') || null;
+  d.people.forEach(p => {
+    L.pessoas.push({id:p.id, nome:p.nome, funcao:semVazio(p.funcao), habilidades:p.skills || [], capacidade_h:Math.max(0, Math.min(80, +p.cap || 0)), papel:p.acesso === 'owner' ? 'master' : p.acesso, ativo:p.ativo !== false});
+    if (p.acesso === 'stakeholder' && p.escopo && p.escopo !== 'all' && idNo(p.escopo)) L.participacoes.push({pessoa_id:p.id, no_id:idNo(p.escopo), papel:'stakeholder'});
+    if (p.custo){ const c = p.custo; L.pessoas_custos.push({id:garantirId(c), pessoa_id:p.id, vinculo:PARA_VINC[c.vinculo] || 'pj', salario:+c.salario || 0, prolabore:+c.prolabore || 0, valor_pj:+c.valorPJ || 0, beneficios:+c.beneficios || 0, vigente_desde:c._desde || (c._desde = iso(HOJE))}); }
+  });
+  const no = (x, tipo, pai) => ({id:x.id, tipo, pai_id:pai || null, nome:x.nome, status:PARA_ST_NO[x.status] || 'ativo', motivo_pausa:x.status === 'on_hold' ? (x.motivo || 'Sem motivo informado') : semVazio(x.motivo)});
+  d.clients.forEach(c => { L.nos.push(no(c, 'cliente', null));
+    L.clientes.push(Object.assign({no_id:c.id, tipo_cliente:c.tipo || 'empresa', documento:semVazio(c.doc), holding_id:c.holding || null}, Object.fromEntries(CAMPOS_FICHA_CLI.map(k => [k, semVazio(c.ficha && c.ficha[k])]))));
+    Object.entries(c.sla || {}).forEach(([g, v]) => { if (v && +v[0] > 0) L.slas.push({no_id:c.id, gravidade:g, horas_resposta:+v[0], horas_solucao:Math.max(+v[1] || 0, +v[0])}); }); });
+  d.projects.forEach(p => { L.nos.push(no(p, 'projeto', p.client)); L.projetos.push({no_id:p.id, origem:p.origem || 'greenfield', inicio:semVazio(p.inicio), alvo:semVazio(p.alvo)}); });
+  d.products.forEach(p => L.nos.push(no(p, 'produto', p.project)));
+  d.apps.forEach(a => { L.nos.push(no(a, 'aplicacao', a.product || a.project)); L.aplicacoes.push({no_id:a.id, plataforma:a.plataforma || 'web', origem_codigo:a.origemCodigo || 'proprio', servico_id:semVazio(a.servico)}); });
+  d.ws.forEach(w => { L.nos.push(no(w, 'frente', w.app)); L.frentes.push({no_id:w.id, wip_limite:+w.wip > 0 ? +w.wip : null}); });
+  d.tags.forEach(t => L.etiquetas.push({id:t.id, nome:t.nome, cor:t.cor, categoria:semVazio(t.cat), descricao:semVazio(t.desc)}));
+  d.tagLinks.forEach(l => L.etiquetas_nos.push({etiqueta_id:l.tag, no_id:l.id}));
+  d.statusCustom.forEach(s => L.status_fluxo.push({id:s.id, no_id:idNo(s.no), chave:s._chave || (s._chave = 'c_' + hex8(s.id)), nome:s.nome, cor:s.cor, grupo:s.grupo}));
+  const reqIds = BANCO.reqIds || (BANCO.reqIds = {});
+  Object.entries(d.baseline || {}).forEach(([nome, padrao]) => L.requisitos.push({id:reqIds[nome] || (reqIds[nome] = novoUuid()), nome, padrao:!!padrao}));
+  d.catalog.forEach(s => {
+    L.servicos.push({id:s.id, codigo:s._codigo || (s._codigo = 'sv_' + hex8(s.id)), categoria:s.cat || 'Outro', nome:s.nome, descricao:semVazio(s.desc), entregaveis:s.entrega || [], frentes_padrao:s.frentes || [],
+      horas_min:+(s.horas || [])[0] || 0, horas_max:Math.max(+(s.horas || [])[1] || 0, +(s.horas || [])[0] || 0), sla:semVazio(s.sla), checklist_inicio:s.check || [], ativo:s.ativo !== false});
+    (s.preco || []).forEach((c, k) => { const par = semPrivado(c); delete par.m; L.servicos_cobranca.push({id:garantirId(c), servico_id:s.id, modelo:PARA_MOD[c.m] || c.m, parametros:par, ordem:k}); });
+    (s.req || []).forEach(n => { if (reqIds[n]) L.servicos_requisitos.push({servico_id:s.id, requisito_id:reqIds[n]}); });
+  });
+  if (BANCO.regrasDoBanco || d.regras._editada){ const R = d.regras, E = R.encargos || {}, I = R.impostos || {};
+    L.regras_calculo.push({vigente_desde:R._desde || (R._desde = iso(HOJE)), regime:R.regime, aliq_simples:+I.simples || 0, aliq_presumido:+I.presumido || 0, aliq_real:+I.real || 0, inss_patronal:+E.inss || 0, rat:+E.rat || 0,
+      terceiros:+E.terceiros || 0, fgts:+E.fgts || 0, ferias:+E.ferias || 0, terco_ferias:+E.terco || 0, decimo_terceiro:+E.decimo || 0, multa_fgts:+E.multaFgts || 0, horas_mes:+R.horasMes || 168,
+      faturavel_pct:Math.min(100, Math.max(1, +R.faturavel || 100)), margem_pct:+R.margem || 0, contingencia_pct:+R.risco || 0, folga_rateio_pct:+R.reservaOverhead || 0, manutencao_pct:+R.manutencaoAnual || 0,
+      cambio_usd:+R.cambio > 0 ? +R.cambio : 1, complexidade:R.complexidade || {'Média':1}, urgencia:R.urgencia || {Normal:1}}); }
+  d.opCustos.forEach(o => { const rec = PARA_REC[o.rec] || 'mensal';
+    L.custos_operacao.push({id:o.id, nome:o.nome, categoria:o.cat || 'Outros', valor:+o.valor || 0, moeda:o.moeda || 'BRL', recorrencia:rec === 'uso' ? 'mensal' : rec, meses_depreciacao:rec === 'depreciacao' ? (+o.meses || 12) : null, inicio:o.inicio || (o.inicio = iso(HOJE)), fim:semVazio(o.fim)}); });
+  d.custos.forEach(c => { const u = c.uso || null, rec = PARA_REC[c.rec] || 'mensal';
+    L.custos_tecnicos.push({id:c.id, no_id:c.app || c.cliente, fornecedor:c.fornecedor, categoria:c.cat || 'Outros', descricao:semVazio(c.desc), recorrencia:rec === 'depreciacao' ? 'mensal' : rec, moeda:c.moeda || 'BRL', valor:+c.valor || 0,
+      unidade:u ? semVazio(u.unidade) : null, limite:u && +u.limite > 0 ? +u.limite : null, plano:u ? semVazio(u.plano) : null, proximo_plano:u && u.prox ? semVazio(u.prox.nome) : null, proximo_valor:u && u.prox && u.prox.valor != null ? +u.prox.valor : null,
+      extra_por_unidade:u && u.prox && u.prox.extraUnidade != null ? +u.prox.extraUnidade : null, repasse:!!c.repasse, taxa_repasse_pct:+c.markup || 0, inicio:c.inicio || (c.inicio = iso(HOJE)), fim:semVazio(c.fim)});
+    if (u && u.hist) u.hist.forEach((q, k) => { const mes = (u._meses && u._meses.length === u.hist.length) ? u._meses[k] : mesUm(k - u.hist.length + 1); L.custos_uso.push({custo_id:c.id, mes, quantidade:+q || 0}); }); });
+  d.receitas.forEach(r => { const forma = PARA_FORMA[r.rec] || 'unica';
+    L.receitas.push({id:r.id, no_id:r.app || r.project || r.cliente, servico_id:semVazio(r.servico), descricao:r.desc || 'Receita', modelo:PARA_MOD[r.modelo] || r.modelo || 'fixo', valor:+r.valor || 0, moeda:'BRL', forma, parcelas:forma === 'parcelada' ? (+r.parcelas || 2) : null, inicio:r.inicio || (r.inicio = iso(HOJE)), fim:semVazio(r.fim)}); });
+  d.sprints.forEach(s => L.sprints.push({id:s.id, projeto_id:s.project, nome:s.nome, meta:semVazio(s.meta), inicio:s.ini, fim:s.fim, status:s.status || 'planejado'}));
+  d.marcos.forEach(m => L.marcos.push({id:m.id, no_id:idNo(m.no), tipo:m.tipo || 'marco', nome:m.nome, descricao:semVazio(m.desc), data:m.data, visivel_cliente:m.vis !== false, entregue_em:m.entregue ? quando(m.entregue) : null}));
+  d.automacoes.forEach(a => { const c = a.cond || {}, p = a.param || {};
+    L.automacoes.push({id:a.id, no_id:idNo(a.no), nome:a.nome, gatilho:a.gatilho, condicao:semPrivado({tipo:c.tipo || undefined, grupo:c.grupo || undefined, prioridade:c.prio || undefined}), acao:a.acao,
+      parametros:semPrivado({para:p.para || undefined, titulo:p.titulo || undefined, texto:p.texto || undefined, pessoa_id:p.pessoa || undefined, prioridade:p.prio || undefined, status:p.status || undefined, visivel_cliente:p.cliente || undefined}), ativa:a.ativa !== false}); });
+  d.camposItem.forEach(c => L.campos_personalizados.push({id:c.id, no_id:idNo(c.no), nome:c.nome, tipo:c.tipo, opcoes:c.opcoes || []}));
+
+  const stPad = BANCO.stPadrao || {}, idsCustom = new Set(d.statusCustom.map(s => s.id));
+  // referências para o que não existe mais ficam vazias (o banco recusaria)
+  const temItem = new Set(d.issues.map(i => i.id)), temSprint = new Set(d.sprints.map(s => s.id)), temMarco = new Set(d.marcos.map(m => m.id)), temPessoa = new Set(d.people.map(p => p.id));
+  const ref = (v, conj) => v && conj.has(v) ? v : null;
+  const PONTOS = [1, 2, 3, 5, 8, 13, 21];
+  d.issues.forEach(i => {
+    const st = i.st && idsCustom.has(i.st) ? i.st : idsCustom.has(i.status) ? i.status : stPad[i.status];
+    L.itens.push({id:i.id, frente_id:i.ws, pai_id:ref(i.pai, temItem), tipo:i.tipo, titulo:i.titulo, descricao:semVazio(i.desc), status_id:st || null, prioridade:i.prio || 'medium', responsavel_id:ref(i.resp, temPessoa), relator_id:ref(i.rep, temPessoa),
+      estimativa_h:i.est == null || i.est === '' ? null : +i.est, pontos:PONTOS.includes(+i.pontos) ? +i.pontos : null, inicio:semVazio(i.ini), prazo:semVazio(i.fim), data_prevista:semVazio(i.alvo),
+      visivel_cliente:i.vis === 'cliente', sprint_id:ref(i.sprint, temSprint), marco_id:ref(i.marco, temMarco), arquivado_em:i.arquivado ? (i._arq || (i._arq = new Date().toISOString())) : null});
+    Object.entries(i.cf || {}).forEach(([k, v]) => { if (v !== '' && v != null) L.itens_campos.push({item_id:i.id, campo_id:k, valor:String(v)}); });
+    (i.check || []).forEach((c, k) => L.itens_checklist.push({id:garantirId(c), item_id:i.id, texto:c.t, feito:!!c.f, ordem:k}));
+    (i.links || []).forEach(l => { const t = {'Blocks':'bloqueia', 'Is blocked by':'bloqueia', 'Relates to':'relacionado', 'Duplicates':'duplica'}[l.tipo] || 'relacionado';
+      const [o2, d2] = l.tipo === 'Is blocked by' ? [l.alvo, i.id] : [i.id, l.alvo]; if (o2 && d2 && o2 !== d2 && temItem.has(o2) && temItem.has(d2)) L.itens_ligacoes.push({origem_id:o2, destino_id:d2, tipo:t}); });
+    (i.coments || []).forEach(c => { if (c.txt && c.txt.trim()) L.comentarios.push({id:garantirId(c), item_id:i.id, autor_id:ref(c.quem, temPessoa), texto:c.txt, visivel_cliente:!!c.cliente}); });
+    if (i.bloco && ref(i.resp, temPessoa) && i.bloco.data) L.blocos_agenda.push({id:garantirId(i.bloco), item_id:i.id, pessoa_id:i.resp, inicio:quando(i.bloco.data, i.bloco.ini || '09:00'), fim:quando(i.bloco.data, i.bloco.fim || '10:00')});
+    (i.tempo || []).forEach(t => { if (!ref(t.quem, temPessoa) || !t.ini) return; const org = {Timer:'cronometro', Manual:'manual', manual:'manual'}[t.origem] || 'cronometro';
+      if (t.fim && t.fim <= t.ini) return; if (org === 'manual' && !t.fim) return;
+      L.tempo_registros.push({id:garantirId(t), pessoa_id:t.quem, origem:org, item_id:i.id, inicio:new Date(t.ini).toISOString(), fim:t.fim ? new Date(t.fim).toISOString() : null}); });
+    (i.refs || []).forEach(x => { if (x.tipo === 'link' && x.url) L.anexos.push({id:garantirId(x), nome:x.nome || x.url, tipo:'link', url:x.url, item_id:i.id}); else if (!x._banco) BANCO.arquivosFora = true; });
+  });
+  Object.entries(d.sheets || {}).forEach(([k, s]) => { const nid = idNo(k); if (!nid) return;
+    Object.entries(s.campos || {}).forEach(([sc, v]) => { const [secao, campo] = sc.split('|'); if (campo && v !== '' && v != null) L.ficha_campos.push({no_id:nid, secao, campo, valor:String(v), personalizado:false}); });
+    (s.custom || []).forEach(c => { if (c.nome) L.ficha_campos.push({no_id:nid, secao:'Custom fields', campo:c.nome, valor:String(c.valor || ''), personalizado:true}); }); });
+  const ordens = d.template.map(e => e._ordem).filter(x => x != null); let prox = (ordens.length ? Math.max(...ordens) : -1) + 1;
+  d.template.forEach(e => { if (e._ordem == null) e._ordem = prox++;
+    L.etapas_modelo.push({id:e.id, chave:e._chave || (e._chave = 'et_' + hex8(e.id)), nome:e.nome, explicacao:semVazio(e.expl), lente:semVazio(e.lente), entrega:semVazio(e.entrega), ordem:e._ordem});
+    (e.itens || []).forEach((it, k) => L.etapas_modelo_itens.push({id:it.id, etapa_id:e.id, texto:it.texto, modo:PARA_MODO[it.modo] || 'aviso', obrigatorio:it.obrig !== false, prova_tipo:PARA_PROVA[it.prova] || 'nenhuma',
+      quem_cumpre:PARA_QUEM[it.quem] || 'qualquer_um', so_terceiros:!!it.terceiros, ordem:k})); });
+  Object.entries(d.stages || {}).forEach(([k, itens]) => { const nid = idNo(k); if (!nid) return;
+    Object.entries(itens || {}).forEach(([mid, s]) => { if (!s || !(s.feito || s.dispensa)) return;
+      L.etapas_nos.push({no_id:nid, item_modelo_id:mid, situacao:s.dispensa ? 'dispensado' : 'cumprido', cumprido_por:s.quem || eu, cumprido_em:quando(s.quando || iso(HOJE)), motivo_dispensa:s.dispensa || null});
+      const p = s.prova, tp = p && PARA_PROVA[p.tipo]; if (p && p.valor && tp && tp !== 'nenhuma') L.provas.push({id:garantirId(p), no_id:nid, item_modelo_id:mid, tipo:tp, valor:String(p.valor), enviado_por:s.quem || eu}); }); });
+  const fIds = BANCO.fonteIds || (BANCO.fonteIds = {});
+  d.agents.forEach(a => { L.agentes.push({id:a.id, codigo:a._codigo || (a._codigo = 'ag_' + hex8(a.id)), nome:a.nome, papel:semVazio(a.papel), instrucoes:a.instr || '', regras_passagem:semVazio(a.passa)});
+    [...new Set(a.fontes || [])].forEach(n => { const k = a.id + '|' + n; L.agentes_fontes.push({id:fIds[k] || (fIds[k] = novoUuid()), agente_id:a.id, nome:n}); });
+    (a.ferramentas || []).forEach(([f, p]) => L.agentes_ferramentas.push({agente_id:a.id, ferramenta:f, permissao:PARA_PERM[p] || 'confirmacao'})); });
+  const agIA = (d.agents.find(a => /atendimento/i.test(a.nome)) || d.agents[0] || {}).id;
+  d.requests.forEach(r => { const st = PARA_PS[r.status] || 'novo', fechado = st === 'resolvido' || st === 'recusado';
+    L.pedidos.push({id:r.id, no_id:r.app, autor_id:r.autor || null, tipo:PARA_PT[r.tipo] || 'duvida', gravidade:PARA_GR[r.grav] || 'incomodo', status:st, titulo:r.titulo, contexto:{resumo:r.contexto || ''}, item_id:r.issue || null,
+      resolvido_em:fechado ? (r._resolvido || (r._resolvido = new Date().toISOString())) : null});
+    (r.msgs || []).forEach(m => { const tipo = m.de === 'voce' ? 'equipe' : m.de; if (tipo === 'ia' && !agIA) return;
+      L.pedidos_mensagens.push({id:garantirId(m), pedido_id:r.id, autor_tipo:tipo, pessoa_id:tipo === 'cliente' ? (r.autor || null) : tipo === 'equipe' ? eu : null, agente_id:tipo === 'ia' ? agIA : null, texto:m.txt || null}); }); });
+  (d.notifs || []).forEach(n => { if (n._banco) L.notificacoes.push({id:n.id, lida_em:n.lida ? (n._lidaEm || (n._lidaEm = new Date().toISOString())) : null}); });
+  // pai antes do filho, dentro das tabelas que se referem a si mesmas
+  const prof = {cliente:0, projeto:1, produto:2, aplicacao:3, frente:4}; L.nos.sort((a, b) => prof[a.tipo] - prof[b.tipo]);
+  const nivel = id => { let n = 0, i = d.issues.find(x => x.id === id); while (i && i.pai && n < 6){ n++; i = d.issues.find(x => x.id === i.pai); } return n; };
+  L.itens.sort((a, b) => nivel(a.id) - nivel(b.id));
+  return L;
+}
+
+const SYNC = {base:null, rodando:false, deNovo:false, timer:0, erros:[], pendente:false};
+const chaveLinha = (row, pk) => pk.map(k => row[k]).join('|');
+const indexar = L => Object.fromEntries(GRAVAR.map(([t, pk]) => [t, new Map((L[t] || []).map(r => [chaveLinha(r, pk), r]))]));
+const igual = (a, b) => JSON.stringify(a === undefined ? null : a) === JSON.stringify(b === undefined ? null : b);
+function marcarBase(){ SYNC.base = indexar(JSON.parse(JSON.stringify(linhasDaTela(D)))); }
+function selo(txt, erro){ const c = $('.chip-exemplo'); if (!c) return; c.textContent = txt; c.classList.toggle('com-erro', !!erro); }
+
+async function gravarNoBanco(){
+  const sb = window.itiaBanco; if (!sb || !SYNC.base) return;
+  if (SYNC.rodando){ SYNC.deNovo = true; return; }
+  SYNC.rodando = true; SYNC.pendente = false; SYNC.erros = []; selo('Salvando...');
+  const agora = indexar(JSON.parse(JSON.stringify(linhasDaTela(D))));
+  const falha = (t, op, msg) => { SYNC.erros.push(t + ' (' + op + '): ' + msg); console.warn('Banco', t, op, msg); };
+  let mexeuItens = false;
+  // 1) apagar o que sumiu (filhos primeiro)
+  for (const [t, pk] of GRAVAR.slice().reverse()){
+    if (t === 'notificacoes') continue;
+    for (const [k, row] of [...SYNC.base[t]].reverse()) if (!agora[t].has(k)){
+      const filtro = Object.fromEntries(pk.map(c => [c, row[c]]));
+      const {error} = await sb.from(t).delete().match(filtro);
+      if (error) falha(t, 'apagar', error.message); else { SYNC.base[t].delete(k); if (t === 'itens') mexeuItens = true; }
+    }
+  }
+  // 2) incluir e alterar (pais primeiro)
+  for (const [t, pk, natural] of GRAVAR){
+    for (const [k, row] of agora[t]){
+      const antes = SYNC.base[t].get(k);
+      if (!antes){
+        if (t === 'notificacoes') continue;
+        const {error} = natural ? await sb.from(t).upsert(row, {onConflict:pk.join(',')}) : await sb.from(t).insert(row);
+        if (error) falha(t, 'incluir', error.message); else { SYNC.base[t].set(k, row); if (t === 'itens') mexeuItens = true; }
+        continue;
+      }
+      const mud = {}; Object.keys(row).forEach(c => { if (!pk.includes(c) && !igual(row[c], antes[c])) mud[c] = row[c]; });
+      if (!Object.keys(mud).length) continue;
+      const filtro = Object.fromEntries(pk.map(c => [c, row[c]]));
+      const {data, error} = await sb.from(t).update(mud).match(filtro).select(pk[0]);
+      if (error) falha(t, 'alterar', error.message);
+      else if (!data || !data.length) falha(t, 'alterar', 'o banco não deixou alterar (permissão)');
+      else { SYNC.base[t].set(k, row); if (t === 'itens') mexeuItens = true; }
+    }
+  }
+  SYNC.rodando = false;
+  if (SYNC.erros.length){ selo('Erro ao salvar', true); const c = $('.chip-exemplo'); if (c) c.title = 'Não gravou: ' + SYNC.erros.join(' · ');
+    const txt = SYNC.erros.join('|'); if (txt !== SYNC.ultimoErro) toast('Não deu para gravar tudo no banco: ' + SYNC.erros[0] + (SYNC.erros.length > 1 ? ' (e mais ' + (SYNC.erros.length - 1) + ')' : '')); SYNC.ultimoErro = txt; }
+  else { SYNC.ultimoErro = ''; selo('Dados do banco'); const c = $('.chip-exemplo'); if (c) c.title = 'Tudo gravado no banco'; if (BANCO.arquivosFora){ BANCO.arquivosFora = false; toast('Os links foram gravados. Arquivos (imagem, áudio, vídeo) ainda não vão para o banco.'); } }
+  if (SYNC.deNovo){ SYNC.deNovo = false; return gravarNoBanco(); }
+  // as automações rodam no banco: se mexeu em itens e há automação ligada, relê para mostrar o resultado
+  if (mexeuItens && D.automacoes.some(a => a.ativa !== false)) setTimeout(() => { if (!document.querySelector('dialog[open]') && !SYNC.rodando) carregarDoBanco(null).then(render); }, 600);
+}
+if (COM_BANCO){
+  salvar = function(){ if (!BANCO.carregado) return; SYNC.pendente = true; clearTimeout(SYNC.timer); SYNC.timer = setTimeout(gravarNoBanco, 350); };
+  rodarAutomacoes = function(){};   // no banco, as automações rodam sozinhas (gatilho itens_automacoes)
+  checarPrazosVencidos = function(){};
+  window.addEventListener('beforeunload', e => { if (SYNC.rodando || SYNC.pendente){ e.preventDefault(); e.returnValue = ''; } });
+}
+window.itiaGravarAgora = gravarNoBanco;
+window.itiaSync = SYNC;

@@ -508,3 +508,4 @@ dialog.modal.modal-ficha{max-width:min(1180px,calc(100% - 32px))}
 .fc-trilha button:hover{color:var(--vermelho);text-decoration:underline}
 .fc-trilha button[aria-current]{color:var(--preto);font-weight:700}
 .fc-nav-dir{display:flex;gap:8px;align-items:center}
+.menu-rodape .chip-exemplo.com-erro{border-color:var(--vermelho);color:#fff;background:var(--vermelho)}

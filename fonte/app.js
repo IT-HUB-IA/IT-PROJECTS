@@ -6,7 +6,9 @@ const $ = (s, r) => (r || document).querySelector(s);
 const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
 const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let seq = 0;
-const uid = p => (p || 'x') + '_' + Date.now().toString(36) + (seq++).toString(36);
+// com login (banco), todo id novo é um uuid, que é o formato das tabelas
+const novoUuid = () => (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16); });
+const uid = p => document.body.classList.contains('com-login') ? novoUuid() : (p || 'x') + '_' + Date.now().toString(36) + (seq++).toString(36);
 const HOJE = (() => { const d = new Date(); d.setHours(0,0,0,0); return d; })();
 const iso = d => { const x = new Date(d); return x.getFullYear() + '-' + String(x.getMonth()+1).padStart(2,'0') + '-' + String(x.getDate()).padStart(2,'0'); };
 const dAdd = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
@@ -680,10 +682,12 @@ const EXPL_VIEW = {
 const abaView = v => '<span class="view-casa"><button class="view-b" type="button" role="tab" data-view="' + v[0] + '" aria-selected="' + (UI.view === v[0]) + '">' + v[1] + '</button>' + (EXPL_VIEW[v[0]] ? I(EXPL_VIEW[v[0]]) : '') + '</span>';
 function rOperacoes(){
   const el = $('#m-operacoes');
-  const [tipo, id] = UI.sel.split(':');
+  let [tipo, id] = UI.sel.split(':');
   const m = {client:'clients', project:'projects', product:'products', app:'apps', ws:'ws'}[tipo];
   let obj = m && byId(m, id);
-  if (!obj && D.projects[0]){ UI.sel = 'project:' + D.projects[0].id; obj = D.projects[0]; }
+  if (!obj && D.projects[0]){ UI.sel = 'project:' + D.projects[0].id; obj = D.projects[0]; tipo = 'project'; id = obj.id; }
+  if (!obj && D.clients[0]){ UI.sel = 'client:' + D.clients[0].id; obj = D.clients[0]; tipo = 'client'; id = obj.id; }
+  if (!obj){ el.innerHTML = '<div class="topo-tela"><div><h1><span>Operações</span></h1><p class="lead">A estrutura está vazia. Cadastre um cliente em Clients e depois crie o projeto dele aqui.</p></div></div>'; return; }
   const tipoNomes = {client:['Client','cliente'], project:['Project','projeto'], product:['Product','produto'], app:['Application','aplicação'], ws:['Workstream','frente de trabalho']};
   const viewsDisp = VIEWS.filter(v => !(v[0] === 'custos' && (tipo === 'ws' || UI.verComo !== 'master')) && !((v[0] === 'stages') && !['project','app'].includes(tipo)) && !((v[0] === 'sheet') && !['project','app','product'].includes(tipo)));
   if (!viewsDisp.some(v => v[0] === UI.view)) UI.view = 'dashboard';
