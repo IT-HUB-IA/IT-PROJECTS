@@ -449,3 +449,6 @@
 @media (min-width: 961px){
   .ops-arvore,.ops.sem-arvore .arv-trilho{position:sticky;top:0;align-self:start;max-height:100vh;overflow-y:auto}
 }
+
+/* Board: coluna até o fim da tela (a altura vem de esticarColunas) */
+.board > .coluna{min-height:var(--col-min,420px)}

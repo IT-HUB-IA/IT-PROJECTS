@@ -1018,3 +1018,17 @@ document.addEventListener('click', ev => {
     return modal('Excluir o registro ' + esc(domHost(r, d)) + '?', '<p style="margin:0">Sai só do cadastro. No Cloudflare (ou onde o DNS fica) ele continua valendo até ser apagado lá.</p>',
       [{txt:'Cancelar', cls:'sec'}, {txt:'Excluir', cls:'acento', acao:() => { domApagar('dominios_registros', r.id).then(res => { if (!res.ok) return toast(res.msg); if (domBanco()) DOM.cache = null; else { d.registros = d.registros.filter(x => x.id !== r.id); salvar(); } DOM.aberto = d.id; rCustos(); toast('Registro excluído'); }); }}]); }
 });
+
+/* ---------- Board: as colunas vão sempre até o fim da tela ---------- */
+function esticarColunas(){
+  document.querySelectorAll('.board').forEach(b => {
+    if (b.closest('.raia')) return;
+    const rolo = b.closest('.principal'); const sobe = rolo ? rolo.scrollTop : 0;
+    const alt = Math.round(window.innerHeight - (b.getBoundingClientRect().top + sobe) - 24);
+    b.style.setProperty('--col-min', Math.max(alt, 240) + 'px');
+  });
+}
+let esticarPedido = 0;
+const pedirEsticar = () => { cancelAnimationFrame(esticarPedido); esticarPedido = requestAnimationFrame(esticarColunas); };
+new MutationObserver(pedirEsticar).observe(document.querySelector('.principal') || document.body, {childList:true, subtree:true});
+window.addEventListener('resize', pedirEsticar);
