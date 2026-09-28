@@ -1037,15 +1037,18 @@ window.addEventListener('resize', pedirEsticar);
 function linhasArvore(){
   const nos = [...document.querySelectorAll('.ops-arvore .no-arv[data-no]')];
   const nivel = nos.map(n => Math.max(0, Math.round((parseFloat(n.style.paddingLeft) - 8) / 14)));
-  const cor = getComputedStyle(document.documentElement).getPropertyValue('--vermelho').trim() || '#FF0000';
-  const v = (x, alto) => ['repeating-linear-gradient(to bottom,' + cor + ' 0 1px,transparent 1px 3px)', x + 'px 0', '1px ' + alto, 'no-repeat'];
-  const h = x => ['repeating-linear-gradient(to right,' + cor + ' 0 1px,transparent 1px 3px)', x + 'px 50%', '7px 1px', 'no-repeat'];
+  const raiz = getComputedStyle(document.documentElement);
+  const vermelho = raiz.getPropertyValue('--vermelho').trim() || '#FF0000', preto = raiz.getPropertyValue('--preto').trim() || '#050506';
+  // até as empresas do projeto (nível 2) o pontilhado é vermelho; das aplicações para dentro, preto
+  const corDe = k => k <= 2 ? vermelho : preto;
+  const v = (x, alto, k) => ['repeating-linear-gradient(to bottom,' + corDe(k) + ' 0 1px,transparent 1px 3px)', x + 'px 0', '1px ' + alto, 'no-repeat'];
+  const h = (x, k) => ['repeating-linear-gradient(to right,' + corDe(k) + ' 0 1px,transparent 1px 3px)', x + 'px 50%', '7px 1px', 'no-repeat'];
   // a linha do nível k continua depois do item i se aparece outro item do nível k antes de algum de nível menor
   const continua = (i, k) => { for (let j = i + 1; j < nos.length; j++){ if (nivel[j] < k) return false; if (nivel[j] === k) return true; } return false; };
   nos.forEach((n, i) => {
     const L = nivel[i], camadas = [];
-    for (let k = 1; k < L; k++) if (continua(i, k)) camadas.push(v(14 * k + 2, '100%'));
-    if (L >= 1){ camadas.push(v(14 * L + 2, continua(i, L) ? '100%' : '50%')); camadas.push(h(14 * L + 2)); }
+    for (let k = 1; k < L; k++) if (continua(i, k)) camadas.push(v(14 * k + 2, '100%', k));
+    if (L >= 1){ camadas.push(v(14 * L + 2, continua(i, L) ? '100%' : '50%', L)); camadas.push(h(14 * L + 2, L)); }
     n.style.backgroundImage = camadas.map(c => c[0]).join(',');
     n.style.backgroundPosition = camadas.map(c => c[1]).join(',');
     n.style.backgroundSize = camadas.map(c => c[2]).join(',');
