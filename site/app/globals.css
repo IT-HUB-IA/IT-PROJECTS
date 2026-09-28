@@ -180,13 +180,21 @@ a { color: inherit; }
 .lab-c li { padding: 12px 0; border-bottom: 1px solid var(--linha); font-size: 15px; }
 .lab-arroba { font-family: var(--font-display); font-weight: 600; font-size: clamp(24px, 2.6vw, 34px); letter-spacing: -.02em; text-decoration: none; color: var(--linha-f); }
 
-/* fechamento sob medida */
+/* fechamento sob medida: proposta à esquerda, o que acontece depois à direita */
 .sm { padding: 104px 0; }
-.sm-in { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 4fr); gap: 48px; align-items: end; }
-.sm-titulo { font-size: clamp(44px, 6vw, 84px); margin: 18px 0 20px; color: var(--branco); }
-.sm-texto { color: var(--nevoa); font-size: 17px; max-width: 560px; margin: 0; }
-.sm-acoes { display: grid; gap: 16px; justify-items: start; }
-.sm-email { color: var(--branco); text-transform: none; letter-spacing: .04em; user-select: all; }
+.sm-in { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 56px; align-items: center; }
+.sm-texto-col { display: grid; gap: 20px; }
+.sm-titulo { font-size: clamp(40px, 5.2vw, 76px); color: var(--branco); }
+.sm-texto { color: var(--nevoa); font-size: 18px; max-width: 580px; margin: 0; }
+.sm-acoes { display: grid; gap: 14px; justify-items: start; margin-top: 12px; }
+.sm-acoes .btn { height: auto; min-height: 52px; padding: 12px 22px; font-size: 13px; line-height: 1.4; }
+.sm-micro { margin: 0; font-size: 14px; color: var(--nevoa); }
+.sm-email { color: var(--branco); user-select: all; font-family: var(--font-mono); font-size: 13px; }
+.sm-passos { list-style: none; margin: 0; padding: 0; border: 1px solid var(--grafite); background: rgba(21,21,23,.7); }
+.sm-passos li { display: grid; grid-template-columns: 36px 1fr; gap: 12px; padding: 22px 24px; border-bottom: 1px solid var(--grafite); }
+.sm-passos li:last-child { border-bottom: 0; }
+.sm-passos b { display: block; font-family: var(--font-display); font-weight: 600; font-size: 19px; letter-spacing: -.01em; color: var(--branco); margin-bottom: 4px; }
+.sm-passos p { margin: 0; font-size: 15px; color: var(--nevoa); }
 
 /* rodapé: preto como o menu, organizado como ficha técnica */
 .ro { background: var(--preto); color: var(--branco); padding: 64px 0 28px; border-top: 1px solid var(--grafite); }

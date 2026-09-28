@@ -4,7 +4,7 @@ export const contato = {
   email: "contato@it-ia.tec.br",
   suporte: "suporte@it-ia.tec.br",
   privacidade: "privacidade@it-ia.tec.br",
-  whatsapp: "https://wa.me/5511960288595?text=" + encodeURIComponent("Olá, IT.IA! Vim pelo site e quero conversar sobre um sistema."),
+  whatsapp: "https://wa.me/5511960288595?text=" + encodeURIComponent("Olá, IT.IA! Vim pelo site e quero conversar sobre um sistema para a minha empresa."),
   whatsappTexto: "(11) 96028-8595",
   instagram: "https://www.instagram.com/it.ia_official/",
   instagramTexto: "@it.ia_official",
