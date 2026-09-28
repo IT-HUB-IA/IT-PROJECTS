@@ -68,6 +68,8 @@ Estas funções são para **outras ferramentas mandarem dados para o Jira**: bra
 | Vulnerabilidades virando item de trabalho | ❌ falta |
 | Incidentes e revisões pós-incidente | 🟡 temos o Service Desk (pedidos). Falta o tipo "incidente" com revisão |
 
+> O modelo único de dados para Jira, Trello e o nosso sistema (sem nada repetido) está em INTEGRACOES-MODELO.md.
+
 ## 2. Plano para o Board ficar com o que o Jira tem
 
 **Fase A · Board igual ao do Jira** (tela)
