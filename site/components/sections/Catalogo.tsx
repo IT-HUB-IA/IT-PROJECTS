@@ -33,6 +33,7 @@ export function Catalogo() {
                 <div key={f.rot} className={f.destaque ? "cat-ficha-ia" : undefined}>
                   <dt className="rotulo com-ponto">{f.rot}</dt>
                   <dd>{f.texto}</dd>
+                  {f.papeis && <dd className="cat-papeis"><ul aria-label="Papéis do DevIT">{f.papeis.map(x => <li key={x}>{x}</li>)}</ul></dd>}
                 </div>
               ))}
             </dl>

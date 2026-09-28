@@ -44,16 +44,16 @@ export const sobMedida = {
 
 export const frentes: Frente[] = [
   { rot: "Produtos", nome: "Produtos próprios, prontos para usar", texto: "Quando uma solução resolve um problema comum a muitas empresas, ela se torna um produto do nosso catálogo.", itens: ["CicloDev: gestão do desenvolvimento de software", "Novos produtos em desenvolvimento"], link: { href: "#catalogo", txt: "Ver o catálogo" } },
-  { rot: "IA integrada", nome: "Inteligência artificial integrada aos sistemas", texto: "Agentes que operam com os dados do próprio sistema, respeitam as permissões de cada usuário e só executam ações com confirmação.", itens: ["Planejamento e priorização de projetos", "Revisão de segurança de código e banco de dados", "Atendimento e rotinas automatizadas"], link: { href: "#regras", txt: "Ver as regras da casa" } },
+  { rot: "IA integrada", nome: "Inteligência artificial integrada aos sistemas", texto: "Agentes que operam com os dados do próprio sistema, respeitam as permissões de cada usuário e só executam ações com confirmação.", itens: ["Planejamento e priorização de projetos", "Arquitetura de software e de banco de dados", "Revisão de segurança de código e infraestrutura", "Atendimento e rotinas automatizadas"], link: { href: "#regras", txt: "Ver as regras da casa" } },
   { rot: "Laboratório", nome: "Pesquisa aplicada em IA", texto: "Avaliamos cada avanço da inteligência artificial antes de aplicá-lo em nossos sistemas. As análises são publicadas no Instagram.", itens: ["Análise de novos modelos e ferramentas", "Aplicações validadas em sistemas reais"], link: { href: "https://www.instagram.com/it.ia_official/", txt: "Seguir @it.ia_official", externo: true } },
 ];
 
 // o CicloDev no catálogo: só o essencial, o resto fica no site dele
-export const ciclodevFicha = [
+export const ciclodevFicha: { rot: string; texto: string; papeis?: string[]; destaque?: boolean }[] = [
   { rot: "Estrutura", texto: "Moldada ao seu trabalho: cliente, projeto, produto, aplicação e frente." },
   { rot: "Visões", texto: "Painel, Board, Lista, Tabela, Calendário e Linha do tempo, sempre sincronizados." },
   { rot: "Governança", texto: "Etapas com trava: cada fase exige comprovação para avançar." },
-  { rot: "IA integrada", texto: "DevIT, o agente que atua como Product Owner do projeto.", destaque: true },
+  { rot: "IA integrada", texto: "DevIT, o agente conectado ao código e ao banco de dados que acompanha o projeto do escopo à entrega.", papeis: ["Product Owner", "Arquiteto de software", "Segurança"], destaque: true },
 ];
 
 // regras da casa: valem para todo sistema que sai da IT.IA
