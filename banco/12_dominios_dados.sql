@@ -4,7 +4,7 @@
 -- =====================================================================
 insert into public.dominios (nome, no_id, registrador, dns_em, servidores_dns, comprado_em, vence_em, renovacao_automatica, email_provedor, observacoes)
 values ('it-ia.tec.br', null, 'Registro.br', 'Cloudflare', array['karsyn.ns.cloudflare.com','kellen.ns.cloudflare.com'],
-        '2026-09-09', '2036-09-09', null, 'Google (Gmail)', 'Domínio da própria CicloDev. Envio de e-mails do sistema pelo Resend (domínio verificado).')
+        '2026-09-09', '2036-09-09', null, 'Google (Gmail)', 'Domínio da própria IT.IA. Envio de e-mails do sistema pelo Resend (domínio verificado).')
 on conflict (nome) do nothing;
 
 insert into public.dominios_registros (dominio_id, nome, tipo, aponta_para, servico, para_que, proxy)

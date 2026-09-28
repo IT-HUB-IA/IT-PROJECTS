@@ -1,6 +1,6 @@
 # CicloDev
 
-Gestão de projetos, entregas e custos da CicloDev. Cliente atual: Blanco & Lisboa (projeto BL).
+Gestão de projetos, entregas e custos da IT.IA, feita no CicloDev. Cliente atual: Blanco & Lisboa (projeto BL).
 
 | Pasta | O que tem |
 |---|---|

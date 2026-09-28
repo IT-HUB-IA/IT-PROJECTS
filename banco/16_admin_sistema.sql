@@ -227,3 +227,27 @@ do $$ begin
     perform cron.schedule('ciclodev_limpar_uso', '17 3 * * *', $c$delete from public.uso_eventos where em < now() - interval '12 months'$c$);
   end if;
 end $$;
+
+-- Marco Civil da Internet, art. 15: guardar data, hora e endereço IP de cada acesso por pelo menos 6 meses.
+-- A entrada no sistema ("entrou") guarda o IP e o navegador, lidos do pedido que chega ao banco (a tela não manda nada).
+alter table public.uso_eventos add column if not exists ip text, add column if not exists navegador text;
+comment on column public.uso_eventos.ip is 'Endereço IP da entrada (Marco Civil, art. 15). Guardado 12 meses, como o resto do registro de uso.';
+create or replace function interno.uso_guardar_acesso() returns trigger
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare h jsonb;
+begin
+  if new.tipo = 'entrou' then
+    begin h := nullif(current_setting('request.headers', true), '')::jsonb; exception when others then h := null; end;
+    if h is not null then
+      new.ip := left(btrim(split_part(coalesce(h ->> 'cf-connecting-ip', h ->> 'x-real-ip', h ->> 'x-forwarded-for', ''), ',', 1)), 64);
+      new.navegador := left(h ->> 'user-agent', 300);
+      if new.ip = '' then new.ip := null; end if;
+    end if;
+  else
+    new.ip := null; new.navegador := null;
+  end if;
+  return new;
+end $$;
+revoke execute on function interno.uso_guardar_acesso() from public, anon, authenticated;
+drop trigger if exists uso_eventos_acesso on public.uso_eventos;
+create trigger uso_eventos_acesso before insert on public.uso_eventos for each row execute function interno.uso_guardar_acesso();

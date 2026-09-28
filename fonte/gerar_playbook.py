@@ -10,13 +10,13 @@ def T(term,expl):  # termo + i
 
 # ---------------- dados ----------------
 REGRAS=[
- ('Um banco só', T('Single database','um banco de dados só')+' para o sistema inteiro da CicloDev. Nenhum projeto ganha um Supabase separado.', 'Tudo conversa com tudo: o Overview, a busca e a IA enxergam todos os projetos sem juntar bancos diferentes.'),
+ ('Um banco só', T('Single database','um banco de dados só')+' para o sistema inteiro da IT.IA. Nenhum projeto ganha um Supabase separado.', 'Tudo conversa com tudo: o Overview, a busca e a IA enxergam todos os projetos sem juntar bancos diferentes.'),
  ('Tabelas comuns com o código do projeto', 'Tarefas, frentes, comentários, tempo, pedidos e fichas ficam em tabelas únicas, e cada linha carrega o '+T('project_id','código do projeto a que a linha pertence')+'.', 'Projeto novo não exige programação: é só um código novo, e board, calendário e painéis já funcionam.'),
  ('Pasta própria para o exclusivo', 'O que só existe num projeto (as tabelas do sistema do BL, por exemplo) fica num '+T('Schema','pasta de tabelas dentro do mesmo banco')+' só daquele projeto.', 'Separa o que é particular sem soltar o projeto do resto.'),
  ('Cada um vê só o que é seu', 'A '+T('RLS','Row Level Security: regra no banco que decide quem vê cada linha')+' garante que o cliente só enxerga o próprio projeto e o dev só os projetos em que está.', 'A segurança fica no banco, não só na tela. Mesmo que uma tela erre, o dado não vaza.'),
  ('Permissão explícita em toda tabela nova', 'Toda tabela nova recebe '+T('GRANT','a liberação da operação: ler, gravar, apagar')+' além da RLS. A RLS filtra linhas; o GRANT libera a operação.', 'Faltando um dos dois, a tela quebra, inclusive consultas de outras tabelas que dependem dela.'),
  ('Fonte única da verdade', 'Cada informação existe uma vez só. Board, tabela, calendário e canvas são '+T('Views','formas de ver o mesmo dado')+', e todas editam o mesmo registro.', 'Mudou num lugar, mudou em todos. Nunca existem duas versões da mesma tarefa.'),
- ('Clientes cadastrados aqui', 'Todo cliente da CicloDev fica na tabela de '+T('Clients','clientes')+' deste sistema, inclusive a Blanco &amp; Lisboa, que entra como cliente do tipo holding. As empresas do grupo (YOU, Realizze, BEEC, Gestão de Lojas e Cobrança 40%) não são clientes: são produtos dentro do projeto BL, e o cliente é a Blanco &amp; Lisboa.', 'A CicloDev atende clientes de dentro e de fora do grupo com a mesma estrutura, e o stakeholder de cada cliente vê só o que é dele.'),
+ ('Clientes cadastrados aqui', 'Todo cliente da IT.IA fica na tabela de '+T('Clients','clientes')+' deste sistema, inclusive a Blanco &amp; Lisboa, que entra como cliente do tipo holding. As empresas do grupo (YOU, Realizze, BEEC, Gestão de Lojas e Cobrança 40%) não são clientes: são produtos dentro do projeto BL, e o cliente é a Blanco &amp; Lisboa.', 'A IT.IA atende clientes de dentro e de fora do grupo com a mesma estrutura, e o stakeholder de cada cliente vê só o que é dele.'),
  ('Estrutura por ligação, não por etiqueta', 'Onde cada coisa mora (a holding do cliente, o projeto da aplicação) é uma '+T('Relationship','ligação fixa entre dois registros no banco')+'. Ligação não se apaga, só se move.', 'Se alguém apagar ou renomear uma etiqueta, nada perde o lugar.'),
  ('Etiquetas livres e automáticas', 'As '+T('Tags','etiquetas')+' são criadas, editadas e apagadas à vontade. As '+T('System tags','etiquetas automáticas, geradas a partir das ligações')+' (Holding e Projeto) aparecem com cadeado e ninguém apaga.', 'Você vê tudo como etiqueta, e a estrutura continua protegida.'),
  ('O ID nunca muda', 'Cada registro tem um '+T('ID','o código interno do banco, que nunca muda')+' e um '+T('Path','o caminho legível, como BL › YOU › Java Fiscal')+'. As ligações usam o ID; o caminho se refaz sozinho quando algo é movido.', 'Mover uma aplicação para outro projeto não quebra tarefas, comentários, tempo nem provas.'),
@@ -95,7 +95,7 @@ h=[]
 h.append('''    <section class="conteudo" id="tela-playbook" aria-labelledby="titulo-pb" hidden>
       <div class="eyebrow"><i class="ponto" aria-hidden="true"></i>03 — Playbook</div>
       <h1 id="titulo-pb"><span>Playbook</span>'''+I('Playbook (manual de regras da operação): o que vale para todo projeto, sempre.')+'''</h1>
-      <p class="lead">As regras que todo projeto da CicloDev segue, do jeito que o banco se comporta até as etapas que nenhum projeto pode pular, mesmo com uma pessoa só no time.</p>
+      <p class="lead">As regras que todo projeto da IT.IA segue, do jeito que o banco se comporta até as etapas que nenhum projeto pode pular, mesmo com uma pessoa só no time.</p>
 
       <div class="abas" role="tablist" aria-label="Seções do Playbook">
         <button class="aba" type="button" role="tab" id="aba-dados" aria-controls="pn-dados" aria-selected="true">Estrutura de dados</button>
@@ -123,7 +123,7 @@ for i,(n,x,lente,itens,ent) in enumerate(ETAPAS,1):
     h.append('          <li class="etapa"><div class="etapa-topo"><span class="etapa-n">%02d</span><h3>%s%s</h3></div><p class="etapa-lente"><span>Lente</span> %s</p><ul>%s</ul><p class="etapa-ent"><span>Entrega</span> %s</p></li>'%(
         i,n,I(n.replace('&amp;','&')+' ('+ETAPA_EXPL[n]+')'),lente,''.join('<li>%s</li>'%it for it in itens),ent))
 h.append('        </ol>')
-h.append('        <p class="nota">Estas etapas e lentes vêm dos agentes da CicloDev (Ultra-Agente e Investigação do Legado): os 14 papéis viram lentes, e o fluxo escopo, fontes, uso, evidências, desenho, protótipo, verificação e entrega vira as travas de todo projeto.</p>')
+h.append('        <p class="nota">Estas etapas e lentes vêm dos agentes da IT.IA (Ultra-Agente e Investigação do Legado): os 14 papéis viram lentes, e o fluxo escopo, fontes, uso, evidências, desenho, protótipo, verificação e entrega vira as travas de todo projeto.</p>')
 h.append('      </div>')
 # painel ficha
 h.append('      <div class="painel-aba" role="tabpanel" id="pn-ficha" aria-labelledby="aba-ficha" hidden>')

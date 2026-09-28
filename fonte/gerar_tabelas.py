@@ -10,7 +10,7 @@ f='parte_playbook.html'; s=open(f,encoding='utf-8').read()
 h=[]
 h.append('''    <section class="conteudo" id="tela-playbook" aria-labelledby="titulo-pb" hidden>
       <h1 id="titulo-pb"><span>Playbook</span>'''+I('Playbook (manual de regras da operação): o que vale para todo projeto, sempre.')+'''</h1>
-      <p class="lead">As regras que todo projeto da CicloDev segue, do jeito que o banco se comporta até as etapas que nenhum projeto pode pular, mesmo com uma pessoa só no time.</p>
+      <p class="lead">As regras que todo projeto da IT.IA segue, do jeito que o banco se comporta até as etapas que nenhum projeto pode pular, mesmo com uma pessoa só no time.</p>
 
       <div class="abas" role="tablist" aria-label="Seções do Playbook">
         <button class="aba" type="button" role="tab" id="aba-dados" aria-controls="pn-dados" aria-selected="true">Estrutura de dados</button>
@@ -146,7 +146,7 @@ MODELO=[
   ('whiteboards','O canvas de cada projeto ou aplicação','de quem é, conteúdo, cards ligados a registros','Master e time','Em seguida'),
  ]),
  ('Comercial e custos',[
-  ('services','O Catalog: cada serviço que a CicloDev vende','categoria, nome, descrição, entregáveis, frentes padrão, horas mínima e máxima, requisitos, SLA, checklist, ativo','Master e time','Primeiro'),
+  ('services','O Catalog: cada serviço que a IT.IA vende','categoria, nome, descrição, entregáveis, frentes padrão, horas mínima e máxima, requisitos, SLA, checklist, ativo','Master e time','Primeiro'),
   ('service_pricing','Os modelos de cobrança de cada serviço','serviço, modelo (preço fechado, hora, marcos, implantação, mensalidade, banco de horas, por usuário, faixas, uso, valor, sucesso, manutenção, repasse), parâmetros','Master','Primeiro'),
   ('pricing_rules','As regras de cálculo, com histórico','regime, impostos, encargos, horas, faturável, margem, contingência, multiplicadores, câmbio, vigência','Master','Primeiro'),
   ('contracts','As receitas: o que cada cliente paga','cliente, serviço, modelo, valor, recorrência, início, fim','Master','Primeiro'),

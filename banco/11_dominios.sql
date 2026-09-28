@@ -1,7 +1,7 @@
 -- =====================================================================
 -- CicloDev · 11 · Cadastro de domínios (pedido do William em 28/09/2026)
 -- Cada domínio, onde foi comprado, onde o DNS é administrado, vencimento, custo e os registros (subdomínios, e-mail, verificações).
--- Sem repetir informação: o custo aponta para custos_operacao (domínio da própria CicloDev) ou custos_tecnicos (domínio de cliente);
+-- Sem repetir informação: o custo aponta para custos_operacao (domínio da própria IT.IA) ou custos_tecnicos (domínio de cliente);
 -- a empresa dona vem da árvore (no_id). Só o Master vê e muda.
 -- =====================================================================
 
@@ -25,7 +25,7 @@ create table if not exists public.dominios (
   check (vence_em is null or comprado_em is null or vence_em >= comprado_em),
   check (num_nonnulls(custo_operacao_id, custo_tecnico_id) <= 1)
 );
-comment on table public.dominios is 'Domínios do grupo. no_id vazio = domínio da própria CicloDev. acesso_onde diz onde fica o acesso ao painel, nunca a senha.';
+comment on table public.dominios is 'Domínios do grupo. no_id vazio = domínio da própria IT.IA. acesso_onde diz onde fica o acesso ao painel, nunca a senha.';
 comment on column public.dominios.renovacao_automatica is 'Vazio = ainda não informado.';
 create index if not exists dominios_no_idx on public.dominios (no_id) where no_id is not null;
 create index if not exists dominios_vence_idx on public.dominios (vence_em) where vence_em is not null;
@@ -79,8 +79,9 @@ begin
          'Vencimento em ' || to_char(d.vence_em, 'DD/MM/YYYY') || ' · comprado em ' || d.registrador ||
            case when d.renovacao_automatica then ' · renovação automática ligada' else ' · confira a renovação' end
     from public.dominios d
-    cross join public.pessoas p
-   where p.papel = 'master' and p.ativo
+    join public.pessoas p on p.id = coalesce((select e.dono_id from public.espacos e where e.id = d.espaco_id), p.id)
+   where p.ativo and p.auth_user_id is not null
+     and (d.espaco_id is not null or p.papel = 'master')   -- cada aviso vai só para o dono do espaço do domínio
      and d.vence_em - bi.hoje() in (60, 30, 7, 1, 0);
   get diagnostics n = row_count;
   return n;

@@ -13,7 +13,7 @@ Um lugar no sistema para guardar cada domínio do grupo e tudo o que depende del
 | Informação | Exemplo |
 |---|---|
 | Domínio | `it-ia.tec.br` |
-| Empresa ou produto dono | CicloDev (ligado a um ponto da árvore: cliente, projeto, produto ou aplicação) |
+| Empresa ou produto dono | IT.IA (ligado a um ponto da árvore: cliente, projeto, produto ou aplicação) |
 | Onde foi comprado (registrador) | Registro.br |
 | Onde o DNS é administrado | Cloudflare (servidores `karsyn` e `kellen.ns.cloudflare.com`) |
 | Data da compra | 09/09/2026 |
