@@ -459,3 +459,6 @@
 .no-arv[data-no^="product:"]:not(.escolhido):hover{background:rgba(255,0,0,.13)}
 .no-arv[data-no^="product:"]{margin-bottom:1px}
 .no-arv[data-no^="project:"] .seta,.no-arv[data-no^="product:"] .seta,.no-arv[data-no^="app:"] .seta{color:var(--vermelho)}
+
+/* Estrutura: as linhas pontilhadas passam por baixo; o item não gruda no vizinho */
+.ops-arvore .no-arv{margin-bottom:0}

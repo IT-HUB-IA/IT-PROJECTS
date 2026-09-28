@@ -1348,6 +1348,9 @@
 .no-arv[data-no^="product:"]{margin-bottom:1px}
 .no-arv[data-no^="project:"] .seta,.no-arv[data-no^="product:"] .seta,.no-arv[data-no^="app:"] .seta{color:var(--vermelho)}
 
+/* Estrutura: as linhas pontilhadas passam por baixo; o item não gruda no vizinho */
+.ops-arvore .no-arv{margin-bottom:0}
+
   .conteudo.sem-pad{padding:0;display:flex;flex-direction:column;flex:1}
   .conteudo.sem-pad > div{flex:1;display:flex;flex-direction:column}
 /* ===== Tela de login (só na versão publicada na Vercel) ===== */
@@ -4694,6 +4697,28 @@ let esticarPedido = 0;
 const pedirEsticar = () => { cancelAnimationFrame(esticarPedido); esticarPedido = requestAnimationFrame(esticarColunas); };
 new MutationObserver(pedirEsticar).observe(document.querySelector('.principal') || document.body, {childList:true, subtree:true});
 window.addEventListener('resize', pedirEsticar);
+
+/* ---------- Estrutura: linhas pontilhadas ligando cada item aos filhos ---------- */
+function linhasArvore(){
+  const nos = [...document.querySelectorAll('.ops-arvore .no-arv[data-no]')];
+  const nivel = nos.map(n => Math.max(0, Math.round((parseFloat(n.style.paddingLeft) - 8) / 14)));
+  const cor = 'rgba(46,46,49,.45)';
+  const v = (x, alto) => ['repeating-linear-gradient(to bottom,' + cor + ' 0 1px,transparent 1px 3px)', x + 'px 0', '1px ' + alto, 'no-repeat'];
+  const h = x => ['repeating-linear-gradient(to right,' + cor + ' 0 1px,transparent 1px 3px)', x + 'px 50%', '7px 1px', 'no-repeat'];
+  // a linha do nível k continua depois do item i se aparece outro item do nível k antes de algum de nível menor
+  const continua = (i, k) => { for (let j = i + 1; j < nos.length; j++){ if (nivel[j] < k) return false; if (nivel[j] === k) return true; } return false; };
+  nos.forEach((n, i) => {
+    const L = nivel[i], camadas = [];
+    for (let k = 1; k < L; k++) if (continua(i, k)) camadas.push(v(14 * k + 2, '100%'));
+    if (L >= 1){ camadas.push(v(14 * L + 2, continua(i, L) ? '100%' : '50%')); camadas.push(h(14 * L + 2)); }
+    n.style.backgroundImage = camadas.map(c => c[0]).join(',');
+    n.style.backgroundPosition = camadas.map(c => c[1]).join(',');
+    n.style.backgroundSize = camadas.map(c => c[2]).join(',');
+    n.style.backgroundRepeat = camadas.map(c => c[3]).join(',');
+  });
+}
+let linhasPedido = 0;
+new MutationObserver(() => { cancelAnimationFrame(linhasPedido); linhasPedido = requestAnimationFrame(linhasArvore); }).observe(document.querySelector('.principal') || document.body, {childList:true, subtree:true});
 
 abrirModulo(UI.modulo);
 })();
