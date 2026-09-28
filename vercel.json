@@ -29,5 +29,18 @@
       ]
     }
   ],
-  "cleanUrls": true
+  "cleanUrls": true,
+  "redirects": [
+    {
+      "source": "/:caminho*",
+      "has": [
+        {
+          "type": "host",
+          "value": "system.it-ia.tec.br"
+        }
+      ],
+      "destination": "https://ciclodev.it-ia.tec.br/:caminho*",
+      "permanent": true
+    }
+  ]
 }
