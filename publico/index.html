@@ -2138,7 +2138,7 @@ function gerarEventos(D){
 /* ================= armazenamento ================= */
 const CHAVE_DADOS = 'itia-sistema-dados-v1';
 let D;
-try { const raw = localStorage.getItem(CHAVE_DADOS); D = raw ? JSON.parse(raw) : null; } catch(e){ D = null; }
+try { const raw = document.body.classList.contains('com-login') ? null : localStorage.getItem(CHAVE_DADOS); D = raw ? JSON.parse(raw) : null; } catch(e){ D = null; }
 if (!D || D.v !== 2) D = semente();
 if (!D.catalog || !D.regras) sementeComercial(D);
 if (!D.eventos || !D.eventos.length) gerarEventos(D);
@@ -2152,6 +2152,13 @@ try { Object.assign(UI, JSON.parse(localStorage.getItem('itia-sistema-ui') || '{
 function salvarUI(){ try { localStorage.setItem('itia-sistema-ui', JSON.stringify(UI)); } catch(e){} }
 const podeEditar = () => UI.verComo !== 'stakeholder';
 const souMaster = () => UI.verComo === 'master';
+/* quem é "eu" em cada papel: no exemplo são pessoas fixas; com login, vêm do banco (definido em recursos.js) */
+const PAPEL_EU = {master:'pe_w', dev:'pe_a', stakeholder:'pe_s'};
+let EU_IDS = null;
+const idEu = papel => EU_IDS ? (EU_IDS[papel] || '') : PAPEL_EU[papel];
+const pjStake = () => { const p = pessoa(idEu('stakeholder')); return p && p.escopo ? (cadeia(p.escopo).project || {}).id : (D.projects[0] || {}).id; };
+const cliStake = () => { const p = pessoa(idEu('stakeholder')); return p && p.escopo ? (cadeia(p.escopo).client || {}).id : (D.clients[0] || {}).id; };
+const cliPadrao = () => (D.clients[0] || {}).id || '';
 
 /* ================= consultas ================= */
 const byId = (lista, id) => D[lista].find(x => x.id === id);
@@ -2307,7 +2314,7 @@ function navNiveis(chave, opts){
 /* ---- registro de mudanças (alimenta "Mudanças recentes" e a linha do tempo) ---- */
 function registrar(tipo, i, txt){
   D.eventos = D.eventos || [];
-  D.eventos.unshift({tipo, item: i ? i.id : null, ws: i ? i.ws : null, txt: txt || (i ? i.titulo : ''), quando: Date.now(), quem: UI.verComo === 'stakeholder' ? 'pe_s' : UI.verComo === 'dev' ? 'pe_a' : 'pe_w'});
+  D.eventos.unshift({tipo, item: i ? i.id : null, ws: i ? i.ws : null, txt: txt || (i ? i.titulo : ''), quando: Date.now(), quem: idEu(UI.verComo)});
   if (D.eventos.length > 600) D.eventos.length = 600;
 }
 function eventosEm(chave, lista){
@@ -2421,7 +2428,7 @@ function painelHTML(chave, opts){
 function rOverview(){
   const el = $('#m-overview');
   if (UI.verComo === 'stakeholder'){
-    const p = pessoa('pe_s');
+    const p = pessoa(idEu('stakeholder')) || {escopo:'all'};
     el.innerHTML = '<div class="topo-tela"><div><h1>Painel do projeto BL</h1><p class="lead">O que o stakeholder' + I('Stakeholder (cliente que acompanha o projeto, sem executar)') + ' vê dentro do sistema dele: só o andamento do projeto dele, sem as partes internas.</p></div><div class="acoes"><button class="btn" type="button" data-acao="novo-pedido">Enviar comentário ou pedido</button></div></div>' + painelHTML(p.escopo, {soCliente:true, tituloFilhos:'Produtos'});
     return;
   }
@@ -2471,7 +2478,7 @@ function rOperacoes(){
   const [tipo, id] = UI.sel.split(':');
   const m = {client:'clients', project:'projects', product:'products', app:'apps', ws:'ws'}[tipo];
   let obj = m && byId(m, id);
-  if (!obj){ UI.sel = 'project:pj_bl'; obj = byId('projects','pj_bl'); }
+  if (!obj && D.projects[0]){ UI.sel = 'project:' + D.projects[0].id; obj = D.projects[0]; }
   const tipoNomes = {client:['Client','cliente'], project:['Project','projeto'], product:['Product','produto'], app:['Application','aplicação'], ws:['Workstream','frente de trabalho']};
   const viewsDisp = VIEWS.filter(v => !(v[0] === 'custos' && (tipo === 'ws' || UI.verComo !== 'master')) && !((v[0] === 'stages') && !['project','app'].includes(tipo)) && !((v[0] === 'sheet') && !['project','app','product'].includes(tipo)));
   if (!viewsDisp.some(v => v[0] === UI.view)) UI.view = 'dashboard';
@@ -2500,7 +2507,7 @@ function rOperacoes(){
 function listaFiltrada(){
   let l = issuesEm(UI.sel);
   const f = UI.filtros, b = (UI.busca || '').toLowerCase().trim();
-  if (f.meus) l = l.filter(i => i.resp === 'pe_w');
+  if (f.meus) l = l.filter(i => i.resp === idEu(UI.verComo));
   if (f.alta) l = l.filter(i => i.prio === 'highest' || i.prio === 'high');
   if (f.atraso) l = l.filter(atrasado);
   if (f.bloq) l = l.filter(i => i.status === 'blocked');
@@ -2915,7 +2922,7 @@ function rServiceDesk(){
   const el = $('#m-servicedesk');
   const stake = UI.verComo === 'stakeholder';
   let base = D.requests.slice().sort((a, b) => b.quando.localeCompare(a.quando));
-  if (stake) base = base.filter(r => r.cliente === 'cl_bl');
+  if (stake) base = base.filter(r => r.cliente === cliStake());
   const lista = UI.filtroPed === 'todos' ? base : base.filter(r => r.status === UI.filtroPed);
   const sel = lista.find(r => r.id === UI.pedSel) || lista[0];
   const contar = s => base.filter(r => r.status === s).length;
@@ -2935,12 +2942,12 @@ function rServiceDesk(){
           '<div class="sd-prop largo"><span>Context capture' + I('Context capture (captura automática de contexto: tela, versão, aparelho e erros, enviados junto com o pedido)') + '</span><code>' + esc(sel.contexto) + '</code></div>' +
           '</div>' +
         '<section class="g-sec"><h4>References' + I('References (referências: prints, arquivos, áudios, vídeos e links enviados junto com o pedido)') + (sel.anexos.length ? '<span class="g-cont">' + sel.anexos.length + '</span>' : '') + '</h4>' + refsHTML(sel.anexos, 'req:' + sel.id, true) + '</section>' +
-        '<div class="sd-conversa">' + sel.msgs.map(m => { const quem = m.de === 'ia' ? 'Agente de atendimento' : m.de === 'voce' ? 'William' : (cl ? cl.nome : 'Cliente'); const av = m.de === 'ia' ? '<span class="avatar av-ia">IA</span>' : m.de === 'voce' ? avatar('pe_w') : avatarCliente(cl);
+        '<div class="sd-conversa">' + sel.msgs.map(m => { const quem = m.de === 'ia' ? 'Agente de atendimento' : m.de === 'voce' ? ((pessoa(idEu('master')) || {nome:'Equipe'}).nome) : (cl ? cl.nome : 'Cliente'); const av = m.de === 'ia' ? '<span class="avatar av-ia">IA</span>' : m.de === 'voce' ? avatar(idEu('master')) : avatarCliente(cl);
           return '<div class="bolha b-' + m.de + '">' + av + '<div class="bolha-c"><div class="bolha-quem">' + esc(quem) + (m.de === 'ia' ? '<span class="simulado">exemplo</span>' : '') + '</div><div class="bolha-txt">' + esc(m.txt) + '</div></div></div>'; }).join('') + '</div>' +
         '<form class="sd-resp" data-form="resp-ped"><input class="campo" name="t" placeholder="' + (stake ? 'Responder' : 'Responder ao cliente') + '"><button class="btn" type="submit">Enviar</button></form></div>'; })() : '<div class="vazio-linha">Selecione um pedido.</div>') + '</div>';
 }
 function formPedido(){
-  const apps = UI.verComo === 'stakeholder' ? D.apps.filter(a => a.project === 'pj_bl') : D.apps;
+  const apps = UI.verComo === 'stakeholder' ? D.apps.filter(a => a.project === pjStake()) : D.apps;
   return '<div class="bloco-g"><h4>O que você quer enviar</h4><div class="tiles">' + TIPOS_PED.map(([t, expl, k], ix) => '<label class="tile"><input type="radio" name="fp-tipo" value="' + t + '"' + (ix === 0 ? ' checked' : '') + '><span class="tile-c"><span class="sd-ico tp-' + k + '">' + ICO_PED[k] + '</span><b>' + esc(expl[0].toUpperCase() + expl.slice(1)) + '</b><small>' + t + '</small></span></label>').join('') + '</div></div>' +
     '<div class="grade-form"><label class="lb">Aplicação<select class="sel" id="fp-app">' + apps.map(a => '<option value="' + a.id + '">' + esc(a.nome) + '</option>').join('') + '</select></label>' +
     '<label class="lb largo">Assunto<input class="campo" id="fp-tit" placeholder="Em uma frase, o que aconteceu ou o que você precisa"></label>' +
@@ -2961,7 +2968,7 @@ function rTime(){
       const its = D.issues.filter(i => !i.arquivado && i.resp === p.id && i.status !== 'done');
       const pap = PAPEL[p.acesso] || PAPEL.dev;
       return '<article class="pessoa"><div class="pessoa-topo"><span class="avatar grande">' + esc(ini(p.nome)) + '</span><div class="pessoa-nome"><h3>' + esc(p.nome) + '</h3><span class="pill pp-' + pap[1] + '">' + esc(p.funcao || pap[0]) + '</span></div>' +
-        '<div class="pessoa-acoes so-master"><button class="ico-btn" type="button" data-editar-pessoa="' + p.id + '" aria-label="Editar ' + esc(p.nome) + '" title="Editar">' + SV('<path d="M4 20h4L20 8l-4-4L4 16z"/>') + '</button>' + (p.id !== 'pe_w' ? '<button class="ico-btn perigo" type="button" data-excluir-pessoa="' + p.id + '" aria-label="Excluir ' + esc(p.nome) + '" title="Excluir">' + SV('<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>') + '</button>' : '') + '</div></div>' +
+        '<div class="pessoa-acoes so-master"><button class="ico-btn" type="button" data-editar-pessoa="' + p.id + '" aria-label="Editar ' + esc(p.nome) + '" title="Editar">' + SV('<path d="M4 20h4L20 8l-4-4L4 16z"/>') + '</button>' + (p.id !== idEu('master') ? '<button class="ico-btn perigo" type="button" data-excluir-pessoa="' + p.id + '" aria-label="Excluir ' + esc(p.nome) + '" title="Excluir">' + SV('<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>') + '</button>' : '') + '</div></div>' +
         (p.skills.length ? '<div class="tags">' + p.skills.map(s => '<span class="tag">' + esc(s) + '</span>').join('') + '</div>' : '<span class="sec" style="font-size:13px">Sem habilidades cadastradas</span>') +
         (p.cap ? '<div class="carga-p"><div class="carga-p-l"><span>Carga desta semana</span><b class="c-' + nivel + '">' + h.toFixed(0) + 'h de ' + p.cap + 'h</b></div><div class="progresso grosso"><i class="c-' + nivel + '" style="width:' + pct + '%"></i></div></div>' : '<div class="carga-p"><span class="sec" style="font-size:13px">Acompanha, não executa tarefas</span></div>') +
         '<div class="pessoa-st">' + ['todo','doing','review','blocked'].map(s => '<span title="' + esc(stNome(s)) + '">' + ICO_ST[s].replace('<svg', '<svg class="st-' + s + '"') + its.filter(i => i.status === s).length + '</span>').join('') + '<span class="sec">' + its.length + ' em aberto</span></div>' +
@@ -3013,7 +3020,7 @@ function rConfig(){
       '<tr><th scope="row">Dev</th><td>Os projetos em que participa, com canvas e ficha técnica</td><td>Cria e edita itens, cumpre etapas com prova, registra tempo</td></tr>' +
       '<tr><th scope="row">Stakeholder</th><td>Só o painel do próprio projeto e os itens marcados como visíveis ao cliente</td><td>Comenta e envia pedidos, com prints, arquivos e áudios</td></tr>' +
     '</tbody></table></div>' +
-    '<h2 class="sub">Dados deste protótipo</h2><div class="acoes"><button class="btn sec" type="button" data-acao="restaurar">Restaurar os dados de exemplo</button><span class="sec" style="font-size:13px">As mudanças ficam guardadas só neste navegador até o banco do projeto ser ligado.</span></div>';
+    (COM_BANCO ? painelBanco() : '<h2 class="sub">Dados deste protótipo</h2><div class="acoes"><button class="btn sec" type="button" data-acao="restaurar">Restaurar os dados de exemplo</button><span class="sec" style="font-size:13px">As mudanças ficam guardadas só neste navegador até o banco do projeto ser ligado.</span></div>');
 }
 
 /* ================= motor de preços e custos ================= */
@@ -3341,7 +3348,7 @@ function vCustosEscopo(chave){
 const fmtData = s => { const d = parse(s); return d ? String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth() + 1).padStart(2,'0') + '/' + d.getFullYear() : ''; };
 function formReceita(r, preset){
   const c = cadeia(UI.sel);
-  r = r || Object.assign({desc:'', cliente: c.client ? c.client.id : 'cl_bl', project: c.project ? c.project.id : '', app: c.app ? c.app.id : '', servico:'', modelo:'fixo', valor:0, rec:'Único', parcelas:3, inicio:iso(HOJE), fim:''}, preset || {});
+  r = r || Object.assign({desc:'', cliente: c.client ? c.client.id : cliPadrao(), project: c.project ? c.project.id : '', app: c.app ? c.app.id : '', servico:'', modelo:'fixo', valor:0, rec:'Único', parcelas:3, inicio:iso(HOJE), fim:''}, preset || {});
   return '<div class="grade-form"><label class="lb largo">Descrição<input class="campo" id="fr-desc" value="' + esc(r.desc) + '" placeholder="Ex.: Implantação do Java Financeiro"></label>' +
     '<label class="lb">Cliente<select class="sel" id="fr-cli">' + D.clients.map(x => '<option value="' + x.id + '"' + (r.cliente === x.id ? ' selected' : '') + '>' + esc(x.nome) + '</option>').join('') + '</select></label>' +
     '<label class="lb">Projeto<select class="sel" id="fr-proj"><option value="">Nenhum</option>' + D.projects.map(x => '<option value="' + x.id + '"' + (r.project === x.id ? ' selected' : '') + '>' + esc(x.nome) + '</option>').join('') + '</select></label>' +
@@ -3361,7 +3368,7 @@ function salvarReceita(dlg, r){
   if (nova) D.receitas.push(r); salvar(); render(); toast(nova ? 'Receita registrada. Já cobrado até hoje: ' + brl(cobradoAteHoje(r)) : 'Receita salva');
 }
 function formCusto(c, preset){
-  c = c || Object.assign({cliente: UI.ctCliente || 'cl_bl', app:'', fornecedor:'', cat:'Hospedagem', desc:'', rec:'Mensal', moeda:'BRL', valor:0, uso:null, repasse:true, markup:15, inicio:iso(HOJE), fim:''}, preset || {});
+  c = c || Object.assign({cliente: UI.ctCliente || cliPadrao(), app:'', fornecedor:'', cat:'Hospedagem', desc:'', rec:'Mensal', moeda:'BRL', valor:0, uso:null, repasse:true, markup:15, inicio:iso(HOJE), fim:''}, preset || {});
   const u = c.uso || {unidade:'', hist:[0], limite:0, plano:'', prox:{nome:'', valor:0, obs:''}};
   return '<div class="grade-form"><label class="lb">Cliente<select class="sel" id="fc2-cli">' + D.clients.map(x => '<option value="' + x.id + '"' + (c.cliente === x.id ? ' selected' : '') + '>' + esc(x.nome) + '</option>').join('') + '</select></label><label class="lb">Aplicação<select class="sel" id="fc2-app"><option value="">Sem aplicação</option>' + D.apps.map(a => '<option value="' + a.id + '"' + (c.app === a.id ? ' selected' : '') + '>' + esc(a.nome) + '</option>').join('') + '</select></label>' +
     '<label class="lb">Fornecedor<input class="campo" id="fc2-for" value="' + esc(c.fornecedor) + '" placeholder="Ex.: Supabase"></label><label class="lb">Categoria<input class="campo" id="fc2-cat" value="' + esc(c.cat) + '" list="cats-custo"><datalist id="cats-custo">' + ['Banco de dados','Armazenamento','Hospedagem','API de IA','Mensageria','Integração','Domínio','Licença'].map(x => '<option value="' + x + '">').join('') + '</datalist></label>' +
@@ -3393,7 +3400,7 @@ document.addEventListener('click', e => {
   if ((x = q('[data-abrir-item]'))) { abrirItem(x.dataset.abrirItem); return; }
   if ((x = q('.cartao,[data-item].ev'))) { if (!q('button')) { abrirItem(x.dataset.item); return; } }
   if ((x = q('[data-tab-alt]'))) { UI.tabAbertos = UI.tabAbertos || {}; const k = x.dataset.tabAlt; UI.tabAbertos[k] = !UI.tabAbertos[k]; salvarUI(); render(); return; }
-  if ((x = q('[data-tab-todos]'))) { UI.tabAbertos = {}; if (x.dataset.tabTodos === '1'){ const abrir = k => { const s = filhosDe(k); if (s.length){ UI.tabAbertos[k] = true; s.forEach(abrir); } }; const base = UI.modulo === 'overview' ? (UI.verComo === 'stakeholder' ? pessoa('pe_s').escopo : (UI.ovSel || 'all')) : UI.sel; filhosDe(base).forEach(abrir); } salvarUI(); render(); return; }
+  if ((x = q('[data-tab-todos]'))) { UI.tabAbertos = {}; if (x.dataset.tabTodos === '1'){ const abrir = k => { const s = filhosDe(k); if (s.length){ UI.tabAbertos[k] = true; s.forEach(abrir); } }; const base = UI.modulo === 'overview' ? (UI.verComo === 'stakeholder' ? (pessoa(idEu('stakeholder')) || {escopo:'all'}).escopo : (UI.ovSel || 'all')) : UI.sel; filhosDe(base).forEach(abrir); } salvarUI(); render(); return; }
   if ((x = q('[data-ov]'))) { UI.ovSel = x.dataset.ov; salvarUI(); rOverview(); return; }
   if ((x = q('#m-overview [data-ir]'))) { UI.ovSel = x.dataset.ir; salvarUI(); rOverview(); return; }
   if ((x = q('#m-operacoes [data-ir]'))) { UI.sel = x.dataset.ir; UI.view = 'dashboard'; abrirArvore(UI.sel); salvarUI(); rOperacoes(); return; }
@@ -3458,7 +3465,7 @@ function acao(a, x){
   else if (a === 'ct-voltar'){ UI.ctCliente = null; salvarUI(); rCustos(); }
   else if (a === 'novo-custo') modal('Novo custo', formCusto(), [{txt:'Cancelar', cls:'sec'},{txt:'Registrar', acao:d => salvarCusto(d, null)}]);
   else if (a === 'novo-op') editarOp(null);
-  else if (a === 'novo-custo-escopo'){ const c = cadeia(UI.sel); modal('Novo custo em ' + esc(nomeDe(UI.sel)), formCusto(null, {cliente: c.client ? (c.product && c.product.client ? c.product.client : c.client.id) : 'cl_bl', app: c.app ? c.app.id : ''}), [{txt:'Cancelar', cls:'sec'},{txt:'Registrar', acao:d => salvarCusto(d, null)}]); }
+  else if (a === 'novo-custo-escopo'){ const c = cadeia(UI.sel); modal('Novo custo em ' + esc(nomeDe(UI.sel)), formCusto(null, {cliente: c.client ? (c.product && c.product.client ? c.product.client : c.client.id) : cliPadrao(), app: c.app ? c.app.id : ''}), [{txt:'Cancelar', cls:'sec'},{txt:'Registrar', acao:d => salvarCusto(d, null)}]); }
   else if (a === 'nova-receita') modal('Nova receita', formReceita(), [{txt:'Cancelar', cls:'sec'},{txt:'Registrar', acao:d => salvarReceita(d, null)}]);
   else if (a === 'por-foco'){ const ws = x.dataset.ws; if (D.focus) toast('Foco trocado. A frente anterior foi pausada e o tempo dela registrado.'); else toast('Frente em foco'); D.focus = {ws, desde:Date.now(), hist:(D.focus && D.focus.hist) || []}; salvar(); rOperacoes(); }
   else if (a === 'sair-foco'){ D.focus = null; salvar(); render(); toast('Foco pausado'); }
@@ -3474,9 +3481,10 @@ function acao(a, x){
   else if (a === 'nova-pessoa') modal('Nova pessoa', formPessoa(), [{txt:'Cancelar', cls:'sec'},{txt:'Criar', acao:d => salvarPessoa(d, null)}]);
   else if (a === 'novo-agente') modal('Novo agente', '<div class="grade-form"><label class="lb largo">Nome<input class="campo" id="na-n" placeholder="Ex.: Agente de cobrança"></label><label class="lb largo">Papel<input class="campo" id="na-p" placeholder="O que ele faz, em uma frase"></label></div>', [{txt:'Cancelar', cls:'sec'},{txt:'Criar agente', acao:d => { const n = $('#na-n', d).value.trim(); if (!n){ toast('Escreva o nome do agente'); return false; } const ag = {id:uid('ag'), nome:n, papel:$('#na-p', d).value.trim() || 'Sem papel definido', instr:'', fontes:[], ferramentas:[['Consultar dados','Livre']], passa:''}; D.agents.push(ag); UI.agSel = ag.id; salvar(); salvarUI(); rAgentes(); toast('Agente criado'); }}]);
   else if (a === 'add-custom'){ const n = $('#cf-nome').value.trim(); if (!n){ toast('Escreva o nome do campo'); return; } D.sheets[UI.sel].custom.push({nome:n, tipo:$('#cf-tipo').value, valor:$('#cf-valor').value}); salvar(); rView(); }
-  else if (a === 'cron'){ const i = byId('issues', itemAberto); const r = i.tempo.find(t => !t.fim); if (r) r.fim = Date.now(); else i.tempo.push({ini:Date.now(), fim:null, quem:'pe_w', origem:'Timer'}); salvar(); abrirItem(i.id); }
+  else if (a === 'cron'){ const i = byId('issues', itemAberto); const r = i.tempo.find(t => !t.fim); if (r) r.fim = Date.now(); else i.tempo.push({ini:Date.now(), fim:null, quem:idEu(UI.verComo), origem:'Timer'}); salvar(); abrirItem(i.id); }
   else if (a === 'arquivar-item'){ const i = byId('issues', itemAberto); i.arquivado = true; registrar('arquivou', i); salvar(); fecharItem(); toast('Item arquivado. Continua guardado no banco.'); }
-  else if (a === 'restaurar') modal('Restaurar os dados de exemplo?', '<p style="margin:0">Tudo o que foi mudado neste navegador volta para o exemplo inicial.</p>', [{txt:'Cancelar', cls:'sec'},{txt:'Restaurar', cls:'acento', acao:() => { D = semente(); salvar(); render(); toast('Dados de exemplo restaurados'); }}]);
+  else if (a === 'reler-banco' && COM_BANCO){ toast('Lendo o banco de novo...'); carregarDoBanco(null).then(() => { render(); toast('Pronto: dados lidos do banco agora'); }); }
+  else if (a === 'restaurar' && !COM_BANCO) modal('Restaurar os dados de exemplo?', '<p style="margin:0">Tudo o que foi mudado neste navegador volta para o exemplo inicial.</p>', [{txt:'Cancelar', cls:'sec'},{txt:'Restaurar', cls:'acento', acao:() => { D = semente(); salvar(); render(); toast('Dados de exemplo restaurados'); }}]);
 }
 function abrirArvore(chave){ caminho(chave).forEach(([k]) => { UI.abertos[k] = true; }); }
 
@@ -3524,7 +3532,7 @@ document.addEventListener('submit', e => {
   const i = itemAberto && byId('issues', itemAberto);
   if (f.dataset.form === 'check' && txt){ i.check.push({t:txt, f:false}); salvar(); abrirItem(i.id); }
   else if (f.dataset.form === 'link'){ if (!f.alvo.value) return; i.links.push({tipo:f.tipo.value, alvo:f.alvo.value}); salvar(); abrirItem(i.id); }
-  else if (f.dataset.form === 'coment' && txt){ const stake = UI.verComo === 'stakeholder'; i.coments.push({quem: stake ? 'pe_s' : 'pe_w', txt, quando:iso(HOJE), cliente:stake}); registrar('comentou', i); salvar(); abrirItem(i.id); }
+  else if (f.dataset.form === 'coment' && txt){ const stake = UI.verComo === 'stakeholder'; i.coments.push({quem: idEu(UI.verComo), txt, quando:iso(HOJE), cliente:stake}); registrar('comentou', i); salvar(); abrirItem(i.id); }
   else if (f.dataset.form === 'resp-ped' && txt){ const r = byId('requests', UI.pedSel) || D.requests[0]; r.msgs.push({de: UI.verComo === 'stakeholder' ? 'cliente' : 'voce', txt}); salvar(); rServiceDesk(); }
   else if (f.dataset.form === 'sv-lista' && txt){ byId('catalog', UI.svSel)[f.dataset.campo].push(txt); salvar(); rCatalog(); }
   else if (f.dataset.form === 'ref-link' && txt){ const l = refsDe(f.dataset.alvo); if (l){ l.push({nome:txt, tipo:'link', url:/^https?:\/\//.test(txt) ? txt : 'https://' + txt}); salvar(); reRenderRefs(f.dataset.alvo); toast('Link adicionado'); } }
@@ -3538,7 +3546,7 @@ document.addEventListener('keydown', e => {
 
 /* ================= criação e ações com modal ================= */
 function primeiroWs(chave){ const l = issuesEm(chave); const [tipo, id] = chave.split(':'); if (tipo === 'app') return (D.ws.find(w => w.app === id) || {}).id; if (tipo === 'product'){ const a = D.apps.find(x => x.product === id); return a && (D.ws.find(w => w.app === a.id) || {}).id; } if (tipo === 'project'){ const a = D.apps.find(x => x.project === id); return a && (D.ws.find(w => w.app === a.id) || {}).id; } return l[0] && l[0].ws; }
-function novoIssue(o){ return Object.assign({id:uid('is'), tipo:'task', titulo:'', desc:'', status:'todo', prio:'medium', resp:null, rep:'pe_w', ini:iso(HOJE), fim:iso(dAdd(HOJE, 7)), alvo:iso(dAdd(HOJE, 7)), est:4, vis:'interno', pai:null, check:[], links:[], coments:[], tempo:[], refs:[], bloco:null, criado:iso(HOJE), feito:null}, o); }
+function novoIssue(o){ return Object.assign({id:uid('is'), tipo:'task', titulo:'', desc:'', status:'todo', prio:'medium', resp:null, rep:idEu(UI.verComo), ini:iso(HOJE), fim:iso(dAdd(HOJE, 7)), alvo:iso(dAdd(HOJE, 7)), est:4, vis:'interno', pai:null, check:[], links:[], coments:[], tempo:[], refs:[], bloco:null, criado:iso(HOJE), feito:null}, o); }
 function novoItem(){
   const [tipo, id] = UI.sel.split(':');
   const wsList = D.ws.filter(w => { const a = byId('apps', w.app); if (tipo === 'ws') return w.id === id; if (tipo === 'app') return w.app === id; if (tipo === 'product') return a.product === id; if (tipo === 'project') return a.project === id; return true; });
@@ -3599,7 +3607,7 @@ function cumprirItem(id){
   modal('Cumprir item', '<p style="margin:0"><b>' + esc(cfg.texto) + '</b></p><p class="sec" style="margin:0;font-size:13px">Prova pedida: ' + esc(cfg.prova) + ' · Modo: ' + esc(cfg.modo) + '</p>' + campoProva,
     [{txt:'Cancelar', cls:'sec'},{txt:'Marcar como cumprido', acao:d => {
       const arq = $('#cp-arq', d), txt = $('#cp-txt', d);
-      const fim = prova => { D.stages[UI.sel][id] = {feito:true, quem:UI.verComo === 'dev' ? 'pe_a' : 'pe_w', quando:iso(HOJE), prova}; salvar(); rView(); toast('Item cumprido e registrado'); };
+      const fim = prova => { D.stages[UI.sel][id] = {feito:true, quem:idEu(UI.verComo), quando:iso(HOJE), prova}; salvar(); rView(); toast('Item cumprido e registrado'); };
       if (arq){ if (!arq.files[0]){ toast('Anexe a prova pedida'); return false; } lerArquivo(arq.files[0]).then(a => fim({tipo:cfg.prova, nome:a.nome, url:a.url})); return; }
       if (txt){ if (!txt.value.trim()){ toast('Preencha a prova pedida'); return false; } fim({tipo:cfg.prova, valor:txt.value.trim()}); return; }
       fim(null);
@@ -3607,7 +3615,7 @@ function cumprirItem(id){
 }
 function dispensarItem(id){
   const cfg = itemEtapa(id);
-  modal('Waiver', '<p style="margin:0"><b>' + esc(cfg.texto) + '</b></p><label class="lb">Por que não se aplica<textarea class="campo" id="wv-t"></textarea></label>', [{txt:'Cancelar', cls:'sec'},{txt:'Registrar dispensa', acao:d => { const m = $('#wv-t', d).value.trim(); if (!m){ toast('Escreva o motivo'); return false; } D.stages[UI.sel][id] = {dispensa:m, quem:'pe_w', quando:iso(HOJE)}; salvar(); rView(); toast('Dispensa registrada com o motivo'); }}]);
+  modal('Waiver', '<p style="margin:0"><b>' + esc(cfg.texto) + '</b></p><label class="lb">Por que não se aplica<textarea class="campo" id="wv-t"></textarea></label>', [{txt:'Cancelar', cls:'sec'},{txt:'Registrar dispensa', acao:d => { const m = $('#wv-t', d).value.trim(); if (!m){ toast('Escreva o motivo'); return false; } D.stages[UI.sel][id] = {dispensa:m, quem:idEu(UI.verComo), quando:iso(HOJE)}; salvar(); rView(); toast('Dispensa registrada com o motivo'); }}]);
 }
 function novoPedido(){
   modal('Novo pedido', formPedido(), [{txt:'Cancelar', cls:'sec'},{txt:'Enviar', acao:d => {
@@ -3617,7 +3625,7 @@ function novoPedido(){
     Promise.all(files.map(lerArquivo)).then(anexos => {
       const lk = ($('#fp-link', d).value || '').trim(); if (lk) anexos.push({nome:lk, tipo:'link', url:lk});
       const tipo = (d.querySelector('input[name=fp-tipo]:checked') || {value:'Question'}).value;
-      const r = {id:uid('rq'), cliente: prod ? prod.client : 'cl_bl', app:app.id, tipo, grav:'Incômodo', status:'Em triagem', titulo:tit, quando:iso(HOJE), autor: UI.verComo === 'stakeholder' ? 'pe_s' : 'pe_w', anexos, contexto:'Tela: ' + app.nome + ' · Enviado pelo ' + (/Mobi/.test(navigator.userAgent) ? 'celular' : 'computador'), issue:null,
+      const r = {id:uid('rq'), cliente: prod ? prod.client : cliPadrao(), app:app.id, tipo, grav:'Incômodo', status:'Em triagem', titulo:tit, quando:iso(HOJE), autor: idEu(UI.verComo), anexos, contexto:'Tela: ' + app.nome + ' · Enviado pelo ' + (/Mobi/.test(navigator.userAgent) ? 'celular' : 'computador'), issue:null,
         msgs:[{de:'cliente', txt:$('#fp-desc', d).value.trim() || tit},{de:'ia', txt: tipo === 'Question' ? 'Recebi sua dúvida. Vou procurar a resposta no manual de ' + app.nome + ' e já te explico.' : 'Recebi. Para eu entender direito: isso acontece sempre ou só às vezes? Se puder, mande um print da tela.'}]};
       D.requests.push(r); UI.pedSel = r.id; UI.filtroPed = 'todos'; salvar(); salvarUI(); if (UI.modulo !== 'servicedesk') abrirModulo('servicedesk'); else rServiceDesk(); toast('Pedido enviado');
     });
@@ -3669,7 +3677,21 @@ aplicarVerComo();
    origem do código, SLA, print anotado e gravação de tela.
    Tudo entra no mesmo escopo do sistema e se liga às funções que já existem.
    ===================================================================== */
-const eu = () => UI.verComo === 'stakeholder' ? 'pe_s' : UI.verComo === 'dev' ? 'pe_a' : 'pe_w';
+const eu = () => idEu(UI.verComo);
+/* ---------- versão com login: a tela mostra SÓ o que está no banco. Nada de exemplo, nada guardado no navegador ---------- */
+const COM_BANCO = document.body.classList.contains('com-login');
+function regrasVazias(){ return {regime:'simples', impostos:{simples:0, presumido:0, real:0}, encargos:{inss:0, rat:0, terceiros:0, fgts:0, ferias:0, terco:0, decimo:0, multaFgts:0}, horasMes:168, faturavel:100, margem:0, risco:0, cambio:0, complexidade:{'Média':1}, urgencia:{Normal:1}, manutencaoAnual:0, reservaOverhead:0}; }
+function dadosVazios(){
+  return {v:2, clients:[], tags:[], tagLinks:[], projects:[], products:[], apps:[], ws:[], people:[], issues:[], sheets:{}, template:[], stages:{}, requests:[], agents:[], focus:null, statusCfg:{}, baseline:{},
+    eventos:[], regras:regrasVazias(), opCustos:[], custos:[], receitas:[], catalog:[], sprints:[], marcos:[], automacoes:[], autoLog:[], notifs:[], vistas:[], statusCustom:[], camposItem:[], quadros:{}, recursosV:1, autoPrazoDia:iso(HOJE)};
+}
+if (COM_BANCO){
+  EU_IDS = {};
+  D = dadosVazios();
+  salvar = function(){};
+  try { localStorage.removeItem(CHAVE_DADOS); } catch(e){}
+}
+
 const GRUPO_NOME = {backlog:'Backlog', todo:'To Do', doing:'In Progress', review:'In Review', blocked:'Blocked', done:'Done'};
 
 function garantirRecursos(d){
@@ -3743,7 +3765,7 @@ function rodarAutomacoes(i, gatilho){
           const dest = p.pessoa || (p.para === 'relator' ? i.rep : i.resp);
           if (dest) D.notifs.unshift({id:uid('nt'), pessoa:dest, titulo:p.titulo || a.nome, txt:i.titulo, item:i.id, quando:Date.now(), lida:false});
           else { ok = false; det = 'Ninguém para avisar'; }
-        } else if (a.acao === 'comentar') i.coments.push({quem:'pe_w', txt:p.texto || a.nome, quando:iso(HOJE), cliente:!!p.cliente, auto:true});
+        } else if (a.acao === 'comentar') i.coments.push({quem:idEu('master'), txt:p.texto || a.nome, quando:iso(HOJE), cliente:!!p.cliente, auto:true});
         else if (a.acao === 'mudar_prioridade') i.prio = p.prio || 'high';
         else if (a.acao === 'atribuir') i.resp = p.pessoa || null;
         else if (a.acao === 'marcar_visivel') i.vis = 'cliente';
@@ -4497,7 +4519,9 @@ window.itiaEntrouComo = function(p){
   UI.verComo = p.papel;
   const s = $('#ver-como');
   if (s){ s.value = p.papel; s.hidden = p.papel !== 'master'; const r = s.closest('.menu-rodape'); if (r){ const l = r.querySelector('label[for=ver-como]'); if (l) l.hidden = p.papel !== 'master'; } }
-  aplicarVerComo(); salvarUI(); abrirModulo(UI.modulo);
+  const seguir = () => { document.body.classList.add('logado'); aplicarVerComo(); salvarUI(); abrirModulo(UI.modulo); };
+  if (COM_BANCO && window.itiaBanco) return carregarDoBanco(p).then(seguir, e => { toast('Não foi possível ler o banco: ' + e.message); seguir(); });
+  seguir();
 };
 
 /* ---------- Costs › Domínios. Com login (versão publicada) lê e grava no banco; sem login, usa os dados de exemplo ---------- */
@@ -4520,6 +4544,7 @@ function domSemente(){
 }
 async function domCarregar(){
   const sb = domBanco();
+  if (!sb && COM_BANCO){ DOM.cache = {dominios:[], donos:[], custos:[]}; return; }
   if (!sb){
     domSemente();
     DOM.cache = {dominios:D.dominios,
@@ -4723,6 +4748,180 @@ function linhasArvore(){
 let linhasPedido = 0;
 new MutationObserver(() => { cancelAnimationFrame(linhasPedido); linhasPedido = requestAnimationFrame(linhasArvore); }).observe(document.querySelector('.principal') || document.body, {childList:true, subtree:true});
 
+/* ---------- versão com login: monta a tela a partir das tabelas do banco ---------- */
+const BANCO = {carregado:false, erros:[], quando:null};
+const TIPO_NO = {cliente:'client', projeto:'project', produto:'product', aplicacao:'app', frente:'ws'};
+const ST_NO = {ativo:'active', pausado:'on_hold', concluido:'done', arquivado:'archived'};
+const inverter = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [v, k]));
+const DE_MOD = inverter({fixo:'fixo', hora:'hora', marco:'marco', setup:'implantacao', mensal:'mensalidade', banco:'banco_horas', usuario:'usuario', faixa:'faixas', uso:'uso', valor:'valor', sucesso:'sucesso', manutencao:'manutencao', repasse:'repasse'});
+const DE_VINC = {clt:'CLT', pj:'PJ', estagio:'Estágio', socio:'Sócio'};
+const DE_REC = {mensal:'Mensal', anual:'Anual', unico:'Único', depreciacao:'Depreciação', uso:'Por uso'};
+const DE_FORMA = {mensal:'Mensal', unica:'Único', parcelada:'Parcelado'};
+const DE_MODO = {aviso:'Aviso', trava:'Trava', desligado:'Desligado'};
+const DE_PROVA = {nenhuma:'Nenhuma', captura:'Captura de tela', arquivo:'Arquivo', link:'Link', texto:'Texto', aprovacao:'Aprovação de alguém'};
+const DE_QUEM = {responsavel_etapa:'Responsável da etapa', qualquer_um:'Qualquer pessoa do time'};
+const DE_PERM = {livre:'Livre', automatica:'Automática', confirmacao:'Com confirmação', bloqueada:'Bloqueada'};
+const DE_PT = {bug:'Bug report', correcao:'Fix request', mudanca:'Change request', funcionalidade:'Feature request', duvida:'Question'};
+const DE_GR = {parado:'Sistema parado', quebrada:'Função quebrada', incomodo:'Incômodo', cosmetico:'Cosmético'};
+const DE_PS = {novo:'Em triagem', ia_conversando:'IA conversando', aguardando_voce:'Aguardando você', virou_item:'Virou item', resolvido:'Resolvido', recusado:'Recusado'};
+const DE_ANEXO = {audio:'áudio', video:'vídeo'};
+const TABELAS_BANCO = ['pessoas','nos','clientes','projetos','aplicacoes','frentes','participacoes','etiquetas','etiquetas_nos','status_fluxo','requisitos','servicos','servicos_cobranca',
+  'servicos_requisitos','regras_calculo','pessoas_custos','custos_operacao','custos_tecnicos','custos_uso','receitas','slas','sprints','marcos','automacoes','campos_personalizados',
+  'itens','itens_campos','itens_checklist','itens_ligacoes','comentarios','blocos_agenda','tempo_registros','anexos','ficha_campos','etapas_modelo','etapas_modelo_itens',
+  'etapas_nos','provas','agentes','agentes_fontes','agentes_ferramentas','pedidos','pedidos_mensagens','notificacoes'];
+
+async function lerTabela(sb, t){
+  const todas = []; const passo = 1000;
+  for (let de = 0; ; de += passo){
+    const {data, error} = await sb.from(t).select('*').range(de, de + passo - 1);
+    if (error) throw new Error(t + ': ' + error.message);
+    todas.push(...(data || []));
+    if (!data || data.length < passo) return todas;
+  }
+}
+const diaDe = ts => ts ? iso(new Date(ts)) : null;
+const horaDe = ts => { const d = new Date(ts); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
+const porOrdem = (a, b) => (a.ordem || 0) - (b.ordem || 0);
+function agrupar(lista, campo){ const m = new Map(); lista.forEach(x => { const k = x[campo]; if (!m.has(k)) m.set(k, []); m.get(k).push(x); }); return m; }
+
+function montarDados(T, eu){
+  const d = dadosVazios();
+  const nos = new Map(T.nos.map(n => [n.id, n]));
+  const chave = id => { const n = nos.get(id); return n ? TIPO_NO[n.tipo] + ':' + n.id : null; };
+  const acima = (id, tipo) => { let n = nos.get(id); while (n && n.tipo !== tipo) n = nos.get(n.pai_id); return n ? n.id : ''; };
+  const um = (lista, campo) => new Map(lista.map(x => [x[campo], x]));
+  const cli = um(T.clientes, 'no_id'), prj = um(T.projetos, 'no_id'), apl = um(T.aplicacoes, 'no_id'), fre = um(T.frentes, 'no_id');
+  const slas = agrupar(T.slas, 'no_id');
+  const base = n => ({id:n.id, nome:n.nome, status:ST_NO[n.status] || 'active', motivo:n.motivo_pausa || ''});
+  const ord = T.nos.slice().sort((a, b) => porOrdem(a, b) || String(a.nome).localeCompare(String(b.nome)));
+  ord.forEach(n => {
+    if (n.tipo === 'cliente'){ const c = cli.get(n.id) || {}; const s = slas.get(n.id);
+      d.clients.push(Object.assign(base(n), {tipo:c.tipo_cliente || 'empresa', holding:c.holding_id || null, doc:c.documento || '', sla: s ? Object.fromEntries(s.map(x => [x.gravidade, [+x.horas_resposta, +x.horas_solucao]])) : undefined})); }
+    else if (n.tipo === 'projeto'){ const p = prj.get(n.id) || {}; d.projects.push(Object.assign(base(n), {client:n.pai_id, origem:p.origem || 'greenfield', inicio:p.inicio, alvo:p.alvo})); }
+    else if (n.tipo === 'produto') d.products.push(Object.assign(base(n), {project:acima(n.id, 'projeto'), client:acima(n.id, 'cliente')}));
+    else if (n.tipo === 'aplicacao'){ const a = apl.get(n.id) || {}; d.apps.push(Object.assign(base(n), {project:acima(n.id, 'projeto'), product:acima(n.id, 'produto'), plataforma:a.plataforma || 'web', servico:a.servico_id || '', origemCodigo:a.origem_codigo || 'proprio'})); }
+    else if (n.tipo === 'frente'){ const f = fre.get(n.id) || {}; d.ws.push(Object.assign(base(n), {app:n.pai_id, wip:f.wip_limite == null ? null : +f.wip_limite})); }
+  });
+
+  const part = agrupar(T.participacoes, 'pessoa_id');
+  const custoP = agrupar(T.pessoas_custos.slice().sort((a, b) => String(b.vigente_desde).localeCompare(String(a.vigente_desde))), 'pessoa_id');
+  T.pessoas.slice().sort((a, b) => (a.papel === 'master' ? 0 : 1) - (b.papel === 'master' ? 0 : 1) || String(a.nome).localeCompare(String(b.nome))).forEach(p => {
+    const c = (custoP.get(p.id) || [])[0];
+    const esc1 = (part.get(p.id) || []).map(x => chave(x.no_id)).filter(Boolean)[0];
+    d.people.push({id:p.id, nome:p.nome, funcao:p.funcao || '', skills:p.habilidades || [], cap:+p.capacidade_h || 0, acesso:p.papel === 'master' ? 'owner' : p.papel,
+      email:p.email || '', ativo:p.ativo, escopo:p.papel === 'stakeholder' ? (esc1 || 'all') : undefined,
+      custo: c ? {vinculo:DE_VINC[c.vinculo] || c.vinculo, salario:+c.salario || 0, prolabore:+c.prolabore || 0, valorPJ:+c.valor_pj || 0, beneficios:+c.beneficios || 0} : undefined});
+  });
+
+  d.tags = T.etiquetas.map(t => ({id:t.id, nome:t.nome, cor:t.cor, cat:t.categoria || '', desc:t.descricao || ''}));
+  d.tagLinks = T.etiquetas_nos.map(l => { const k = chave(l.no_id); return k ? {tag:l.etiqueta_id, tipo:k.split(':')[0], id:l.no_id} : null; }).filter(Boolean);
+  d.statusCustom = T.status_fluxo.filter(s => s.no_id).sort(porOrdem).map(s => ({id:s.id, no:chave(s.no_id), nome:s.nome, cor:s.cor, grupo:s.grupo}));
+  const stPorId = um(T.status_fluxo, 'id');
+  T.requisitos.slice().sort(porOrdem).forEach(q => { d.baseline[q.nome] = !!q.padrao; });
+
+  const reqNome = um(T.requisitos, 'id'), cob = agrupar(T.servicos_cobranca.slice().sort(porOrdem), 'servico_id'), sreq = agrupar(T.servicos_requisitos, 'servico_id');
+  d.catalog = T.servicos.map(s => ({id:s.id, cat:s.categoria, nome:s.nome, desc:s.descricao || '', entrega:s.entregaveis || [], frentes:s.frentes_padrao || [],
+    horas:[+s.horas_min || 0, +s.horas_max || 0], preco:(cob.get(s.id) || []).map(c => Object.assign({m:DE_MOD[c.modelo] || c.modelo}, c.parametros || {})),
+    req:(sreq.get(s.id) || []).map(x => (reqNome.get(x.requisito_id) || {}).nome).filter(Boolean), sla:s.sla || '', check:s.checklist_inicio || [], ativo:s.ativo !== false}));
+
+  const R = T.regras_calculo.slice().sort((a, b) => String(b.vigente_desde).localeCompare(String(a.vigente_desde)))[0];
+  if (R) d.regras = {regime:R.regime, impostos:{simples:+R.aliq_simples, presumido:+R.aliq_presumido, real:+R.aliq_real},
+    encargos:{inss:+R.inss_patronal, rat:+R.rat, terceiros:+R.terceiros, fgts:+R.fgts, ferias:+R.ferias, terco:+R.terco_ferias, decimo:+R.decimo_terceiro, multaFgts:+R.multa_fgts},
+    horasMes:+R.horas_mes, faturavel:+R.faturavel_pct, margem:+R.margem_pct, risco:+R.contingencia_pct, cambio:+R.cambio_usd, complexidade:R.complexidade || {'Média':1},
+    urgencia:R.urgencia || {Normal:1}, manutencaoAnual:+R.manutencao_pct, reservaOverhead:+R.folga_rateio_pct};
+
+  d.opCustos = T.custos_operacao.map(o => ({id:o.id, nome:o.nome, cat:o.categoria, valor:+o.valor, moeda:o.moeda, rec:DE_REC[o.recorrencia] || o.recorrencia, meses:o.meses_depreciacao, inicio:o.inicio, fim:o.fim || ''}));
+  const usos = agrupar(T.custos_uso.slice().sort((a, b) => String(a.mes).localeCompare(String(b.mes))), 'custo_id');
+  d.custos = T.custos_tecnicos.map(c => { const n = nos.get(c.no_id);
+    return {id:c.id, cliente:acima(c.no_id, 'cliente'), app:n && n.tipo === 'aplicacao' ? n.id : '', fornecedor:c.fornecedor, cat:c.categoria, desc:c.descricao || '', rec:DE_REC[c.recorrencia] || c.recorrencia,
+      moeda:c.moeda, valor:+c.valor, repasse:!!c.repasse, markup:+c.taxa_repasse_pct || 0, inicio:c.inicio, fim:c.fim || '',
+      uso: c.unidade ? {unidade:c.unidade, hist:(usos.get(c.id) || []).map(u => +u.quantidade), limite:c.limite == null ? null : +c.limite, plano:c.plano || '',
+        prox: c.proximo_plano ? {nome:c.proximo_plano, valor:+c.proximo_valor || 0, extraUnidade:c.extra_por_unidade == null ? null : +c.extra_por_unidade} : null} : null}; });
+  d.receitas = T.receitas.map(r => { const n = nos.get(r.no_id);
+    return {id:r.id, cliente:acima(r.no_id, 'cliente'), project:acima(r.no_id, 'projeto'), app:n && n.tipo === 'aplicacao' ? n.id : '', servico:r.servico_id || '', desc:r.descricao,
+      modelo:DE_MOD[r.modelo] || r.modelo, valor:+r.valor, rec:DE_FORMA[r.forma] || r.forma, parcelas:r.parcelas, inicio:r.inicio, fim:r.fim || ''}; });
+
+  d.sprints = T.sprints.map(s => ({id:s.id, project:s.projeto_id, nome:s.nome, meta:s.meta || '', ini:s.inicio, fim:s.fim, status:s.status}));
+  d.marcos = T.marcos.map(m => ({id:m.id, no:chave(m.no_id), tipo:m.tipo, nome:m.nome, desc:m.descricao || '', data:m.data, vis:!!m.visivel_cliente, entregue:m.entregue_em ? diaDe(m.entregue_em) : null})).filter(m => m.no);
+  d.automacoes = T.automacoes.map(a => { const c = a.condicao || {}, p = a.parametros || {};
+    return {id:a.id, no:chave(a.no_id), nome:a.nome, gatilho:a.gatilho, cond:{tipo:c.tipo, grupo:c.grupo, prio:c.prioridade}, acao:a.acao,
+      param:{para:p.para, titulo:p.titulo, texto:p.texto, pessoa:p.pessoa_id, prio:p.prioridade, status:p.status, cliente:p.visivel_cliente}, ativa:a.ativa !== false}; }).filter(a => a.no);
+  d.camposItem = T.campos_personalizados.slice().sort(porOrdem).map(c => ({id:c.id, no:chave(c.no_id), nome:c.nome, tipo:c.tipo, opcoes:c.opcoes || []})).filter(c => c.no);
+
+  const chk = agrupar(T.itens_checklist.slice().sort(porOrdem), 'item_id'), com = agrupar(T.comentarios.slice().sort((a, b) => String(a.criado_em).localeCompare(String(b.criado_em))), 'item_id');
+  const lig = agrupar(T.itens_ligacoes, 'origem_id'), blo = agrupar(T.blocos_agenda, 'item_id'), tmp = agrupar(T.tempo_registros, 'item_id');
+  const anxItem = agrupar(T.anexos.filter(x => x.item_id), 'item_id'), cmp = agrupar(T.itens_campos, 'item_id');
+  const TL = {bloqueia:'Blocks', relacionado:'Relates to', duplica:'Duplicates'};
+  d.issues = T.itens.map(i => { const st = stPorId.get(i.status_id) || {}; const custom = !!st.no_id; const b = (blo.get(i.id) || [])[0];
+    return {id:i.id, ws:i.frente_id, tipo:i.tipo, titulo:i.titulo, desc:i.descricao || '', status:custom ? st.grupo : (st.chave || 'backlog'), st:custom ? st.id : undefined,
+      prio:i.prioridade, resp:i.responsavel_id || null, rep:i.relator_id || null, ini:i.inicio, fim:i.prazo, alvo:i.data_prevista, est:i.estimativa_h == null ? null : +i.estimativa_h,
+      pontos:i.pontos == null ? undefined : +i.pontos, vis:i.visivel_cliente ? 'cliente' : 'interno', pai:i.pai_id || null,
+      check:(chk.get(i.id) || []).map(c => ({t:c.texto, f:!!c.feito})), links:(lig.get(i.id) || []).map(l => ({tipo:TL[l.tipo] || 'Relates to', alvo:l.destino_id})),
+      coments:(com.get(i.id) || []).map(c => ({quem:c.autor_id, txt:c.texto, quando:diaDe(c.criado_em), cliente:!!c.visivel_cliente})),
+      tempo:(tmp.get(i.id) || []).map(t => ({ini:new Date(t.inicio).getTime(), fim:t.fim ? new Date(t.fim).getTime() : null, quem:t.pessoa_id, origem:t.origem || ''})),
+      bloco: b ? {data:diaDe(b.inicio), ini:horaDe(b.inicio), fim:horaDe(b.fim)} : null,
+      refs:(anxItem.get(i.id) || []).map(x => ({nome:x.nome, tipo:DE_ANEXO[x.tipo] || x.tipo, url:x.url || undefined, tam:x.tamanho_bytes || undefined})),
+      cf:Object.fromEntries((cmp.get(i.id) || []).map(x => [x.campo_id, x.valor])),
+      criado:diaDe(i.criado_em), iniciado:diaDe(i.iniciado_em), feito:diaDe(i.concluido_em), sprint:i.sprint_id || undefined, marco:i.marco_id || undefined,
+      arquivado:i.arquivado_em ? true : undefined}; });
+
+  T.ficha_campos.forEach(f => { const k = chave(f.no_id); if (!k) return; const s = d.sheets[k] || (d.sheets[k] = {campos:{}, custom:[], arquivos:[]});
+    if (f.personalizado) s.custom.push({nome:f.campo, tipo:'Texto', valor:f.valor || ''}); else s.campos[f.secao + '|' + f.campo] = f.valor || ''; });
+  T.anexos.filter(x => x.no_id && !x.item_id).forEach(x => { const k = chave(x.no_id); if (!k) return; const s = d.sheets[k] || (d.sheets[k] = {campos:{}, custom:[], arquivos:[]}); s.arquivos.push({nome:x.nome, tipo:DE_ANEXO[x.tipo] || x.tipo, url:x.url || undefined}); });
+
+  const itensEt = agrupar(T.etapas_modelo_itens.slice().sort(porOrdem), 'etapa_id');
+  d.template = T.etapas_modelo.slice().sort(porOrdem).map(e => ({id:e.id, nome:e.nome, expl:e.explicacao || '', lente:e.lente || '', entrega:e.entrega || '',
+    itens:(itensEt.get(e.id) || []).map(it => ({id:it.id, texto:it.texto, modo:DE_MODO[it.modo] || 'Aviso', obrig:!!it.obrigatorio, prova:DE_PROVA[it.prova_tipo] || 'Nenhuma', quem:DE_QUEM[it.quem_cumpre] || 'Qualquer pessoa do time', terceiros:!!it.so_terceiros}))}));
+  const provas = new Map(T.provas.map(p => [p.no_id + '|' + p.item_modelo_id, p]));
+  T.etapas_nos.forEach(e => { const k = chave(e.no_id); if (!k) return; const s = d.stages[k] || (d.stages[k] = {});
+    if (e.situacao === 'dispensado') s[e.item_modelo_id] = {dispensa:e.motivo_dispensa || 'Dispensado', quem:e.cumprido_por, quando:diaDe(e.cumprido_em)};
+    else if (e.situacao === 'cumprido'){ const p = provas.get(e.no_id + '|' + e.item_modelo_id); s[e.item_modelo_id] = {feito:true, quem:e.cumprido_por, quando:diaDe(e.cumprido_em), prova: p ? {tipo:DE_PROVA[p.tipo] || p.tipo, valor:p.valor} : undefined}; } });
+
+  const fontes = agrupar(T.agentes_fontes, 'agente_id'), ferr = agrupar(T.agentes_ferramentas, 'agente_id');
+  d.agents = T.agentes.map(a => ({id:a.id, nome:a.nome, papel:a.papel || '', instr:a.instrucoes || '', fontes:(fontes.get(a.id) || []).map(f => f.nome), ferramentas:(ferr.get(a.id) || []).map(f => [f.ferramenta, DE_PERM[f.permissao] || f.permissao]), passa:a.regras_passagem || ''}));
+
+  const msgs = agrupar(T.pedidos_mensagens.slice().sort((a, b) => String(a.criado_em).localeCompare(String(b.criado_em))), 'pedido_id'), anxPed = agrupar(T.anexos.filter(x => x.pedido_id), 'pedido_id');
+  d.requests = T.pedidos.slice().sort((a, b) => String(b.criado_em).localeCompare(String(a.criado_em))).map(r => ({id:r.id, cliente:acima(r.no_id, 'cliente'), app:r.no_id, tipo:DE_PT[r.tipo] || r.tipo,
+    grav:DE_GR[r.gravidade] || r.gravidade, status:DE_PS[r.status] || r.status, titulo:r.titulo, quando:diaDe(r.criado_em), autor:r.autor_id || null,
+    anexos:(anxPed.get(r.id) || []).map(x => ({nome:x.nome, tipo:DE_ANEXO[x.tipo] || x.tipo})), contexto:(r.contexto && r.contexto.resumo) || '', issue:r.item_id || null,
+    msgs:(msgs.get(r.id) || []).map(m => ({de:m.autor_tipo === 'equipe' ? 'voce' : m.autor_tipo, txt:m.texto}))}));
+
+  d.notifs = T.notificacoes.map(n => ({id:n.id, pessoa:n.pessoa_id, titulo:n.titulo, txt:n.texto || '', item:n.item_id || '', quando:new Date(n.criado_em).getTime(), lida:!!n.lida_em}));
+
+  const primeiro = papel => (d.people.find(p => p.acesso === (papel === 'master' ? 'owner' : papel)) || {}).id || '';
+  EU_IDS = {master:primeiro('master'), dev:primeiro('dev'), stakeholder:primeiro('stakeholder')};
+  if (eu && eu.pessoa_id && ['master','dev','stakeholder'].includes(eu.papel)) EU_IDS[eu.papel] = eu.pessoa_id;
+  return d;
+}
+
+async function carregarDoBanco(eu){
+  const sb = window.itiaBanco; if (!sb) return;
+  const T = {}; BANCO.erros = [];
+  await Promise.all(TABELAS_BANCO.map(async t => { try { T[t] = await lerTabela(sb, t); } catch(e){ T[t] = []; BANCO.erros.push(e.message); } }));
+  D = montarDados(T, eu);
+  const ok = id => D.projects.some(p => 'project:' + p.id === id) || D.products.some(p => 'product:' + p.id === id) || D.apps.some(p => 'app:' + p.id === id) || D.ws.some(p => 'ws:' + p.id === id) || D.clients.some(p => 'client:' + p.id === id);
+  if (!ok(UI.sel)) UI.sel = D.projects[0] ? 'project:' + D.projects[0].id : (D.clients[0] ? 'client:' + D.clients[0].id : 'all');
+  if (UI.ovSel && UI.ovSel !== 'all' && !ok(UI.ovSel)) UI.ovSel = 'all';
+  // a árvore começa aberta até os produtos, como no exemplo (as chaves antigas do exemplo não servem mais)
+  const abertos = Object.keys(UI.abertos || {}).filter(k => UI.abertos[k] && ok(k));
+  if (!abertos.length){ UI.abertos = {}; D.clients.forEach(x => { UI.abertos['client:' + x.id] = true; }); D.projects.forEach(x => { UI.abertos['project:' + x.id] = true; }); D.products.forEach(x => { UI.abertos['product:' + x.id] = true; }); }
+  BANCO.carregado = true; BANCO.quando = new Date(); DOM.cache = null; DOM.aberto = null;
+  const chip = $('.chip-exemplo'); if (chip){ chip.textContent = 'Dados do banco'; chip.classList.add('do-banco'); chip.title = 'Tudo nesta tela vem do banco (Supabase), lido em ' + BANCO.quando.toLocaleString('pt-BR'); }
+  if (BANCO.erros.length){ console.warn('Tabelas que não deu para ler:', BANCO.erros); toast('Algumas partes do banco não puderam ser lidas (' + BANCO.erros.length + '). Veja em Settings.'); }
+}
+window.itiaCarregarBanco = carregarDoBanco;
+window.itiaBancoInfo = () => BANCO;
+function painelBanco(){
+  const b = BANCO, cont = [['Pessoas', D.people.length], ['Clientes', D.clients.length], ['Projetos', D.projects.length], ['Produtos', D.products.length], ['Aplicações', D.apps.length],
+    ['Frentes', D.ws.length], ['Itens', D.issues.length], ['Pedidos', D.requests.length], ['Serviços', D.catalog.length], ['Custos técnicos', D.custos.length],
+    ['Custos da operação', D.opCustos.length], ['Receitas', D.receitas.length], ['Agentes', D.agents.length]];
+  return '<h2 class="sub">Dados do banco</h2>' +
+    '<p class="sec" style="font-size:13px;margin:0 0 10px">Tudo o que aparece no sistema vem do banco (Supabase)' + (b.quando ? ', lido em ' + esc(b.quando.toLocaleString('pt-BR')) : '') + '. Nada de exemplo e nada guardado no navegador.</p>' +
+    '<div class="tabela-rolo"><table class="tabela"><thead><tr><th>O quê</th><th>No banco</th></tr></thead><tbody>' + cont.map(([n, q]) => '<tr><td>' + n + '</td><td>' + q + '</td></tr>').join('') + '</tbody></table></div>' +
+    (b.erros.length ? '<p class="sec" style="font-size:13px;color:var(--vermelho,#FF0000)">Não deu para ler: ' + b.erros.map(esc).join(' · ') + '</p>' : '') +
+    '<div class="acoes"><button class="btn sec" type="button" data-acao="reler-banco">Ler o banco de novo</button><span class="sec" style="font-size:13px">Por enquanto, as mudanças feitas nas telas (fora da aba Domínios) ainda não são gravadas no banco e somem ao recarregar.</span></div>';
+}
+
 abrirModulo(UI.modulo);
 })();
 
@@ -4778,8 +4977,9 @@ async function entrar(sessao){
   if (error){ mostrar('login'); aviso(raiz.querySelector('[data-etapa="login"]'), 'erro', traduz(error)); return; }
   const p = Array.isArray(data) ? data[0] : data;
   if (!p){ raiz.querySelector('[data-email]').textContent = sessao.user.email || ''; mostrar('sem-acesso'); return; }
+  // primeiro lê o banco (a tela de "carregando" continua aparecendo), depois mostra o sistema
+  if (window.itiaEntrouComo) await window.itiaEntrouComo(p);
   document.body.classList.add('logado');
-  if (window.itiaEntrouComo) window.itiaEntrouComo(p);
 }
 function mostrarTrocar(){
   const f = raiz.querySelector('[data-etapa="trocar"]');

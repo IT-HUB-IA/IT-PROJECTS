@@ -47,8 +47,9 @@ async function entrar(sessao){
   if (error){ mostrar('login'); aviso(raiz.querySelector('[data-etapa="login"]'), 'erro', traduz(error)); return; }
   const p = Array.isArray(data) ? data[0] : data;
   if (!p){ raiz.querySelector('[data-email]').textContent = sessao.user.email || ''; mostrar('sem-acesso'); return; }
+  // primeiro lê o banco (a tela de "carregando" continua aparecendo), depois mostra o sistema
+  if (window.itiaEntrouComo) await window.itiaEntrouComo(p);
   document.body.classList.add('logado');
-  if (window.itiaEntrouComo) window.itiaEntrouComo(p);
 }
 function mostrarTrocar(){
   const f = raiz.querySelector('[data-etapa="trocar"]');

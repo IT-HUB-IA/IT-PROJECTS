@@ -326,7 +326,7 @@ function gerarEventos(D){
 /* ================= armazenamento ================= */
 const CHAVE_DADOS = 'itia-sistema-dados-v1';
 let D;
-try { const raw = localStorage.getItem(CHAVE_DADOS); D = raw ? JSON.parse(raw) : null; } catch(e){ D = null; }
+try { const raw = document.body.classList.contains('com-login') ? null : localStorage.getItem(CHAVE_DADOS); D = raw ? JSON.parse(raw) : null; } catch(e){ D = null; }
 if (!D || D.v !== 2) D = semente();
 if (!D.catalog || !D.regras) sementeComercial(D);
 if (!D.eventos || !D.eventos.length) gerarEventos(D);
@@ -340,6 +340,13 @@ try { Object.assign(UI, JSON.parse(localStorage.getItem('itia-sistema-ui') || '{
 function salvarUI(){ try { localStorage.setItem('itia-sistema-ui', JSON.stringify(UI)); } catch(e){} }
 const podeEditar = () => UI.verComo !== 'stakeholder';
 const souMaster = () => UI.verComo === 'master';
+/* quem é "eu" em cada papel: no exemplo são pessoas fixas; com login, vêm do banco (definido em recursos.js) */
+const PAPEL_EU = {master:'pe_w', dev:'pe_a', stakeholder:'pe_s'};
+let EU_IDS = null;
+const idEu = papel => EU_IDS ? (EU_IDS[papel] || '') : PAPEL_EU[papel];
+const pjStake = () => { const p = pessoa(idEu('stakeholder')); return p && p.escopo ? (cadeia(p.escopo).project || {}).id : (D.projects[0] || {}).id; };
+const cliStake = () => { const p = pessoa(idEu('stakeholder')); return p && p.escopo ? (cadeia(p.escopo).client || {}).id : (D.clients[0] || {}).id; };
+const cliPadrao = () => (D.clients[0] || {}).id || '';
 
 /* ================= consultas ================= */
 const byId = (lista, id) => D[lista].find(x => x.id === id);
@@ -495,7 +502,7 @@ function navNiveis(chave, opts){
 /* ---- registro de mudanças (alimenta "Mudanças recentes" e a linha do tempo) ---- */
 function registrar(tipo, i, txt){
   D.eventos = D.eventos || [];
-  D.eventos.unshift({tipo, item: i ? i.id : null, ws: i ? i.ws : null, txt: txt || (i ? i.titulo : ''), quando: Date.now(), quem: UI.verComo === 'stakeholder' ? 'pe_s' : UI.verComo === 'dev' ? 'pe_a' : 'pe_w'});
+  D.eventos.unshift({tipo, item: i ? i.id : null, ws: i ? i.ws : null, txt: txt || (i ? i.titulo : ''), quando: Date.now(), quem: idEu(UI.verComo)});
   if (D.eventos.length > 600) D.eventos.length = 600;
 }
 function eventosEm(chave, lista){
@@ -609,7 +616,7 @@ function painelHTML(chave, opts){
 function rOverview(){
   const el = $('#m-overview');
   if (UI.verComo === 'stakeholder'){
-    const p = pessoa('pe_s');
+    const p = pessoa(idEu('stakeholder')) || {escopo:'all'};
     el.innerHTML = '<div class="topo-tela"><div><h1>Painel do projeto BL</h1><p class="lead">O que o stakeholder' + I('Stakeholder (cliente que acompanha o projeto, sem executar)') + ' vê dentro do sistema dele: só o andamento do projeto dele, sem as partes internas.</p></div><div class="acoes"><button class="btn" type="button" data-acao="novo-pedido">Enviar comentário ou pedido</button></div></div>' + painelHTML(p.escopo, {soCliente:true, tituloFilhos:'Produtos'});
     return;
   }
@@ -659,7 +666,7 @@ function rOperacoes(){
   const [tipo, id] = UI.sel.split(':');
   const m = {client:'clients', project:'projects', product:'products', app:'apps', ws:'ws'}[tipo];
   let obj = m && byId(m, id);
-  if (!obj){ UI.sel = 'project:pj_bl'; obj = byId('projects','pj_bl'); }
+  if (!obj && D.projects[0]){ UI.sel = 'project:' + D.projects[0].id; obj = D.projects[0]; }
   const tipoNomes = {client:['Client','cliente'], project:['Project','projeto'], product:['Product','produto'], app:['Application','aplicação'], ws:['Workstream','frente de trabalho']};
   const viewsDisp = VIEWS.filter(v => !(v[0] === 'custos' && (tipo === 'ws' || UI.verComo !== 'master')) && !((v[0] === 'stages') && !['project','app'].includes(tipo)) && !((v[0] === 'sheet') && !['project','app','product'].includes(tipo)));
   if (!viewsDisp.some(v => v[0] === UI.view)) UI.view = 'dashboard';
@@ -688,7 +695,7 @@ function rOperacoes(){
 function listaFiltrada(){
   let l = issuesEm(UI.sel);
   const f = UI.filtros, b = (UI.busca || '').toLowerCase().trim();
-  if (f.meus) l = l.filter(i => i.resp === 'pe_w');
+  if (f.meus) l = l.filter(i => i.resp === idEu(UI.verComo));
   if (f.alta) l = l.filter(i => i.prio === 'highest' || i.prio === 'high');
   if (f.atraso) l = l.filter(atrasado);
   if (f.bloq) l = l.filter(i => i.status === 'blocked');
@@ -1103,7 +1110,7 @@ function rServiceDesk(){
   const el = $('#m-servicedesk');
   const stake = UI.verComo === 'stakeholder';
   let base = D.requests.slice().sort((a, b) => b.quando.localeCompare(a.quando));
-  if (stake) base = base.filter(r => r.cliente === 'cl_bl');
+  if (stake) base = base.filter(r => r.cliente === cliStake());
   const lista = UI.filtroPed === 'todos' ? base : base.filter(r => r.status === UI.filtroPed);
   const sel = lista.find(r => r.id === UI.pedSel) || lista[0];
   const contar = s => base.filter(r => r.status === s).length;
@@ -1123,12 +1130,12 @@ function rServiceDesk(){
           '<div class="sd-prop largo"><span>Context capture' + I('Context capture (captura automática de contexto: tela, versão, aparelho e erros, enviados junto com o pedido)') + '</span><code>' + esc(sel.contexto) + '</code></div>' +
           '</div>' +
         '<section class="g-sec"><h4>References' + I('References (referências: prints, arquivos, áudios, vídeos e links enviados junto com o pedido)') + (sel.anexos.length ? '<span class="g-cont">' + sel.anexos.length + '</span>' : '') + '</h4>' + refsHTML(sel.anexos, 'req:' + sel.id, true) + '</section>' +
-        '<div class="sd-conversa">' + sel.msgs.map(m => { const quem = m.de === 'ia' ? 'Agente de atendimento' : m.de === 'voce' ? 'William' : (cl ? cl.nome : 'Cliente'); const av = m.de === 'ia' ? '<span class="avatar av-ia">IA</span>' : m.de === 'voce' ? avatar('pe_w') : avatarCliente(cl);
+        '<div class="sd-conversa">' + sel.msgs.map(m => { const quem = m.de === 'ia' ? 'Agente de atendimento' : m.de === 'voce' ? ((pessoa(idEu('master')) || {nome:'Equipe'}).nome) : (cl ? cl.nome : 'Cliente'); const av = m.de === 'ia' ? '<span class="avatar av-ia">IA</span>' : m.de === 'voce' ? avatar(idEu('master')) : avatarCliente(cl);
           return '<div class="bolha b-' + m.de + '">' + av + '<div class="bolha-c"><div class="bolha-quem">' + esc(quem) + (m.de === 'ia' ? '<span class="simulado">exemplo</span>' : '') + '</div><div class="bolha-txt">' + esc(m.txt) + '</div></div></div>'; }).join('') + '</div>' +
         '<form class="sd-resp" data-form="resp-ped"><input class="campo" name="t" placeholder="' + (stake ? 'Responder' : 'Responder ao cliente') + '"><button class="btn" type="submit">Enviar</button></form></div>'; })() : '<div class="vazio-linha">Selecione um pedido.</div>') + '</div>';
 }
 function formPedido(){
-  const apps = UI.verComo === 'stakeholder' ? D.apps.filter(a => a.project === 'pj_bl') : D.apps;
+  const apps = UI.verComo === 'stakeholder' ? D.apps.filter(a => a.project === pjStake()) : D.apps;
   return '<div class="bloco-g"><h4>O que você quer enviar</h4><div class="tiles">' + TIPOS_PED.map(([t, expl, k], ix) => '<label class="tile"><input type="radio" name="fp-tipo" value="' + t + '"' + (ix === 0 ? ' checked' : '') + '><span class="tile-c"><span class="sd-ico tp-' + k + '">' + ICO_PED[k] + '</span><b>' + esc(expl[0].toUpperCase() + expl.slice(1)) + '</b><small>' + t + '</small></span></label>').join('') + '</div></div>' +
     '<div class="grade-form"><label class="lb">Aplicação<select class="sel" id="fp-app">' + apps.map(a => '<option value="' + a.id + '">' + esc(a.nome) + '</option>').join('') + '</select></label>' +
     '<label class="lb largo">Assunto<input class="campo" id="fp-tit" placeholder="Em uma frase, o que aconteceu ou o que você precisa"></label>' +
@@ -1149,7 +1156,7 @@ function rTime(){
       const its = D.issues.filter(i => !i.arquivado && i.resp === p.id && i.status !== 'done');
       const pap = PAPEL[p.acesso] || PAPEL.dev;
       return '<article class="pessoa"><div class="pessoa-topo"><span class="avatar grande">' + esc(ini(p.nome)) + '</span><div class="pessoa-nome"><h3>' + esc(p.nome) + '</h3><span class="pill pp-' + pap[1] + '">' + esc(p.funcao || pap[0]) + '</span></div>' +
-        '<div class="pessoa-acoes so-master"><button class="ico-btn" type="button" data-editar-pessoa="' + p.id + '" aria-label="Editar ' + esc(p.nome) + '" title="Editar">' + SV('<path d="M4 20h4L20 8l-4-4L4 16z"/>') + '</button>' + (p.id !== 'pe_w' ? '<button class="ico-btn perigo" type="button" data-excluir-pessoa="' + p.id + '" aria-label="Excluir ' + esc(p.nome) + '" title="Excluir">' + SV('<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>') + '</button>' : '') + '</div></div>' +
+        '<div class="pessoa-acoes so-master"><button class="ico-btn" type="button" data-editar-pessoa="' + p.id + '" aria-label="Editar ' + esc(p.nome) + '" title="Editar">' + SV('<path d="M4 20h4L20 8l-4-4L4 16z"/>') + '</button>' + (p.id !== idEu('master') ? '<button class="ico-btn perigo" type="button" data-excluir-pessoa="' + p.id + '" aria-label="Excluir ' + esc(p.nome) + '" title="Excluir">' + SV('<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>') + '</button>' : '') + '</div></div>' +
         (p.skills.length ? '<div class="tags">' + p.skills.map(s => '<span class="tag">' + esc(s) + '</span>').join('') + '</div>' : '<span class="sec" style="font-size:13px">Sem habilidades cadastradas</span>') +
         (p.cap ? '<div class="carga-p"><div class="carga-p-l"><span>Carga desta semana</span><b class="c-' + nivel + '">' + h.toFixed(0) + 'h de ' + p.cap + 'h</b></div><div class="progresso grosso"><i class="c-' + nivel + '" style="width:' + pct + '%"></i></div></div>' : '<div class="carga-p"><span class="sec" style="font-size:13px">Acompanha, não executa tarefas</span></div>') +
         '<div class="pessoa-st">' + ['todo','doing','review','blocked'].map(s => '<span title="' + esc(stNome(s)) + '">' + ICO_ST[s].replace('<svg', '<svg class="st-' + s + '"') + its.filter(i => i.status === s).length + '</span>').join('') + '<span class="sec">' + its.length + ' em aberto</span></div>' +
@@ -1201,7 +1208,7 @@ function rConfig(){
       '<tr><th scope="row">Dev</th><td>Os projetos em que participa, com canvas e ficha técnica</td><td>Cria e edita itens, cumpre etapas com prova, registra tempo</td></tr>' +
       '<tr><th scope="row">Stakeholder</th><td>Só o painel do próprio projeto e os itens marcados como visíveis ao cliente</td><td>Comenta e envia pedidos, com prints, arquivos e áudios</td></tr>' +
     '</tbody></table></div>' +
-    '<h2 class="sub">Dados deste protótipo</h2><div class="acoes"><button class="btn sec" type="button" data-acao="restaurar">Restaurar os dados de exemplo</button><span class="sec" style="font-size:13px">As mudanças ficam guardadas só neste navegador até o banco do projeto ser ligado.</span></div>';
+    (COM_BANCO ? painelBanco() : '<h2 class="sub">Dados deste protótipo</h2><div class="acoes"><button class="btn sec" type="button" data-acao="restaurar">Restaurar os dados de exemplo</button><span class="sec" style="font-size:13px">As mudanças ficam guardadas só neste navegador até o banco do projeto ser ligado.</span></div>');
 }
 
 /* ================= motor de preços e custos ================= */
@@ -1529,7 +1536,7 @@ function vCustosEscopo(chave){
 const fmtData = s => { const d = parse(s); return d ? String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth() + 1).padStart(2,'0') + '/' + d.getFullYear() : ''; };
 function formReceita(r, preset){
   const c = cadeia(UI.sel);
-  r = r || Object.assign({desc:'', cliente: c.client ? c.client.id : 'cl_bl', project: c.project ? c.project.id : '', app: c.app ? c.app.id : '', servico:'', modelo:'fixo', valor:0, rec:'Único', parcelas:3, inicio:iso(HOJE), fim:''}, preset || {});
+  r = r || Object.assign({desc:'', cliente: c.client ? c.client.id : cliPadrao(), project: c.project ? c.project.id : '', app: c.app ? c.app.id : '', servico:'', modelo:'fixo', valor:0, rec:'Único', parcelas:3, inicio:iso(HOJE), fim:''}, preset || {});
   return '<div class="grade-form"><label class="lb largo">Descrição<input class="campo" id="fr-desc" value="' + esc(r.desc) + '" placeholder="Ex.: Implantação do Java Financeiro"></label>' +
     '<label class="lb">Cliente<select class="sel" id="fr-cli">' + D.clients.map(x => '<option value="' + x.id + '"' + (r.cliente === x.id ? ' selected' : '') + '>' + esc(x.nome) + '</option>').join('') + '</select></label>' +
     '<label class="lb">Projeto<select class="sel" id="fr-proj"><option value="">Nenhum</option>' + D.projects.map(x => '<option value="' + x.id + '"' + (r.project === x.id ? ' selected' : '') + '>' + esc(x.nome) + '</option>').join('') + '</select></label>' +
@@ -1549,7 +1556,7 @@ function salvarReceita(dlg, r){
   if (nova) D.receitas.push(r); salvar(); render(); toast(nova ? 'Receita registrada. Já cobrado até hoje: ' + brl(cobradoAteHoje(r)) : 'Receita salva');
 }
 function formCusto(c, preset){
-  c = c || Object.assign({cliente: UI.ctCliente || 'cl_bl', app:'', fornecedor:'', cat:'Hospedagem', desc:'', rec:'Mensal', moeda:'BRL', valor:0, uso:null, repasse:true, markup:15, inicio:iso(HOJE), fim:''}, preset || {});
+  c = c || Object.assign({cliente: UI.ctCliente || cliPadrao(), app:'', fornecedor:'', cat:'Hospedagem', desc:'', rec:'Mensal', moeda:'BRL', valor:0, uso:null, repasse:true, markup:15, inicio:iso(HOJE), fim:''}, preset || {});
   const u = c.uso || {unidade:'', hist:[0], limite:0, plano:'', prox:{nome:'', valor:0, obs:''}};
   return '<div class="grade-form"><label class="lb">Cliente<select class="sel" id="fc2-cli">' + D.clients.map(x => '<option value="' + x.id + '"' + (c.cliente === x.id ? ' selected' : '') + '>' + esc(x.nome) + '</option>').join('') + '</select></label><label class="lb">Aplicação<select class="sel" id="fc2-app"><option value="">Sem aplicação</option>' + D.apps.map(a => '<option value="' + a.id + '"' + (c.app === a.id ? ' selected' : '') + '>' + esc(a.nome) + '</option>').join('') + '</select></label>' +
     '<label class="lb">Fornecedor<input class="campo" id="fc2-for" value="' + esc(c.fornecedor) + '" placeholder="Ex.: Supabase"></label><label class="lb">Categoria<input class="campo" id="fc2-cat" value="' + esc(c.cat) + '" list="cats-custo"><datalist id="cats-custo">' + ['Banco de dados','Armazenamento','Hospedagem','API de IA','Mensageria','Integração','Domínio','Licença'].map(x => '<option value="' + x + '">').join('') + '</datalist></label>' +
@@ -1581,7 +1588,7 @@ document.addEventListener('click', e => {
   if ((x = q('[data-abrir-item]'))) { abrirItem(x.dataset.abrirItem); return; }
   if ((x = q('.cartao,[data-item].ev'))) { if (!q('button')) { abrirItem(x.dataset.item); return; } }
   if ((x = q('[data-tab-alt]'))) { UI.tabAbertos = UI.tabAbertos || {}; const k = x.dataset.tabAlt; UI.tabAbertos[k] = !UI.tabAbertos[k]; salvarUI(); render(); return; }
-  if ((x = q('[data-tab-todos]'))) { UI.tabAbertos = {}; if (x.dataset.tabTodos === '1'){ const abrir = k => { const s = filhosDe(k); if (s.length){ UI.tabAbertos[k] = true; s.forEach(abrir); } }; const base = UI.modulo === 'overview' ? (UI.verComo === 'stakeholder' ? pessoa('pe_s').escopo : (UI.ovSel || 'all')) : UI.sel; filhosDe(base).forEach(abrir); } salvarUI(); render(); return; }
+  if ((x = q('[data-tab-todos]'))) { UI.tabAbertos = {}; if (x.dataset.tabTodos === '1'){ const abrir = k => { const s = filhosDe(k); if (s.length){ UI.tabAbertos[k] = true; s.forEach(abrir); } }; const base = UI.modulo === 'overview' ? (UI.verComo === 'stakeholder' ? (pessoa(idEu('stakeholder')) || {escopo:'all'}).escopo : (UI.ovSel || 'all')) : UI.sel; filhosDe(base).forEach(abrir); } salvarUI(); render(); return; }
   if ((x = q('[data-ov]'))) { UI.ovSel = x.dataset.ov; salvarUI(); rOverview(); return; }
   if ((x = q('#m-overview [data-ir]'))) { UI.ovSel = x.dataset.ir; salvarUI(); rOverview(); return; }
   if ((x = q('#m-operacoes [data-ir]'))) { UI.sel = x.dataset.ir; UI.view = 'dashboard'; abrirArvore(UI.sel); salvarUI(); rOperacoes(); return; }
@@ -1646,7 +1653,7 @@ function acao(a, x){
   else if (a === 'ct-voltar'){ UI.ctCliente = null; salvarUI(); rCustos(); }
   else if (a === 'novo-custo') modal('Novo custo', formCusto(), [{txt:'Cancelar', cls:'sec'},{txt:'Registrar', acao:d => salvarCusto(d, null)}]);
   else if (a === 'novo-op') editarOp(null);
-  else if (a === 'novo-custo-escopo'){ const c = cadeia(UI.sel); modal('Novo custo em ' + esc(nomeDe(UI.sel)), formCusto(null, {cliente: c.client ? (c.product && c.product.client ? c.product.client : c.client.id) : 'cl_bl', app: c.app ? c.app.id : ''}), [{txt:'Cancelar', cls:'sec'},{txt:'Registrar', acao:d => salvarCusto(d, null)}]); }
+  else if (a === 'novo-custo-escopo'){ const c = cadeia(UI.sel); modal('Novo custo em ' + esc(nomeDe(UI.sel)), formCusto(null, {cliente: c.client ? (c.product && c.product.client ? c.product.client : c.client.id) : cliPadrao(), app: c.app ? c.app.id : ''}), [{txt:'Cancelar', cls:'sec'},{txt:'Registrar', acao:d => salvarCusto(d, null)}]); }
   else if (a === 'nova-receita') modal('Nova receita', formReceita(), [{txt:'Cancelar', cls:'sec'},{txt:'Registrar', acao:d => salvarReceita(d, null)}]);
   else if (a === 'por-foco'){ const ws = x.dataset.ws; if (D.focus) toast('Foco trocado. A frente anterior foi pausada e o tempo dela registrado.'); else toast('Frente em foco'); D.focus = {ws, desde:Date.now(), hist:(D.focus && D.focus.hist) || []}; salvar(); rOperacoes(); }
   else if (a === 'sair-foco'){ D.focus = null; salvar(); render(); toast('Foco pausado'); }
@@ -1662,9 +1669,10 @@ function acao(a, x){
   else if (a === 'nova-pessoa') modal('Nova pessoa', formPessoa(), [{txt:'Cancelar', cls:'sec'},{txt:'Criar', acao:d => salvarPessoa(d, null)}]);
   else if (a === 'novo-agente') modal('Novo agente', '<div class="grade-form"><label class="lb largo">Nome<input class="campo" id="na-n" placeholder="Ex.: Agente de cobrança"></label><label class="lb largo">Papel<input class="campo" id="na-p" placeholder="O que ele faz, em uma frase"></label></div>', [{txt:'Cancelar', cls:'sec'},{txt:'Criar agente', acao:d => { const n = $('#na-n', d).value.trim(); if (!n){ toast('Escreva o nome do agente'); return false; } const ag = {id:uid('ag'), nome:n, papel:$('#na-p', d).value.trim() || 'Sem papel definido', instr:'', fontes:[], ferramentas:[['Consultar dados','Livre']], passa:''}; D.agents.push(ag); UI.agSel = ag.id; salvar(); salvarUI(); rAgentes(); toast('Agente criado'); }}]);
   else if (a === 'add-custom'){ const n = $('#cf-nome').value.trim(); if (!n){ toast('Escreva o nome do campo'); return; } D.sheets[UI.sel].custom.push({nome:n, tipo:$('#cf-tipo').value, valor:$('#cf-valor').value}); salvar(); rView(); }
-  else if (a === 'cron'){ const i = byId('issues', itemAberto); const r = i.tempo.find(t => !t.fim); if (r) r.fim = Date.now(); else i.tempo.push({ini:Date.now(), fim:null, quem:'pe_w', origem:'Timer'}); salvar(); abrirItem(i.id); }
+  else if (a === 'cron'){ const i = byId('issues', itemAberto); const r = i.tempo.find(t => !t.fim); if (r) r.fim = Date.now(); else i.tempo.push({ini:Date.now(), fim:null, quem:idEu(UI.verComo), origem:'Timer'}); salvar(); abrirItem(i.id); }
   else if (a === 'arquivar-item'){ const i = byId('issues', itemAberto); i.arquivado = true; registrar('arquivou', i); salvar(); fecharItem(); toast('Item arquivado. Continua guardado no banco.'); }
-  else if (a === 'restaurar') modal('Restaurar os dados de exemplo?', '<p style="margin:0">Tudo o que foi mudado neste navegador volta para o exemplo inicial.</p>', [{txt:'Cancelar', cls:'sec'},{txt:'Restaurar', cls:'acento', acao:() => { D = semente(); salvar(); render(); toast('Dados de exemplo restaurados'); }}]);
+  else if (a === 'reler-banco' && COM_BANCO){ toast('Lendo o banco de novo...'); carregarDoBanco(null).then(() => { render(); toast('Pronto: dados lidos do banco agora'); }); }
+  else if (a === 'restaurar' && !COM_BANCO) modal('Restaurar os dados de exemplo?', '<p style="margin:0">Tudo o que foi mudado neste navegador volta para o exemplo inicial.</p>', [{txt:'Cancelar', cls:'sec'},{txt:'Restaurar', cls:'acento', acao:() => { D = semente(); salvar(); render(); toast('Dados de exemplo restaurados'); }}]);
 }
 function abrirArvore(chave){ caminho(chave).forEach(([k]) => { UI.abertos[k] = true; }); }
 
@@ -1712,7 +1720,7 @@ document.addEventListener('submit', e => {
   const i = itemAberto && byId('issues', itemAberto);
   if (f.dataset.form === 'check' && txt){ i.check.push({t:txt, f:false}); salvar(); abrirItem(i.id); }
   else if (f.dataset.form === 'link'){ if (!f.alvo.value) return; i.links.push({tipo:f.tipo.value, alvo:f.alvo.value}); salvar(); abrirItem(i.id); }
-  else if (f.dataset.form === 'coment' && txt){ const stake = UI.verComo === 'stakeholder'; i.coments.push({quem: stake ? 'pe_s' : 'pe_w', txt, quando:iso(HOJE), cliente:stake}); registrar('comentou', i); salvar(); abrirItem(i.id); }
+  else if (f.dataset.form === 'coment' && txt){ const stake = UI.verComo === 'stakeholder'; i.coments.push({quem: idEu(UI.verComo), txt, quando:iso(HOJE), cliente:stake}); registrar('comentou', i); salvar(); abrirItem(i.id); }
   else if (f.dataset.form === 'resp-ped' && txt){ const r = byId('requests', UI.pedSel) || D.requests[0]; r.msgs.push({de: UI.verComo === 'stakeholder' ? 'cliente' : 'voce', txt}); salvar(); rServiceDesk(); }
   else if (f.dataset.form === 'sv-lista' && txt){ byId('catalog', UI.svSel)[f.dataset.campo].push(txt); salvar(); rCatalog(); }
   else if (f.dataset.form === 'ref-link' && txt){ const l = refsDe(f.dataset.alvo); if (l){ l.push({nome:txt, tipo:'link', url:/^https?:\/\//.test(txt) ? txt : 'https://' + txt}); salvar(); reRenderRefs(f.dataset.alvo); toast('Link adicionado'); } }
@@ -1726,7 +1734,7 @@ document.addEventListener('keydown', e => {
 
 /* ================= criação e ações com modal ================= */
 function primeiroWs(chave){ const l = issuesEm(chave); const [tipo, id] = chave.split(':'); if (tipo === 'app') return (D.ws.find(w => w.app === id) || {}).id; if (tipo === 'product'){ const a = D.apps.find(x => x.product === id); return a && (D.ws.find(w => w.app === a.id) || {}).id; } if (tipo === 'project'){ const a = D.apps.find(x => x.project === id); return a && (D.ws.find(w => w.app === a.id) || {}).id; } return l[0] && l[0].ws; }
-function novoIssue(o){ return Object.assign({id:uid('is'), tipo:'task', titulo:'', desc:'', status:'todo', prio:'medium', resp:null, rep:'pe_w', ini:iso(HOJE), fim:iso(dAdd(HOJE, 7)), alvo:iso(dAdd(HOJE, 7)), est:4, vis:'interno', pai:null, check:[], links:[], coments:[], tempo:[], refs:[], bloco:null, criado:iso(HOJE), feito:null}, o); }
+function novoIssue(o){ return Object.assign({id:uid('is'), tipo:'task', titulo:'', desc:'', status:'todo', prio:'medium', resp:null, rep:idEu(UI.verComo), ini:iso(HOJE), fim:iso(dAdd(HOJE, 7)), alvo:iso(dAdd(HOJE, 7)), est:4, vis:'interno', pai:null, check:[], links:[], coments:[], tempo:[], refs:[], bloco:null, criado:iso(HOJE), feito:null}, o); }
 function novoItem(){
   const [tipo, id] = UI.sel.split(':');
   const wsList = D.ws.filter(w => { const a = byId('apps', w.app); if (tipo === 'ws') return w.id === id; if (tipo === 'app') return w.app === id; if (tipo === 'product') return a.product === id; if (tipo === 'project') return a.project === id; return true; });
@@ -1787,7 +1795,7 @@ function cumprirItem(id){
   modal('Cumprir item', '<p style="margin:0"><b>' + esc(cfg.texto) + '</b></p><p class="sec" style="margin:0;font-size:13px">Prova pedida: ' + esc(cfg.prova) + ' · Modo: ' + esc(cfg.modo) + '</p>' + campoProva,
     [{txt:'Cancelar', cls:'sec'},{txt:'Marcar como cumprido', acao:d => {
       const arq = $('#cp-arq', d), txt = $('#cp-txt', d);
-      const fim = prova => { D.stages[UI.sel][id] = {feito:true, quem:UI.verComo === 'dev' ? 'pe_a' : 'pe_w', quando:iso(HOJE), prova}; salvar(); rView(); toast('Item cumprido e registrado'); };
+      const fim = prova => { D.stages[UI.sel][id] = {feito:true, quem:idEu(UI.verComo), quando:iso(HOJE), prova}; salvar(); rView(); toast('Item cumprido e registrado'); };
       if (arq){ if (!arq.files[0]){ toast('Anexe a prova pedida'); return false; } lerArquivo(arq.files[0]).then(a => fim({tipo:cfg.prova, nome:a.nome, url:a.url})); return; }
       if (txt){ if (!txt.value.trim()){ toast('Preencha a prova pedida'); return false; } fim({tipo:cfg.prova, valor:txt.value.trim()}); return; }
       fim(null);
@@ -1795,7 +1803,7 @@ function cumprirItem(id){
 }
 function dispensarItem(id){
   const cfg = itemEtapa(id);
-  modal('Waiver', '<p style="margin:0"><b>' + esc(cfg.texto) + '</b></p><label class="lb">Por que não se aplica<textarea class="campo" id="wv-t"></textarea></label>', [{txt:'Cancelar', cls:'sec'},{txt:'Registrar dispensa', acao:d => { const m = $('#wv-t', d).value.trim(); if (!m){ toast('Escreva o motivo'); return false; } D.stages[UI.sel][id] = {dispensa:m, quem:'pe_w', quando:iso(HOJE)}; salvar(); rView(); toast('Dispensa registrada com o motivo'); }}]);
+  modal('Waiver', '<p style="margin:0"><b>' + esc(cfg.texto) + '</b></p><label class="lb">Por que não se aplica<textarea class="campo" id="wv-t"></textarea></label>', [{txt:'Cancelar', cls:'sec'},{txt:'Registrar dispensa', acao:d => { const m = $('#wv-t', d).value.trim(); if (!m){ toast('Escreva o motivo'); return false; } D.stages[UI.sel][id] = {dispensa:m, quem:idEu(UI.verComo), quando:iso(HOJE)}; salvar(); rView(); toast('Dispensa registrada com o motivo'); }}]);
 }
 function novoPedido(){
   modal('Novo pedido', formPedido(), [{txt:'Cancelar', cls:'sec'},{txt:'Enviar', acao:d => {
@@ -1805,7 +1813,7 @@ function novoPedido(){
     Promise.all(files.map(lerArquivo)).then(anexos => {
       const lk = ($('#fp-link', d).value || '').trim(); if (lk) anexos.push({nome:lk, tipo:'link', url:lk});
       const tipo = (d.querySelector('input[name=fp-tipo]:checked') || {value:'Question'}).value;
-      const r = {id:uid('rq'), cliente: prod ? prod.client : 'cl_bl', app:app.id, tipo, grav:'Incômodo', status:'Em triagem', titulo:tit, quando:iso(HOJE), autor: UI.verComo === 'stakeholder' ? 'pe_s' : 'pe_w', anexos, contexto:'Tela: ' + app.nome + ' · Enviado pelo ' + (/Mobi/.test(navigator.userAgent) ? 'celular' : 'computador'), issue:null,
+      const r = {id:uid('rq'), cliente: prod ? prod.client : cliPadrao(), app:app.id, tipo, grav:'Incômodo', status:'Em triagem', titulo:tit, quando:iso(HOJE), autor: idEu(UI.verComo), anexos, contexto:'Tela: ' + app.nome + ' · Enviado pelo ' + (/Mobi/.test(navigator.userAgent) ? 'celular' : 'computador'), issue:null,
         msgs:[{de:'cliente', txt:$('#fp-desc', d).value.trim() || tit},{de:'ia', txt: tipo === 'Question' ? 'Recebi sua dúvida. Vou procurar a resposta no manual de ' + app.nome + ' e já te explico.' : 'Recebi. Para eu entender direito: isso acontece sempre ou só às vezes? Se puder, mande um print da tela.'}]};
       D.requests.push(r); UI.pedSel = r.id; UI.filtroPed = 'todos'; salvar(); salvarUI(); if (UI.modulo !== 'servicedesk') abrirModulo('servicedesk'); else rServiceDesk(); toast('Pedido enviado');
     });

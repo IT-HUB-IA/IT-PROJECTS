@@ -4,7 +4,21 @@
    origem do código, SLA, print anotado e gravação de tela.
    Tudo entra no mesmo escopo do sistema e se liga às funções que já existem.
    ===================================================================== */
-const eu = () => UI.verComo === 'stakeholder' ? 'pe_s' : UI.verComo === 'dev' ? 'pe_a' : 'pe_w';
+const eu = () => idEu(UI.verComo);
+/* ---------- versão com login: a tela mostra SÓ o que está no banco. Nada de exemplo, nada guardado no navegador ---------- */
+const COM_BANCO = document.body.classList.contains('com-login');
+function regrasVazias(){ return {regime:'simples', impostos:{simples:0, presumido:0, real:0}, encargos:{inss:0, rat:0, terceiros:0, fgts:0, ferias:0, terco:0, decimo:0, multaFgts:0}, horasMes:168, faturavel:100, margem:0, risco:0, cambio:0, complexidade:{'Média':1}, urgencia:{Normal:1}, manutencaoAnual:0, reservaOverhead:0}; }
+function dadosVazios(){
+  return {v:2, clients:[], tags:[], tagLinks:[], projects:[], products:[], apps:[], ws:[], people:[], issues:[], sheets:{}, template:[], stages:{}, requests:[], agents:[], focus:null, statusCfg:{}, baseline:{},
+    eventos:[], regras:regrasVazias(), opCustos:[], custos:[], receitas:[], catalog:[], sprints:[], marcos:[], automacoes:[], autoLog:[], notifs:[], vistas:[], statusCustom:[], camposItem:[], quadros:{}, recursosV:1, autoPrazoDia:iso(HOJE)};
+}
+if (COM_BANCO){
+  EU_IDS = {};
+  D = dadosVazios();
+  salvar = function(){};
+  try { localStorage.removeItem(CHAVE_DADOS); } catch(e){}
+}
+
 const GRUPO_NOME = {backlog:'Backlog', todo:'To Do', doing:'In Progress', review:'In Review', blocked:'Blocked', done:'Done'};
 
 function garantirRecursos(d){
@@ -78,7 +92,7 @@ function rodarAutomacoes(i, gatilho){
           const dest = p.pessoa || (p.para === 'relator' ? i.rep : i.resp);
           if (dest) D.notifs.unshift({id:uid('nt'), pessoa:dest, titulo:p.titulo || a.nome, txt:i.titulo, item:i.id, quando:Date.now(), lida:false});
           else { ok = false; det = 'Ninguém para avisar'; }
-        } else if (a.acao === 'comentar') i.coments.push({quem:'pe_w', txt:p.texto || a.nome, quando:iso(HOJE), cliente:!!p.cliente, auto:true});
+        } else if (a.acao === 'comentar') i.coments.push({quem:idEu('master'), txt:p.texto || a.nome, quando:iso(HOJE), cliente:!!p.cliente, auto:true});
         else if (a.acao === 'mudar_prioridade') i.prio = p.prio || 'high';
         else if (a.acao === 'atribuir') i.resp = p.pessoa || null;
         else if (a.acao === 'marcar_visivel') i.vis = 'cliente';
@@ -832,7 +846,9 @@ window.itiaEntrouComo = function(p){
   UI.verComo = p.papel;
   const s = $('#ver-como');
   if (s){ s.value = p.papel; s.hidden = p.papel !== 'master'; const r = s.closest('.menu-rodape'); if (r){ const l = r.querySelector('label[for=ver-como]'); if (l) l.hidden = p.papel !== 'master'; } }
-  aplicarVerComo(); salvarUI(); abrirModulo(UI.modulo);
+  const seguir = () => { document.body.classList.add('logado'); aplicarVerComo(); salvarUI(); abrirModulo(UI.modulo); };
+  if (COM_BANCO && window.itiaBanco) return carregarDoBanco(p).then(seguir, e => { toast('Não foi possível ler o banco: ' + e.message); seguir(); });
+  seguir();
 };
 
 /* ---------- Costs › Domínios. Com login (versão publicada) lê e grava no banco; sem login, usa os dados de exemplo ---------- */
@@ -855,6 +871,7 @@ function domSemente(){
 }
 async function domCarregar(){
   const sb = domBanco();
+  if (!sb && COM_BANCO){ DOM.cache = {dominios:[], donos:[], custos:[]}; return; }
   if (!sb){
     domSemente();
     DOM.cache = {dominios:D.dominios,
@@ -1057,3 +1074,177 @@ function linhasArvore(){
 }
 let linhasPedido = 0;
 new MutationObserver(() => { cancelAnimationFrame(linhasPedido); linhasPedido = requestAnimationFrame(linhasArvore); }).observe(document.querySelector('.principal') || document.body, {childList:true, subtree:true});
+
+/* ---------- versão com login: monta a tela a partir das tabelas do banco ---------- */
+const BANCO = {carregado:false, erros:[], quando:null};
+const TIPO_NO = {cliente:'client', projeto:'project', produto:'product', aplicacao:'app', frente:'ws'};
+const ST_NO = {ativo:'active', pausado:'on_hold', concluido:'done', arquivado:'archived'};
+const inverter = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [v, k]));
+const DE_MOD = inverter({fixo:'fixo', hora:'hora', marco:'marco', setup:'implantacao', mensal:'mensalidade', banco:'banco_horas', usuario:'usuario', faixa:'faixas', uso:'uso', valor:'valor', sucesso:'sucesso', manutencao:'manutencao', repasse:'repasse'});
+const DE_VINC = {clt:'CLT', pj:'PJ', estagio:'Estágio', socio:'Sócio'};
+const DE_REC = {mensal:'Mensal', anual:'Anual', unico:'Único', depreciacao:'Depreciação', uso:'Por uso'};
+const DE_FORMA = {mensal:'Mensal', unica:'Único', parcelada:'Parcelado'};
+const DE_MODO = {aviso:'Aviso', trava:'Trava', desligado:'Desligado'};
+const DE_PROVA = {nenhuma:'Nenhuma', captura:'Captura de tela', arquivo:'Arquivo', link:'Link', texto:'Texto', aprovacao:'Aprovação de alguém'};
+const DE_QUEM = {responsavel_etapa:'Responsável da etapa', qualquer_um:'Qualquer pessoa do time'};
+const DE_PERM = {livre:'Livre', automatica:'Automática', confirmacao:'Com confirmação', bloqueada:'Bloqueada'};
+const DE_PT = {bug:'Bug report', correcao:'Fix request', mudanca:'Change request', funcionalidade:'Feature request', duvida:'Question'};
+const DE_GR = {parado:'Sistema parado', quebrada:'Função quebrada', incomodo:'Incômodo', cosmetico:'Cosmético'};
+const DE_PS = {novo:'Em triagem', ia_conversando:'IA conversando', aguardando_voce:'Aguardando você', virou_item:'Virou item', resolvido:'Resolvido', recusado:'Recusado'};
+const DE_ANEXO = {audio:'áudio', video:'vídeo'};
+const TABELAS_BANCO = ['pessoas','nos','clientes','projetos','aplicacoes','frentes','participacoes','etiquetas','etiquetas_nos','status_fluxo','requisitos','servicos','servicos_cobranca',
+  'servicos_requisitos','regras_calculo','pessoas_custos','custos_operacao','custos_tecnicos','custos_uso','receitas','slas','sprints','marcos','automacoes','campos_personalizados',
+  'itens','itens_campos','itens_checklist','itens_ligacoes','comentarios','blocos_agenda','tempo_registros','anexos','ficha_campos','etapas_modelo','etapas_modelo_itens',
+  'etapas_nos','provas','agentes','agentes_fontes','agentes_ferramentas','pedidos','pedidos_mensagens','notificacoes'];
+
+async function lerTabela(sb, t){
+  const todas = []; const passo = 1000;
+  for (let de = 0; ; de += passo){
+    const {data, error} = await sb.from(t).select('*').range(de, de + passo - 1);
+    if (error) throw new Error(t + ': ' + error.message);
+    todas.push(...(data || []));
+    if (!data || data.length < passo) return todas;
+  }
+}
+const diaDe = ts => ts ? iso(new Date(ts)) : null;
+const horaDe = ts => { const d = new Date(ts); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
+const porOrdem = (a, b) => (a.ordem || 0) - (b.ordem || 0);
+function agrupar(lista, campo){ const m = new Map(); lista.forEach(x => { const k = x[campo]; if (!m.has(k)) m.set(k, []); m.get(k).push(x); }); return m; }
+
+function montarDados(T, eu){
+  const d = dadosVazios();
+  const nos = new Map(T.nos.map(n => [n.id, n]));
+  const chave = id => { const n = nos.get(id); return n ? TIPO_NO[n.tipo] + ':' + n.id : null; };
+  const acima = (id, tipo) => { let n = nos.get(id); while (n && n.tipo !== tipo) n = nos.get(n.pai_id); return n ? n.id : ''; };
+  const um = (lista, campo) => new Map(lista.map(x => [x[campo], x]));
+  const cli = um(T.clientes, 'no_id'), prj = um(T.projetos, 'no_id'), apl = um(T.aplicacoes, 'no_id'), fre = um(T.frentes, 'no_id');
+  const slas = agrupar(T.slas, 'no_id');
+  const base = n => ({id:n.id, nome:n.nome, status:ST_NO[n.status] || 'active', motivo:n.motivo_pausa || ''});
+  const ord = T.nos.slice().sort((a, b) => porOrdem(a, b) || String(a.nome).localeCompare(String(b.nome)));
+  ord.forEach(n => {
+    if (n.tipo === 'cliente'){ const c = cli.get(n.id) || {}; const s = slas.get(n.id);
+      d.clients.push(Object.assign(base(n), {tipo:c.tipo_cliente || 'empresa', holding:c.holding_id || null, doc:c.documento || '', sla: s ? Object.fromEntries(s.map(x => [x.gravidade, [+x.horas_resposta, +x.horas_solucao]])) : undefined})); }
+    else if (n.tipo === 'projeto'){ const p = prj.get(n.id) || {}; d.projects.push(Object.assign(base(n), {client:n.pai_id, origem:p.origem || 'greenfield', inicio:p.inicio, alvo:p.alvo})); }
+    else if (n.tipo === 'produto') d.products.push(Object.assign(base(n), {project:acima(n.id, 'projeto'), client:acima(n.id, 'cliente')}));
+    else if (n.tipo === 'aplicacao'){ const a = apl.get(n.id) || {}; d.apps.push(Object.assign(base(n), {project:acima(n.id, 'projeto'), product:acima(n.id, 'produto'), plataforma:a.plataforma || 'web', servico:a.servico_id || '', origemCodigo:a.origem_codigo || 'proprio'})); }
+    else if (n.tipo === 'frente'){ const f = fre.get(n.id) || {}; d.ws.push(Object.assign(base(n), {app:n.pai_id, wip:f.wip_limite == null ? null : +f.wip_limite})); }
+  });
+
+  const part = agrupar(T.participacoes, 'pessoa_id');
+  const custoP = agrupar(T.pessoas_custos.slice().sort((a, b) => String(b.vigente_desde).localeCompare(String(a.vigente_desde))), 'pessoa_id');
+  T.pessoas.slice().sort((a, b) => (a.papel === 'master' ? 0 : 1) - (b.papel === 'master' ? 0 : 1) || String(a.nome).localeCompare(String(b.nome))).forEach(p => {
+    const c = (custoP.get(p.id) || [])[0];
+    const esc1 = (part.get(p.id) || []).map(x => chave(x.no_id)).filter(Boolean)[0];
+    d.people.push({id:p.id, nome:p.nome, funcao:p.funcao || '', skills:p.habilidades || [], cap:+p.capacidade_h || 0, acesso:p.papel === 'master' ? 'owner' : p.papel,
+      email:p.email || '', ativo:p.ativo, escopo:p.papel === 'stakeholder' ? (esc1 || 'all') : undefined,
+      custo: c ? {vinculo:DE_VINC[c.vinculo] || c.vinculo, salario:+c.salario || 0, prolabore:+c.prolabore || 0, valorPJ:+c.valor_pj || 0, beneficios:+c.beneficios || 0} : undefined});
+  });
+
+  d.tags = T.etiquetas.map(t => ({id:t.id, nome:t.nome, cor:t.cor, cat:t.categoria || '', desc:t.descricao || ''}));
+  d.tagLinks = T.etiquetas_nos.map(l => { const k = chave(l.no_id); return k ? {tag:l.etiqueta_id, tipo:k.split(':')[0], id:l.no_id} : null; }).filter(Boolean);
+  d.statusCustom = T.status_fluxo.filter(s => s.no_id).sort(porOrdem).map(s => ({id:s.id, no:chave(s.no_id), nome:s.nome, cor:s.cor, grupo:s.grupo}));
+  const stPorId = um(T.status_fluxo, 'id');
+  T.requisitos.slice().sort(porOrdem).forEach(q => { d.baseline[q.nome] = !!q.padrao; });
+
+  const reqNome = um(T.requisitos, 'id'), cob = agrupar(T.servicos_cobranca.slice().sort(porOrdem), 'servico_id'), sreq = agrupar(T.servicos_requisitos, 'servico_id');
+  d.catalog = T.servicos.map(s => ({id:s.id, cat:s.categoria, nome:s.nome, desc:s.descricao || '', entrega:s.entregaveis || [], frentes:s.frentes_padrao || [],
+    horas:[+s.horas_min || 0, +s.horas_max || 0], preco:(cob.get(s.id) || []).map(c => Object.assign({m:DE_MOD[c.modelo] || c.modelo}, c.parametros || {})),
+    req:(sreq.get(s.id) || []).map(x => (reqNome.get(x.requisito_id) || {}).nome).filter(Boolean), sla:s.sla || '', check:s.checklist_inicio || [], ativo:s.ativo !== false}));
+
+  const R = T.regras_calculo.slice().sort((a, b) => String(b.vigente_desde).localeCompare(String(a.vigente_desde)))[0];
+  if (R) d.regras = {regime:R.regime, impostos:{simples:+R.aliq_simples, presumido:+R.aliq_presumido, real:+R.aliq_real},
+    encargos:{inss:+R.inss_patronal, rat:+R.rat, terceiros:+R.terceiros, fgts:+R.fgts, ferias:+R.ferias, terco:+R.terco_ferias, decimo:+R.decimo_terceiro, multaFgts:+R.multa_fgts},
+    horasMes:+R.horas_mes, faturavel:+R.faturavel_pct, margem:+R.margem_pct, risco:+R.contingencia_pct, cambio:+R.cambio_usd, complexidade:R.complexidade || {'Média':1},
+    urgencia:R.urgencia || {Normal:1}, manutencaoAnual:+R.manutencao_pct, reservaOverhead:+R.folga_rateio_pct};
+
+  d.opCustos = T.custos_operacao.map(o => ({id:o.id, nome:o.nome, cat:o.categoria, valor:+o.valor, moeda:o.moeda, rec:DE_REC[o.recorrencia] || o.recorrencia, meses:o.meses_depreciacao, inicio:o.inicio, fim:o.fim || ''}));
+  const usos = agrupar(T.custos_uso.slice().sort((a, b) => String(a.mes).localeCompare(String(b.mes))), 'custo_id');
+  d.custos = T.custos_tecnicos.map(c => { const n = nos.get(c.no_id);
+    return {id:c.id, cliente:acima(c.no_id, 'cliente'), app:n && n.tipo === 'aplicacao' ? n.id : '', fornecedor:c.fornecedor, cat:c.categoria, desc:c.descricao || '', rec:DE_REC[c.recorrencia] || c.recorrencia,
+      moeda:c.moeda, valor:+c.valor, repasse:!!c.repasse, markup:+c.taxa_repasse_pct || 0, inicio:c.inicio, fim:c.fim || '',
+      uso: c.unidade ? {unidade:c.unidade, hist:(usos.get(c.id) || []).map(u => +u.quantidade), limite:c.limite == null ? null : +c.limite, plano:c.plano || '',
+        prox: c.proximo_plano ? {nome:c.proximo_plano, valor:+c.proximo_valor || 0, extraUnidade:c.extra_por_unidade == null ? null : +c.extra_por_unidade} : null} : null}; });
+  d.receitas = T.receitas.map(r => { const n = nos.get(r.no_id);
+    return {id:r.id, cliente:acima(r.no_id, 'cliente'), project:acima(r.no_id, 'projeto'), app:n && n.tipo === 'aplicacao' ? n.id : '', servico:r.servico_id || '', desc:r.descricao,
+      modelo:DE_MOD[r.modelo] || r.modelo, valor:+r.valor, rec:DE_FORMA[r.forma] || r.forma, parcelas:r.parcelas, inicio:r.inicio, fim:r.fim || ''}; });
+
+  d.sprints = T.sprints.map(s => ({id:s.id, project:s.projeto_id, nome:s.nome, meta:s.meta || '', ini:s.inicio, fim:s.fim, status:s.status}));
+  d.marcos = T.marcos.map(m => ({id:m.id, no:chave(m.no_id), tipo:m.tipo, nome:m.nome, desc:m.descricao || '', data:m.data, vis:!!m.visivel_cliente, entregue:m.entregue_em ? diaDe(m.entregue_em) : null})).filter(m => m.no);
+  d.automacoes = T.automacoes.map(a => { const c = a.condicao || {}, p = a.parametros || {};
+    return {id:a.id, no:chave(a.no_id), nome:a.nome, gatilho:a.gatilho, cond:{tipo:c.tipo, grupo:c.grupo, prio:c.prioridade}, acao:a.acao,
+      param:{para:p.para, titulo:p.titulo, texto:p.texto, pessoa:p.pessoa_id, prio:p.prioridade, status:p.status, cliente:p.visivel_cliente}, ativa:a.ativa !== false}; }).filter(a => a.no);
+  d.camposItem = T.campos_personalizados.slice().sort(porOrdem).map(c => ({id:c.id, no:chave(c.no_id), nome:c.nome, tipo:c.tipo, opcoes:c.opcoes || []})).filter(c => c.no);
+
+  const chk = agrupar(T.itens_checklist.slice().sort(porOrdem), 'item_id'), com = agrupar(T.comentarios.slice().sort((a, b) => String(a.criado_em).localeCompare(String(b.criado_em))), 'item_id');
+  const lig = agrupar(T.itens_ligacoes, 'origem_id'), blo = agrupar(T.blocos_agenda, 'item_id'), tmp = agrupar(T.tempo_registros, 'item_id');
+  const anxItem = agrupar(T.anexos.filter(x => x.item_id), 'item_id'), cmp = agrupar(T.itens_campos, 'item_id');
+  const TL = {bloqueia:'Blocks', relacionado:'Relates to', duplica:'Duplicates'};
+  d.issues = T.itens.map(i => { const st = stPorId.get(i.status_id) || {}; const custom = !!st.no_id; const b = (blo.get(i.id) || [])[0];
+    return {id:i.id, ws:i.frente_id, tipo:i.tipo, titulo:i.titulo, desc:i.descricao || '', status:custom ? st.grupo : (st.chave || 'backlog'), st:custom ? st.id : undefined,
+      prio:i.prioridade, resp:i.responsavel_id || null, rep:i.relator_id || null, ini:i.inicio, fim:i.prazo, alvo:i.data_prevista, est:i.estimativa_h == null ? null : +i.estimativa_h,
+      pontos:i.pontos == null ? undefined : +i.pontos, vis:i.visivel_cliente ? 'cliente' : 'interno', pai:i.pai_id || null,
+      check:(chk.get(i.id) || []).map(c => ({t:c.texto, f:!!c.feito})), links:(lig.get(i.id) || []).map(l => ({tipo:TL[l.tipo] || 'Relates to', alvo:l.destino_id})),
+      coments:(com.get(i.id) || []).map(c => ({quem:c.autor_id, txt:c.texto, quando:diaDe(c.criado_em), cliente:!!c.visivel_cliente})),
+      tempo:(tmp.get(i.id) || []).map(t => ({ini:new Date(t.inicio).getTime(), fim:t.fim ? new Date(t.fim).getTime() : null, quem:t.pessoa_id, origem:t.origem || ''})),
+      bloco: b ? {data:diaDe(b.inicio), ini:horaDe(b.inicio), fim:horaDe(b.fim)} : null,
+      refs:(anxItem.get(i.id) || []).map(x => ({nome:x.nome, tipo:DE_ANEXO[x.tipo] || x.tipo, url:x.url || undefined, tam:x.tamanho_bytes || undefined})),
+      cf:Object.fromEntries((cmp.get(i.id) || []).map(x => [x.campo_id, x.valor])),
+      criado:diaDe(i.criado_em), iniciado:diaDe(i.iniciado_em), feito:diaDe(i.concluido_em), sprint:i.sprint_id || undefined, marco:i.marco_id || undefined,
+      arquivado:i.arquivado_em ? true : undefined}; });
+
+  T.ficha_campos.forEach(f => { const k = chave(f.no_id); if (!k) return; const s = d.sheets[k] || (d.sheets[k] = {campos:{}, custom:[], arquivos:[]});
+    if (f.personalizado) s.custom.push({nome:f.campo, tipo:'Texto', valor:f.valor || ''}); else s.campos[f.secao + '|' + f.campo] = f.valor || ''; });
+  T.anexos.filter(x => x.no_id && !x.item_id).forEach(x => { const k = chave(x.no_id); if (!k) return; const s = d.sheets[k] || (d.sheets[k] = {campos:{}, custom:[], arquivos:[]}); s.arquivos.push({nome:x.nome, tipo:DE_ANEXO[x.tipo] || x.tipo, url:x.url || undefined}); });
+
+  const itensEt = agrupar(T.etapas_modelo_itens.slice().sort(porOrdem), 'etapa_id');
+  d.template = T.etapas_modelo.slice().sort(porOrdem).map(e => ({id:e.id, nome:e.nome, expl:e.explicacao || '', lente:e.lente || '', entrega:e.entrega || '',
+    itens:(itensEt.get(e.id) || []).map(it => ({id:it.id, texto:it.texto, modo:DE_MODO[it.modo] || 'Aviso', obrig:!!it.obrigatorio, prova:DE_PROVA[it.prova_tipo] || 'Nenhuma', quem:DE_QUEM[it.quem_cumpre] || 'Qualquer pessoa do time', terceiros:!!it.so_terceiros}))}));
+  const provas = new Map(T.provas.map(p => [p.no_id + '|' + p.item_modelo_id, p]));
+  T.etapas_nos.forEach(e => { const k = chave(e.no_id); if (!k) return; const s = d.stages[k] || (d.stages[k] = {});
+    if (e.situacao === 'dispensado') s[e.item_modelo_id] = {dispensa:e.motivo_dispensa || 'Dispensado', quem:e.cumprido_por, quando:diaDe(e.cumprido_em)};
+    else if (e.situacao === 'cumprido'){ const p = provas.get(e.no_id + '|' + e.item_modelo_id); s[e.item_modelo_id] = {feito:true, quem:e.cumprido_por, quando:diaDe(e.cumprido_em), prova: p ? {tipo:DE_PROVA[p.tipo] || p.tipo, valor:p.valor} : undefined}; } });
+
+  const fontes = agrupar(T.agentes_fontes, 'agente_id'), ferr = agrupar(T.agentes_ferramentas, 'agente_id');
+  d.agents = T.agentes.map(a => ({id:a.id, nome:a.nome, papel:a.papel || '', instr:a.instrucoes || '', fontes:(fontes.get(a.id) || []).map(f => f.nome), ferramentas:(ferr.get(a.id) || []).map(f => [f.ferramenta, DE_PERM[f.permissao] || f.permissao]), passa:a.regras_passagem || ''}));
+
+  const msgs = agrupar(T.pedidos_mensagens.slice().sort((a, b) => String(a.criado_em).localeCompare(String(b.criado_em))), 'pedido_id'), anxPed = agrupar(T.anexos.filter(x => x.pedido_id), 'pedido_id');
+  d.requests = T.pedidos.slice().sort((a, b) => String(b.criado_em).localeCompare(String(a.criado_em))).map(r => ({id:r.id, cliente:acima(r.no_id, 'cliente'), app:r.no_id, tipo:DE_PT[r.tipo] || r.tipo,
+    grav:DE_GR[r.gravidade] || r.gravidade, status:DE_PS[r.status] || r.status, titulo:r.titulo, quando:diaDe(r.criado_em), autor:r.autor_id || null,
+    anexos:(anxPed.get(r.id) || []).map(x => ({nome:x.nome, tipo:DE_ANEXO[x.tipo] || x.tipo})), contexto:(r.contexto && r.contexto.resumo) || '', issue:r.item_id || null,
+    msgs:(msgs.get(r.id) || []).map(m => ({de:m.autor_tipo === 'equipe' ? 'voce' : m.autor_tipo, txt:m.texto}))}));
+
+  d.notifs = T.notificacoes.map(n => ({id:n.id, pessoa:n.pessoa_id, titulo:n.titulo, txt:n.texto || '', item:n.item_id || '', quando:new Date(n.criado_em).getTime(), lida:!!n.lida_em}));
+
+  const primeiro = papel => (d.people.find(p => p.acesso === (papel === 'master' ? 'owner' : papel)) || {}).id || '';
+  EU_IDS = {master:primeiro('master'), dev:primeiro('dev'), stakeholder:primeiro('stakeholder')};
+  if (eu && eu.pessoa_id && ['master','dev','stakeholder'].includes(eu.papel)) EU_IDS[eu.papel] = eu.pessoa_id;
+  return d;
+}
+
+async function carregarDoBanco(eu){
+  const sb = window.itiaBanco; if (!sb) return;
+  const T = {}; BANCO.erros = [];
+  await Promise.all(TABELAS_BANCO.map(async t => { try { T[t] = await lerTabela(sb, t); } catch(e){ T[t] = []; BANCO.erros.push(e.message); } }));
+  D = montarDados(T, eu);
+  const ok = id => D.projects.some(p => 'project:' + p.id === id) || D.products.some(p => 'product:' + p.id === id) || D.apps.some(p => 'app:' + p.id === id) || D.ws.some(p => 'ws:' + p.id === id) || D.clients.some(p => 'client:' + p.id === id);
+  if (!ok(UI.sel)) UI.sel = D.projects[0] ? 'project:' + D.projects[0].id : (D.clients[0] ? 'client:' + D.clients[0].id : 'all');
+  if (UI.ovSel && UI.ovSel !== 'all' && !ok(UI.ovSel)) UI.ovSel = 'all';
+  // a árvore começa aberta até os produtos, como no exemplo (as chaves antigas do exemplo não servem mais)
+  const abertos = Object.keys(UI.abertos || {}).filter(k => UI.abertos[k] && ok(k));
+  if (!abertos.length){ UI.abertos = {}; D.clients.forEach(x => { UI.abertos['client:' + x.id] = true; }); D.projects.forEach(x => { UI.abertos['project:' + x.id] = true; }); D.products.forEach(x => { UI.abertos['product:' + x.id] = true; }); }
+  BANCO.carregado = true; BANCO.quando = new Date(); DOM.cache = null; DOM.aberto = null;
+  const chip = $('.chip-exemplo'); if (chip){ chip.textContent = 'Dados do banco'; chip.classList.add('do-banco'); chip.title = 'Tudo nesta tela vem do banco (Supabase), lido em ' + BANCO.quando.toLocaleString('pt-BR'); }
+  if (BANCO.erros.length){ console.warn('Tabelas que não deu para ler:', BANCO.erros); toast('Algumas partes do banco não puderam ser lidas (' + BANCO.erros.length + '). Veja em Settings.'); }
+}
+window.itiaCarregarBanco = carregarDoBanco;
+window.itiaBancoInfo = () => BANCO;
+function painelBanco(){
+  const b = BANCO, cont = [['Pessoas', D.people.length], ['Clientes', D.clients.length], ['Projetos', D.projects.length], ['Produtos', D.products.length], ['Aplicações', D.apps.length],
+    ['Frentes', D.ws.length], ['Itens', D.issues.length], ['Pedidos', D.requests.length], ['Serviços', D.catalog.length], ['Custos técnicos', D.custos.length],
+    ['Custos da operação', D.opCustos.length], ['Receitas', D.receitas.length], ['Agentes', D.agents.length]];
+  return '<h2 class="sub">Dados do banco</h2>' +
+    '<p class="sec" style="font-size:13px;margin:0 0 10px">Tudo o que aparece no sistema vem do banco (Supabase)' + (b.quando ? ', lido em ' + esc(b.quando.toLocaleString('pt-BR')) : '') + '. Nada de exemplo e nada guardado no navegador.</p>' +
+    '<div class="tabela-rolo"><table class="tabela"><thead><tr><th>O quê</th><th>No banco</th></tr></thead><tbody>' + cont.map(([n, q]) => '<tr><td>' + n + '</td><td>' + q + '</td></tr>').join('') + '</tbody></table></div>' +
+    (b.erros.length ? '<p class="sec" style="font-size:13px;color:var(--vermelho,#FF0000)">Não deu para ler: ' + b.erros.map(esc).join(' · ') + '</p>' : '') +
+    '<div class="acoes"><button class="btn sec" type="button" data-acao="reler-banco">Ler o banco de novo</button><span class="sec" style="font-size:13px">Por enquanto, as mudanças feitas nas telas (fora da aba Domínios) ainda não são gravadas no banco e somem ao recarregar.</span></div>';
+}
