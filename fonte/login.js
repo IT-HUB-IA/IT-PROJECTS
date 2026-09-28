@@ -217,7 +217,9 @@ raiz.addEventListener('click', ev => {
 
 /* botão Sair no menu lateral */
 const rodape = document.querySelector('.menu-rodape .rodape-txt');
-if (rodape){ const b = document.createElement('button'); b.type = 'button'; b.className = 'menu-sair'; b.textContent = 'Sair'; b.addEventListener('click', sair); rodape.appendChild(b); }
+if (rodape){ const b = document.createElement('button'); b.type = 'button'; b.className = 'menu-sair'; b.setAttribute('aria-label', 'Sair do sistema'); b.title = 'Sair';
+  b.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square" aria-hidden="true"><path d="M9 4H5v16h4"/><path d="M14 8l4 4-4 4"/><path d="M18 12H9"/></svg>';
+  b.addEventListener('click', sair); rodape.appendChild(b); }
 
 sb.auth.onAuthStateChange((evento, sessao) => {
   if (evento === 'PASSWORD_RECOVERY'){ trocandoSenha = true; mostrarTrocar(); }

@@ -20,7 +20,9 @@ function mostrarMeuId(){
   const rod = $('.menu-rodape .rodape-txt'); if (!rod || !MU.eu) return;
   let b = $('.mu-meu-id', rod);
   if (!b){ b = document.createElement('button'); b.type = 'button'; b.className = 'mu-meu-id'; b.dataset.muCopiar = '1'; rod.insertBefore(b, rod.firstChild); }
-  b.innerHTML = '<span>' + esc(MU.eu.nome || '') + '</span><b>ID ' + esc(MU.eu.numero || '') + '</b>';
+  const ini2 = String(MU.eu.nome || '?').trim().split(/\s+/).map(x => x[0]).slice(0, 2).join('').toUpperCase();
+  b.innerHTML = '<span class="mu-avatar" aria-hidden="true">' + esc(ini2) + '</span><span class="mu-txt"><span class="mu-nome">' + esc(MU.eu.nome || '') + '</span><b>ID ' + esc(MU.eu.numero || '') + '</b></span>';
+  const rodape = rod.closest('.menu-rodape'); if (rodape) rodape.classList.add('com-conta');
   b.title = 'Seu número de ID. Passe para quem vai compartilhar algo com você. Clique para copiar.';
 }
 

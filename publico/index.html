@@ -1686,6 +1686,28 @@ body.com-login.logado #entrada{display:none}
 .entrada-voltar:hover{background:var(--preto-04)}
 @media (max-width:420px){ .entrada-dupla{grid-template-columns:1fr} .entrada-cidade{grid-template-columns:1fr 88px} .entrada-passos li{font-size:11px} }
 
+/* rodapé do menu com a conta: iniciais, nome, ID, sino e sair numa linha só */
+.menu-rodape.com-conta{padding:12px 14px 14px}
+.menu-rodape.com-conta .rodape-txt{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;min-width:0}
+.menu-rodape.com-conta .rodape-txt > label{display:none}
+.menu-rodape.com-conta .chip-exemplo:not(.com-erro){display:none}
+.menu-rodape.com-conta .chip-exemplo.com-erro{position:absolute;left:14px;right:14px;bottom:calc(100% + 6px);text-align:center;cursor:help}
+.menu-rodape.com-conta .mu-meu-id{flex:1 1 auto;min-width:0;flex-direction:row;align-items:center;gap:10px;margin:0;padding:4px;border:1px solid transparent;text-align:left}
+.menu-rodape.com-conta .mu-meu-id:hover{border-color:var(--grafite)}
+.mu-avatar{flex:0 0 32px;width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;background:var(--branco);color:var(--preto);font-family:var(--font-display);font-weight:700;font-size:13px;letter-spacing:.02em}
+.mu-txt{display:flex;flex-direction:column;min-width:0;gap:2px}
+.mu-nome{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.mu-txt b{font-family:var(--font-mono);font-size:10.5px;font-weight:500;letter-spacing:.06em;color:var(--nevoa);white-space:nowrap}
+.menu-rodape.com-conta .rc-sino,.menu-rodape.com-conta .menu-sair{flex:0 0 30px;width:30px;height:30px;margin:0;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--grafite);background:transparent;color:var(--nevoa);cursor:pointer;padding:0}
+.menu-rodape.com-conta .rc-sino:hover,.menu-rodape.com-conta .menu-sair:hover{color:var(--branco);border-color:var(--nevoa)}
+.menu-rodape.com-conta .menu-sair:hover{border-color:var(--vermelho);color:#fff;background:var(--vermelho)}
+/* menu recolhido: só as iniciais e o sair, um embaixo do outro */
+.app.recolhido .menu-rodape.com-conta{height:auto;padding:10px 0;flex-direction:column;gap:8px}
+.app.recolhido .menu-rodape.com-conta .rodape-ico{display:none}
+.app.recolhido .menu-rodape.com-conta .rodape-txt{display:flex;flex-direction:column;gap:8px}
+.app.recolhido .menu-rodape.com-conta .mu-meu-id{display:flex;padding:0;flex:0 0 auto}
+.app.recolhido .menu-rodape.com-conta .mu-txt,.app.recolhido .menu-rodape.com-conta .rc-sino{display:none}
+
 </style>
 
 <div class="app" id="app">
@@ -6211,7 +6233,9 @@ function mostrarMeuId(){
   const rod = $('.menu-rodape .rodape-txt'); if (!rod || !MU.eu) return;
   let b = $('.mu-meu-id', rod);
   if (!b){ b = document.createElement('button'); b.type = 'button'; b.className = 'mu-meu-id'; b.dataset.muCopiar = '1'; rod.insertBefore(b, rod.firstChild); }
-  b.innerHTML = '<span>' + esc(MU.eu.nome || '') + '</span><b>ID ' + esc(MU.eu.numero || '') + '</b>';
+  const ini2 = String(MU.eu.nome || '?').trim().split(/\s+/).map(x => x[0]).slice(0, 2).join('').toUpperCase();
+  b.innerHTML = '<span class="mu-avatar" aria-hidden="true">' + esc(ini2) + '</span><span class="mu-txt"><span class="mu-nome">' + esc(MU.eu.nome || '') + '</span><b>ID ' + esc(MU.eu.numero || '') + '</b></span>';
+  const rodape = rod.closest('.menu-rodape'); if (rodape) rodape.classList.add('com-conta');
   b.title = 'Seu número de ID. Passe para quem vai compartilhar algo com você. Clique para copiar.';
 }
 
@@ -6805,7 +6829,9 @@ raiz.addEventListener('click', ev => {
 
 /* botão Sair no menu lateral */
 const rodape = document.querySelector('.menu-rodape .rodape-txt');
-if (rodape){ const b = document.createElement('button'); b.type = 'button'; b.className = 'menu-sair'; b.textContent = 'Sair'; b.addEventListener('click', sair); rodape.appendChild(b); }
+if (rodape){ const b = document.createElement('button'); b.type = 'button'; b.className = 'menu-sair'; b.setAttribute('aria-label', 'Sair do sistema'); b.title = 'Sair';
+  b.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square" aria-hidden="true"><path d="M9 4H5v16h4"/><path d="M14 8l4 4-4 4"/><path d="M18 12H9"/></svg>';
+  b.addEventListener('click', sair); rodape.appendChild(b); }
 
 sb.auth.onAuthStateChange((evento, sessao) => {
   if (evento === 'PASSWORD_RECOVERY'){ trocandoSenha = true; mostrarTrocar(); }
