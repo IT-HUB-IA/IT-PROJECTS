@@ -41,6 +41,11 @@
       ],
       "destination": "https://ciclodev.it-ia.tec.br/:caminho*",
       "permanent": true
+    },
+    {
+      "source": "/fornecedores",
+      "destination": "/privacidade",
+      "permanent": true
     }
   ]
 }

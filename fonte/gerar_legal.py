@@ -46,7 +46,7 @@ th{background:var(--preto);color:var(--branco);font-family:var(--mono);font-weig
 def pagina(arq, titulo, olho, resumo, secoes, ativo):
     ind = ''.join(f'<li><a href="#s{i+1}">{html.escape(t)}</a></li>' for i,(t,_) in enumerate(secoes))
     sec = ''.join(f'<section id="s{i+1}"><h2><span>{i+1:02d}</span>{html.escape(t)}</h2>{c}</section>' for i,(t,c) in enumerate(secoes))
-    nav = ''.join(f'<a href="{h}"' + (' aria-current="page"' if h == ativo else '') + f'>{n}</a>' for h,n in [('/termos','Termos de Uso'),('/privacidade','Privacidade'),('/fornecedores','Fornecedores'),('/','Entrar no sistema')])
+    nav = ''.join(f'<a href="{h}"' + (' aria-current="page"' if h == ativo else '') + f'>{n}</a>' for h,n in [('/termos','Termos de Uso'),('/privacidade','Privacidade'),('/','Entrar no sistema')])
     doc = f'''<!doctype html>
 <html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{html.escape(titulo)} · CicloDev</title><meta name="description" content="{html.escape(titulo)} do CicloDev."><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png"><link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest"><meta name="theme-color" content="#0B0B0C">
@@ -57,7 +57,7 @@ def pagina(arq, titulo, olho, resumo, secoes, ativo):
 <p class="olho">{html.escape(olho)}</p><h1>{html.escape(titulo)}</h1><p class="atual">Última atualização: {ATUAL}</p></div></header>
 <div class="corpo"><aside class="indice" aria-label="Índice"><b>Nesta página</b><ol>{ind}</ol></aside>
 <main><div class="resumo">{resumo}</div>{sec}</main></div>
-<footer class="rodape"><div><span>© 2026 IT.IA · CNPJ 69.279.397/0001-07</span><span><a href="/termos">Termos de Uso</a> · <a href="/privacidade">Privacidade</a> · <a href="/fornecedores">Fornecedores</a> · <a href="mailto:contato@it-ia.tec.br">contato@it-ia.tec.br</a></span></div></footer>
+<footer class="rodape"><div><span>© 2026 IT.IA · CNPJ 69.279.397/0001-07</span><span><a href="/termos">Termos de Uso</a> · <a href="/privacidade">Privacidade</a> · <a href="mailto:contato@it-ia.tec.br">contato@it-ia.tec.br</a></span></div></footer>
 </body></html>
 '''
     assert '—' not in doc, arq
@@ -94,7 +94,7 @@ P = [
 <li><b>Quem trabalha com você</b> (pessoas com quem você compartilha algo, ou da mesma equipe) vê o seu nome, e-mail, número de ID, nome de usuário e perfil no Team, além do conteúdo compartilhado. Essas pessoas <b>não</b> veem os seus dados de cadastro (como CPF, nascimento e endereço) nem os seus dados de uso.</li>
 <li><b>A IT.IA</b> acessa os dados de conta, de cadastro e de uso para dar suporte, prevenir fraudes e manter o Sistema funcionando. A IT.IA não acessa o conteúdo dos seus projetos, salvo quando você pedir suporte ou quando a lei exigir.</li>
 </ul>'''),
-('Com quem compartilhamos', '''<p>Usamos fornecedores para hospedar o Sistema, guardar os dados, enviar e-mails e oferecer o login com Google. Eles recebem só o necessário para a sua parte do serviço. A lista atualizada está na página <a href="/fornecedores">Fornecedores</a>.</p>
+('Com quem compartilhamos', '''<p>Usamos fornecedores para hospedar o Sistema, guardar os dados, enviar e-mails e oferecer o login com Google. Eles recebem só o necessário para a sua parte do serviço.</p>
 <p>Fora isso, a IT.IA só compartilha dados quando a lei ou uma ordem judicial exigir, ou para defender direitos em processo judicial, administrativo ou arbitral.</p>'''),
 ('Transferência internacional', '''<p>Alguns fornecedores ficam fora do Brasil. Nesses casos, a transferência segue o art. 33 da LGPD, e a IT.IA escolhe fornecedores que oferecem garantias de proteção de dados.</p>'''),
 ('Por quanto tempo guardamos', '''<ul>
@@ -163,18 +163,4 @@ T = [
 pagina('termos.html', 'Termos de Uso', 'CicloDev · Condições de uso',
  '<p><b>Resumo:</b> use o CicloDev de acordo com a lei e com dados verdadeiros. O que você cria é seu. Compartilhe só com quem confia. A IT.IA pode melhorar o Sistema e avisa antes de mudar estes Termos.</p>', T, '/termos')
 
-# ======================= FORNECEDORES =======================
-F = [
-('Lista de fornecedores', '''<div class="tabela"><table><thead><tr><th>Fornecedor</th><th>Para quê</th><th>País</th></tr></thead><tbody>
-<tr><td>Supabase</td><td>Banco de dados e login</td><td>Dados guardados no Brasil; empresa nos Estados Unidos</td></tr>
-<tr><td>Vercel</td><td>Hospedagem das páginas</td><td>Estados Unidos</td></tr>
-<tr><td>Resend</td><td>Envio de e-mails da conta</td><td>Estados Unidos</td></tr>
-<tr><td>Google</td><td>Login, só se você escolher entrar com a sua conta Google</td><td>Estados Unidos</td></tr>
-<tr><td>ViaCEP</td><td>Preencher o endereço a partir do CEP (recebe só o CEP)</td><td>Brasil</td></tr>
-<tr><td>Google Fonts e jsDelivr</td><td>Entrega de fontes e bibliotecas da tela (recebem só dados técnicos do navegador)</td><td>Estados Unidos</td></tr>
-</tbody></table></div>
-<p>Quando esta lista mudar, a data no topo será atualizada.</p>'''),
-]
-pagina('fornecedores.html', 'Fornecedores', 'CicloDev · Privacidade',
- '<p><b>Resumo:</b> estes são os serviços que a IT.IA usa para o CicloDev funcionar e o que cada um faz. Eles recebem só o necessário para a sua parte. Veja também a <a href="/privacidade">Política de Privacidade</a>.</p>', F, '/fornecedores')
 print('ok')
