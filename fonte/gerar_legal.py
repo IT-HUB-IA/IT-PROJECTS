@@ -9,7 +9,7 @@ a{color:inherit}
 .topo-in{max-width:1120px;margin:0 auto;padding:28px 24px 56px}
 .barra{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
 .logo{font-family:var(--display);font-weight:700;font-size:24px;display:flex;align-items:center;gap:10px;text-decoration:none}
-.logo i{width:10px;height:10px;background:var(--vermelho);display:inline-block}
+.logo i{width:10px;height:10px;background:var(--vermelho);display:inline-block;border-radius:50%}
 .logo .marca-icone{width:36px;height:36px;flex:0 0 36px;display:block}
 .nav{display:flex;gap:6px;flex-wrap:wrap}
 .nav a{font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;color:var(--nevoa);padding:8px 12px;border:1px solid var(--grafite)}
