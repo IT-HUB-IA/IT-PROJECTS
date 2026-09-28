@@ -20,6 +20,20 @@ O banco está no ar no projeto `tfcvoszeewmpghgxztuy` ("IT-Systems", Postgres 17
 - Acesso, simulando o login do CEO da B&L: vê só os 9 itens marcados como visíveis ao cliente e nenhum custo ou receita.
 - Tempo no Supabase com os dados de exemplo: painel do projeto 25 ms, painel da raiz 12 ms, financeiro 79 ms, carga de 4 semanas 5 ms.
 
+## Parte 18: itens mais completos, lixeira e modelos (28/09/2026, AINDA NÃO APLICADA)
+
+Escrita e testada no Postgres local (`96_teste_tarefas_LOCAL.sql`: 37 de 37). **Tem que ser aplicada ANTES de publicar a tela nova**: a tela passa a gravar as colunas `recorrencia`, `lembrete_em` e `lembrete_para` em `itens`; sem elas, criar ou alterar item dá erro.
+
+| Peça | Para que serve |
+|---|---|
+| `itens.recorrencia` | Repetição (`{"freq":"dia|semana|mes|ano","a_cada":1,"ate":"AAAA-MM-DD"}`). Quem cria o próximo é a tela, ao concluir; a repetição passa para o novo |
+| `itens.lembrete_em`, `lembrete_para`, `lembrete_enviado_em` | Lembrete. A rotina `ciclodev_lembretes` (a cada minuto) põe o aviso no sininho de quem pediu |
+| `itens_descricao_versoes` | Cada versão da descrição, gravada pelo gatilho. Edições seguidas da mesma pessoa em 10 minutos ficam numa versão só. Só leitura para a tela |
+| `modelos` | Modelos de item e de estrutura (projeto, produto, aplicação, frente), por espaço |
+| `itens.excluido_em`, `nos.excluido_em` | Lixeira. Item na lixeira some da leitura (regra `ver` de `itens`); ponto da estrutura na lixeira esconde tudo o que tem dentro (a tela filtra) |
+| `lixeira_mover`, `lixeira_restaurar`, `lixeira_apagar`, `lixeira_listar` | O que a tela chama. Confere quem pode: o que é do meu espaço, ou está dentro de algo compartilhado comigo como owner ou dev. O ponto compartilhado em si só o dono do espaço exclui |
+| Rotina `ciclodev_lixeira` (todo dia, 4h23) | Apaga de vez o que está na lixeira há mais de 30 dias, com tudo o que tinha dentro |
+
 ## Como aplicar num banco novo (se um dia precisar)
 
 1. **Antes de tudo, olhar o banco.** O arquivo foi feito para um banco vazio.
@@ -44,6 +58,8 @@ O banco está no ar no projeto `tfcvoszeewmpghgxztuy` ("IT-Systems", Postgres 17
 | `12_dominios_dados.sql` | Os domínios reais já conhecidos (hoje, o it-ia.tec.br) | Sim |
 | `90_testes_LOCAL.sql` | 16 testes das regras (tem que terminar em "TODOS OS TESTES PASSARAM") | Não |
 | `91_usuarios_teste_LOCAL.sql`, `92_carga_volume_LOCAL.sql` | Logins falsos e volume grande para medir desempenho | Não |
+| `18_tarefas_lixeira_modelos.sql` | Item que se repete, lembrete, histórico da descrição, lixeira (excluir e restaurar em 30 dias) e modelos de item e de estrutura | Sim (ainda não aplicada, ver abaixo) |
+| `96_teste_tarefas_LOCAL.sql` | 37 testes da parte 18: repetição, lembrete, versões, lixeira, limpeza de 30 dias, modelos e quem pode o quê | Não |
 
 ## Decisões de estrutura (e por quê)
 

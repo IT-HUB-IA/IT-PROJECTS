@@ -1,10 +1,10 @@
 head=open('parte_head.html',encoding='utf-8').read()
-css=open('parte_css_base.css',encoding='utf-8').read()+open('app.css',encoding='utf-8').read()+open('design.css',encoding='utf-8').read()
+css=open('parte_css_base.css',encoding='utf-8').read()+open('app.css',encoding='utf-8').read()+open('design.css',encoding='utf-8').read()+open('tarefas.css',encoding='utf-8').read()
 pb=open('parte_playbook.html',encoding='utf-8').read().replace('class="conteudo" id="tela-playbook"','class="conteudo cheio" id="tela-playbook"').replace('<h1 id="titulo-pb">','<div class="topo-hero"><div><h1 id="titulo-pb">',1).replace('mesmo com uma pessoa só no time.</p>','mesmo com uma pessoa só no time.</p></div></div>',1)
 js=open('app.js',encoding='utf-8').read()
 _fim='\nabrirModulo(UI.modulo);\n})();'
 assert js.rstrip().endswith(_fim.strip()), 'final do app.js mudou'
-js=js.rstrip()[:-len(_fim.strip())]+'\n'+open('recursos.js',encoding='utf-8').read()+'\n'+open('board.js',encoding='utf-8').read()+'\n'+open('multiusuario.js',encoding='utf-8').read()+'\n'+open('admin.js',encoding='utf-8').read()+'\n'+open('studio.js',encoding='utf-8').read()+'\n'+_fim.strip()+'\n'
+js=js.rstrip()[:-len(_fim.strip())]+'\n'+open('recursos.js',encoding='utf-8').read()+'\n'+open('board.js',encoding='utf-8').read()+'\n'+open('multiusuario.js',encoding='utf-8').read()+'\n'+open('admin.js',encoding='utf-8').read()+'\n'+open('studio.js',encoding='utf-8').read()+'\n'+open('tarefas.js',encoding='utf-8').read()+'\n'+_fim.strip()+'\n'
 import json, html as _h
 from explicacoes import EXPL
 js='window.EXPL = '+json.dumps(EXPL, ensure_ascii=False)+';\n'+js
@@ -22,6 +22,7 @@ MODS=[
  ('time','Team',P+'<circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20c.8-3.5 3.3-5.5 6.5-5.5s5.7 2 6.5 5.5"></path><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.8c1.8.7 3 2.5 3.5 5.2"></path></svg>'),
  ('agentes','Agent Studio',P+'<rect x="4" y="7" width="16" height="12"></rect><path d="M12 3v4M9 12v2M15 12v2M2 12v3M22 12v3"></path></svg>'),
  ('playbook','Playbook',P+'<path d="M4 4h6a2 2 0 0 1 2 2v14a2 2 0 0 0-2-2H4z"></path><path d="M20 4h-6a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h6z"></path></svg>'),
+ ('lixeira','Lixeira',P+'<path d="M4 7h16"></path><path d="M9 7V4h6v3"></path><path d="M6 7l1 13h10l1-13"></path><path d="M10 11v6M14 11v6"></path></svg>'),
  ('configuracoes','Settings',P+'<circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"></path></svg>'),
  ('admin','Admin',P+'<path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"></path><path d="M9 12l2 2 4-4"></path></svg>'),
 ]
