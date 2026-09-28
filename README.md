@@ -1,0 +1,35 @@
+# Sistema IT.IA
+
+Gestão de projetos, entregas e custos da IT.IA. Cliente atual: Blanco & Lisboa (projeto BL).
+
+| Pasta | O que tem |
+|---|---|
+| `publico/` | A página que a Vercel publica (gerada, não editar à mão) |
+| `fonte/` | O código da tela. `build.py` junta tudo e gera `publico/index.html` |
+| `banco/` | O banco no Supabase (`tfcvoszeewmpghgxztuy`): SQL em partes, testes e o `LEIA-ME.md` com as decisões |
+| `testes/` | Testes da tela (Playwright) |
+| `emails/` | Os e-mails do login em português (esqueci a senha, convite, confirmação), para colar no Supabase |
+
+## Gerar a página
+
+```
+cd fonte && python3 build.py && cp vercel/index.html ../publico/index.html
+```
+
+## Login
+
+Supabase Auth, com e-mail e senha. A chave que aparece em `fonte/login.js` é a chave **pública** do projeto: ela foi feita para ficar na tela. Quem protege os dados são as regras de acesso (RLS) do banco. Nenhuma chave secreta fica neste repositório.
+
+Para dar acesso a alguém: criar o usuário no Supabase (Authentication, Users, Add user) com o mesmo e-mail cadastrado na pessoa do time (`public.pessoas.email`). No primeiro login o banco liga os dois sozinho.
+
+## E-mails (Resend)
+
+Os e-mails do login saem pelo Resend, com o domínio `it-ia.tec.br` (já verificado). A configuração fica no Supabase, em Authentication, Emails, SMTP Settings. A chave do Resend fica só lá, nunca neste repositório.
+
+## Situação
+
+A tela ainda guarda os dados no navegador de quem usa (dados de exemplo). O banco já está no ar e conferido. Ligar a tela ao banco é o próximo passo.
+
+## Pendências
+
+Ver [PENDENCIAS.md](PENDENCIAS.md).

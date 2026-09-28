@@ -1,0 +1,55 @@
+<div id="entrada" class="entrada" aria-live="polite">
+  <aside class="entrada-marca">
+    <div class="entrada-logo"><span class="entrada-ponto" aria-hidden="true"></span>IT.IA</div>
+    <p class="entrada-frase">Projetos, entregas e custos da operação num lugar só.</p>
+    <p class="entrada-rodape">Sistema IT.IA · Blanco &amp; Lisboa</p>
+  </aside>
+  <section class="entrada-lado">
+    <div class="entrada-caixa">
+      <div class="entrada-carregando" data-etapa="carregando">
+        <span class="entrada-giro" aria-hidden="true"></span><span>Conferindo seu acesso…</span>
+      </div>
+
+      <form class="entrada-form" data-etapa="login" hidden novalidate>
+        <h1>Entrar</h1>
+        <p class="entrada-sub">Use o e-mail e a senha do seu acesso.</p>
+        <label class="entrada-campo"><span>E-mail</span>
+          <input type="email" name="email" autocomplete="username" inputmode="email" required></label>
+        <label class="entrada-campo"><span>Senha</span>
+          <span class="entrada-senha"><input type="password" name="senha" autocomplete="current-password" required>
+          <button type="button" class="entrada-ver" data-ver-senha aria-label="Mostrar a senha">Mostrar</button></span></label>
+        <p class="entrada-erro" data-erro hidden></p>
+        <button class="entrada-botao" type="submit">Entrar</button>
+        <button class="entrada-link" type="button" data-ir="esqueci">Esqueci minha senha</button>
+      </form>
+
+      <form class="entrada-form" data-etapa="esqueci" hidden novalidate>
+        <h1>Nova senha</h1>
+        <p class="entrada-sub">Digite seu e-mail. Se ele tiver acesso, chega um link para você criar uma senha nova.</p>
+        <label class="entrada-campo"><span>E-mail</span>
+          <input type="email" name="email" autocomplete="username" inputmode="email" required></label>
+        <p class="entrada-erro" data-erro hidden></p>
+        <p class="entrada-ok" data-ok hidden></p>
+        <button class="entrada-botao" type="submit">Enviar o link</button>
+        <button class="entrada-link" type="button" data-ir="login">Voltar para entrar</button>
+      </form>
+
+      <form class="entrada-form" data-etapa="trocar" hidden novalidate>
+        <h1>Criar a senha nova</h1>
+        <p class="entrada-sub">Use pelo menos 8 caracteres.</p>
+        <label class="entrada-campo"><span>Senha nova</span>
+          <input type="password" name="senha" autocomplete="new-password" minlength="8" required></label>
+        <label class="entrada-campo"><span>Repita a senha</span>
+          <input type="password" name="senha2" autocomplete="new-password" minlength="8" required></label>
+        <p class="entrada-erro" data-erro hidden></p>
+        <button class="entrada-botao" type="submit">Salvar e entrar</button>
+      </form>
+
+      <div class="entrada-form" data-etapa="sem-acesso" hidden>
+        <h1>Acesso ainda não liberado</h1>
+        <p class="entrada-sub">Você entrou como <b data-email></b>, mas esse e-mail ainda não está ligado a ninguém do time. Peça para o Master liberar o seu acesso.</p>
+        <button class="entrada-botao" type="button" data-sair>Sair</button>
+      </div>
+    </div>
+  </section>
+</div>

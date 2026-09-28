@@ -1,0 +1,163 @@
+head=open('parte_head.html',encoding='utf-8').read()
+css=open('parte_css_base.css',encoding='utf-8').read()+open('app.css',encoding='utf-8').read()+open('design.css',encoding='utf-8').read()
+pb=open('parte_playbook.html',encoding='utf-8').read().replace('class="conteudo" id="tela-playbook"','class="conteudo cheio" id="tela-playbook"').replace('<h1 id="titulo-pb">','<div class="topo-hero"><div><h1 id="titulo-pb">',1).replace('mesmo com uma pessoa só no time.</p>','mesmo com uma pessoa só no time.</p></div></div>',1)
+js=open('app.js',encoding='utf-8').read()
+_fim='\nabrirModulo(UI.modulo);\n})();'
+assert js.rstrip().endswith(_fim.strip()), 'final do app.js mudou'
+js=js.rstrip()[:-len(_fim.strip())]+'\n'+open('recursos.js',encoding='utf-8').read()+'\n'+_fim.strip()+'\n'
+import json, html as _h
+from explicacoes import EXPL
+js='window.EXPL = '+json.dumps(EXPL, ensure_ascii=False)+';\n'+js
+def _esc(t): return _h.escape(t, quote=True).replace('&#x27;','&#39;')
+for _k,_v in EXPL.items():
+  pb=pb.replace('data-info="'+_esc(_k)+'"','data-info="'+_esc(_v)+'"').replace('aria-label="O que é: '+_esc(_k)+'"','aria-label="O que é: '+_esc(_v)+'"')
+P='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">'
+MODS=[
+ ('overview','Overview',P+'<rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg>'),
+ ('operacoes','Operações',P+'<path d="M12 3l9 4.5-9 4.5-9-4.5z"></path><path d="M3 12l9 4.5 9-4.5"></path><path d="M3 16.5l9 4.5 9-4.5"></path></svg>'),
+ ('clientes','Clients',P+'<rect x="3" y="7" width="18" height="14"></rect><path d="M8 7V3h8v4"></path><path d="M3 13h18"></path></svg>'),
+ ('catalog','Catalog',P+'<path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4z"></path><path d="M16.5 13v7M13 16.5h7"></path></svg>'),
+ ('custos','Costs',P+'<circle cx="12" cy="12" r="9"></circle><path d="M14.5 9.5c-.5-1-1.5-1.5-2.5-1.5-1.4 0-2.5.8-2.5 2s1.1 1.7 2.5 2 2.5.8 2.5 2-1.1 2-2.5 2c-1 0-2-.5-2.5-1.5M12 6.5V8M12 16v1.5"></path></svg>'),
+ ('servicedesk','Service Desk',P+'<path d="M4 4h16v12H8l-4 4z"></path><path d="M8 9h8M8 12h5"></path></svg>'),
+ ('time','Team',P+'<circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20c.8-3.5 3.3-5.5 6.5-5.5s5.7 2 6.5 5.5"></path><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.8c1.8.7 3 2.5 3.5 5.2"></path></svg>'),
+ ('agentes','Agent Studio',P+'<rect x="4" y="7" width="16" height="12"></rect><path d="M12 3v4M9 12v2M15 12v2M2 12v3M22 12v3"></path></svg>'),
+ ('playbook','Playbook',P+'<path d="M4 4h6a2 2 0 0 1 2 2v14a2 2 0 0 0-2-2H4z"></path><path d="M20 4h-6a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h6z"></path></svg>'),
+ ('configuracoes','Settings',P+'<circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"></path></svg>'),
+]
+menu='\n'.join('        <li><button class="item" type="button" data-nome="%s" data-tela="%s"><span class="item-ico">%s</span><span class="item-nome">%s</span></button></li>'%(n,k,ic,n) for k,n,ic in MODS)
+secoes=''.join('    <section class="conteudo %s" id="tela-%s" hidden><div id="m-%s"></div></section>\n'%('sem-pad' if k=='operacoes' else 'cheio',k,k) for k,n,ic in MODS if k!='playbook')
+base_js=r'''
+(function(){
+  const app = document.getElementById('app');
+  const botao = document.getElementById('alternar');
+  const dica = document.getElementById('dica');
+  const CHAVE = 'sistema-itia-menu-recolhido';
+  function aplicar(recolhido){
+    app.classList.toggle('recolhido', recolhido);
+    botao.setAttribute('aria-expanded', String(!recolhido));
+    const txt = recolhido ? 'Expandir menu' : 'Recolher menu';
+    botao.setAttribute('aria-label', txt); botao.title = txt;
+    if (!recolhido) dica.hidden = true;
+  }
+  const estreito = window.matchMedia('(max-width: 720px)');
+  let inicial = estreito.matches;
+  if (!inicial){ try { const v = localStorage.getItem(CHAVE); if (v !== null) inicial = v === '1'; } catch(e){} }
+  estreito.addEventListener('change', e => { if (e.matches) aplicar(true); });
+  aplicar(inicial);
+  function alternarMenu(){
+    const recolhido = !app.classList.contains('recolhido');
+    aplicar(recolhido);
+    try { localStorage.setItem(CHAVE, recolhido ? '1' : '0'); } catch(e){}
+  }
+  botao.addEventListener('click', alternarMenu);
+  document.getElementById('menu').addEventListener('click', e => {
+    if (e.target.closest('button, a, input, select, textarea, [role="button"]')) return;
+    const sel = window.getSelection && window.getSelection();
+    if (sel && String(sel).length) return;
+    alternarMenu();
+  });
+  document.querySelectorAll('.item').forEach(el => {
+    const mostrar = () => {
+      if (!app.classList.contains('recolhido')) return;
+      const r = el.getBoundingClientRect();
+      dica.textContent = el.dataset.nome;
+      dica.style.left = (r.right + 8) + 'px';
+      dica.style.top = (r.top + r.height / 2 - 14) + 'px';
+      dica.hidden = false;
+    };
+    const esconder = () => { dica.hidden = true; };
+    el.addEventListener('mouseenter', mostrar); el.addEventListener('focus', mostrar);
+    el.addEventListener('mouseleave', esconder); el.addEventListener('blur', esconder);
+  });
+
+  // "i" dos termos técnicos, para qualquer conteúdo, inclusive o que é desenhado depois
+  const dicaInfo = document.getElementById('dica-info');
+  let infoAberto = null;
+  function mostrarInfo(el){
+    const casa = el.closest('dialog[open]') || document.body; if (dicaInfo.parentNode !== casa) casa.appendChild(dicaInfo);
+    dicaInfo.textContent = (window.EXPL && window.EXPL[el.dataset.info]) || el.dataset.info; dicaInfo.hidden = false;
+    const r = el.getBoundingClientRect(), d = dicaInfo.getBoundingClientRect();
+    const x = Math.min(Math.max(8, r.left + r.width / 2 - d.width / 2), window.innerWidth - d.width - 8);
+    let y = r.bottom + 8; if (y + d.height > window.innerHeight - 8) y = r.top - d.height - 8;
+    dicaInfo.style.left = x + 'px'; dicaInfo.style.top = y + 'px';
+    if (infoAberto && infoAberto !== el) infoAberto.setAttribute('aria-expanded', 'false');
+    infoAberto = el; el.setAttribute('aria-expanded', 'true');
+  }
+  function esconderInfo(){ dicaInfo.hidden = true; if (dicaInfo.parentNode !== document.body) document.body.appendChild(dicaInfo); if (infoAberto) infoAberto.setAttribute('aria-expanded', 'false'); infoAberto = null; }
+  document.addEventListener('mouseover', e => { const el = e.target.closest('.info'); if (el) mostrarInfo(el); });
+  document.addEventListener('mouseout', e => { const el = e.target.closest('.info'); if (el && !el.contains(e.relatedTarget)) esconderInfo(); });
+  document.addEventListener('focusin', e => { const el = e.target.closest && e.target.closest('.info'); if (el) mostrarInfo(el); });
+  document.addEventListener('focusout', e => { if (e.target.closest && e.target.closest('.info')) esconderInfo(); });
+  document.addEventListener('click', e => { const el = e.target.closest('.info'); if (el){ e.preventDefault(); e.stopPropagation(); if (infoAberto === el && !dicaInfo.hidden) esconderInfo(); else mostrarInfo(el); } }, true);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') esconderInfo(); });
+  window.addEventListener('scroll', esconderInfo, true);
+
+  // abas do Playbook
+  const abas = Array.from(document.querySelectorAll('.aba'));
+  const CHAVE_ABA = 'sistema-itia-aba-playbook';
+  function abrirAba(id){
+    const alvo = abas.find(a => a.id === id) || abas[0];
+    abas.forEach(a => { const sel = a === alvo; a.setAttribute('aria-selected', String(sel)); a.tabIndex = sel ? 0 : -1; document.getElementById(a.getAttribute('aria-controls')).hidden = !sel; });
+    try { localStorage.setItem(CHAVE_ABA, alvo.id); } catch(e){}
+  }
+  let abaInicial = null; try { abaInicial = localStorage.getItem(CHAVE_ABA); } catch(e){}
+  abrirAba(abaInicial);
+  abas.forEach((a, i) => {
+    a.addEventListener('click', () => abrirAba(a.id));
+    a.addEventListener('keydown', e => { if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return; e.preventDefault(); const prox = abas[(i + (e.key === 'ArrowRight' ? 1 : abas.length - 1)) % abas.length]; abrirAba(prox.id); prox.focus(); });
+  });
+})();
+'''
+html=head+'<style>'+css+'''
+  .conteudo.sem-pad{padding:0;display:flex;flex-direction:column;flex:1}
+  .conteudo.sem-pad > div{flex:1;display:flex;flex-direction:column}
+</style>
+
+<div class="app" id="app">
+  <nav class="menu" id="menu" aria-label="Menu principal">
+    <div class="menu-topo">
+      <div class="logo" aria-label="IT.IA">IT<b>.</b>IA</div>
+      <button class="alternar" id="alternar" type="button" aria-controls="menu" aria-expanded="true" aria-label="Recolher menu" title="Recolher menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true"><rect x="3" y="3" width="18" height="18"></rect><path d="M9 3v18"></path><path d="M16 15l-3-3 3-3"></path></svg>
+      </button>
+    </div>
+    <div class="secao">
+      <div class="rotulo">Módulos</div>
+      <ul class="itens">
+'''+menu+'''
+      </ul>
+    </div>
+    <div class="menu-rodape" title="Ver como">
+      <svg class="rodape-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+      <div class="rodape-txt"><label class="rotulo" for="ver-como">Ver como</label><button class="rc-sino" type="button" data-rc-sino aria-label="Notificações" title="Notificações"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg><b id="notif-n" hidden>0</b></button><span class="chip-exemplo">Dados de exemplo</span></div>
+      <select class="sel peq" id="ver-como" aria-label="Ver o sistema como"><option value="master">Master · William</option><option value="dev">Dev · Ana</option><option value="stakeholder">Stakeholder · CEO da B&amp;L</option></select>
+    </div>
+  </nav>
+
+  <main class="principal">
+'''+secoes+pb+'''
+  </main>
+</div>
+<div class="dica" id="dica" hidden></div>
+<div class="dica-info" id="dica-info" role="tooltip" hidden></div>
+<script>'''+base_js+'''</script>
+<script>
+'''+js+'''
+</script>
+'''
+open('sistema.html','w',encoding='utf-8').write(html)
+print(len(html))
+
+# versão publicada (Vercel): mesma página, com a tela de login na frente
+_login_css = open('login.css', encoding='utf-8').read()
+_login_html = open('login.html', encoding='utf-8').read()
+_login_js = open('login.js', encoding='utf-8').read()
+import os as _os
+_os.makedirs('vercel', exist_ok=True)
+_v = html.replace('</style>', _login_css + '\n</style>', 1)
+_v = _v.replace('<div class="dica" id="dica" hidden></div>', _login_html + '<div class="dica" id="dica" hidden></div>', 1)
+_v = _v + '<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>\n<script>\n' + _login_js + '\n</script>\n'
+_v = '<!doctype html>\n<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex"><style>[hidden]{display:none!important}html,body{height:100%}</style></head><body>\n<script>document.body.classList.add("com-login")</script>\n' + _v + '\n</body></html>\n'
+assert _login_html[:20] in _v and 'com-login' in _v
+open('vercel/index.html', 'w', encoding='utf-8').write(_v)
+print('vercel/index.html', len(_v))

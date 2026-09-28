@@ -1,0 +1,2894 @@
+-- =====================================================================
+-- Sistema IT.IA · banco completo para o Supabase tfcvoszeewmpghgxztuy
+-- Rodar UMA VEZ, inteiro, num banco sem estas tabelas (SQL Editor ou migration). Ordem: 01 a 10.
+-- Depois disso, 05, 06, 07, 08, 09 e 10 podem ser rodados de novo sozinhos (recriam funções e regras; a semente não duplica).
+-- Gerado em 2026-09-28. Os arquivos 00, 90, 91 e 92 são só de teste local e NÃO entram aqui.
+-- =====================================================================
+
+-- >>>>>>>>>> 01_base_estrutura.sql
+-- =====================================================================
+-- Sistema IT.IA · 01 · Base: schemas, funções de apoio, estrutura (árvore), pessoas e etiquetas
+-- Banco: Supabase tfcvoszeewmpghgxztuy
+-- Convenções:
+--   * nomes em português, snake_case; chaves uuid; datas timestamptz (UTC no banco)
+--   * nada se apaga de verdade no dia a dia: arquivado_em marca o arquivamento
+--   * public  = tabelas do produto (expostas pela API, sempre com RLS)
+--   * interno = funções de apoio (não expostas)
+--   * bi      = camada analítica (views, visões materializadas e funções de cálculo)
+--   * auditoria = registro de quem fez o quê
+-- =====================================================================
+
+-- gen_random_uuid() já vem no Postgres. btree_gist (usado nas travas de sobreposição) fica no schema extensions, padrão do Supabase.
+create schema if not exists extensions;
+create extension if not exists btree_gist with schema extensions;
+
+create schema if not exists interno;
+create schema if not exists bi;
+create schema if not exists auditoria;
+
+revoke all on schema interno from public;
+revoke all on schema auditoria from public;
+grant usage on schema interno to authenticated, service_role;
+grant usage on schema bi to authenticated, service_role;
+grant usage on schema auditoria to service_role;
+
+-- carimbo de atualização
+create or replace function interno.carimbar_atualizacao() returns trigger
+language plpgsql set search_path = public, pg_temp as $$
+begin
+  new.atualizado_em := now();
+  return new;
+end $$;
+
+-- =====================================================================
+-- ESTRUTURA: uma árvore só. Cliente › Projeto › Produto (opcional) › Aplicação › Frente
+-- =====================================================================
+create table public.nos (
+  id            uuid primary key default gen_random_uuid(),
+  tipo          text not null check (tipo in ('cliente','projeto','produto','aplicacao','frente')),
+  pai_id        uuid references public.nos(id) on delete restrict,
+  nome          text not null check (length(btrim(nome)) between 1 and 160),
+  status        text not null default 'ativo' check (status in ('ativo','pausado','concluido','arquivado')),
+  motivo_pausa  text,
+  ordem         integer not null default 0,
+  criado_em     timestamptz not null default now(),
+  criado_por    uuid,
+  atualizado_em timestamptz not null default now(),
+  constraint nos_id_tipo_unq unique (id, tipo),
+  constraint nos_raiz_so_cliente check ((tipo = 'cliente') = (pai_id is null)),
+  constraint nos_pausa_com_motivo check (status <> 'pausado' or length(btrim(coalesce(motivo_pausa,''))) > 0)
+);
+comment on table public.nos is 'A árvore da operação: cada linha é um cliente, projeto, produto, aplicação ou frente de trabalho.';
+create index nos_pai_idx on public.nos (pai_id, ordem);
+create index nos_tipo_idx on public.nos (tipo) where status <> 'arquivado';
+
+-- tabela de ancestrais (closure table): cada nó ligado a todos os seus ancestrais, com a distância
+create table public.nos_ancestrais (
+  ancestral_id uuid not null references public.nos(id) on delete cascade,
+  no_id        uuid not null references public.nos(id) on delete cascade,
+  distancia    smallint not null check (distancia >= 0),
+  primary key (ancestral_id, no_id)
+);
+comment on table public.nos_ancestrais is 'Mantida pelo banco. Permite somar qualquer nível da árvore sem percorrer a hierarquia a cada consulta.';
+create index nos_ancestrais_no_idx on public.nos_ancestrais (no_id, distancia);
+
+-- regra de quem pode ser pai de quem
+create or replace function interno.validar_pai() returns trigger
+language plpgsql set search_path = public, pg_temp as $$
+declare tipo_pai text;
+begin
+  if new.pai_id is null then
+    return new;
+  end if;
+  select tipo into tipo_pai from public.nos where id = new.pai_id;
+  if not (
+       (new.tipo = 'projeto'   and tipo_pai = 'cliente')
+    or (new.tipo = 'produto'   and tipo_pai = 'projeto')
+    or (new.tipo = 'aplicacao' and tipo_pai in ('projeto','produto'))
+    or (new.tipo = 'frente'    and tipo_pai = 'aplicacao')
+  ) then
+    raise exception 'Um % não pode ficar dentro de um %', new.tipo, tipo_pai using errcode = '23514';
+  end if;
+  if tg_op = 'UPDATE' and new.tipo <> old.tipo then
+    raise exception 'O tipo de um registro da estrutura não muda' using errcode = '23514';
+  end if;
+  return new;
+end $$;
+
+create trigger nos_validar_pai before insert or update of pai_id, tipo on public.nos
+  for each row execute function interno.validar_pai();
+create trigger nos_carimbo before update on public.nos
+  for each row execute function interno.carimbar_atualizacao();
+
+-- manutenção da tabela de ancestrais (inclusão e movimentação de galhos)
+create or replace function interno.manter_ancestrais() returns trigger
+language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  if tg_op = 'INSERT' then
+    insert into public.nos_ancestrais (ancestral_id, no_id, distancia)
+    select new.id, new.id, 0
+    union all
+    select a.ancestral_id, new.id, a.distancia + 1
+      from public.nos_ancestrais a
+     where a.no_id = new.pai_id;
+    return new;
+  end if;
+
+  if new.pai_id is distinct from old.pai_id then
+    -- não pode mover para dentro de si mesmo
+    if exists (select 1 from public.nos_ancestrais where ancestral_id = new.id and no_id = new.pai_id) then
+      raise exception 'Não dá para mover um registro para dentro dele mesmo' using errcode = '23514';
+    end if;
+    -- solta o galho dos ancestrais antigos
+    delete from public.nos_ancestrais d
+     using public.nos_ancestrais galho, public.nos_ancestrais acima
+     where galho.ancestral_id = new.id
+       and d.no_id = galho.no_id
+       and acima.no_id = new.id and acima.distancia > 0
+       and d.ancestral_id = acima.ancestral_id;
+    -- prende o galho nos ancestrais novos
+    insert into public.nos_ancestrais (ancestral_id, no_id, distancia)
+    select acima.ancestral_id, galho.no_id, acima.distancia + galho.distancia + 1
+      from public.nos_ancestrais acima
+      join public.nos_ancestrais galho on galho.ancestral_id = new.id
+     where acima.no_id = new.pai_id;
+  end if;
+  return new;
+end $$;
+
+create trigger nos_ancestrais_ins after insert on public.nos
+  for each row execute function interno.manter_ancestrais();
+create trigger nos_ancestrais_upd after update of pai_id on public.nos
+  for each row execute function interno.manter_ancestrais();
+
+-- extensões por tipo (cada uma só aceita o tipo certo, garantido por chave estrangeira composta)
+create table public.clientes (
+  no_id         uuid primary key,
+  tipo          text not null default 'cliente' check (tipo = 'cliente'),
+  tipo_cliente  text not null default 'empresa' check (tipo_cliente in ('holding','empresa','pessoa')),
+  documento     text,
+  holding_id    uuid,
+  holding_tipo  text not null default 'cliente' check (holding_tipo = 'cliente'),
+  foreign key (no_id, tipo) references public.nos (id, tipo) on delete cascade,
+  foreign key (holding_id, holding_tipo) references public.nos (id, tipo),
+  check (holding_id is null or holding_id <> no_id)
+);
+comment on column public.clientes.holding_id is 'Quando o cliente é uma empresa controlada por outra holding cliente. A BL é holding e não pertence a ninguém.';
+
+create table public.projetos (
+  no_id    uuid primary key,
+  tipo     text not null default 'projeto' check (tipo = 'projeto'),
+  origem   text not null default 'greenfield' check (origem in ('greenfield','brownfield')),
+  inicio   date,
+  alvo     date,
+  foreign key (no_id, tipo) references public.nos (id, tipo) on delete cascade,
+  check (alvo is null or inicio is null or alvo >= inicio)
+);
+
+create table public.aplicacoes (
+  no_id          uuid primary key,
+  tipo           text not null default 'aplicacao' check (tipo = 'aplicacao'),
+  plataforma     text not null default 'web' check (plataforma in ('desktop','web','mobile','api','outro')),
+  origem_codigo  text not null default 'proprio' check (origem_codigo in ('proprio','terceiros')),
+  servico_id     uuid,  -- ligado ao catálogo em 03_comercial
+  foreign key (no_id, tipo) references public.nos (id, tipo) on delete cascade
+);
+comment on column public.aplicacoes.origem_codigo is 'proprio: sistema feito pela IT.IA. terceiros: feito por outra empresa e trazido para manutenção.';
+
+create table public.frentes (
+  no_id       uuid primary key,
+  tipo        text not null default 'frente' check (tipo = 'frente'),
+  wip_limite  smallint check (wip_limite is null or wip_limite > 0),
+  foreign key (no_id, tipo) references public.nos (id, tipo) on delete cascade
+);
+
+-- =====================================================================
+-- PESSOAS E ACESSO
+-- =====================================================================
+create table public.pessoas (
+  id             uuid primary key default gen_random_uuid(),
+  auth_user_id   uuid unique,               -- ligado ao login quando ele existir
+  nome           text not null check (length(btrim(nome)) > 0),
+  email          text unique,
+  funcao         text,
+  habilidades    text[] not null default '{}',
+  capacidade_h   numeric(5,2) not null default 40 check (capacidade_h between 0 and 80),
+  papel          text not null default 'dev' check (papel in ('master','dev','stakeholder')),
+  ativo          boolean not null default true,
+  criado_em      timestamptz not null default now(),
+  atualizado_em  timestamptz not null default now()
+);
+comment on column public.pessoas.capacidade_h is 'Capacity: horas por semana disponíveis para tarefas.';
+create trigger pessoas_carimbo before update on public.pessoas for each row execute function interno.carimbar_atualizacao();
+
+-- quem participa de onde (vale para o nó e tudo o que está abaixo dele)
+create table public.participacoes (
+  pessoa_id  uuid not null references public.pessoas(id) on delete cascade,
+  no_id      uuid not null references public.nos(id) on delete cascade,
+  papel      text not null check (papel in ('owner','dev','stakeholder')),
+  criado_em  timestamptz not null default now(),
+  primary key (pessoa_id, no_id)
+);
+create index participacoes_no_idx on public.participacoes (no_id);
+
+-- =====================================================================
+-- FUNÇÕES DE ACESSO (usadas pelas regras de RLS)
+-- =====================================================================
+create or replace function interno.pessoa_atual() returns uuid
+language sql stable security definer set search_path = public, pg_temp as $$
+  select id from public.pessoas where auth_user_id = auth.uid() and ativo
+$$;
+
+create or replace function interno.eh_master() returns boolean
+language sql stable security definer set search_path = public, pg_temp as $$
+  select coalesce((select papel = 'master' from public.pessoas where auth_user_id = auth.uid() and ativo), false)
+$$;
+
+-- nós que a pessoa atual enxerga: tudo abaixo de onde participa, mais o caminho até a raiz
+create or replace function interno.nos_visiveis() returns setof uuid
+language sql stable security definer set search_path = public, pg_temp as $$
+  select n.id from public.nos n where interno.eh_master()
+  union
+  select a.no_id
+    from public.participacoes p
+    join public.nos_ancestrais a on a.ancestral_id = p.no_id
+   where p.pessoa_id = interno.pessoa_atual()
+  union
+  select a.ancestral_id
+    from public.participacoes p
+    join public.nos_ancestrais a on a.no_id = p.no_id
+   where p.pessoa_id = interno.pessoa_atual()
+$$;
+
+-- nós em que a pessoa atual pode trabalhar (owner ou dev no nó ou acima)
+create or replace function interno.nos_editaveis() returns setof uuid
+language sql stable security definer set search_path = public, pg_temp as $$
+  select n.id from public.nos n where interno.eh_master()
+  union
+  select a.no_id
+    from public.participacoes p
+    join public.nos_ancestrais a on a.ancestral_id = p.no_id
+   where p.pessoa_id = interno.pessoa_atual() and p.papel in ('owner','dev')
+$$;
+
+-- a pessoa atual é só stakeholder (vê apenas o que está marcado como visível ao cliente)
+create or replace function interno.eh_stakeholder() returns boolean
+language sql stable security definer set search_path = public, pg_temp as $$
+  select coalesce((select papel = 'stakeholder' from public.pessoas where auth_user_id = auth.uid() and ativo), false)
+$$;
+
+-- =====================================================================
+-- ETIQUETAS (as automáticas não são guardadas: vêm da estrutura, pela view etiquetas_sistema)
+-- =====================================================================
+create table public.etiquetas (
+  id         uuid primary key default gen_random_uuid(),
+  nome       text not null check (length(btrim(nome)) between 1 and 60),
+  cor        text not null default '#2E2E31' check (cor ~ '^#[0-9A-Fa-f]{6}$'),
+  categoria  text,
+  descricao  text,
+  criado_em  timestamptz not null default now(),
+  constraint etiquetas_nome_unq unique (nome)
+);
+
+create table public.etiquetas_nos (
+  etiqueta_id uuid not null references public.etiquetas(id) on delete cascade,
+  no_id       uuid not null references public.nos(id) on delete cascade,
+  primary key (no_id, etiqueta_id)
+);
+create index etiquetas_nos_etiqueta_idx on public.etiquetas_nos (etiqueta_id);
+
+-- etiquetas automáticas (com cadeado): holding do cliente e projeto de cada item, calculadas na hora
+create or replace view public.etiquetas_sistema with (security_invoker = true) as
+  select a.no_id, 'Holding: ' || h.nome as rotulo, 'holding' as origem, h.id as ref_id
+    from public.nos_ancestrais a
+    join public.nos c on c.id = a.ancestral_id and c.tipo = 'cliente'
+    join public.clientes cl on cl.no_id = c.id
+    join public.nos h on h.id = coalesce(cl.holding_id, case when cl.tipo_cliente = 'holding' then c.id end)
+   where a.distancia > 0
+  union all
+  select a.no_id, 'Projeto: ' || p.nome, 'projeto', p.id
+    from public.nos_ancestrais a
+    join public.nos p on p.id = a.ancestral_id and p.tipo = 'projeto'
+   where a.distancia > 0;
+comment on view public.etiquetas_sistema is 'Etiquetas automáticas geradas pelas ligações da estrutura. Ninguém apaga, porque não são guardadas.';
+
+-- >>>>>>>>>> 02_trabalho.sql
+-- =====================================================================
+-- Sistema IT.IA · 02 · Trabalho: status, itens (issues), ciclos, marcos, tempo, visões, automações
+-- =====================================================================
+
+-- STATUS: fluxo padrão (no_id nulo) ou personalizado para um nó e tudo abaixo dele
+create table public.status_fluxo (
+  id         uuid primary key default gen_random_uuid(),
+  no_id      uuid references public.nos(id) on delete cascade,
+  chave      text not null check (chave ~ '^[a-z0-9_]{2,30}$'),
+  nome       text not null,
+  explicacao text,
+  cor        text not null check (cor ~ '^#[0-9A-Fa-f]{6}$'),
+  grupo      text not null check (grupo in ('backlog','todo','doing','review','blocked','done')),
+  ordem      smallint not null default 0
+);
+comment on column public.status_fluxo.grupo is 'A que etapa do fluxo o status pertence. Os painéis somam pelo grupo, então status personalizados entram nas contas sem mudar nada.';
+create unique index status_fluxo_chave_unq on public.status_fluxo (coalesce(no_id, '00000000-0000-0000-0000-000000000000'::uuid), chave);
+create index status_fluxo_no_idx on public.status_fluxo (no_id) where no_id is not null;
+
+-- CICLOS (sprints), opcionais, sempre de um projeto
+create table public.sprints (
+  id          uuid primary key default gen_random_uuid(),
+  projeto_id  uuid not null,
+  projeto_tipo text not null default 'projeto' check (projeto_tipo = 'projeto'),
+  nome        text not null,
+  meta        text,
+  inicio      date not null,
+  fim         date not null,
+  status      text not null default 'planejado' check (status in ('planejado','ativo','encerrado')),
+  criado_em   timestamptz not null default now(),
+  foreign key (projeto_id, projeto_tipo) references public.nos (id, tipo) on delete cascade,
+  check (fim >= inicio),
+  exclude using gist (projeto_id with =, daterange(inicio, fim, '[]') with &&)
+);
+comment on table public.sprints is 'Sprints (ciclos curtos). Dois ciclos do mesmo projeto não podem se sobrepor.';
+create unique index sprints_um_ativo on public.sprints (projeto_id) where status = 'ativo';
+
+-- MARCOS e ENTREGAS DE VERSÃO
+create table public.marcos (
+  id              uuid primary key default gen_random_uuid(),
+  no_id           uuid not null references public.nos(id) on delete cascade,
+  tipo            text not null default 'marco' check (tipo in ('marco','release')),
+  nome            text not null,
+  descricao       text,
+  data            date not null,
+  visivel_cliente boolean not null default true,
+  entregue_em     date,
+  criado_em       timestamptz not null default now()
+);
+create index marcos_no_idx on public.marcos (no_id, data);
+
+-- ITENS (Epic, Story, Task, Sub-task, Bug). Ficam sempre numa frente.
+create table public.itens (
+  id              uuid primary key default gen_random_uuid(),
+  frente_id       uuid not null,
+  frente_tipo     text not null default 'frente' check (frente_tipo = 'frente'),
+  pai_id          uuid references public.itens(id) on delete restrict,
+  tipo            text not null check (tipo in ('epic','story','task','subtask','bug')),
+  titulo          text not null check (length(btrim(titulo)) between 1 and 300),
+  descricao       text,
+  status_id       uuid not null references public.status_fluxo(id),
+  prioridade      text not null default 'medium' check (prioridade in ('highest','high','medium','low')),
+  responsavel_id  uuid references public.pessoas(id) on delete set null,
+  relator_id      uuid references public.pessoas(id) on delete set null,
+  estimativa_h    numeric(7,2) check (estimativa_h is null or estimativa_h >= 0),
+  pontos          smallint check (pontos is null or pontos in (1,2,3,5,8,13,21)),
+  inicio          date,
+  prazo           date,
+  data_prevista   date,
+  visivel_cliente boolean not null default false,
+  sprint_id       uuid references public.sprints(id) on delete set null,
+  marco_id        uuid references public.marcos(id) on delete set null,
+  ordem           double precision not null default 0,
+  criado_em       timestamptz not null default now(),
+  iniciado_em     timestamptz,     -- primeira vez que entrou em andamento (Cycle time)
+  concluido_em    timestamptz,     -- quando entrou num status do grupo concluído (Lead time)
+  atualizado_em   timestamptz not null default now(),
+  arquivado_em    timestamptz,
+  foreign key (frente_id, frente_tipo) references public.nos (id, tipo),
+  check (prazo is null or inicio is null or prazo >= inicio),
+  check (pai_id is null or pai_id <> id)
+);
+comment on table public.itens is 'Issues: todas as tarefas, stories, epics, subtarefas e bugs. Um registro só, lido por todas as views.';
+comment on column public.itens.pontos is 'Story points (nota de esforço: 1, 2, 3, 5, 8, 13 ou 21). Opcional; a estimativa em horas continua valendo.';
+create index itens_frente_status_idx on public.itens (frente_id, status_id, ordem) where arquivado_em is null;
+create index itens_responsavel_idx on public.itens (responsavel_id, prazo) where arquivado_em is null;
+create index itens_pai_idx on public.itens (pai_id) where pai_id is not null;
+create index itens_sprint_idx on public.itens (sprint_id) where sprint_id is not null;
+create index itens_marco_idx on public.itens (marco_id) where marco_id is not null;
+create index itens_prazo_idx on public.itens (prazo) where arquivado_em is null and concluido_em is null;
+create index itens_concluido_idx on public.itens (concluido_em) where concluido_em is not null;
+create index itens_status_idx on public.itens (status_id);
+
+-- regras do item: hierarquia de tipos, status válido para a frente, ciclo do mesmo projeto, datas de fluxo
+create or replace function interno.validar_item() returns trigger
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare
+  tipo_pai text; frente_pai uuid; grupo_novo text; grupo_velho text; st_no uuid; sp_proj uuid;
+begin
+  -- hierarquia: epic > story > task > subtask; bug fica em epic ou story
+  if new.pai_id is not null then
+    select tipo, frente_id into tipo_pai, frente_pai from public.itens where id = new.pai_id;
+    if not (
+         (new.tipo = 'story'   and tipo_pai = 'epic')
+      or (new.tipo = 'task'    and tipo_pai in ('epic','story'))
+      or (new.tipo = 'bug'     and tipo_pai in ('epic','story'))
+      or (new.tipo = 'subtask' and tipo_pai in ('task','bug'))
+    ) then
+      raise exception 'Um % não pode ficar dentro de um %', new.tipo, tipo_pai using errcode = '23514';
+    end if;
+    -- o pai precisa estar na mesma aplicação
+    if not exists (
+      select 1 from public.nos f1 join public.nos f2 on f2.pai_id = f1.pai_id
+       where f1.id = new.frente_id and f2.id = frente_pai
+    ) then
+      raise exception 'O item pai precisa estar na mesma aplicação' using errcode = '23514';
+    end if;
+  elsif new.tipo = 'subtask' then
+    raise exception 'Uma subtarefa precisa de uma tarefa ou bug acima dela' using errcode = '23514';
+  elsif new.tipo = 'epic' and new.pai_id is not null then
+    raise exception 'Um epic não fica dentro de outro item' using errcode = '23514';
+  end if;
+
+  -- o status tem que valer para esta frente (padrão ou personalizado num nó acima)
+  select no_id, grupo into st_no, grupo_novo from public.status_fluxo where id = new.status_id;
+  if st_no is not null and not exists (
+    select 1 from public.nos_ancestrais where ancestral_id = st_no and no_id = new.frente_id
+  ) then
+    raise exception 'Este status não vale para esta frente' using errcode = '23514';
+  end if;
+
+  -- o ciclo tem que ser do mesmo projeto
+  if new.sprint_id is not null then
+    select projeto_id into sp_proj from public.sprints where id = new.sprint_id;
+    if not exists (select 1 from public.nos_ancestrais where ancestral_id = sp_proj and no_id = new.frente_id) then
+      raise exception 'O ciclo escolhido é de outro projeto' using errcode = '23514';
+    end if;
+  end if;
+
+  -- datas do fluxo (base do Lead time e do Cycle time)
+  if tg_op = 'UPDATE' then
+    select grupo into grupo_velho from public.status_fluxo where id = old.status_id;
+  end if;
+  if grupo_novo in ('doing','review') and new.iniciado_em is null then
+    new.iniciado_em := now();
+  end if;
+  if grupo_novo = 'done' and (tg_op = 'INSERT' or grupo_velho is distinct from 'done') then
+    new.concluido_em := coalesce(new.concluido_em, now());
+    new.iniciado_em := coalesce(new.iniciado_em, new.concluido_em);
+  elsif grupo_novo <> 'done' then
+    new.concluido_em := null;
+  end if;
+  if tg_op = 'UPDATE' then new.atualizado_em := now(); end if;
+  return new;
+end $$;
+
+create trigger itens_validar before insert or update on public.itens
+  for each row execute function interno.validar_item();
+
+-- LIGAÇÕES ENTRE ITENS (guardadas num sentido só; "é bloqueado por" é a leitura ao contrário)
+create table public.itens_ligacoes (
+  origem_id  uuid not null references public.itens(id) on delete cascade,
+  destino_id uuid not null references public.itens(id) on delete cascade,
+  tipo       text not null check (tipo in ('bloqueia','relacionado','duplica')),
+  criado_em  timestamptz not null default now(),
+  primary key (origem_id, destino_id, tipo),
+  check (origem_id <> destino_id)
+);
+create index itens_ligacoes_destino_idx on public.itens_ligacoes (destino_id);
+
+-- CHECKLIST
+create table public.itens_checklist (
+  id        uuid primary key default gen_random_uuid(),
+  item_id   uuid not null references public.itens(id) on delete cascade,
+  texto     text not null,
+  feito     boolean not null default false,
+  ordem     smallint not null default 0
+);
+create index itens_checklist_item_idx on public.itens_checklist (item_id, ordem);
+
+-- CAMPOS PERSONALIZADOS (definidos num nó, valem para os itens abaixo dele)
+create table public.campos_personalizados (
+  id        uuid primary key default gen_random_uuid(),
+  no_id     uuid not null references public.nos(id) on delete cascade,
+  nome      text not null,
+  tipo      text not null check (tipo in ('texto','numero','data','lista','sim_nao','dinheiro')),
+  opcoes    text[] not null default '{}',
+  ordem     smallint not null default 0,
+  unique (no_id, nome),
+  check (tipo <> 'lista' or cardinality(opcoes) > 0)
+);
+
+create table public.itens_campos (
+  item_id  uuid not null references public.itens(id) on delete cascade,
+  campo_id uuid not null references public.campos_personalizados(id) on delete cascade,
+  valor    text not null,
+  primary key (item_id, campo_id)
+);
+create index itens_campos_campo_idx on public.itens_campos (campo_id);
+
+create or replace function interno.validar_valor_campo() returns trigger
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare c record; f uuid;
+begin
+  select * into c from public.campos_personalizados where id = new.campo_id;
+  select frente_id into f from public.itens where id = new.item_id;
+  if not exists (select 1 from public.nos_ancestrais where ancestral_id = c.no_id and no_id = f) then
+    raise exception 'O campo "%" não vale para este item', c.nome using errcode = '23514';
+  end if;
+  if c.tipo in ('numero','dinheiro') and new.valor !~ '^-?[0-9]+([.,][0-9]+)?$' then
+    raise exception 'O campo "%" aceita só número', c.nome using errcode = '22P02';
+  elsif c.tipo = 'data' and new.valor !~ '^\d{4}-\d{2}-\d{2}$' then
+    raise exception 'O campo "%" aceita só data (aaaa-mm-dd)', c.nome using errcode = '22P02';
+  elsif c.tipo = 'sim_nao' and new.valor not in ('sim','nao') then
+    raise exception 'O campo "%" aceita só sim ou nao', c.nome using errcode = '22P02';
+  elsif c.tipo = 'lista' and not (new.valor = any (c.opcoes)) then
+    raise exception 'Valor fora das opções do campo "%"', c.nome using errcode = '22P02';
+  end if;
+  return new;
+end $$;
+create trigger itens_campos_validar before insert or update on public.itens_campos
+  for each row execute function interno.validar_valor_campo();
+
+-- COMENTÁRIOS (num item ou direto num nó, para o comentário "no macro" do stakeholder)
+create table public.comentarios (
+  id              uuid primary key default gen_random_uuid(),
+  item_id         uuid references public.itens(id) on delete cascade,
+  no_id           uuid references public.nos(id) on delete cascade,
+  autor_id        uuid references public.pessoas(id) on delete set null,
+  texto           text not null check (length(btrim(texto)) > 0),
+  visivel_cliente boolean not null default false,
+  criado_em       timestamptz not null default now(),
+  editado_em      timestamptz,
+  check (num_nonnulls(item_id, no_id) = 1)
+);
+create index comentarios_item_idx on public.comentarios (item_id, criado_em) where item_id is not null;
+create index comentarios_no_idx on public.comentarios (no_id, criado_em) where no_id is not null;
+
+-- TEMPO: cronômetro por item e tempo em foco numa frente ficam na mesma tabela (sem duplicar)
+create table public.tempo_registros (
+  id         uuid primary key default gen_random_uuid(),
+  pessoa_id  uuid not null references public.pessoas(id) on delete cascade,
+  origem     text not null check (origem in ('cronometro','foco','manual')),
+  item_id    uuid references public.itens(id) on delete cascade,
+  frente_id  uuid,
+  frente_tipo text not null default 'frente' check (frente_tipo = 'frente'),
+  inicio     timestamptz not null,
+  fim        timestamptz,
+  nota       text,
+  foreign key (frente_id, frente_tipo) references public.nos (id, tipo) on delete cascade,
+  check (fim is null or fim > inicio),
+  check ((origem = 'foco') = (frente_id is not null and item_id is null)),
+  check (origem = 'foco' or item_id is not null),
+  check (origem <> 'manual' or fim is not null)
+);
+comment on table public.tempo_registros is 'Time tracking. Registro aberto (fim vazio) de origem foco é o foco atual da pessoa.';
+create unique index tempo_um_cronometro_aberto on public.tempo_registros (pessoa_id) where fim is null and origem = 'cronometro';
+create unique index tempo_um_foco_aberto on public.tempo_registros (pessoa_id) where fim is null and origem = 'foco';
+create index tempo_item_idx on public.tempo_registros (item_id) where item_id is not null;
+create index tempo_frente_idx on public.tempo_registros (frente_id, inicio) where frente_id is not null;
+create index tempo_pessoa_inicio_idx on public.tempo_registros (pessoa_id, inicio);
+
+-- RESERVA DE HORÁRIO (Time blocking): planejado, não é tempo gasto
+create table public.blocos_agenda (
+  id        uuid primary key default gen_random_uuid(),
+  item_id   uuid not null references public.itens(id) on delete cascade,
+  pessoa_id uuid not null references public.pessoas(id) on delete cascade,
+  inicio    timestamptz not null,
+  fim       timestamptz not null,
+  check (fim > inicio),
+  exclude using gist (pessoa_id with =, tstzrange(inicio, fim) with &&)
+);
+create index blocos_item_idx on public.blocos_agenda (item_id);
+
+-- VISÕES SALVAS (Saved views)
+create table public.visoes_salvas (
+  id            uuid primary key default gen_random_uuid(),
+  pessoa_id     uuid not null references public.pessoas(id) on delete cascade,
+  no_id         uuid references public.nos(id) on delete cascade,   -- nulo = vale em qualquer lugar (Everything)
+  nome          text not null,
+  visao         text not null check (visao in ('board','table','list','calendar','timeline','workload')),
+  filtros       jsonb not null default '{}'::jsonb,
+  agrupamento   text,
+  ordenacao     text,
+  compartilhada boolean not null default false,
+  criado_em     timestamptz not null default now(),
+  unique (pessoa_id, nome)
+);
+
+-- AUTOMAÇÕES ("quando acontecer X, faça Y")
+create table public.automacoes (
+  id          uuid primary key default gen_random_uuid(),
+  no_id       uuid not null references public.nos(id) on delete cascade,
+  nome        text not null,
+  gatilho     text not null check (gatilho in ('item_criado','status_mudou','prioridade_mudou','responsavel_mudou','prazo_vencido')),
+  condicao    jsonb not null default '{}'::jsonb,  -- ex.: {"tipo":"bug","grupo":"done"}
+  acao        text not null check (acao in ('notificar','comentar','mudar_prioridade','atribuir','mudar_status','marcar_visivel')),
+  parametros  jsonb not null default '{}'::jsonb,  -- ex.: {"pessoa_id":"...","texto":"..."}
+  ativa       boolean not null default true,
+  criado_por  uuid references public.pessoas(id) on delete set null,
+  criado_em   timestamptz not null default now()
+);
+create index automacoes_no_idx on public.automacoes (no_id) where ativa;
+
+create table public.automacoes_execucoes (
+  id           bigint generated always as identity primary key,
+  automacao_id uuid not null references public.automacoes(id) on delete cascade,
+  item_id      uuid references public.itens(id) on delete cascade,
+  resultado    text not null check (resultado in ('ok','ignorada','erro')),
+  detalhe      text,
+  em           timestamptz not null default now()
+);
+create index automacoes_execucoes_idx on public.automacoes_execucoes (automacao_id, em desc);
+create index automacoes_execucoes_item_idx on public.automacoes_execucoes (item_id) where item_id is not null;
+
+-- NOTIFICAÇÕES
+create table public.notificacoes (
+  id         uuid primary key default gen_random_uuid(),
+  pessoa_id  uuid not null references public.pessoas(id) on delete cascade,
+  titulo     text not null,
+  texto      text,
+  item_id    uuid references public.itens(id) on delete cascade,
+  criado_em  timestamptz not null default now(),
+  lida_em    timestamptz
+);
+create index notificacoes_pessoa_idx on public.notificacoes (pessoa_id, criado_em desc) where lida_em is null;
+create index notificacoes_item_idx on public.notificacoes (item_id) where item_id is not null;
+
+-- QUADRO VISUAL (Whiteboard): cada elemento pode apontar para um registro de verdade
+create table public.quadros (
+  no_id          uuid primary key references public.nos(id) on delete cascade,
+  atualizado_em  timestamptz not null default now()
+);
+
+create table public.quadro_elementos (
+  id          uuid primary key default gen_random_uuid(),
+  quadro_id   uuid not null references public.quadros(no_id) on delete cascade,
+  tipo        text not null check (tipo in ('cartao','texto','forma','seta')),
+  x           real not null default 0,
+  y           real not null default 0,
+  largura     real,
+  altura      real,
+  texto       text,
+  cor         text check (cor is null or cor ~ '^#[0-9A-Fa-f]{6}$'),
+  ref_no_id   uuid references public.nos(id) on delete set null,
+  ref_item_id uuid references public.itens(id) on delete set null,
+  de_id       uuid references public.quadro_elementos(id) on delete cascade,
+  para_id     uuid references public.quadro_elementos(id) on delete cascade,
+  check (num_nonnulls(ref_no_id, ref_item_id) <= 1),
+  check ((tipo = 'seta') = (de_id is not null and para_id is not null))
+);
+create index quadro_elementos_quadro_idx on public.quadro_elementos (quadro_id);
+create index quadro_elementos_de_idx on public.quadro_elementos (de_id) where de_id is not null;
+create index quadro_elementos_para_idx on public.quadro_elementos (para_id) where para_id is not null;
+create index quadro_elementos_ref_no_idx on public.quadro_elementos (ref_no_id) where ref_no_id is not null;
+create index quadro_elementos_ref_item_idx on public.quadro_elementos (ref_item_id) where ref_item_id is not null;
+
+-- >>>>>>>>>> 03_ficha_etapas_comercial.sql
+-- =====================================================================
+-- Sistema IT.IA · 03 · Ficha técnica, requisitos, etapas obrigatórias, catálogo, custos e receitas
+-- =====================================================================
+
+-- FICHA TÉCNICA: um campo por linha. A aplicação herda do projeto o que não preencher (ver bi.ficha_do_no)
+create table public.ficha_campos (
+  no_id          uuid not null references public.nos(id) on delete cascade,
+  secao          text not null,
+  campo          text not null,
+  valor          text not null,
+  personalizado  boolean not null default false,
+  atualizado_por uuid references public.pessoas(id) on delete set null,
+  atualizado_em  timestamptz not null default now(),
+  primary key (no_id, secao, campo)
+);
+create trigger ficha_carimbo before update on public.ficha_campos for each row execute function interno.carimbar_atualizacao();
+
+create table public.decisoes (
+  id            uuid primary key default gen_random_uuid(),
+  no_id         uuid not null references public.nos(id) on delete cascade,
+  titulo        text not null,
+  motivo        text not null,
+  alternativas  text,
+  decidido_por  uuid references public.pessoas(id) on delete set null,
+  decidido_em   date not null default current_date
+);
+create index decisoes_no_idx on public.decisoes (no_id, decidido_em desc);
+
+-- lista de segredos: só nome e onde fica. Nunca o valor.
+create table public.segredos_catalogo (
+  id            uuid primary key default gen_random_uuid(),
+  no_id         uuid not null references public.nos(id) on delete cascade,
+  nome          text not null check (nome ~ '^[A-Z][A-Z0-9_]{1,80}$'),
+  onde_fica     text not null,
+  para_que      text,
+  quem_acessa   text,
+  ultima_troca  date,
+  unique (no_id, nome)
+);
+comment on table public.segredos_catalogo is 'Secrets catalog. O nome segue o padrão de variável (MAIÚSCULAS_COM_SUBLINHADO) justamente para não caber um valor aqui.';
+
+-- REQUISITOS MÍNIMOS (Baseline requirements)
+create table public.requisitos (
+  id          uuid primary key default gen_random_uuid(),
+  nome        text not null unique,
+  descricao   text,
+  padrao      boolean not null default true,   -- entra em todo projeto novo
+  ordem       smallint not null default 0
+);
+
+-- ETAPAS OBRIGATÓRIAS (Stage gates): modelo padrão
+create table public.etapas_modelo (
+  id          uuid primary key default gen_random_uuid(),
+  chave       text not null unique,
+  nome        text not null,
+  explicacao  text,
+  lente       text,
+  entrega     text,
+  ordem       smallint not null unique
+);
+
+create table public.etapas_modelo_itens (
+  id           uuid primary key default gen_random_uuid(),
+  etapa_id     uuid not null references public.etapas_modelo(id) on delete cascade,
+  texto        text not null,
+  modo         text not null default 'aviso' check (modo in ('aviso','trava','desligado')),
+  obrigatorio  boolean not null default true,
+  prova_tipo   text not null default 'nenhuma' check (prova_tipo in ('nenhuma','captura','arquivo','link','texto','aprovacao')),
+  quem_cumpre  text not null default 'responsavel_etapa' check (quem_cumpre in ('responsavel_etapa','qualquer_um','pessoa_definida')),
+  pessoa_id    uuid references public.pessoas(id) on delete set null,
+  so_terceiros boolean not null default false,   -- só vale quando o código é de outra empresa
+  ordem        smallint not null default 0,
+  check ((quem_cumpre = 'pessoa_definida') = (pessoa_id is not null))
+);
+create index etapas_modelo_itens_etapa_idx on public.etapas_modelo_itens (etapa_id, ordem);
+
+-- a situação de cada item de etapa em cada projeto ou aplicação (com os ajustes feitos pelo Master ali)
+create table public.etapas_nos (
+  no_id           uuid not null references public.nos(id) on delete cascade,
+  item_modelo_id  uuid not null references public.etapas_modelo_itens(id) on delete cascade,
+  modo            text check (modo in ('aviso','trava','desligado')),               -- nulo = segue o modelo
+  prova_tipo      text check (prova_tipo in ('nenhuma','captura','arquivo','link','texto','aprovacao')),
+  situacao        text not null default 'pendente' check (situacao in ('pendente','cumprido','dispensado')),
+  cumprido_por    uuid references public.pessoas(id) on delete set null,
+  cumprido_em     timestamptz,
+  motivo_dispensa text,
+  primary key (no_id, item_modelo_id),
+  check (situacao <> 'dispensado' or length(btrim(coalesce(motivo_dispensa,''))) > 0),
+  check ((situacao = 'pendente') = (cumprido_em is null))
+);
+comment on table public.etapas_nos is 'Só existe linha quando algo mudou no item daquele projeto. Sem linha, o item está pendente e segue o modelo.';
+create index etapas_nos_item_modelo_idx on public.etapas_nos (item_modelo_id);
+
+create table public.provas (
+  id              uuid primary key default gen_random_uuid(),
+  no_id           uuid not null,
+  item_modelo_id  uuid not null,
+  tipo            text not null check (tipo in ('captura','arquivo','link','texto','aprovacao')),
+  valor           text,
+  enviado_por     uuid references public.pessoas(id) on delete set null,
+  enviado_em      timestamptz not null default now(),
+  foreign key (no_id, item_modelo_id) references public.etapas_nos (no_id, item_modelo_id) on delete cascade
+);
+create index provas_item_idx on public.provas (no_id, item_modelo_id);
+
+-- =====================================================================
+-- CATÁLOGO DE SERVIÇOS
+-- =====================================================================
+create table public.servicos (
+  id               uuid primary key default gen_random_uuid(),
+  codigo           text not null unique check (codigo ~ '^[a-z0-9_]{2,40}$'),
+  categoria        text not null,
+  nome             text not null,
+  descricao        text,
+  entregaveis      text[] not null default '{}',
+  frentes_padrao   text[] not null default '{}',
+  horas_min        numeric(7,1) not null default 0,
+  horas_max        numeric(7,1) not null default 0,
+  sla              text,
+  checklist_inicio text[] not null default '{}',
+  ativo            boolean not null default true,
+  check (horas_max >= horas_min and horas_min >= 0)
+);
+
+alter table public.aplicacoes
+  add constraint aplicacoes_servico_fk foreign key (servico_id) references public.servicos(id) on delete set null;
+create index aplicacoes_servico_idx on public.aplicacoes (servico_id) where servico_id is not null;
+
+create table public.servicos_cobranca (
+  id          uuid primary key default gen_random_uuid(),
+  servico_id  uuid not null references public.servicos(id) on delete cascade,
+  modelo      text not null check (modelo in ('fixo','hora','marco','implantacao','mensalidade','banco_horas','usuario','faixas','uso','valor','sucesso','manutencao','repasse')),
+  parametros  jsonb not null default '{}'::jsonb,
+  ordem       smallint not null default 0,
+  unique (servico_id, modelo)
+);
+
+create table public.servicos_requisitos (
+  servico_id   uuid not null references public.servicos(id) on delete cascade,
+  requisito_id uuid not null references public.requisitos(id) on delete cascade,
+  primary key (servico_id, requisito_id)
+);
+create index servicos_requisitos_requisito_idx on public.servicos_requisitos (requisito_id);
+
+-- REGRAS DE CÁLCULO, com histórico: vale a linha mais recente com vigência até hoje
+create table public.regras_calculo (
+  vigente_desde    date primary key,
+  regime           text not null check (regime in ('simples','presumido','real')),
+  aliq_simples     numeric(5,2) not null,
+  aliq_presumido   numeric(5,2) not null,
+  aliq_real        numeric(5,2) not null,
+  inss_patronal    numeric(5,2) not null,
+  rat              numeric(5,2) not null,
+  terceiros        numeric(5,2) not null,
+  fgts             numeric(5,2) not null,
+  ferias           numeric(5,2) not null,
+  terco_ferias     numeric(5,2) not null,
+  decimo_terceiro  numeric(5,2) not null,
+  multa_fgts       numeric(5,2) not null,
+  horas_mes        numeric(5,1) not null check (horas_mes > 0),
+  faturavel_pct    numeric(5,2) not null check (faturavel_pct > 0 and faturavel_pct <= 100),
+  margem_pct       numeric(5,2) not null,
+  contingencia_pct numeric(5,2) not null,
+  folga_rateio_pct numeric(5,2) not null default 0,
+  manutencao_pct   numeric(5,2) not null,
+  cambio_usd       numeric(10,4) not null check (cambio_usd > 0),
+  complexidade     jsonb not null,  -- {"Baixa":0.85,"Média":1,"Alta":1.3,"Muito alta":1.6}
+  urgencia         jsonb not null,  -- {"Normal":1,"Prioritária":1.2,"Urgente":1.5}
+  criado_em        timestamptz not null default now(),
+  criado_por       uuid references public.pessoas(id) on delete set null
+);
+
+-- CUSTO DE PESSOAS (salários: só o Master vê)
+create table public.pessoas_custos (
+  id             uuid primary key default gen_random_uuid(),
+  pessoa_id      uuid not null references public.pessoas(id) on delete cascade,
+  vinculo        text not null check (vinculo in ('clt','pj','estagio','socio')),
+  salario        numeric(12,2) not null default 0 check (salario >= 0),
+  prolabore      numeric(12,2) not null default 0 check (prolabore >= 0),
+  valor_pj       numeric(12,2) not null default 0 check (valor_pj >= 0),
+  beneficios     numeric(12,2) not null default 0 check (beneficios >= 0),
+  vigente_desde  date not null,
+  unique (pessoa_id, vigente_desde)
+);
+
+-- DINHEIRO: sempre com moeda e data
+create table public.cambio (
+  moeda  char(3) not null check (moeda in ('USD','EUR')),
+  dia    date not null,
+  valor  numeric(10,4) not null check (valor > 0),
+  primary key (moeda, dia)
+);
+
+create table public.custos_operacao (
+  id                 uuid primary key default gen_random_uuid(),
+  nome               text not null,
+  categoria          text not null,
+  valor              numeric(14,2) not null check (valor >= 0),
+  moeda              char(3) not null default 'BRL' check (moeda in ('BRL','USD','EUR')),
+  recorrencia        text not null check (recorrencia in ('mensal','anual','unico','depreciacao')),
+  meses_depreciacao  smallint check (meses_depreciacao is null or meses_depreciacao > 0),
+  inicio             date not null default current_date,
+  fim                date,
+  check ((recorrencia = 'depreciacao') = (meses_depreciacao is not null)),
+  check (fim is null or fim >= inicio)
+);
+
+-- CUSTOS TÉCNICOS: ligados a qualquer nível da estrutura (normalmente a aplicação). O cliente vem da árvore.
+create table public.custos_tecnicos (
+  id                  uuid primary key default gen_random_uuid(),
+  no_id               uuid not null references public.nos(id) on delete restrict,
+  fornecedor          text not null,
+  categoria           text not null,
+  descricao           text,
+  recorrencia         text not null check (recorrencia in ('mensal','anual','unico','uso')),
+  moeda               char(3) not null default 'BRL' check (moeda in ('BRL','USD','EUR')),
+  valor               numeric(14,2) not null check (valor >= 0),
+  unidade             text,
+  limite              numeric(14,2) check (limite is null or limite > 0),
+  plano               text,
+  proximo_plano       text,
+  proximo_valor       numeric(14,2),
+  extra_por_unidade   numeric(14,4),
+  repasse             boolean not null default false,
+  taxa_repasse_pct    numeric(5,2) not null default 0 check (taxa_repasse_pct >= 0),
+  inicio              date not null,
+  fim                 date,
+  check (fim is null or fim >= inicio),
+  check (recorrencia <> 'uso' or unidade is not null)
+);
+create index custos_tecnicos_no_idx on public.custos_tecnicos (no_id);
+
+create table public.custos_uso (
+  custo_id    uuid not null references public.custos_tecnicos(id) on delete cascade,
+  mes         date not null check (extract(day from mes) = 1),
+  quantidade  numeric(14,2) not null check (quantidade >= 0),
+  valor_pago  numeric(14,2) check (valor_pago is null or valor_pago >= 0),
+  primary key (custo_id, mes)
+);
+
+-- RECEITAS: o que cada cliente paga, ligado ao projeto ou à aplicação
+create table public.receitas (
+  id          uuid primary key default gen_random_uuid(),
+  no_id       uuid not null references public.nos(id) on delete restrict,
+  servico_id  uuid references public.servicos(id) on delete set null,
+  descricao   text not null,
+  modelo      text not null check (modelo in ('fixo','hora','marco','implantacao','mensalidade','banco_horas','usuario','faixas','uso','valor','sucesso','manutencao','repasse')),
+  valor       numeric(14,2) not null check (valor >= 0),
+  moeda       char(3) not null default 'BRL' check (moeda in ('BRL','USD','EUR')),
+  forma       text not null check (forma in ('unica','parcelada','mensal')),
+  parcelas    smallint check (parcelas is null or parcelas > 0),
+  inicio      date not null,
+  fim         date,
+  check ((forma = 'parcelada') = (parcelas is not null)),
+  check (fim is null or fim >= inicio)
+);
+create index receitas_no_idx on public.receitas (no_id);
+
+-- >>>>>>>>>> 04_atendimento_agentes_anexos_auditoria.sql
+-- =====================================================================
+-- Sistema IT.IA · 04 · Service Desk, agentes, anexos e auditoria
+-- =====================================================================
+
+-- SLA: prazo combinado por nível da estrutura (vale o mais próximo acima do pedido)
+create table public.slas (
+  no_id            uuid not null references public.nos(id) on delete cascade,
+  gravidade        text not null check (gravidade in ('parado','quebrada','incomodo','cosmetico')),
+  horas_resposta   numeric(6,1) not null check (horas_resposta > 0),
+  horas_solucao    numeric(7,1) not null check (horas_solucao >= horas_resposta),
+  primary key (no_id, gravidade)
+);
+
+create table public.pedidos (
+  id             uuid primary key default gen_random_uuid(),
+  no_id          uuid not null references public.nos(id) on delete restrict,   -- aplicação (ou projeto) de onde veio
+  autor_id       uuid references public.pessoas(id) on delete set null,
+  tipo           text not null check (tipo in ('bug','correcao','mudanca','funcionalidade','duvida')),
+  gravidade      text not null default 'incomodo' check (gravidade in ('parado','quebrada','incomodo','cosmetico')),
+  status         text not null default 'novo' check (status in ('novo','ia_conversando','aguardando_voce','virou_item','resolvido','recusado')),
+  titulo         text not null,
+  contexto       jsonb not null default '{}'::jsonb,   -- Context capture: tela, versão, navegador, erros
+  item_id        uuid unique references public.itens(id) on delete set null,
+  duplicado_de   uuid references public.pedidos(id) on delete set null,
+  criado_em      timestamptz not null default now(),
+  respondido_em  timestamptz,   -- primeira resposta de uma pessoa da equipe (mede o SLA de resposta)
+  resolvido_em   timestamptz,
+  check (duplicado_de is null or duplicado_de <> id),
+  check ((status in ('resolvido','recusado')) = (resolvido_em is not null))
+);
+create index pedidos_no_idx on public.pedidos (no_id, criado_em desc);
+create index pedidos_status_idx on public.pedidos (status) where status not in ('resolvido','recusado');
+create index pedidos_autor_idx on public.pedidos (autor_id);
+create index pedidos_duplicado_idx on public.pedidos (duplicado_de) where duplicado_de is not null;
+
+create table public.pedidos_mensagens (
+  id           uuid primary key default gen_random_uuid(),
+  pedido_id    uuid not null references public.pedidos(id) on delete cascade,
+  autor_tipo   text not null check (autor_tipo in ('cliente','ia','equipe')),
+  pessoa_id    uuid references public.pessoas(id) on delete set null,
+  agente_id    uuid,
+  texto        text,
+  transcricao  text,   -- quando a mensagem é um áudio
+  criado_em    timestamptz not null default now(),
+  check (num_nonnulls(texto, transcricao) >= 1 or autor_tipo = 'cliente'),
+  check ((autor_tipo = 'ia') = (agente_id is not null))
+);
+create index pedidos_mensagens_idx on public.pedidos_mensagens (pedido_id, criado_em);
+
+-- primeira resposta da equipe carimba o pedido (base do SLA de resposta)
+create or replace function interno.carimbar_resposta() returns trigger
+language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  if new.autor_tipo = 'equipe' then
+    update public.pedidos set respondido_em = new.criado_em
+     where id = new.pedido_id and respondido_em is null;
+  end if;
+  return new;
+end $$;
+create trigger pedidos_mensagens_resposta after insert on public.pedidos_mensagens
+  for each row execute function interno.carimbar_resposta();
+
+-- AGENTES (Agent Studio)
+create table public.agentes (
+  id               uuid primary key default gen_random_uuid(),
+  codigo           text not null unique check (codigo ~ '^[a-z0-9_]{2,40}$'),
+  nome             text not null,
+  papel            text,
+  instrucoes       text not null default '',
+  regras_passagem  text,          -- Handoff rules
+  modelo_ia        text,          -- qual modelo de IA ele usa, quando houver provedor ligado
+  ativo            boolean not null default true,
+  criado_em        timestamptz not null default now()
+);
+
+alter table public.pedidos_mensagens
+  add constraint pedidos_mensagens_agente_fk foreign key (agente_id) references public.agentes(id) on delete set null;
+
+create table public.agentes_fontes (
+  id         uuid primary key default gen_random_uuid(),
+  agente_id  uuid not null references public.agentes(id) on delete cascade,
+  nome       text not null,
+  tipo       text not null default 'documento' check (tipo in ('documento','banco','ficha','historico','canvas','link')),
+  ref        text,
+  unique (agente_id, nome)
+);
+
+create table public.agentes_ferramentas (
+  agente_id   uuid not null references public.agentes(id) on delete cascade,
+  ferramenta  text not null,
+  permissao   text not null check (permissao in ('livre','automatica','confirmacao','bloqueada')),
+  primary key (agente_id, ferramenta)
+);
+
+create table public.agentes_execucoes (
+  id          bigint generated always as identity primary key,
+  agente_id   uuid not null references public.agentes(id) on delete cascade,
+  pedido_id   uuid references public.pedidos(id) on delete set null,
+  item_id     uuid references public.itens(id) on delete set null,
+  ferramenta  text,
+  entrada     text,
+  saida       text,
+  resultado   text not null check (resultado in ('ok','erro','aguardando_aprovacao','recusado')),
+  tokens      integer check (tokens is null or tokens >= 0),
+  custo_usd   numeric(10,4),
+  em          timestamptz not null default now()
+);
+create index agentes_execucoes_idx on public.agentes_execucoes (agente_id, em desc);
+create index agentes_execucoes_pedido_idx on public.agentes_execucoes (pedido_id) where pedido_id is not null;
+create index agentes_execucoes_item_idx on public.agentes_execucoes (item_id) where item_id is not null;
+
+create table public.agentes_avaliacoes (
+  id                 uuid primary key default gen_random_uuid(),
+  agente_id          uuid not null references public.agentes(id) on delete cascade,
+  pergunta           text not null,
+  resposta_esperada  text not null,
+  ultima_resposta    text,
+  nota               numeric(4,1) check (nota is null or nota between 0 and 10),
+  avaliado_em        timestamptz
+);
+create index agentes_avaliacoes_agente_idx on public.agentes_avaliacoes (agente_id);
+
+-- ANEXOS E REFERÊNCIAS: cada um pertence a exatamente um lugar; é arquivo no storage ou link
+create table public.anexos (
+  id            uuid primary key default gen_random_uuid(),
+  nome          text not null,
+  tipo          text not null check (tipo in ('imagem','audio','video','documento','link')),
+  mime          text,
+  tamanho_bytes bigint check (tamanho_bytes is null or tamanho_bytes >= 0),
+  storage_path  text,   -- bucket "anexos"
+  url           text,
+  no_id         uuid references public.nos(id) on delete cascade,
+  item_id       uuid references public.itens(id) on delete cascade,
+  comentario_id uuid references public.comentarios(id) on delete cascade,
+  pedido_id     uuid references public.pedidos(id) on delete cascade,
+  mensagem_id   uuid references public.pedidos_mensagens(id) on delete cascade,
+  prova_id      uuid references public.provas(id) on delete cascade,
+  decisao_id    uuid references public.decisoes(id) on delete cascade,
+  enviado_por   uuid references public.pessoas(id) on delete set null,
+  criado_em     timestamptz not null default now(),
+  check (num_nonnulls(no_id, item_id, comentario_id, pedido_id, mensagem_id, prova_id, decisao_id) = 1),
+  check (num_nonnulls(storage_path, url) = 1),
+  check ((tipo = 'link') = (url is not null))
+);
+create index anexos_no_idx on public.anexos (no_id) where no_id is not null;
+create index anexos_item_idx on public.anexos (item_id) where item_id is not null;
+create index anexos_pedido_idx on public.anexos (pedido_id) where pedido_id is not null;
+create index anexos_mensagem_idx on public.anexos (mensagem_id) where mensagem_id is not null;
+create index anexos_comentario_idx on public.anexos (comentario_id) where comentario_id is not null;
+create index anexos_prova_idx on public.anexos (prova_id) where prova_id is not null;
+
+-- =====================================================================
+-- AUDITORIA (Audit log): quem fez o quê, com o antes e o depois só do que mudou
+-- =====================================================================
+create table auditoria.registros (
+  id          bigint generated always as identity primary key,
+  tabela      text not null,
+  registro_id uuid,
+  acao        text not null check (acao in ('I','U','D')),
+  mudancas    jsonb,          -- INSERT: tudo; UPDATE: {"campo":[antes, depois]}; DELETE: tudo
+  pessoa_id   uuid,
+  em          timestamptz not null default now()
+);
+create index auditoria_registro_idx on auditoria.registros (registro_id, em desc);
+create index auditoria_em_idx on auditoria.registros using brin (em);
+create index auditoria_tabela_em_idx on auditoria.registros (tabela, em desc);
+
+create or replace function auditoria.registrar() returns trigger
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare j_novo jsonb; j_velho jsonb; dif jsonb; k text;
+begin
+  if tg_op = 'INSERT' then
+    j_novo := to_jsonb(new);
+    insert into auditoria.registros (tabela, registro_id, acao, mudancas, pessoa_id)
+    values (tg_table_name, (j_novo->>'id')::uuid, 'I', j_novo, interno.pessoa_atual());
+    return new;
+  elsif tg_op = 'UPDATE' then
+    j_novo := to_jsonb(new); j_velho := to_jsonb(old); dif := '{}'::jsonb;
+    for k in select jsonb_object_keys(j_novo) loop
+      if k not in ('atualizado_em') and j_novo->k is distinct from j_velho->k then
+        dif := dif || jsonb_build_object(k, jsonb_build_array(j_velho->k, j_novo->k));
+      end if;
+    end loop;
+    if dif <> '{}'::jsonb then
+      insert into auditoria.registros (tabela, registro_id, acao, mudancas, pessoa_id)
+      values (tg_table_name, (j_novo->>'id')::uuid, 'U', dif, interno.pessoa_atual());
+    end if;
+    return new;
+  else
+    j_velho := to_jsonb(old);
+    insert into auditoria.registros (tabela, registro_id, acao, mudancas, pessoa_id)
+    values (tg_table_name, (j_velho->>'id')::uuid, 'D', j_velho, interno.pessoa_atual());
+    return old;
+  end if;
+end $$;
+
+-- tabelas com histórico
+do $$
+declare t text;
+begin
+  foreach t in array array['nos','itens','comentarios','pedidos','custos_tecnicos','receitas','regras_calculo',
+                           'pessoas_custos','servicos','automacoes','marcos','sprints','decisoes','agentes'] loop
+    execute format('create trigger %I after insert or update or delete on public.%I for each row execute function auditoria.registrar()',
+                   t || '_auditoria', t);
+  end loop;
+end $$;
+
+-- >>>>>>>>>> 05_bi.sql
+-- =====================================================================
+-- Sistema IT.IA · 05 · BI: toda conta do sistema mora aqui, num lugar só
+-- Critério de desempenho:
+--   * o que é pequeno e muda toda hora (custos, receitas, painel) é calculado na hora, com índice;
+--   * o que é histórico e cresce sem parar (ritmo semanal dos itens) fica numa visão materializada
+--     com índice único, atualizada sem travar leitura (refresh concurrently) pela rotina bi.atualizar().
+-- =====================================================================
+
+-- dia de hoje no fuso de Brasília (o banco guarda em UTC)
+create or replace function bi.hoje() returns date
+language sql stable set search_path = public, pg_temp as $$ select (now() at time zone 'America/Sao_Paulo')::date $$;
+
+create or replace function bi.mes_atual() returns date
+language sql stable set search_path = public, pg_temp as $$ select date_trunc('month', bi.hoje())::date $$;
+
+-- regra de cálculo vigente
+create or replace function bi.regras() returns public.regras_calculo
+language sql stable security definer set search_path = public, pg_temp as $$
+  select * from public.regras_calculo where vigente_desde <= bi.hoje() order by vigente_desde desc limit 1
+$$;
+
+create or replace function bi.aliquota() returns numeric
+language sql stable set search_path = public, pg_temp as $$
+  select case r.regime when 'simples' then r.aliq_simples when 'presumido' then r.aliq_presumido else r.aliq_real end
+    from bi.regras() r
+$$;
+
+-- câmbio: o do dia (ou o último antes dele); sem registro, o dólar da regra vigente
+create or replace function bi.cambio(p_moeda char(3), p_dia date) returns numeric
+language sql stable security definer set search_path = public, pg_temp as $$
+  select case when p_moeda = 'BRL' then 1::numeric else coalesce(
+    (select c.valor from public.cambio c where c.moeda = p_moeda and c.dia <= p_dia order by c.dia desc limit 1),
+    case when p_moeda = 'USD' then (bi.regras()).cambio_usd end) end
+$$;
+
+-- =====================================================================
+-- EQUIPE: custo mensal de cada pessoa pela regra vigente (CLT, PJ, estágio, sócio)
+-- =====================================================================
+create or replace view bi.custo_pessoas as
+with vig as (
+  select distinct on (pc.pessoa_id) pc.*
+    from public.pessoas_custos pc
+   where pc.vigente_desde <= bi.hoje()
+   order by pc.pessoa_id, pc.vigente_desde desc
+), r as (select * from bi.regras())
+select p.id as pessoa_id, p.nome, v.vinculo, p.capacidade_h,
+       c.salario_base, c.provisoes, c.fgts, c.inss, c.multa_fgts, v.beneficios,
+       round(c.salario_base + c.provisoes + c.fgts + c.inss + c.multa_fgts + v.beneficios, 2) as total_mes,
+       round(p.capacidade_h * 4.33 * r.faturavel_pct / 100, 2) as horas_faturaveis_mes,
+       round((c.salario_base + c.provisoes + c.fgts + c.inss + c.multa_fgts + v.beneficios)
+             / nullif(p.capacidade_h * 4.33 * r.faturavel_pct / 100, 0), 2) as custo_hora
+  from vig v
+  join public.pessoas p on p.id = v.pessoa_id and p.ativo
+  cross join r
+  cross join lateral (
+    select
+      case v.vinculo when 'clt' then v.salario when 'pj' then v.valor_pj when 'estagio' then v.salario else v.prolabore end as salario_base,
+      case when v.vinculo = 'clt' then v.salario * (r.ferias + r.terco_ferias + r.decimo_terceiro) / 100 else 0 end as provisoes,
+      case when v.vinculo = 'clt' then v.salario * (1 + (r.ferias + r.terco_ferias + r.decimo_terceiro) / 100) * r.fgts / 100 else 0 end as fgts,
+      case when r.regime = 'simples' then 0
+           when v.vinculo = 'clt' then v.salario * (1 + (r.ferias + r.terco_ferias + r.decimo_terceiro) / 100) * (r.inss_patronal + r.rat + r.terceiros) / 100
+           when v.vinculo = 'socio' then v.prolabore * 0.20
+           else 0 end as inss,
+      case when v.vinculo = 'clt' then v.salario * r.multa_fgts / 100 else 0 end as multa_fgts
+  ) c;
+comment on view bi.custo_pessoas is 'Custo mensal e custo hora de cada pessoa. No Simples, o INSS patronal vai no DAS e não entra aqui.';
+
+-- operação interna em valor mensal equivalente (anual/12, depreciação/meses, único fora da conta mensal)
+create or replace view bi.operacao_mensal as
+select o.*,
+       round(case o.recorrencia when 'mensal' then o.valor when 'anual' then o.valor / 12
+                                when 'depreciacao' then o.valor / o.meses_depreciacao else 0 end
+             * bi.cambio(o.moeda, bi.hoje()), 2) as mensal_brl
+  from public.custos_operacao o
+ where o.inicio <= bi.hoje() and (o.fim is null or o.fim >= bi.hoje());
+
+-- os números que formam o preço da hora
+create or replace view bi.parametros_preco as
+with eq as (select coalesce(sum(total_mes), 0) as custo_equipe, coalesce(sum(horas_faturaveis_mes), 0) as horas from bi.custo_pessoas),
+     op as (select coalesce(sum(mensal_brl), 0) as overhead from bi.operacao_mensal),
+     r as (select * from bi.regras())
+select eq.custo_equipe, eq.horas as horas_faturaveis, op.overhead,
+       round(eq.custo_equipe / nullif(eq.horas, 0), 2) as custo_hora_medio,
+       round(op.overhead * (1 + r.folga_rateio_pct / 100) / nullif(eq.horas, 0), 2) as rateio_hora,
+       bi.aliquota() as aliquota, r.margem_pct, r.contingencia_pct,
+       round((eq.custo_equipe + op.overhead * (1 + r.folga_rateio_pct / 100)) / nullif(eq.horas, 0)
+             * (1 + r.contingencia_pct / 100) / greatest(1 - (bi.aliquota() + r.margem_pct) / 100, 0.05), 2) as preco_hora
+  from eq, op, r;
+
+-- a calculadora do Catalog: (equipe + rateio) × (1 + contingência) ÷ (1 − impostos − margem) × urgência
+create or replace function bi.calcular_preco(p_horas numeric, p_complexidade text default 'Média', p_urgencia text default 'Normal')
+returns jsonb language sql stable security definer set search_path = public, pg_temp as $$
+  with ok as (select interno.eh_master() as m),
+       p as (select * from bi.parametros_preco where (select m from ok)),
+       r as (select * from bi.regras()),
+       k as (select coalesce((r.complexidade->>p_complexidade)::numeric, 1) as kc,
+                    coalesce((r.urgencia->>p_urgencia)::numeric, 1) as ku from r),
+       c as (select p_horas * k.kc as horas, p_horas * k.kc * p.custo_hora_medio as equipe,
+                    p_horas * k.kc * p.rateio_hora as rateio, k.ku, p.aliquota, p.margem_pct, p.contingencia_pct from p, k),
+       f as (select c.*, (c.equipe + c.rateio) * c.contingencia_pct / 100 as contingencia,
+                    (c.equipe + c.rateio) * (1 + c.contingencia_pct / 100)
+                      / greatest(1 - (c.aliquota + c.margem_pct) / 100, 0.05) * c.ku as preco from c)
+  select jsonb_build_object(
+    'horas', round(horas, 1), 'equipe', round(equipe, 2), 'rateio', round(rateio, 2), 'contingencia', round(contingencia, 2),
+    'impostos', round(preco * aliquota / 100, 2), 'margem', round(preco * margem_pct / 100, 2),
+    'acrescimo_urgencia', round(preco - preco / ku, 2), 'preco', round(preco, 2))
+  from f
+$$;
+
+-- =====================================================================
+-- CUSTOS E RECEITAS MÊS A MÊS (36 meses para trás e 12 para frente)
+-- =====================================================================
+create or replace view bi.meses as
+select m::date as mes, (m::date > bi.mes_atual()) as previsto
+  from generate_series(bi.mes_atual() - interval '36 months', bi.mes_atual() + interval '12 months', interval '1 month') m;
+
+-- tendência de uso de cada custo (Forecast): inclinação dos últimos 6 meses registrados
+create or replace view bi.custos_tendencia as
+select u.custo_id,
+       (array_agg(u.quantidade order by u.mes desc))[1] as ultima_quantidade,
+       max(u.mes) as ultimo_mes,
+       min(u.mes) as primeiro_mes,
+       (array_agg(u.quantidade order by u.mes asc))[1] as primeira_quantidade,
+       coalesce(regr_slope(u.quantidade, extract(epoch from u.mes) / 2629800.0), 0)::numeric as inclinacao_mes
+  from (select *, row_number() over (partition by custo_id order by mes desc) as rn from public.custos_uso) u
+ where u.rn <= 6
+ group by u.custo_id;
+
+create or replace view bi.custos_mensais as
+with base as (
+  select c.*, date_trunc('month', c.inicio)::date as mes_ini,
+         date_trunc('month', coalesce(c.fim, 'infinity'::date))::date as mes_fim
+    from public.custos_tecnicos c
+), grade as (
+  select b.*, m.mes, m.previsto,
+         ((extract(year from m.mes) - extract(year from b.mes_ini)) * 12 + extract(month from m.mes) - extract(month from b.mes_ini))::int as idade
+    from base b
+    join bi.meses m on m.mes >= b.mes_ini and (b.fim is null or m.mes <= b.mes_fim)
+), qtd as (
+  select g.*, u.valor_pago,
+         case when g.unidade is null then null
+              when u.quantidade is not null then u.quantidade
+              when t.custo_id is null then null
+              when g.mes < t.primeiro_mes then t.primeira_quantidade
+              else greatest(0, t.ultima_quantidade + t.inclinacao_mes *
+                   ((extract(year from g.mes) - extract(year from t.ultimo_mes)) * 12 + extract(month from g.mes) - extract(month from t.ultimo_mes)))
+         end as quantidade,
+         (u.quantidade is null and g.unidade is not null) as quantidade_estimada
+    from grade g
+    left join public.custos_uso u on u.custo_id = g.id and u.mes = g.mes
+    left join bi.custos_tendencia t on t.custo_id = g.id
+), valor as (
+  select q.*,
+         case
+           when q.valor_pago is not null then q.valor_pago
+           when q.recorrencia = 'uso' then coalesce(q.quantidade, 0) * q.valor
+           when q.limite is not null and q.quantidade > q.limite and q.proximo_valor is not null
+             then q.proximo_valor + coalesce((q.quantidade - q.limite) * q.extra_por_unidade, 0)
+           else q.valor
+         end as valor_moeda
+    from qtd q
+)
+select v.id as custo_id, v.no_id, v.mes, v.previsto, v.quantidade, v.quantidade_estimada,
+       v.limite, (v.limite is not null and v.quantidade > v.limite) as acima_do_limite,
+       -- caixa: o que sai do bolso naquele mês
+       round(case v.recorrencia
+               when 'anual' then case when v.idade % 12 = 0 then v.valor_moeda else 0 end
+               when 'unico' then case when v.idade = 0 then v.valor_moeda else 0 end
+               else v.valor_moeda end * bi.cambio(v.moeda, least(v.mes, bi.hoje())), 2) as caixa_brl,
+       -- competência: o peso do custo em cada mês (anual dividido por 12)
+       round(case v.recorrencia
+               when 'anual' then v.valor_moeda / 12
+               when 'unico' then case when v.idade = 0 then v.valor_moeda else 0 end
+               else v.valor_moeda end * bi.cambio(v.moeda, least(v.mes, bi.hoje())), 2) as competencia_brl,
+       round(case when v.repasse then v.valor_moeda * (1 + v.taxa_repasse_pct / 100) * bi.cambio(v.moeda, least(v.mes, bi.hoje())) else 0 end, 2) as repasse_brl
+  from valor v;
+comment on view bi.custos_mensais is 'Custo técnico de cada item em cada mês, desde o início (pode ser retroativo), com previsão pela tendência de uso.';
+
+create or replace view bi.receitas_mensais as
+with grade as (
+  select r.*, m.mes, m.previsto,
+         ((extract(year from m.mes) - extract(year from date_trunc('month', r.inicio))) * 12
+           + extract(month from m.mes) - extract(month from date_trunc('month', r.inicio)))::int as idade
+    from public.receitas r
+    join bi.meses m on m.mes >= date_trunc('month', r.inicio)::date
+                   and (r.fim is null or m.mes <= date_trunc('month', r.fim)::date)
+)
+select g.id as receita_id, g.no_id, g.mes, g.previsto,
+       round(case g.forma
+               when 'mensal' then g.valor
+               when 'unica' then case when g.idade = 0 then g.valor else 0 end
+               when 'parcelada' then case when g.idade < g.parcelas then g.valor / g.parcelas else 0 end
+             end * bi.cambio(g.moeda, least(g.mes, bi.hoje())), 2) as valor_brl
+  from grade g;
+
+-- previsão de quando cada custo com limite chega no teto do plano
+create or replace view bi.previsao_limites as
+select c.id as custo_id, c.no_id, c.fornecedor, c.descricao, c.unidade, c.limite, c.plano, c.proximo_plano,
+       t.ultima_quantidade, round(t.inclinacao_mes, 3) as crescimento_mes,
+       round(100 * t.ultima_quantidade / c.limite, 1) as uso_pct,
+       case when t.ultima_quantidade >= c.limite then 0
+            when t.inclinacao_mes > 0 then ceil((c.limite - t.ultima_quantidade) / t.inclinacao_mes)::int end as meses_ate_limite
+  from public.custos_tecnicos c
+  join bi.custos_tendencia t on t.custo_id = c.id
+ where c.limite is not null and (c.fim is null or c.fim >= bi.hoje());
+
+-- =====================================================================
+-- ITENS: situação calculada de cada item (grupo do status, atraso, tempos)
+-- =====================================================================
+create or replace view bi.itens_situacao as
+select i.id, i.frente_id, i.tipo, i.titulo, i.prioridade, i.responsavel_id, i.estimativa_h, i.pontos,
+       i.inicio, i.prazo, i.data_prevista, i.visivel_cliente, i.sprint_id, i.marco_id, i.pai_id,
+       i.criado_em, i.iniciado_em, i.concluido_em, s.grupo, s.nome as status_nome, s.cor as status_cor,
+       (s.grupo <> 'done' and i.prazo < bi.hoje()) as atrasado,
+       (i.data_prevista is not null and i.prazo is not null and i.data_prevista > i.prazo) as previsto_depois_do_prazo,
+       extract(epoch from (i.concluido_em - i.criado_em)) / 3600 as lead_time_h,
+       extract(epoch from (i.concluido_em - i.iniciado_em)) / 3600 as cycle_time_h
+  from public.itens i
+  join public.status_fluxo s on s.id = i.status_id
+ where i.arquivado_em is null;
+
+-- RITMO SEMANAL por nível da estrutura (Throughput, Lead time, Cycle time). Materializada.
+create materialized view if not exists bi.ritmo_semanal as
+with semanas as (
+  select generate_series(date_trunc('week', now() - interval '25 weeks'), date_trunc('week', now()), interval '1 week')::date as semana
+), criados as (
+  select a.ancestral_id as no_id, date_trunc('week', i.criado_em)::date as semana, count(*) as n
+    from public.itens i join public.nos_ancestrais a on a.no_id = i.frente_id
+   where i.arquivado_em is null and i.criado_em >= now() - interval '26 weeks'
+   group by 1, 2
+), feitos as (
+  select a.ancestral_id as no_id, date_trunc('week', i.concluido_em)::date as semana, count(*) as n,
+         avg(extract(epoch from (i.concluido_em - i.criado_em)) / 3600) as lead_h,
+         avg(extract(epoch from (i.concluido_em - i.iniciado_em)) / 3600) as cycle_h,
+         sum(coalesce(i.estimativa_h, 0)) as horas, sum(coalesce(i.pontos, 0)) as pontos
+    from public.itens i join public.nos_ancestrais a on a.no_id = i.frente_id
+   where i.arquivado_em is null and i.concluido_em >= now() - interval '26 weeks'
+   group by 1, 2
+)
+select n.id as no_id, s.semana,
+       coalesce(c.n, 0)::int as criados, coalesce(f.n, 0)::int as concluidos,
+       round(f.lead_h::numeric, 1) as lead_time_h, round(f.cycle_h::numeric, 1) as cycle_time_h,
+       coalesce(f.horas, 0) as horas_concluidas, coalesce(f.pontos, 0)::int as pontos_concluidos
+  from public.nos n
+  cross join semanas s
+  left join criados c on c.no_id = n.id and c.semana = s.semana
+  left join feitos f on f.no_id = n.id and f.semana = s.semana
+ where n.status <> 'arquivado';
+create unique index if not exists ritmo_semanal_pk on bi.ritmo_semanal (no_id, semana);
+
+-- VELOCIDADE por ciclo (Velocity) e QUEIMA do ciclo (Burndown)
+create or replace view bi.velocidade_sprints as
+select sp.id as sprint_id, sp.projeto_id, sp.nome, sp.inicio, sp.fim, sp.status,
+       count(i.id) as itens, count(i.id) filter (where i.concluido_em is not null) as itens_concluidos,
+       coalesce(sum(i.pontos), 0) as pontos_planejados,
+       coalesce(sum(i.pontos) filter (where i.concluido_em is not null), 0) as pontos_concluidos,
+       coalesce(sum(i.estimativa_h), 0) as horas_planejadas,
+       coalesce(sum(i.estimativa_h) filter (where i.concluido_em is not null), 0) as horas_concluidas
+  from public.sprints sp
+  left join public.itens i on i.sprint_id = sp.id and i.arquivado_em is null
+ group by sp.id;
+
+create or replace function bi.queima_sprint(p_sprint uuid)
+returns table (dia date, restante_h numeric, restante_pontos numeric, ideal_h numeric)
+language sql stable security definer set search_path = public, pg_temp as $$
+  with sp as (select * from public.sprints where id = p_sprint),
+       tot as (select coalesce(sum(estimativa_h), 0) as h, count(*) as n from public.itens where sprint_id = p_sprint and arquivado_em is null),
+       dias as (select d::date as dia from sp, generate_series(sp.inicio, sp.fim, interval '1 day') d)
+  select d.dia,
+         coalesce(sum(i.estimativa_h) filter (where i.concluido_em is null or (i.concluido_em at time zone 'America/Sao_Paulo')::date > d.dia), 0),
+         coalesce(sum(i.pontos) filter (where i.concluido_em is null or (i.concluido_em at time zone 'America/Sao_Paulo')::date > d.dia), 0),
+         round(tot.h * (1 - (d.dia - sp.inicio)::numeric / greatest(sp.fim - sp.inicio, 1)), 1)
+    from dias d cross join sp cross join tot
+    left join public.itens i on i.sprint_id = p_sprint and i.arquivado_em is null
+   group by d.dia, tot.h, sp.inicio, sp.fim
+   order by d.dia
+$$;
+
+-- próximo dia útil (sábado e domingo passam para segunda). Usado fora das contas pesadas.
+create or replace function bi.dia_util(p_dia date) returns date
+language sql immutable set search_path = public, pg_temp as $$
+  select case extract(isodow from p_dia) when 6 then p_dia + 2 when 7 then p_dia + 1 else p_dia end
+$$;
+
+-- CARGA (Workload): a estimativa que falta de cada item aberto, espalhada pelos dias úteis entre o início e o prazo.
+-- Item atrasado: o que falta fica no próximo dia útil a partir de hoje.
+-- Desempenho: as contas de data ficam escritas direto na consulta (sem chamar função linha a linha)
+-- e os dias úteis saem de uma fórmula, sem gerar a lista de dias de cada item.
+create or replace function bi.carga(p_de date, p_ate date)
+returns table (pessoa_id uuid, dia date, horas numeric, capacidade_dia numeric)
+language plpgsql stable security definer set search_path = public, pg_temp as $$
+declare hoje date := bi.hoje(); todos boolean := interno.eh_master();
+begin
+  return query
+  with base as (
+    select i.id, i.responsavel_id, i.estimativa_h,
+           greatest(coalesce(i.inicio, i.prazo), hoje) as b_de, greatest(i.prazo, hoje) as b_ate
+      from public.itens i
+      join public.status_fluxo s on s.id = i.status_id and s.grupo <> 'done'
+     where i.arquivado_em is null and i.responsavel_id is not null and i.prazo is not null
+       and (todos or i.frente_id in (select interno.nos_visiveis()))
+  ), abertos as (
+    select b.id, b.responsavel_id, b.estimativa_h, x.de, greatest(x.ate0, x.de) as ate
+      from base b
+      cross join lateral (select
+        b.b_de + case extract(isodow from b.b_de) when 6 then 2 when 7 then 1 else 0 end as de,
+        b.b_ate + case extract(isodow from b.b_ate) when 6 then 2 when 7 then 1 else 0 end as ate0) x
+  ), no_periodo as (
+    select a.*, ((a.ate - a.de) / 7) * 5 + ((a.ate - a.de) % 7) + 1
+               - case when extract(isodow from a.de) + ((a.ate - a.de) % 7) > 5 then 2 else 0 end as n_uteis
+      from abertos a where a.de <= p_ate and a.ate >= p_de
+  ), gasto as (
+    select t.item_id, sum(extract(epoch from (coalesce(t.fim, now()) - t.inicio)) / 3600) as h
+      from public.tempo_registros t where t.item_id in (select id from no_periodo) group by t.item_id
+  ), dias as (
+    select a.responsavel_id, d::date as dia,
+           greatest(coalesce(a.estimativa_h, 0) - coalesce(g.h, 0), 0) / greatest(a.n_uteis, 1) as horas_dia
+      from no_periodo a
+      left join gasto g on g.item_id = a.id
+      cross join lateral generate_series(greatest(a.de, p_de), least(a.ate, p_ate), interval '1 day') d
+     where extract(isodow from d) < 6
+  )
+  select d.responsavel_id, d.dia, round(sum(d.horas_dia), 2), round(p.capacidade_h / 5, 2)
+    from dias d join public.pessoas p on p.id = d.responsavel_id
+   group by d.responsavel_id, d.dia, p.capacidade_h;
+end $$;
+
+-- SLA de cada pedido: vale o SLA do nível mais próximo acima do pedido
+create or replace view bi.pedidos_sla as
+select p.id as pedido_id, p.no_id, p.status, p.gravidade, p.criado_em, p.respondido_em, p.resolvido_em,
+       s.horas_resposta, s.horas_solucao,
+       p.criado_em + make_interval(secs => s.horas_resposta * 3600) as prazo_resposta,
+       p.criado_em + make_interval(secs => s.horas_solucao * 3600) as prazo_solucao,
+       case
+         when s.no_id is null then 'sem_sla'
+         when p.resolvido_em is not null then case when p.resolvido_em <= p.criado_em + make_interval(secs => s.horas_solucao * 3600) then 'cumprido' else 'estourado' end
+         when now() > p.criado_em + make_interval(secs => s.horas_solucao * 3600) then 'estourado'
+         when p.respondido_em is null and now() > p.criado_em + make_interval(secs => s.horas_resposta * 3600) then 'resposta_atrasada'
+         when now() > p.criado_em + make_interval(secs => s.horas_solucao * 3600 * 0.8) then 'perto_do_limite'
+         else 'no_prazo' end as situacao
+  from public.pedidos p
+  left join lateral (
+    select sl.* from public.nos_ancestrais a
+      join public.slas sl on sl.no_id = a.ancestral_id and sl.gravidade = p.gravidade
+     where a.no_id = p.no_id order by a.distancia limit 1
+  ) s on true;
+
+-- ETAPAS: situação efetiva de cada item de etapa em cada projeto e aplicação (modelo + ajustes)
+create or replace view bi.etapas_situacao as
+select n.id as no_id, n.tipo as no_tipo, em.id as etapa_id, em.nome as etapa, em.ordem as etapa_ordem,
+       mi.id as item_modelo_id, mi.texto, mi.obrigatorio,
+       coalesce(en.modo, mi.modo) as modo, coalesce(en.prova_tipo, mi.prova_tipo) as prova_tipo,
+       coalesce(en.situacao, 'pendente') as situacao, en.cumprido_por, en.cumprido_em, en.motivo_dispensa
+  from public.nos n
+  cross join public.etapas_modelo_itens mi
+  join public.etapas_modelo em on em.id = mi.etapa_id
+  left join public.etapas_nos en on en.no_id = n.id and en.item_modelo_id = mi.id
+ where n.tipo in ('projeto','aplicacao') and n.status <> 'arquivado'
+   and (not mi.so_terceiros or exists (
+         select 1 from public.nos_ancestrais a join public.aplicacoes ap on ap.no_id = a.no_id
+          where a.ancestral_id = n.id and ap.origem_codigo = 'terceiros'));
+
+-- FICHA TÉCNICA com herança: vale o valor do nível mais próximo
+create or replace function bi.ficha_do_no(p_no uuid)
+returns table (secao text, campo text, valor text, personalizado boolean, herdado boolean, origem_id uuid, origem_nome text)
+language sql stable security definer set search_path = public, pg_temp as $$
+  select distinct on (f.secao, f.campo) f.secao, f.campo, f.valor, f.personalizado, a.distancia > 0, f.no_id, n.nome
+    from public.nos_ancestrais a
+    join public.ficha_campos f on f.no_id = a.ancestral_id
+    join public.nos n on n.id = f.no_id
+   where a.no_id = p_no and p_no in (select interno.nos_visiveis())
+   order by f.secao, f.campo, a.distancia
+$$;
+
+-- MUDANÇAS RECENTES de um nível (lidas do registro de auditoria)
+-- Desempenho: escopo pequeno (até 3 mil itens) busca pelos ids do escopo no índice (registro_id, em);
+-- escopo grande percorre a auditoria do mais novo para o mais velho e para quando junta o suficiente.
+create or replace function bi.mudancas_recentes(p_no uuid, p_limite int default 12)
+returns table (quando timestamptz, pessoa text, acao text, item_id uuid, titulo text, detalhe jsonb)
+language plpgsql stable security definer set search_path = public, auditoria, pg_temp as $$
+declare
+  so_cliente boolean := interno.eh_stakeholder();
+  n_escopo int;
+begin
+  if p_no not in (select interno.nos_visiveis()) then return; end if;
+  select count(*) into n_escopo from (
+    select 1 from public.itens i join public.nos_ancestrais a on a.no_id = i.frente_id and a.ancestral_id = p_no limit 3001) x;
+
+  if n_escopo <= 3000 then
+    return query
+    with alvo as (
+      select i.id, i.titulo, i.visivel_cliente from public.itens i
+        join public.nos_ancestrais a on a.no_id = i.frente_id and a.ancestral_id = p_no
+       where not so_cliente or i.visivel_cliente
+    ), com as (
+      select c.id, c.item_id from public.comentarios c join alvo on alvo.id = c.item_id
+       where not so_cliente or c.visivel_cliente
+    ), ev as (
+      (select r.em, r.pessoa_id, r.acao, r.mudancas, alvo.id as item_id, alvo.titulo, false as comentario
+         from alvo cross join lateral (
+           select * from auditoria.registros r where r.registro_id = alvo.id and r.tabela = 'itens' order by r.em desc limit p_limite) r)
+      union all
+      (select r.em, r.pessoa_id, r.acao, null, alvo.id, alvo.titulo, true
+         from com join alvo on alvo.id = com.item_id
+         cross join lateral (select * from auditoria.registros r where r.registro_id = com.id and r.tabela = 'comentarios' and r.acao = 'I' limit 1) r)
+    )
+    select ev.em, pe.nome, interno.rotulo_mudanca(ev.acao, ev.mudancas, ev.comentario), ev.item_id, ev.titulo, ev.mudancas
+      from ev left join public.pessoas pe on pe.id = ev.pessoa_id
+     order by ev.em desc limit p_limite;
+  else
+    return query
+    select r.em, pe.nome, interno.rotulo_mudanca(r.acao, r.mudancas, r.tabela = 'comentarios'), i.id, i.titulo, r.mudancas
+      from auditoria.registros r
+      left join public.comentarios c on r.tabela = 'comentarios' and c.id = r.registro_id
+      join public.itens i on i.id = case when r.tabela = 'itens' then r.registro_id else c.item_id end
+      join public.nos_ancestrais a on a.no_id = i.frente_id and a.ancestral_id = p_no
+      left join public.pessoas pe on pe.id = r.pessoa_id
+     where r.tabela in ('itens','comentarios') and (r.tabela = 'itens' or r.acao = 'I')
+       and (not so_cliente or (i.visivel_cliente and (c.id is null or c.visivel_cliente)))
+     order by r.em desc limit p_limite;
+  end if;
+end $$;
+
+create or replace function interno.rotulo_mudanca(p_acao text, p_mudancas jsonb, p_comentario boolean) returns text
+language sql immutable set search_path = public, pg_temp as $$
+  select case when p_comentario then 'comentou em'
+              when p_acao = 'I' then 'criou'
+              when p_mudancas ? 'status_id' then 'mudou o status de'
+              when p_mudancas ? 'prazo' then 'mudou o prazo de'
+              when p_mudancas ? 'responsavel_id' then 'mudou o responsável de'
+              when p_mudancas ? 'arquivado_em' then 'arquivou'
+              else 'editou' end
+$$;
+
+-- =====================================================================
+-- PAINEL de qualquer nível (o Dashboard): tudo numa chamada só
+-- =====================================================================
+create or replace function bi.painel(p_no uuid)
+returns jsonb language plpgsql stable security definer set search_path = public, pg_temp as $$
+declare
+  so_cliente boolean := interno.eh_stakeholder();
+  hoje date := bi.hoje();
+  r jsonb;
+begin
+  if p_no not in (select interno.nos_visiveis()) then
+    raise exception 'Sem acesso a este nível' using errcode = '42501';
+  end if;
+
+  with it as (
+    select s.* from bi.itens_situacao s
+      join public.nos_ancestrais a on a.no_id = s.frente_id and a.ancestral_id = p_no
+     where not so_cliente or s.visivel_cliente
+  ), filhos as (
+    select n.id, n.nome, n.tipo, n.status,
+           count(s.id) as total,
+           count(s.id) filter (where s.grupo = 'done') as feitos,
+           count(s.id) filter (where s.grupo in ('doing','review')) as andamento,
+           count(s.id) filter (where s.grupo = 'blocked') as bloqueados,
+           count(s.id) filter (where s.atrasado) as atrasados
+      from public.nos n
+      left join public.nos_ancestrais a on a.ancestral_id = n.id
+      left join it s on s.frente_id = a.no_id
+     where n.pai_id = p_no and n.status <> 'arquivado' and n.id in (select interno.nos_visiveis())
+     group by n.id
+  ), dias as (
+    select d::date as dia,
+           (select count(*) from it where (it.concluido_em at time zone 'America/Sao_Paulo')::date = d::date) as concluidos
+      from generate_series(hoje - 13, hoje, interval '1 day') d
+  )
+  select jsonb_build_object(
+    'kpis', (select jsonb_build_object(
+        'total', count(*),
+        'backlog', count(*) filter (where grupo = 'backlog'),
+        'a_fazer', count(*) filter (where grupo = 'todo'),
+        'em_andamento', count(*) filter (where grupo in ('doing','review')),
+        'bloqueados', count(*) filter (where grupo = 'blocked'),
+        'concluidos', count(*) filter (where grupo = 'done'),
+        'atrasados', count(*) filter (where atrasado),
+        'sem_responsavel', count(*) filter (where responsavel_id is null and grupo <> 'done'),
+        'criados_14d', count(*) filter (where criado_em >= now() - interval '14 days'),
+        'concluidos_semana', count(*) filter (where concluido_em >= date_trunc('week', now())),
+        'concluidos_semana_anterior', count(*) filter (where concluido_em >= date_trunc('week', now()) - interval '1 week' and concluido_em < date_trunc('week', now())),
+        'horas_restantes', coalesce(sum(estimativa_h) filter (where grupo <> 'done'), 0)) from it),
+    'por_status', (select coalesce(jsonb_object_agg(g, n), '{}'::jsonb) from (select grupo g, count(*) n from it group by grupo) x),
+    'filhos', (select coalesce(jsonb_agg(to_jsonb(f) order by f.nome), '[]'::jsonb) from filhos f),
+    'dias', (select jsonb_agg(jsonb_build_object('dia', dia, 'concluidos', concluidos) order by dia) from dias),
+    'ultimos_concluidos', (select coalesce(jsonb_agg(x), '[]'::jsonb) from (
+        select id, titulo, concluido_em from it where grupo = 'done' order by concluido_em desc nulls last limit 8) x),
+    'mudancas', (select coalesce(jsonb_agg(to_jsonb(m)), '[]'::jsonb) from bi.mudancas_recentes(p_no, 10) m),
+    'avisos', jsonb_build_object(
+        'atrasados', (select count(*) from it where atrasado),
+        'bloqueados', (select count(*) from it where grupo = 'blocked'),
+        'sem_responsavel', (select count(*) from it where responsavel_id is null and grupo <> 'done'),
+        'etapas_pendentes', case when so_cliente then 0 else (select count(*)
+              from public.nos_ancestrais a
+              join public.nos n on n.id = a.no_id and n.tipo in ('projeto','aplicacao') and n.status <> 'arquivado'
+              cross join public.etapas_modelo_itens mi
+              left join public.etapas_nos en on en.no_id = n.id and en.item_modelo_id = mi.id
+             where a.ancestral_id = p_no and mi.obrigatorio and coalesce(en.situacao, 'pendente') = 'pendente'
+               and coalesce(en.modo, mi.modo) <> 'desligado'
+               and (not mi.so_terceiros or exists (select 1 from public.nos_ancestrais a2 join public.aplicacoes ap on ap.no_id = a2.no_id
+                                                    where a2.ancestral_id = n.id and ap.origem_codigo = 'terceiros'))) end,
+        'custos_perto_do_limite', case when interno.eh_master() then (select count(*) from bi.previsao_limites l
+              join public.nos_ancestrais a on a.no_id = l.no_id and a.ancestral_id = p_no
+             where l.meses_ate_limite is not null and l.meses_ate_limite <= 3) else 0 end,
+        'pedidos_aguardando', case when so_cliente then 0 else (select count(*) from public.pedidos p
+              join public.nos_ancestrais a on a.no_id = p.no_id and a.ancestral_id = p_no
+             where p.status = 'aguardando_voce') end),
+    'ritmo', (select coalesce(jsonb_agg(jsonb_build_object('semana', semana, 'criados', criados, 'concluidos', concluidos,
+                     'lead_time_h', lead_time_h, 'cycle_time_h', cycle_time_h) order by semana), '[]'::jsonb)
+                from bi.ritmo_semanal where no_id = p_no)
+  ) into r;
+  return r;
+end $$;
+
+-- FINANCEIRO de qualquer nível (só o Master): o que já foi gasto e cobrado, desde o início
+create or replace function bi.financeiro(p_no uuid)
+returns jsonb language plpgsql stable security definer set search_path = public, pg_temp as $$
+declare r jsonb; v_mes date := bi.mes_atual(); par record;
+begin
+  if not interno.eh_master() then
+    raise exception 'Só o Master vê valores' using errcode = '42501';
+  end if;
+  select * into par from bi.parametros_preco;
+  with esc as (select no_id from public.nos_ancestrais where ancestral_id = p_no),
+       cm as (select * from bi.custos_mensais where no_id in (select no_id from esc)),
+       rm as (select * from bi.receitas_mensais where no_id in (select no_id from esc)),
+       serie as (
+         select m.mes, m.previsto,
+                coalesce((select sum(caixa_brl) from cm where cm.mes = m.mes), 0) as custo,
+                coalesce((select sum(valor_brl) from rm where rm.mes = m.mes), 0) + coalesce((select sum(repasse_brl) from cm where cm.mes = m.mes), 0) as receita
+           from bi.meses m where m.mes >= v_mes - interval '24 months' and m.mes <= v_mes + interval '6 months')
+  select jsonb_build_object(
+    'custo_mes', (select coalesce(sum(competencia_brl), 0) from cm where cm.mes = v_mes),
+    'gasto_ate_hoje', (select coalesce(sum(caixa_brl), 0) from cm where not cm.previsto),
+    'cobrado_ate_hoje', (select coalesce(sum(valor_brl), 0) from rm where not rm.previsto),
+    'repasse_ate_hoje', (select coalesce(sum(repasse_brl), 0) from cm where not cm.previsto),
+    -- a receber: o que falta dos contratos com valor fechado (única e parcelada); mensalidade sem fim não entra
+    'a_receber', (select coalesce(sum(greatest(r.valor * bi.cambio(r.moeda, bi.hoje())
+                     - coalesce((select sum(x.valor_brl) from rm x where x.receita_id = r.id and not x.previsto), 0), 0)), 0)
+                    from public.receitas r where r.no_id in (select no_id from esc) and r.forma <> 'mensal'),
+    'equipe_para_terminar', round(coalesce((select sum(estimativa_h) from bi.itens_situacao s
+                              join esc on esc.no_id = s.frente_id where s.grupo <> 'done'), 0)
+                              * coalesce(par.custo_hora_medio, 0) * (1 + coalesce(par.contingencia_pct, 0) / 100), 2),
+    'serie', (select jsonb_agg(to_jsonb(s) order by s.mes) from serie s)
+  ) into r;
+  return r || jsonb_build_object('resultado', (r->>'cobrado_ate_hoje')::numeric - (r->>'gasto_ate_hoje')::numeric);
+end $$;
+
+-- atualiza as visões materializadas sem travar a leitura
+create or replace function bi.atualizar() returns void
+language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  refresh materialized view concurrently bi.ritmo_semanal;
+end $$;
+
+-- >>>>>>>>>> 06_rotinas.sql
+-- =====================================================================
+-- Sistema IT.IA · 06 · Rotinas chamadas pela tela (RPC) e motor das automações
+-- Toda rotina confere a permissão da pessoa atual antes de agir.
+-- O miolo com poder de dono (security definer) fica no schema interno, fora da API.
+-- Na API (schema public) fica só a casca, sem poder especial, que chama o miolo.
+-- =====================================================================
+
+-- ---------- estrutura ----------
+create or replace function interno.mover_no(p_no uuid, p_novo_pai uuid)
+returns void language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  if not interno.eh_master() then raise exception 'Só o Master move a estrutura' using errcode = '42501'; end if;
+  update public.nos set pai_id = p_novo_pai where id = p_no;
+  if not found then raise exception 'Registro não encontrado' using errcode = 'P0002'; end if;
+end $$;
+
+-- ---------- tempo ----------
+create or replace function interno.trocar_foco(p_frente uuid)
+returns uuid language plpgsql security definer set search_path = public, pg_temp as $$
+declare eu uuid := interno.pessoa_atual(); novo uuid;
+begin
+  if eu is null then raise exception 'Pessoa não identificada' using errcode = '42501'; end if;
+  if p_frente not in (select interno.nos_editaveis()) then raise exception 'Sem acesso a esta frente' using errcode = '42501'; end if;
+  update public.tempo_registros set fim = now() where pessoa_id = eu and origem = 'foco' and fim is null;
+  insert into public.tempo_registros (pessoa_id, origem, frente_id, inicio) values (eu, 'foco', p_frente, now()) returning id into novo;
+  return novo;
+end $$;
+
+create or replace function interno.parar_foco()
+returns void language sql security definer set search_path = public, pg_temp as $$
+  update public.tempo_registros set fim = now() where pessoa_id = interno.pessoa_atual() and origem = 'foco' and fim is null
+$$;
+
+create or replace function interno.iniciar_cronometro(p_item uuid)
+returns uuid language plpgsql security definer set search_path = public, pg_temp as $$
+declare eu uuid := interno.pessoa_atual(); novo uuid; f uuid;
+begin
+  select frente_id into f from public.itens where id = p_item;
+  if eu is null or f is null or f not in (select interno.nos_editaveis()) then
+    raise exception 'Sem acesso a este item' using errcode = '42501';
+  end if;
+  update public.tempo_registros set fim = now() where pessoa_id = eu and origem = 'cronometro' and fim is null;
+  insert into public.tempo_registros (pessoa_id, origem, item_id, inicio) values (eu, 'cronometro', p_item, now()) returning id into novo;
+  return novo;
+end $$;
+
+create or replace function interno.parar_cronometro()
+returns void language sql security definer set search_path = public, pg_temp as $$
+  update public.tempo_registros set fim = now() where pessoa_id = interno.pessoa_atual() and origem = 'cronometro' and fim is null
+$$;
+
+-- ---------- service desk ----------
+create or replace function interno.converter_pedido(p_pedido uuid, p_frente uuid, p_tipo text default null)
+returns uuid language plpgsql security definer set search_path = public, pg_temp as $$
+declare p record; novo uuid; st uuid;
+begin
+  if p_frente not in (select interno.nos_editaveis()) then raise exception 'Sem acesso a esta frente' using errcode = '42501'; end if;
+  select * into p from public.pedidos where id = p_pedido for update;
+  if not found then raise exception 'Pedido não encontrado' using errcode = 'P0002'; end if;
+  if p.item_id is not null then return p.item_id; end if;
+  select id into st from public.status_fluxo where no_id is null and grupo = 'backlog' order by ordem limit 1;
+  insert into public.itens (frente_id, tipo, titulo, descricao, status_id, prioridade, relator_id, visivel_cliente)
+  values (p_frente, coalesce(p_tipo, case when p.tipo in ('bug','correcao') then 'bug' else 'story' end), p.titulo,
+          'Veio do Service Desk.', st,
+          case p.gravidade when 'parado' then 'highest' when 'quebrada' then 'high' when 'incomodo' then 'medium' else 'low' end,
+          p.autor_id, true)
+  returning id into novo;
+  update public.pedidos set item_id = novo, status = 'virou_item' where id = p_pedido;
+  return novo;
+end $$;
+
+-- ---------- etapas ----------
+create or replace function interno.cumprir_etapa(p_no uuid, p_item_modelo uuid, p_prova_tipo text default null, p_valor text default null)
+returns void language plpgsql security definer set search_path = public, pg_temp as $$
+declare pedida text;
+begin
+  if p_no not in (select interno.nos_editaveis()) then raise exception 'Sem acesso a este projeto' using errcode = '42501'; end if;
+  select prova_tipo into pedida from bi.etapas_situacao where no_id = p_no and item_modelo_id = p_item_modelo;
+  if pedida is null then raise exception 'Item de etapa não encontrado' using errcode = 'P0002'; end if;
+  if pedida <> 'nenhuma' and (p_prova_tipo is null or p_valor is null or length(btrim(p_valor)) = 0) then
+    raise exception 'Este item pede prova do tipo %', pedida using errcode = '23514';
+  end if;
+  insert into public.etapas_nos (no_id, item_modelo_id, situacao, cumprido_por, cumprido_em)
+  values (p_no, p_item_modelo, 'cumprido', interno.pessoa_atual(), now())
+  on conflict (no_id, item_modelo_id) do update
+     set situacao = 'cumprido', cumprido_por = excluded.cumprido_por, cumprido_em = excluded.cumprido_em, motivo_dispensa = null;
+  if p_prova_tipo is not null and p_prova_tipo <> 'nenhuma' then
+    insert into public.provas (no_id, item_modelo_id, tipo, valor, enviado_por)
+    values (p_no, p_item_modelo, p_prova_tipo, p_valor, interno.pessoa_atual());
+  end if;
+end $$;
+
+create or replace function interno.dispensar_etapa(p_no uuid, p_item_modelo uuid, p_motivo text)
+returns void language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  if not interno.eh_master() then raise exception 'Só o Master dispensa um item de etapa' using errcode = '42501'; end if;
+  insert into public.etapas_nos (no_id, item_modelo_id, situacao, cumprido_por, cumprido_em, motivo_dispensa)
+  values (p_no, p_item_modelo, 'dispensado', interno.pessoa_atual(), now(), p_motivo)
+  on conflict (no_id, item_modelo_id) do update
+     set situacao = 'dispensado', cumprido_por = excluded.cumprido_por, cumprido_em = excluded.cumprido_em, motivo_dispensa = excluded.motivo_dispensa;
+end $$;
+
+-- ---------- login: liga a pessoa do time ao login pelo e-mail confirmado ----------
+-- Só liga quando a pessoa ainda não tem login e o e-mail do login é o mesmo cadastrado nela.
+create or replace function interno.vincular_meu_login()
+returns table (pessoa_id uuid, nome text, papel text)
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare eu uuid := auth.uid(); meu_email text := lower(nullif(auth.jwt()->>'email', ''));
+begin
+  if eu is null then raise exception 'Faça login primeiro' using errcode = '42501'; end if;
+  if meu_email is not null and not exists (select 1 from public.pessoas where auth_user_id = eu) then
+    update public.pessoas set auth_user_id = eu
+     where auth_user_id is null and ativo and lower(email) = meu_email;
+  end if;
+  return query select p.id, p.nome, p.papel from public.pessoas p where p.auth_user_id = eu and p.ativo;
+end $$;
+
+-- ---------- cascas na API (security invoker): a tela chama estas ----------
+create or replace function public.mover_no(p_no uuid, p_novo_pai uuid) returns void
+language sql security invoker set search_path = public, pg_temp as $$ select interno.mover_no(p_no, p_novo_pai) $$;
+create or replace function public.trocar_foco(p_frente uuid) returns uuid
+language sql security invoker set search_path = public, pg_temp as $$ select interno.trocar_foco(p_frente) $$;
+create or replace function public.parar_foco() returns void
+language sql security invoker set search_path = public, pg_temp as $$ select interno.parar_foco() $$;
+create or replace function public.iniciar_cronometro(p_item uuid) returns uuid
+language sql security invoker set search_path = public, pg_temp as $$ select interno.iniciar_cronometro(p_item) $$;
+create or replace function public.parar_cronometro() returns void
+language sql security invoker set search_path = public, pg_temp as $$ select interno.parar_cronometro() $$;
+create or replace function public.converter_pedido(p_pedido uuid, p_frente uuid, p_tipo text default null) returns uuid
+language sql security invoker set search_path = public, pg_temp as $$ select interno.converter_pedido(p_pedido, p_frente, p_tipo) $$;
+create or replace function public.cumprir_etapa(p_no uuid, p_item_modelo uuid, p_prova_tipo text default null, p_valor text default null) returns void
+language sql security invoker set search_path = public, pg_temp as $$ select interno.cumprir_etapa(p_no, p_item_modelo, p_prova_tipo, p_valor) $$;
+create or replace function public.dispensar_etapa(p_no uuid, p_item_modelo uuid, p_motivo text) returns void
+language sql security invoker set search_path = public, pg_temp as $$ select interno.dispensar_etapa(p_no, p_item_modelo, p_motivo) $$;
+
+create or replace function public.vincular_meu_login() returns table (pessoa_id uuid, nome text, papel text)
+language sql security invoker set search_path = public, pg_temp as $$ select * from interno.vincular_meu_login() $$;
+
+-- ---------- leitura do BI pela tela (a API só enxerga o schema public) ----------
+create or replace function public.painel(p_no uuid) returns jsonb
+language sql stable security invoker set search_path = public, pg_temp as $$ select bi.painel(p_no) $$;
+create or replace function public.financeiro(p_no uuid) returns jsonb
+language sql stable security invoker set search_path = public, pg_temp as $$ select bi.financeiro(p_no) $$;
+create or replace function public.calcular_preco(p_horas numeric, p_complexidade text default 'Média', p_urgencia text default 'Normal') returns jsonb
+language sql stable security invoker set search_path = public, pg_temp as $$ select bi.calcular_preco(p_horas, p_complexidade, p_urgencia) $$;
+create or replace function public.ficha(p_no uuid)
+returns table (secao text, campo text, valor text, personalizado boolean, herdado boolean, origem_id uuid, origem_nome text)
+language sql stable security invoker set search_path = public, pg_temp as $$ select * from bi.ficha_do_no(p_no) $$;
+create or replace function public.carga(p_de date, p_ate date)
+returns table (pessoa_id uuid, dia date, horas numeric, capacidade_dia numeric)
+language sql stable security invoker set search_path = public, pg_temp as $$ select * from bi.carga(p_de, p_ate) $$;
+create or replace function public.queima_sprint(p_sprint uuid)
+returns table (dia date, restante_h numeric, restante_pontos numeric, ideal_h numeric)
+language sql stable security invoker set search_path = public, pg_temp as $$ select * from bi.queima_sprint(p_sprint) $$;
+
+-- =====================================================================
+-- MOTOR DAS AUTOMAÇÕES
+-- A condição é um objeto em que cada chave precisa bater com o item: tipo, prioridade, grupo, status (chave).
+-- =====================================================================
+create or replace function interno.rodar_automacoes(p_item uuid, p_gatilho text)
+returns void language plpgsql security definer set search_path = public, pg_temp as $$
+declare a record; i record; ok boolean; st uuid; dest uuid;
+begin
+  select it.*, s.grupo, s.chave as status_chave into i
+    from public.itens it join public.status_fluxo s on s.id = it.status_id where it.id = p_item;
+  if not found then return; end if;
+
+  for a in
+    select au.* from public.automacoes au
+      join public.nos_ancestrais an on an.ancestral_id = au.no_id and an.no_id = i.frente_id
+     where au.ativa and au.gatilho = p_gatilho
+     order by an.distancia desc, au.criado_em
+  loop
+    ok := coalesce((a.condicao->>'tipo') is null or a.condicao->>'tipo' = i.tipo, true)
+      and coalesce((a.condicao->>'prioridade') is null or a.condicao->>'prioridade' = i.prioridade, true)
+      and coalesce((a.condicao->>'grupo') is null or a.condicao->>'grupo' = i.grupo, true)
+      and coalesce((a.condicao->>'status') is null or a.condicao->>'status' = i.status_chave, true);
+    if not ok then continue; end if;
+    begin
+      if a.acao = 'notificar' then
+        dest := coalesce(nullif(a.parametros->>'pessoa_id', '')::uuid,
+                         case when a.parametros->>'para' = 'relator' then i.relator_id else i.responsavel_id end);
+        if dest is not null then
+          insert into public.notificacoes (pessoa_id, titulo, texto, item_id)
+          values (dest, coalesce(a.parametros->>'titulo', a.nome), i.titulo, i.id);
+        end if;
+      elsif a.acao = 'comentar' then
+        insert into public.comentarios (item_id, texto, visivel_cliente)
+        values (i.id, coalesce(a.parametros->>'texto', a.nome), coalesce((a.parametros->>'visivel_cliente')::boolean, false));
+      elsif a.acao = 'mudar_prioridade' then
+        update public.itens set prioridade = a.parametros->>'prioridade' where id = i.id;
+      elsif a.acao = 'atribuir' then
+        update public.itens set responsavel_id = (a.parametros->>'pessoa_id')::uuid where id = i.id;
+      elsif a.acao = 'marcar_visivel' then
+        update public.itens set visivel_cliente = true where id = i.id;
+      elsif a.acao = 'mudar_status' then
+        select sf.id into st from public.status_fluxo sf
+          left join public.nos_ancestrais an on an.ancestral_id = sf.no_id and an.no_id = i.frente_id
+         where sf.chave = a.parametros->>'status' and (sf.no_id is null or an.no_id is not null)
+         order by an.distancia nulls last limit 1;
+        if st is not null then update public.itens set status_id = st where id = i.id; end if;
+      end if;
+      insert into public.automacoes_execucoes (automacao_id, item_id, resultado) values (a.id, i.id, 'ok');
+    exception when others then
+      insert into public.automacoes_execucoes (automacao_id, item_id, resultado, detalhe) values (a.id, i.id, 'erro', sqlerrm);
+    end;
+  end loop;
+end $$;
+
+create or replace function interno.gatilho_automacoes() returns trigger
+language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  -- automações não disparam outras automações (evita ciclo infinito)
+  if pg_trigger_depth() > 1 then return null; end if;
+  if tg_op = 'INSERT' then
+    perform interno.rodar_automacoes(new.id, 'item_criado');
+  else
+    if new.status_id is distinct from old.status_id then perform interno.rodar_automacoes(new.id, 'status_mudou'); end if;
+    if new.prioridade is distinct from old.prioridade then perform interno.rodar_automacoes(new.id, 'prioridade_mudou'); end if;
+    if new.responsavel_id is distinct from old.responsavel_id then perform interno.rodar_automacoes(new.id, 'responsavel_mudou'); end if;
+  end if;
+  return null;
+end $$;
+
+drop trigger if exists itens_automacoes on public.itens;
+create trigger itens_automacoes after insert or update of status_id, prioridade, responsavel_id on public.itens
+  for each row execute function interno.gatilho_automacoes();
+
+-- rotina diária: itens que venceram ontem disparam "prazo_vencido"
+create or replace function interno.automacoes_prazo_vencido() returns integer
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare n integer := 0; r record;
+begin
+  for r in select s.id from bi.itens_situacao s where s.grupo <> 'done' and s.prazo = bi.hoje() - 1 loop
+    perform interno.rodar_automacoes(r.id, 'prazo_vencido'); n := n + 1;
+  end loop;
+  return n;
+end $$;
+
+-- >>>>>>>>>> 07_seguranca.sql
+-- =====================================================================
+-- Sistema IT.IA · 07 · Segurança: RLS (quem vê cada linha) + GRANT (quem pode cada operação)
+-- Papéis:  master = vê e muda tudo · dev = trabalha onde participa · stakeholder = só o visível ao cliente, sem valores
+-- Padrão de desempenho: toda função dentro de uma regra vai entre parênteses com select, "(select interno.eh_master())",
+-- para o banco calcular uma vez por consulta, e não uma vez por linha.
+-- =====================================================================
+
+-- recomeça do zero (este arquivo pode ser rodado de novo: recria todas as regras)
+do $$
+declare r record;
+begin
+  for r in select policyname, tablename from pg_policies where schemaname = 'public' loop
+    execute format('drop policy %I on public.%I', r.policyname, r.tablename);
+  end loop;
+end $$;
+
+-- liga a RLS em todas as tabelas do produto
+-- (sem FORCE: as rotinas security definer, donas das tabelas, continuam lendo tudo para fazer as contas)
+do $$
+declare t text;
+begin
+  for t in select tablename from pg_tables where schemaname = 'public' loop
+    execute format('alter table public.%I enable row level security', t);
+  end loop;
+end $$;
+
+-- ---------- estrutura ----------
+create policy ver on public.nos for select to authenticated using (id in (select interno.nos_visiveis()));
+create policy master_muda on public.nos for all to authenticated using ((select interno.eh_master())) with check ((select interno.eh_master()));
+
+create policy ver on public.nos_ancestrais for select to authenticated using (no_id in (select interno.nos_visiveis()));
+
+create policy ver on public.clientes   for select to authenticated using (no_id in (select interno.nos_visiveis()));
+create policy ver on public.projetos   for select to authenticated using (no_id in (select interno.nos_visiveis()));
+create policy ver on public.aplicacoes for select to authenticated using (no_id in (select interno.nos_visiveis()));
+create policy ver on public.frentes    for select to authenticated using (no_id in (select interno.nos_visiveis()));
+create policy master_muda on public.clientes   for all to authenticated using ((select interno.eh_master())) with check ((select interno.eh_master()));
+create policy master_muda on public.projetos   for all to authenticated using ((select interno.eh_master())) with check ((select interno.eh_master()));
+create policy master_muda on public.aplicacoes for all to authenticated using ((select interno.eh_master())) with check ((select interno.eh_master()));
+create policy master_muda on public.frentes    for all to authenticated using ((select interno.eh_master())) with check ((select interno.eh_master()));
+
+-- ---------- pessoas ----------
+create policy ver on public.pessoas for select to authenticated using (ativo or (select interno.eh_master()));
+create policy master_muda on public.pessoas for all to authenticated using ((select interno.eh_master())) with check ((select interno.eh_master()));
+
+create policy ver on public.participacoes for select to authenticated using ((select interno.eh_master()) or pessoa_id = (select interno.pessoa_atual()));
+create policy master_muda on public.participacoes for all to authenticated using ((select interno.eh_master())) with check ((select interno.eh_master()));
+
+-- ---------- etiquetas ----------
+create policy ver on public.etiquetas for select to authenticated using (true);
+create policy master_muda on public.etiquetas for all to authenticated using ((select interno.eh_master())) with check ((select interno.eh_master()));
+create policy ver on public.etiquetas_nos for select to authenticated using (no_id in (select interno.nos_visiveis()));
+create policy master_muda on public.etiquetas_nos for all to authenticated using ((select interno.eh_master())) with check ((select interno.eh_master()));
+
+-- ---------- trabalho ----------
+create policy ver on public.status_fluxo for select to authenticated using (no_id is null or no_id in (select interno.nos_visiveis()));
+create policy master_muda on public.status_fluxo for all to authenticated using ((select interno.eh_master())) with check ((select interno.eh_master()));
+
+create policy ver on public.sprints for select to authenticated using (projeto_id in (select interno.nos_visiveis()));
+create policy time_muda on public.sprints for all to authenticated
+  using (projeto_id in (select interno.nos_editaveis())) with check (projeto_id in (select interno.nos_editaveis()));
+
+create policy ver on public.marcos for select to authenticated
+  using (no_id in (select interno.nos_visiveis()) and (visivel_cliente or not (select interno.eh_stakeholder())));
+create policy time_muda on public.marcos for all to authenticated
+  using (no_id in (select interno.nos_editaveis())) with check (no_id in (select interno.nos_editaveis()));
+
+create policy ver on public.itens for select to authenticated
+  using (frente_id in (select interno.nos_visiveis()) and (visivel_cliente or not (select interno.eh_stakeholder())));
+create policy time_cria on public.itens for insert to authenticated with check (frente_id in (select interno.nos_editaveis()));
+create policy time_edita on public.itens for update to authenticated
+  using (frente_id in (select interno.nos_editaveis())) with check (frente_id in (select interno.nos_editaveis()));
+create policy master_apaga on public.itens for delete to authenticated using ((select interno.eh_master()));
+
+-- tabelas penduradas no item: vale a visibilidade do item (a RLS de itens roda dentro do exists)
+create policy ver on public.itens_ligacoes for select to authenticated using (exists (select 1 from public.itens i where i.id = origem_id));
+create policy time_muda on public.itens_ligacoes for all to authenticated
+  using (exists (select 1 from public.itens i where i.id = origem_id and i.frente_id in (select interno.nos_editaveis())))
+  with check (exists (select 1 from public.itens i where i.id = origem_id and i.frente_id in (select interno.nos_editaveis())));
+
+create policy ver on public.itens_checklist for select to authenticated using (exists (select 1 from public.itens i where i.id = item_id));
+create policy time_muda on public.itens_checklist for all to authenticated
+  using (exists (select 1 from public.itens i where i.id = item_id and i.frente_id in (select interno.nos_editaveis())))
+  with check (exists (select 1 from public.itens i where i.id = item_id and i.frente_id in (select interno.nos_editaveis())));
+
+create policy ver on public.campos_personalizados for select to authenticated using (no_id in (select interno.nos_visiveis()));
+create policy master_muda on public.campos_personalizados for all to authenticated using ((select interno.eh_master())) with check ((select interno.eh_master()));
+
+create policy ver on public.itens_campos for select to authenticated using (exists (select 1 from public.itens i where i.id = item_id));
+create policy time_muda on public.itens_campos for all to authenticated
+  using (exists (select 1 from public.itens i where i.id = item_id and i.frente_id in (select interno.nos_editaveis())))
+  with check (exists (select 1 from public.itens i where i.id = item_id and i.frente_id in (select interno.nos_editaveis())));
+
+create policy ver on public.comentarios for select to authenticated using (
+  (visivel_cliente or not (select interno.eh_stakeholder()))
+  and ((item_id is not null and exists (select 1 from public.itens i where i.id = item_id))
+       or (no_id is not null and no_id in (select interno.nos_visiveis()))));
+create policy cria on public.comentarios for insert to authenticated with check (
+  autor_id = (select interno.pessoa_atual())
+  and (not (select interno.eh_stakeholder()) or visivel_cliente)
+  and ((item_id is not null and exists (select 1 from public.itens i where i.id = item_id))
+       or (no_id is not null and no_id in (select interno.nos_visiveis()))));
+create policy autor_muda on public.comentarios for update to authenticated
+  using (autor_id = (select interno.pessoa_atual()) or (select interno.eh_master())) with check (autor_id = (select interno.pessoa_atual()) or (select interno.eh_master()));
+create policy autor_apaga on public.comentarios for delete to authenticated using (autor_id = (select interno.pessoa_atual()) or (select interno.eh_master()));
+
+create policy ver on public.tempo_registros for select to authenticated using (
+  pessoa_id = (select interno.pessoa_atual()) or (select interno.eh_master())
+  or (not (select interno.eh_stakeholder()) and (frente_id in (select interno.nos_editaveis())
+      or exists (select 1 from public.itens i where i.id = item_id and i.frente_id in (select interno.nos_editaveis())))));
+create policy dono_muda on public.tempo_registros for all to authenticated
+  using (pessoa_id = (select interno.pessoa_atual()) or (select interno.eh_master()))
+  with check (pessoa_id = (select interno.pessoa_atual()) or (select interno.eh_master()));
+
+create policy ver on public.blocos_agenda for select to authenticated using (
+  not (select interno.eh_stakeholder()) and exists (select 1 from public.itens i where i.id = item_id));
+create policy dono_muda on public.blocos_agenda for all to authenticated
+  using (pessoa_id = (select interno.pessoa_atual()) or (select interno.eh_master()))
+  with check ((pessoa_id = (select interno.pessoa_atual()) or (select interno.eh_master()))
+              and exists (select 1 from public.itens i where i.id = item_id and i.frente_id in (select interno.nos_editaveis())));
+
+create policy ver on public.visoes_salvas for select to authenticated using (pessoa_id = (select interno.pessoa_atual()) or compartilhada);
+create policy dono_muda on public.visoes_salvas for all to authenticated
+  using (pessoa_id = (select interno.pessoa_atual())) with check (pessoa_id = (select interno.pessoa_atual()));
+
+create policy master on public.automacoes for all to authenticated using ((select interno.eh_master())) with check ((select interno.eh_master()));
+create policy master on public.automacoes_execucoes for select to authenticated using ((select interno.eh_master()));
+
+create policy dono on public.notificacoes for select to authenticated using (pessoa_id = (select interno.pessoa_atual()));
+create policy dono_marca_lida on public.notificacoes for update to authenticated
+  using (pessoa_id = (select interno.pessoa_atual())) with check (pessoa_id = (select interno.pessoa_atual()));
+
+create policy ver on public.quadros for select to authenticated using (not (select interno.eh_stakeholder()) and no_id in (select interno.nos_visiveis()));
+create policy time_muda on public.quadros for all to authenticated
+  using (no_id in (select interno.nos_editaveis())) with check (no_id in (select interno.nos_editaveis()));
+create policy ver on public.quadro_elementos for select to authenticated using (exists (select 1 from public.quadros q where q.no_id = quadro_id));
+create policy time_muda on public.quadro_elementos for all to authenticated
+  using (quadro_id in (select interno.nos_editaveis())) with check (quadro_id in (select interno.nos_editaveis()));
+
+-- ---------- ficha técnica e etapas ----------
+create policy ver on public.ficha_campos for select to authenticated using (not (select interno.eh_stakeholder()) and no_id in (select interno.nos_visiveis()));
+create policy time_muda on public.ficha_campos for all to authenticated
+  using (no_id in (select interno.nos_editaveis())) with check (no_id in (select interno.nos_editaveis()));
+create policy ver on public.decisoes for select to authenticated using (not (select interno.eh_stakeholder()) and no_id in (select interno.nos_visiveis()));
+create policy time_muda on public.decisoes for all to authenticated
+  using (no_id in (select interno.nos_editaveis())) with check (no_id in (select interno.nos_editaveis()));
+create policy master on public.segredos_catalogo for all to authenticated using ((select interno.eh_master())) with check ((select interno.eh_master()));
+
+create policy ver on public.requisitos for select to authenticated using (not (select interno.eh_stakeholder()));
+create policy master_muda on public.requisitos for all to authenticated using ((select interno.eh_master())) with check ((select interno.eh_master()));
+create policy ver on public.etapas_modelo for select to authenticated using (not (select interno.eh_stakeholder()));
+create policy master_muda on public.etapas_modelo for all to authenticated using ((select interno.eh_master())) with check ((select interno.eh_master()));
+create policy ver on public.etapas_modelo_itens for select to authenticated using (not (select interno.eh_stakeholder()));
+create policy master_muda on public.etapas_modelo_itens for all to authenticated using ((select interno.eh_master())) with check ((select interno.eh_master()));
+-- cumprir e dispensar passam pelas rotinas cumprir_etapa e dispensar_etapa; o Master ajusta modo e prova direto
+create policy ver on public.etapas_nos for select to authenticated using (not (select interno.eh_stakeholder()) and no_id in (select interno.nos_visiveis()));
+create policy master_muda on public.etapas_nos for all to authenticated using ((select interno.eh_master())) with check ((select interno.eh_master()));
+create policy ver on public.provas for select to authenticated using (not (select interno.eh_stakeholder()) and no_id in (select interno.nos_visiveis()));
+create policy master_muda on public.provas for all to authenticated using ((select interno.eh_master())) with check ((select interno.eh_master()));
+
+-- ---------- comercial e custos: só o Master (o time vê o catálogo, sem preços) ----------
+create policy ver on public.servicos for select to authenticated using (not (select interno.eh_stakeholder()));
+create policy master_muda on public.servicos for all to authenticated using ((select interno.eh_master())) with check ((select interno.eh_master()));
+create policy ver on public.servicos_requisitos for select to authenticated using (not (select interno.eh_stakeholder()));
+create policy master_muda on public.servicos_requisitos for all to authenticated using ((select interno.eh_master())) with check ((select interno.eh_master()));
+do $$
+declare t text;
+begin
+  foreach t in array array['servicos_cobranca','regras_calculo','pessoas_custos','cambio','custos_operacao',
+                           'custos_tecnicos','custos_uso','receitas'] loop
+    execute format('create policy master on public.%I for all to authenticated using ((select interno.eh_master())) with check ((select interno.eh_master()))', t);
+  end loop;
+end $$;
+
+-- ---------- service desk ----------
+create policy ver on public.slas for select to authenticated using (no_id in (select interno.nos_visiveis()));
+create policy master_muda on public.slas for all to authenticated using ((select interno.eh_master())) with check ((select interno.eh_master()));
+
+create policy ver on public.pedidos for select to authenticated using (
+  autor_id = (select interno.pessoa_atual()) or (not (select interno.eh_stakeholder()) and no_id in (select interno.nos_visiveis())));
+create policy cria on public.pedidos for insert to authenticated with check (
+  autor_id = (select interno.pessoa_atual()) and no_id in (select interno.nos_visiveis()));
+create policy time_muda on public.pedidos for update to authenticated
+  using (no_id in (select interno.nos_editaveis())) with check (no_id in (select interno.nos_editaveis()));
+
+create policy ver on public.pedidos_mensagens for select to authenticated using (exists (select 1 from public.pedidos p where p.id = pedido_id));
+create policy cria on public.pedidos_mensagens for insert to authenticated with check (
+  pessoa_id = (select interno.pessoa_atual())
+  and autor_tipo = case when (select interno.eh_stakeholder()) then 'cliente' else 'equipe' end
+  and exists (select 1 from public.pedidos p where p.id = pedido_id));
+
+-- ---------- agentes ----------
+create policy ver on public.agentes for select to authenticated using (not (select interno.eh_stakeholder()));
+create policy master_muda on public.agentes for all to authenticated using ((select interno.eh_master())) with check ((select interno.eh_master()));
+create policy ver on public.agentes_fontes for select to authenticated using (not (select interno.eh_stakeholder()));
+create policy master_muda on public.agentes_fontes for all to authenticated using ((select interno.eh_master())) with check ((select interno.eh_master()));
+create policy ver on public.agentes_ferramentas for select to authenticated using (not (select interno.eh_stakeholder()));
+create policy master_muda on public.agentes_ferramentas for all to authenticated using ((select interno.eh_master())) with check ((select interno.eh_master()));
+create policy master on public.agentes_execucoes for select to authenticated using ((select interno.eh_master()));
+create policy master on public.agentes_avaliacoes for all to authenticated using ((select interno.eh_master())) with check ((select interno.eh_master()));
+
+-- ---------- anexos: vale a visibilidade de onde o anexo está ----------
+create or replace function interno.anexo_visivel(a public.anexos) returns boolean
+language sql stable security invoker set search_path = public, pg_temp as $$
+  select case
+    when a.no_id is not null then not interno.eh_stakeholder() and a.no_id in (select interno.nos_visiveis())
+    when a.item_id is not null then exists (select 1 from public.itens i where i.id = a.item_id)
+    when a.comentario_id is not null then exists (select 1 from public.comentarios c where c.id = a.comentario_id)
+    when a.pedido_id is not null then exists (select 1 from public.pedidos p where p.id = a.pedido_id)
+    when a.mensagem_id is not null then exists (select 1 from public.pedidos_mensagens m where m.id = a.mensagem_id)
+    when a.prova_id is not null then exists (select 1 from public.provas pr where pr.id = a.prova_id)
+    when a.decisao_id is not null then exists (select 1 from public.decisoes d where d.id = a.decisao_id)
+    else false end
+$$;
+create policy ver on public.anexos for select to authenticated using (interno.anexo_visivel(anexos));
+create policy cria on public.anexos for insert to authenticated with check (enviado_por = (select interno.pessoa_atual()) and interno.anexo_visivel(anexos));
+create policy dono_apaga on public.anexos for delete to authenticated using (enviado_por = (select interno.pessoa_atual()) or (select interno.eh_master()));
+
+-- ---------- desempenho: uma regra só por operação ----------
+-- Onde a tabela tem uma regra "ver" (leitura) e outra regra de mudança escrita "para tudo", a leitura avaliaria as duas.
+-- Aqui a regra de mudança vira três (incluir, alterar, apagar), com as mesmas condições, e a leitura fica só com a "ver".
+do $$
+declare p record; cond text; conf text;
+begin
+  for p in
+    select a.tablename, a.policyname, a.qual, a.with_check
+      from pg_policies a
+     where a.schemaname = 'public' and a.cmd = 'ALL'
+       and exists (select 1 from pg_policies b where b.schemaname = 'public' and b.tablename = a.tablename and b.cmd = 'SELECT')
+  loop
+    cond := p.qual; conf := coalesce(p.with_check, p.qual);
+    execute format('drop policy %I on public.%I', p.policyname, p.tablename);
+    execute format('create policy %I on public.%I for insert to authenticated with check (%s)', p.policyname || '_inclui', p.tablename, conf);
+    execute format('create policy %I on public.%I for update to authenticated using (%s) with check (%s)', p.policyname || '_altera', p.tablename, cond, conf);
+    execute format('create policy %I on public.%I for delete to authenticated using (%s)', p.policyname || '_apaga', p.tablename, cond);
+  end loop;
+end $$;
+
+-- =====================================================================
+-- GRANT explícito (RLS filtra linhas; GRANT libera a operação. Sem os dois, a tela quebra)
+-- =====================================================================
+revoke all on all tables in schema public from anon, public;
+grant select, insert, update, delete on all tables in schema public to authenticated;
+grant all on all tables in schema public to service_role;
+grant usage on all sequences in schema public to authenticated, service_role;
+
+-- as views do BI respeitam a RLS de quem consulta
+do $$
+declare v text;
+begin
+  for v in select viewname from pg_views where schemaname = 'bi' loop
+    execute format('alter view bi.%I set (security_invoker = true)', v);
+  end loop;
+end $$;
+revoke all on all tables in schema bi from public, anon, authenticated;
+grant select on all tables in schema bi to service_role;
+revoke all on all tables in schema auditoria from public, anon, authenticated;
+
+-- funções: ninguém executa por padrão; libera só o que a tela e as regras usam
+revoke execute on all functions in schema public, interno, bi, auditoria from public, anon;
+grant execute on function interno.pessoa_atual(), interno.eh_master(), interno.eh_stakeholder(),
+                          interno.nos_visiveis(), interno.nos_editaveis(), interno.anexo_visivel(public.anexos) to authenticated;
+grant execute on function bi.painel(uuid), bi.financeiro(uuid), bi.calcular_preco(numeric, text, text), bi.ficha_do_no(uuid),
+                          bi.carga(date, date), bi.queima_sprint(uuid), bi.mudancas_recentes(uuid, int),
+                          bi.hoje(), bi.mes_atual() to authenticated;
+grant execute on function public.mover_no(uuid, uuid), public.trocar_foco(uuid), public.parar_foco(),
+                          public.iniciar_cronometro(uuid), public.parar_cronometro(), public.converter_pedido(uuid, uuid, text),
+                          public.cumprir_etapa(uuid, uuid, text, text), public.dispensar_etapa(uuid, uuid, text),
+                          public.painel(uuid), public.financeiro(uuid), public.calcular_preco(numeric, text, text),
+                          public.ficha(uuid), public.carga(date, date), public.queima_sprint(uuid), public.vincular_meu_login() to authenticated;
+-- o miolo das rotinas da tela (as cascas da API chamam estas)
+grant execute on function interno.mover_no(uuid, uuid), interno.trocar_foco(uuid), interno.parar_foco(),
+                          interno.iniciar_cronometro(uuid), interno.parar_cronometro(), interno.converter_pedido(uuid, uuid, text),
+                          interno.cumprir_etapa(uuid, uuid, text, text), interno.dispensar_etapa(uuid, uuid, text),
+                          interno.vincular_meu_login() to authenticated;
+grant execute on all functions in schema public, interno, bi, auditoria to service_role;
+
+-- o Supabase dá permissão automática para anon em tudo que nasce no schema public. Aqui isso é desligado para o futuro:
+-- tabela ou função nova só fica acessível quando alguém der o GRANT de propósito.
+alter default privileges in schema public revoke all on tables from anon;
+alter default privileges in schema public revoke all on sequences from anon;
+alter default privileges in schema public revoke execute on functions from anon, public;
+
+-- >>>>>>>>>> 08_semente.sql
+-- =====================================================================
+-- Sistema IT.IA · 08 · Semente: os dados de exemplo que o sistema já mostra (gerado por gerar_semente.py)
+-- Pode rodar de novo: nada duplica. As datas relativas foram calculadas em 2026-09-28.
+-- =====================================================================
+begin;
+-- a semente não entra no registro de auditoria (o histórico de exemplo é carregado no fim)
+alter table public.nos disable trigger nos_auditoria;
+alter table public.itens disable trigger itens_auditoria;
+alter table public.itens disable trigger itens_automacoes;
+alter table public.comentarios disable trigger comentarios_auditoria;
+alter table public.pedidos disable trigger pedidos_auditoria;
+alter table public.custos_tecnicos disable trigger custos_tecnicos_auditoria;
+alter table public.receitas disable trigger receitas_auditoria;
+alter table public.regras_calculo disable trigger regras_calculo_auditoria;
+alter table public.pessoas_custos disable trigger pessoas_custos_auditoria;
+alter table public.servicos disable trigger servicos_auditoria;
+alter table public.agentes disable trigger agentes_auditoria;
+alter table public.marcos disable trigger marcos_auditoria;
+alter table public.sprints disable trigger sprints_auditoria;
+alter table public.automacoes disable trigger automacoes_auditoria;
+
+insert into public.pessoas (id, nome, funcao, habilidades, capacidade_h, papel) values
+  ('d148fdc5-eef3-5398-bf89-f49b55b5cd28', 'William', 'Master · Owner', array['Produto','Arquitetura','Java']::text[], 40, 'master'),
+  ('b5510531-2c75-59fb-b2c1-006a90d0775f', 'Ana (exemplo)', 'Dev', array['Java','JavaFX','Supabase']::text[], 40, 'dev'),
+  ('29f7bce5-bf6e-5a2f-8e3b-c25e855a33c4', 'Bruno (exemplo)', 'Dev', array['Flutter','APIs','QA']::text[], 30, 'dev'),
+  ('2246aac4-fcc9-5564-af95-054b9cc42889', 'CEO da B&L (exemplo)', 'Stakeholder', '{}'::text[], 0, 'stakeholder')
+on conflict (id) do nothing;
+
+insert into public.nos (id, tipo, pai_id, nome, status, motivo_pausa, ordem) values
+  ('a615f8ab-48db-550e-bbe7-f11524ae2669', 'cliente', null, 'Blanco & Lisboa', 'ativo', null, 0),
+  ('cea3db88-841f-5511-98d1-3bedcc411131', 'projeto', 'a615f8ab-48db-550e-bbe7-f11524ae2669', 'BL', 'ativo', null, 0),
+  ('c2c5b9eb-d8ab-5f51-8a45-aae53d38a74a', 'produto', 'cea3db88-841f-5511-98d1-3bedcc411131', 'Blanco & Lisboa', 'ativo', null, 0),
+  ('70b80c6e-aa4f-5cd7-8663-4439f0084edf', 'produto', 'cea3db88-841f-5511-98d1-3bedcc411131', 'YOU Contabilidade', 'ativo', null, 1),
+  ('d7a972f1-13d0-562c-a612-018dd01688de', 'produto', 'cea3db88-841f-5511-98d1-3bedcc411131', 'Realizze', 'ativo', null, 2),
+  ('4a599062-267a-58ea-999c-8ae3c67c2519', 'produto', 'cea3db88-841f-5511-98d1-3bedcc411131', 'BEEC', 'pausado', 'Aguardando definição do escopo de tráfego pago', 3),
+  ('554bf641-779b-5731-8e63-08e275e9b8ef', 'produto', 'cea3db88-841f-5511-98d1-3bedcc411131', 'Gestão de Lojas', 'ativo', null, 4),
+  ('4f3b7efc-e53e-5260-b5ee-fdf6e3a92da3', 'produto', 'cea3db88-841f-5511-98d1-3bedcc411131', 'Cobrança 40%', 'ativo', null, 5),
+  ('3991414f-b7a6-5abf-a62e-064efa9a9adf', 'aplicacao', 'c2c5b9eb-d8ab-5f51-8a45-aae53d38a74a', 'Java BL', 'ativo', null, 0),
+  ('38ff5917-3d08-5887-ba5f-57a82861493f', 'aplicacao', 'c2c5b9eb-d8ab-5f51-8a45-aae53d38a74a', 'App celular do CEO', 'ativo', null, 1),
+  ('d23ede90-b2b5-56e0-b294-cc0ff4f9c41a', 'aplicacao', '70b80c6e-aa4f-5cd7-8663-4439f0084edf', 'Java Fiscal', 'ativo', null, 2),
+  ('3d08e58a-8710-5ec5-b23e-7e8e9d36dbd3', 'aplicacao', '70b80c6e-aa4f-5cd7-8663-4439f0084edf', 'Java Financeiro', 'ativo', null, 3),
+  ('3435d48c-e3bc-5887-a742-b1500492faf0', 'aplicacao', '70b80c6e-aa4f-5cd7-8663-4439f0084edf', 'Java Pessoal', 'ativo', null, 4),
+  ('b3e427e0-9332-567b-8915-a2363b97dc03', 'aplicacao', '70b80c6e-aa4f-5cd7-8663-4439f0084edf', 'Java Societário', 'ativo', null, 5),
+  ('c37cc0c0-2eec-59e2-bebf-989417c684ee', 'aplicacao', '70b80c6e-aa4f-5cd7-8663-4439f0084edf', 'App Área do Cliente', 'ativo', null, 6),
+  ('28e89fc6-dff1-5d34-afee-da7cd76b42f4', 'aplicacao', 'd7a972f1-13d0-562c-a612-018dd01688de', 'Java Realizze', 'ativo', null, 7),
+  ('e917b7b5-2dbb-5517-8ebf-5bf904b7b5dd', 'aplicacao', '4a599062-267a-58ea-999c-8ae3c67c2519', 'Java BEEC', 'pausado', 'Pausado junto com o produto BEEC', 8),
+  ('755ed714-e550-5cb4-a418-a437bda3ba4d', 'aplicacao', '554bf641-779b-5731-8e63-08e275e9b8ef', 'Java Gestão de Lojas', 'ativo', null, 9),
+  ('3894255a-60fd-5aef-aea7-10dc60f62d87', 'aplicacao', '4f3b7efc-e53e-5260-b5ee-fdf6e3a92da3', 'Java Cobrança 40%', 'ativo', null, 10),
+  ('27ed01ff-b4ea-5354-aaa2-c34d711304d0', 'frente', '3991414f-b7a6-5abf-a62e-064efa9a9adf', 'Frontend', 'ativo', null, 0),
+  ('a1683a67-a153-5423-94a5-791ae7b85df9', 'frente', '3991414f-b7a6-5abf-a62e-064efa9a9adf', 'Backend', 'ativo', null, 1),
+  ('00d6a88c-4baf-50e4-a0b7-72c2e36a21af', 'frente', '3991414f-b7a6-5abf-a62e-064efa9a9adf', 'Database', 'ativo', null, 2),
+  ('127109a4-0854-5e51-af3d-3864af4a1b0d', 'frente', '3991414f-b7a6-5abf-a62e-064efa9a9adf', 'AI', 'ativo', null, 3),
+  ('71d5831e-a4c2-5b2c-8120-16ed8f0eb28a', 'frente', '38ff5917-3d08-5887-ba5f-57a82861493f', 'Frontend', 'ativo', null, 4),
+  ('f8de61c6-cdfd-5f0e-8058-1e6a5e970ac5', 'frente', '38ff5917-3d08-5887-ba5f-57a82861493f', 'Backend', 'ativo', null, 5),
+  ('6c7a5b20-1287-516f-977b-6b3bb8710fc6', 'frente', '38ff5917-3d08-5887-ba5f-57a82861493f', 'Database', 'ativo', null, 6),
+  ('68118257-a8c5-5852-a1b0-c0192c4e705f', 'frente', 'd23ede90-b2b5-56e0-b294-cc0ff4f9c41a', 'Frontend', 'ativo', null, 7),
+  ('0b5048b2-af47-59de-8fd1-8bc8bf2c8470', 'frente', 'd23ede90-b2b5-56e0-b294-cc0ff4f9c41a', 'Backend', 'ativo', null, 8),
+  ('5ab3fbab-102b-57f7-a47c-8f5ac0beb539', 'frente', 'd23ede90-b2b5-56e0-b294-cc0ff4f9c41a', 'Database', 'ativo', null, 9),
+  ('3cb585a7-ec87-5719-aabf-7022b23dc2c2', 'frente', '3d08e58a-8710-5ec5-b23e-7e8e9d36dbd3', 'Frontend', 'ativo', null, 10),
+  ('c63be23e-3cfb-552e-86ae-dadb7d703e31', 'frente', '3d08e58a-8710-5ec5-b23e-7e8e9d36dbd3', 'Backend', 'ativo', null, 11),
+  ('f8334e5a-01f7-5bf9-8791-ba6af14d553f', 'frente', '3d08e58a-8710-5ec5-b23e-7e8e9d36dbd3', 'Database', 'ativo', null, 12),
+  ('31b004d0-22b5-5593-be68-960f2e3d4560', 'frente', '3435d48c-e3bc-5887-a742-b1500492faf0', 'Frontend', 'ativo', null, 13),
+  ('9de59366-98dd-54bc-b1fc-7f54725a318b', 'frente', '3435d48c-e3bc-5887-a742-b1500492faf0', 'Backend', 'ativo', null, 14),
+  ('4ca8f123-6951-554a-a513-5eb7f1c680c2', 'frente', '3435d48c-e3bc-5887-a742-b1500492faf0', 'Database', 'ativo', null, 15),
+  ('b5d98785-0784-5d52-8e41-a4a8ee065f98', 'frente', 'b3e427e0-9332-567b-8915-a2363b97dc03', 'Frontend', 'ativo', null, 16),
+  ('ce5e204e-18a7-54ba-bf94-6dd9581e94e6', 'frente', 'b3e427e0-9332-567b-8915-a2363b97dc03', 'Backend', 'ativo', null, 17),
+  ('69aa1e69-cff6-507a-b2fb-99de444826e6', 'frente', 'b3e427e0-9332-567b-8915-a2363b97dc03', 'Database', 'ativo', null, 18),
+  ('22ea1d28-a27c-5b7f-9dfd-5ea181bcb67a', 'frente', 'c37cc0c0-2eec-59e2-bebf-989417c684ee', 'Frontend', 'ativo', null, 19),
+  ('7b6911f0-12de-5ea1-9304-f811fb404c42', 'frente', 'c37cc0c0-2eec-59e2-bebf-989417c684ee', 'Backend', 'ativo', null, 20),
+  ('8af0d9e4-9993-5bb4-83cc-2c1429054f96', 'frente', 'c37cc0c0-2eec-59e2-bebf-989417c684ee', 'Database', 'ativo', null, 21),
+  ('072b1896-e400-5d6d-9d2f-6bd0bc25a70e', 'frente', '28e89fc6-dff1-5d34-afee-da7cd76b42f4', 'Frontend', 'ativo', null, 22),
+  ('ef73d1da-63a0-5595-ae39-e5c65377918f', 'frente', '28e89fc6-dff1-5d34-afee-da7cd76b42f4', 'Backend', 'ativo', null, 23),
+  ('a39cba16-716f-556d-838a-aef2dc1b314e', 'frente', '28e89fc6-dff1-5d34-afee-da7cd76b42f4', 'Database', 'ativo', null, 24),
+  ('23362b3e-9566-5331-9496-6d7f6dea9339', 'frente', 'e917b7b5-2dbb-5517-8ebf-5bf904b7b5dd', 'Frontend', 'ativo', null, 25),
+  ('7dad40b2-07a5-57df-b9c8-23a422d3ea36', 'frente', 'e917b7b5-2dbb-5517-8ebf-5bf904b7b5dd', 'Backend', 'ativo', null, 26),
+  ('b1af5ab4-31f0-5c29-86dc-0b466c90282b', 'frente', 'e917b7b5-2dbb-5517-8ebf-5bf904b7b5dd', 'Database', 'ativo', null, 27),
+  ('151159e9-006b-54c2-92c6-71ac19303628', 'frente', '755ed714-e550-5cb4-a418-a437bda3ba4d', 'Frontend', 'ativo', null, 28),
+  ('3b0fdf80-1f60-5ada-a666-1c9bf9bff667', 'frente', '755ed714-e550-5cb4-a418-a437bda3ba4d', 'Backend', 'ativo', null, 29),
+  ('0d5599d5-0ffc-5ea6-a763-bd51d6309ffa', 'frente', '755ed714-e550-5cb4-a418-a437bda3ba4d', 'Database', 'ativo', null, 30),
+  ('5aa97a0f-6ca7-5ad4-9fa9-783fdd9ff6d6', 'frente', '3894255a-60fd-5aef-aea7-10dc60f62d87', 'Frontend', 'ativo', null, 31),
+  ('a747a148-99f3-5f75-90d0-9d82e260970d', 'frente', '3894255a-60fd-5aef-aea7-10dc60f62d87', 'Backend', 'ativo', null, 32),
+  ('98059cc2-df97-5ea7-a2df-1bfdcebbc4c8', 'frente', '3894255a-60fd-5aef-aea7-10dc60f62d87', 'Database', 'ativo', null, 33)
+on conflict (id) do nothing;
+
+insert into public.clientes (no_id, tipo_cliente, documento, holding_id) values
+  ('a615f8ab-48db-550e-bbe7-f11524ae2669', 'holding', null, null)
+on conflict (no_id) do nothing;
+
+insert into public.projetos (no_id, origem, inicio, alvo) values
+  ('cea3db88-841f-5511-98d1-3bedcc411131', 'brownfield', '2026-07-13', '2027-02-23')
+on conflict (no_id) do nothing;
+
+insert into public.aplicacoes (no_id, plataforma, origem_codigo, servico_id) values
+  ('3991414f-b7a6-5abf-a62e-064efa9a9adf', 'desktop', 'proprio', null),
+  ('38ff5917-3d08-5887-ba5f-57a82861493f', 'mobile', 'proprio', null),
+  ('d23ede90-b2b5-56e0-b294-cc0ff4f9c41a', 'desktop', 'proprio', null),
+  ('3d08e58a-8710-5ec5-b23e-7e8e9d36dbd3', 'desktop', 'proprio', null),
+  ('3435d48c-e3bc-5887-a742-b1500492faf0', 'desktop', 'proprio', null),
+  ('b3e427e0-9332-567b-8915-a2363b97dc03', 'desktop', 'proprio', null),
+  ('c37cc0c0-2eec-59e2-bebf-989417c684ee', 'mobile', 'proprio', null),
+  ('28e89fc6-dff1-5d34-afee-da7cd76b42f4', 'desktop', 'proprio', null),
+  ('e917b7b5-2dbb-5517-8ebf-5bf904b7b5dd', 'desktop', 'proprio', null),
+  ('755ed714-e550-5cb4-a418-a437bda3ba4d', 'desktop', 'proprio', null),
+  ('3894255a-60fd-5aef-aea7-10dc60f62d87', 'desktop', 'proprio', null)
+on conflict (no_id) do nothing;
+
+insert into public.frentes (no_id, wip_limite) values
+  ('27ed01ff-b4ea-5354-aaa2-c34d711304d0', 3),
+  ('a1683a67-a153-5423-94a5-791ae7b85df9', 3),
+  ('00d6a88c-4baf-50e4-a0b7-72c2e36a21af', 3),
+  ('127109a4-0854-5e51-af3d-3864af4a1b0d', 3),
+  ('71d5831e-a4c2-5b2c-8120-16ed8f0eb28a', 3),
+  ('f8de61c6-cdfd-5f0e-8058-1e6a5e970ac5', 3),
+  ('6c7a5b20-1287-516f-977b-6b3bb8710fc6', 3),
+  ('68118257-a8c5-5852-a1b0-c0192c4e705f', 3),
+  ('0b5048b2-af47-59de-8fd1-8bc8bf2c8470', 3),
+  ('5ab3fbab-102b-57f7-a47c-8f5ac0beb539', 3),
+  ('3cb585a7-ec87-5719-aabf-7022b23dc2c2', 3),
+  ('c63be23e-3cfb-552e-86ae-dadb7d703e31', 3),
+  ('f8334e5a-01f7-5bf9-8791-ba6af14d553f', 3),
+  ('31b004d0-22b5-5593-be68-960f2e3d4560', 3),
+  ('9de59366-98dd-54bc-b1fc-7f54725a318b', 3),
+  ('4ca8f123-6951-554a-a513-5eb7f1c680c2', 3),
+  ('b5d98785-0784-5d52-8e41-a4a8ee065f98', 3),
+  ('ce5e204e-18a7-54ba-bf94-6dd9581e94e6', 3),
+  ('69aa1e69-cff6-507a-b2fb-99de444826e6', 3),
+  ('22ea1d28-a27c-5b7f-9dfd-5ea181bcb67a', 3),
+  ('7b6911f0-12de-5ea1-9304-f811fb404c42', 3),
+  ('8af0d9e4-9993-5bb4-83cc-2c1429054f96', 3),
+  ('072b1896-e400-5d6d-9d2f-6bd0bc25a70e', 3),
+  ('ef73d1da-63a0-5595-ae39-e5c65377918f', 3),
+  ('a39cba16-716f-556d-838a-aef2dc1b314e', 3),
+  ('23362b3e-9566-5331-9496-6d7f6dea9339', 3),
+  ('7dad40b2-07a5-57df-b9c8-23a422d3ea36', 3),
+  ('b1af5ab4-31f0-5c29-86dc-0b466c90282b', 3),
+  ('151159e9-006b-54c2-92c6-71ac19303628', 3),
+  ('3b0fdf80-1f60-5ada-a666-1c9bf9bff667', 3),
+  ('0d5599d5-0ffc-5ea6-a763-bd51d6309ffa', 3),
+  ('5aa97a0f-6ca7-5ad4-9fa9-783fdd9ff6d6', 3),
+  ('a747a148-99f3-5f75-90d0-9d82e260970d', 3),
+  ('98059cc2-df97-5ea7-a2df-1bfdcebbc4c8', 3)
+on conflict (no_id) do nothing;
+
+insert into public.participacoes (pessoa_id, no_id, papel) values
+  ('d148fdc5-eef3-5398-bf89-f49b55b5cd28', 'a615f8ab-48db-550e-bbe7-f11524ae2669', 'owner'),
+  ('b5510531-2c75-59fb-b2c1-006a90d0775f', 'cea3db88-841f-5511-98d1-3bedcc411131', 'dev'),
+  ('29f7bce5-bf6e-5a2f-8e3b-c25e855a33c4', 'cea3db88-841f-5511-98d1-3bedcc411131', 'dev'),
+  ('2246aac4-fcc9-5564-af95-054b9cc42889', 'cea3db88-841f-5511-98d1-3bedcc411131', 'stakeholder')
+on conflict (pessoa_id, no_id) do nothing;
+
+insert into public.etiquetas (id, nome, cor, categoria, descricao) values
+  ('706ed303-fc13-57b8-86f4-61ac87d97551', 'Holding', '#050506', 'Tipo', 'Empresa que controla outras empresas'),
+  ('4131797f-20c3-5856-9f6f-cb45b8c09d21', 'Contabilidade', '#2E2E31', 'Segmento', null),
+  ('2b7d0445-2208-54f6-bace-e12056f0fea4', 'Certificados digitais', '#2E2E31', 'Segmento', null),
+  ('74de9ec6-cb08-5678-ba6b-3fd99b29a21e', 'Tráfego pago', '#2E2E31', 'Segmento', null),
+  ('d9050943-a887-5b58-8334-acf5e2964741', 'Cobrança', '#2E2E31', 'Segmento', null),
+  ('6ea9b15f-9ad0-5f92-a854-a5dfbc098e73', 'Varejo', '#2E2E31', 'Segmento', null),
+  ('8cb84d64-4a29-5e40-ba82-3827d36e8155', 'Prioritário', '#FF0000', 'Relacionamento', 'Cliente com atenção redobrada')
+on conflict (id) do nothing;
+
+insert into public.etiquetas_nos (etiqueta_id, no_id) values
+  ('706ed303-fc13-57b8-86f4-61ac87d97551', 'a615f8ab-48db-550e-bbe7-f11524ae2669'),
+  ('8cb84d64-4a29-5e40-ba82-3827d36e8155', 'a615f8ab-48db-550e-bbe7-f11524ae2669'),
+  ('4131797f-20c3-5856-9f6f-cb45b8c09d21', '70b80c6e-aa4f-5cd7-8663-4439f0084edf'),
+  ('2b7d0445-2208-54f6-bace-e12056f0fea4', 'd7a972f1-13d0-562c-a612-018dd01688de'),
+  ('74de9ec6-cb08-5678-ba6b-3fd99b29a21e', '4a599062-267a-58ea-999c-8ae3c67c2519'),
+  ('6ea9b15f-9ad0-5f92-a854-a5dfbc098e73', '554bf641-779b-5731-8e63-08e275e9b8ef'),
+  ('d9050943-a887-5b58-8334-acf5e2964741', '4f3b7efc-e53e-5260-b5ee-fdf6e3a92da3')
+on conflict (no_id, etiqueta_id) do nothing;
+
+insert into public.status_fluxo (id, no_id, chave, nome, explicacao, cor, grupo, ordem) values
+  ('04c022f2-6169-5a25-adfe-1a43f66c093a', null, 'backlog', 'Backlog', 'na fila, ainda não planejado', '#A6A6AD', 'backlog', 0),
+  ('4549c18d-0fb2-5425-9d63-62360e2c4a88', null, 'todo', 'To Do', 'a fazer', '#3355E0', 'todo', 1),
+  ('c492b85a-8079-5176-a476-fac31bcc1aaa', null, 'doing', 'In Progress', 'em andamento', '#E08600', 'doing', 2),
+  ('e4da0819-465a-5cd8-b70e-2c837053429e', null, 'review', 'In Review', 'em revisão', '#6D4AFF', 'review', 3),
+  ('852fa09a-b876-585e-a93a-c51409240120', null, 'blocked', 'Blocked', 'bloqueado, esperando algo', '#FF0000', 'blocked', 4),
+  ('c81b6d0b-de4d-53ce-85e9-d24600183909', null, 'done', 'Done', 'concluído', '#0E8A55', 'done', 5)
+on conflict (id) do nothing;
+
+insert into public.status_fluxo (id, no_id, chave, nome, explicacao, cor, grupo, ordem) values
+  ('9a6959a6-14a5-5705-afeb-74f1eef5fc09', 'cea3db88-841f-5511-98d1-3bedcc411131', 'cs_cli', 'Aguardando cliente', null, '#B04A00', 'blocked', 10)
+on conflict (id) do nothing;
+
+insert into public.requisitos (id, nome, padrao, ordem) values
+  ('7a57186b-a49b-5644-86e0-da0bdededc6c', 'Painel do cliente', true, 0),
+  ('a6d3d6f4-c8e1-5022-a63d-348ed92caaa6', 'Botão de feedback', true, 1),
+  ('17c66ec9-6227-5597-9cc3-7123b11c708f', 'Login e níveis de acesso', true, 2),
+  ('e80d6409-3277-5870-82d4-99573c74aab2', 'Registro de quem fez o quê', true, 3),
+  ('d2f7d9d9-6d59-592e-83c2-a113da178ebd', 'Changelog', true, 4),
+  ('dc454f6c-ee34-504f-a186-7cadbbd55c1f', 'Backup e LGPD', true, 5),
+  ('3e522ccb-a100-5446-a83c-8140434edad9', 'Sinal de funcionamento', true, 6)
+on conflict (id) do nothing;
+
+insert into public.servicos (id, codigo, categoria, nome, descricao, entregaveis, frentes_padrao, horas_min, horas_max, sla, checklist_inicio, ativo) values
+  ('eecf79c8-6a01-5673-99c7-4d51966097a5', 'sv_site', 'Web', 'Site institucional', 'Site de apresentação da empresa, com páginas institucionais e formulário de contato.', array['Layout aprovado','Site publicado','Painel para editar textos','Configuração de domínio e SEO básico']::text[], array['Design','Frontend','SEO']::text[], 40, 120, null, array['Manual de identidade do cliente','Textos e imagens','Acesso ao domínio']::text[], true),
+  ('9f0f3c79-eebd-5097-a614-1fa4a7b2e4d8', 'sv_landing', 'Web', 'Landing page', 'Página única de venda ou captação, focada em conversão.', array['Página publicada','Formulário ligado ao CRM ou planilha','Pixel e analytics']::text[], array['Design','Frontend']::text[], 16, 40, null, array['Oferta e público definidos','Identidade visual']::text[], true),
+  ('4fd4e566-689b-551a-8198-81451df52331', 'sv_ecommerce', 'Web', 'E-commerce', 'Loja virtual com catálogo, carrinho e pagamento.', array['Loja publicada','Meios de pagamento','Integração com estoque']::text[], array['Design','Frontend','Backend','Integrations']::text[], 160, 480, '8 horas úteis', array['Contrato do gateway de pagamento','Catálogo de produtos']::text[], true),
+  ('30152efb-067c-5bff-b291-b5c079e6f771', 'sv_sistema', 'Sistemas', 'Sistema web sob medida (ERP, CRM e outros)', 'Sistema de gestão feito para o processo do cliente.', array['Módulos combinados no escopo','Painel do cliente','Treinamento','Documentação']::text[], array['Frontend','Backend','Database','Integrations']::text[], 400, 2400, '4 horas úteis', array['Processos mapeados','Responsável do cliente definido','Acessos aos sistemas atuais']::text[], true),
+  ('635a3fcb-ee41-59bd-9a66-b418dc8f48fa', 'sv_desktop', 'Sistemas', 'Sistema desktop', 'Aplicativo instalado no computador, como os Javas do BL.', array['Instalador','Atualização automática','Painel do cliente']::text[], array['Frontend','Backend','Database']::text[], 200, 1200, '4 horas úteis', array['Sistema operacional dos usuários','Rede e permissões']::text[], true),
+  ('0e3962f2-5424-54b3-8a1e-550f0adfe7b5', 'sv_mobile', 'Sistemas', 'App mobile', 'Aplicativo de celular Android e iOS.', array['App nas lojas','Painel do cliente','Notificações']::text[], array['Design','Frontend','Backend']::text[], 240, 1400, '8 horas úteis', array['Contas de desenvolvedor Apple e Google']::text[], true),
+  ('0807b44d-6f69-5089-b9f3-9b278f0e3975', 'sv_ajuste_nosso', 'Evolução', 'Manutenção e ajustes em sistema nosso', 'Correções e melhorias em sistemas feitos pela IT.IA.', array['Mudança publicada','Changelog atualizado']::text[], array['Frontend','Backend']::text[], 4, 80, '8 horas úteis', array['Pedido registrado no Service Desk']::text[], true),
+  ('40fc7936-50b1-5951-8d8f-3a373f1bbaba', 'sv_ajuste_terceiro', 'Evolução', 'Manutenção e ajustes em sistema de terceiros', 'Correções e melhorias em sistemas feitos por outra empresa.', array['Diagnóstico do código recebido','Mudança publicada','Relatório de riscos']::text[], array['Discovery','Frontend','Backend']::text[], 8, 160, '1 dia útil', array['Acesso ao código','Acesso ao banco','Documentação existente','Contrato ou termo de responsabilidade']::text[], true),
+  ('d853e838-05c7-5e5e-a228-a443d7fe1883', 'sv_integracao', 'Integração e IA', 'Integrações entre sistemas', 'Ligação entre sistemas por API, webhook ou arquivo.', array['Integração no ar','Monitoramento de falhas','Documentação do contrato']::text[], array['Backend','Integrations']::text[], 24, 240, '4 horas úteis', array['Documentação da API do outro sistema','Credenciais de teste']::text[], true),
+  ('fd39b09d-10a7-5b78-ad5f-4421c498e154', 'sv_ia', 'Integração e IA', 'Automação e agentes de IA', 'Robôs e agentes que executam tarefas, com níveis de permissão.', array['Agente configurado','Níveis de permissão','Painel de uso e custo']::text[], array['AI','Backend','Integrations']::text[], 40, 400, '4 horas úteis', array['Processo a automatizar descrito','Dados de exemplo','Aprovação de uso de IA com dados do cliente']::text[], true),
+  ('7c80a2f6-e352-5997-95a2-3f595f002ac1', 'sv_discovery', 'Consultoria', 'Discovery e diagnóstico', 'Levantamento do que existe e do que precisa, antes de construir.', array['Dossiê atual','Matriz de evidências','Proposta de solução','Estimativa']::text[], array['Discovery']::text[], 16, 80, null, array['Acesso ao código e ao banco, se houver','Pessoas para entrevistar']::text[], true),
+  ('5c8891c1-11b2-5497-aae3-052fe40ccbec', 'sv_suporte', 'Recorrente', 'Suporte e sustentação mensal', 'Plano mensal com horas para correções, melhorias e acompanhamento.', array['Horas do mês','Relatório mensal','Atendimento pelo Service Desk']::text[], array['Frontend','Backend']::text[], 10, 80, '4 horas úteis', array['Acesso ao Service Desk']::text[], true)
+on conflict (id) do nothing;
+
+insert into public.servicos_cobranca (id, servico_id, modelo, parametros, ordem) values
+  ('b694d2ae-cae1-511c-b65b-eeed0736962a', 'eecf79c8-6a01-5673-99c7-4d51966097a5', 'fixo', '{}'::jsonb, 0),
+  ('cf2526f0-54bc-5998-8924-71555e1ce7ab', 'eecf79c8-6a01-5673-99c7-4d51966097a5', 'manutencao', '{"pct": 18}'::jsonb, 1),
+  ('54db7e9a-0773-5e2e-a809-ef9ee962e8ea', '9f0f3c79-eebd-5097-a614-1fa4a7b2e4d8', 'fixo', '{}'::jsonb, 0),
+  ('d7c98383-51e8-5ef6-9d7d-a67282f37a0e', '9f0f3c79-eebd-5097-a614-1fa4a7b2e4d8', 'mensalidade', '{"valor": 250, "horas": 2, "excedente": 0}'::jsonb, 1),
+  ('68622f71-0182-5b2d-aeee-6482de480139', '4fd4e566-689b-551a-8198-81451df52331', 'implantacao', '{}'::jsonb, 0),
+  ('ea4228ea-7f0f-59e1-8d0a-1bfdab2f26c0', '4fd4e566-689b-551a-8198-81451df52331', 'mensalidade', '{"valor": 900, "horas": 6}'::jsonb, 1),
+  ('8e685e9d-9c01-5d71-b710-f6f01f9c2702', '4fd4e566-689b-551a-8198-81451df52331', 'sucesso', '{"pct": 1.5, "base": "Faturamento da loja"}'::jsonb, 2),
+  ('1f7b9676-e8bc-5033-9d95-4dc809c88a92', '30152efb-067c-5bff-b291-b5c079e6f771', 'marco', '{"parcelas": [30, 40, 30]}'::jsonb, 0),
+  ('a0b206e0-c411-5895-9572-d635c371353f', '30152efb-067c-5bff-b291-b5c079e6f771', 'usuario', '{"valor": 39, "minimo": 10}'::jsonb, 1),
+  ('744b91c4-565a-5121-a3d6-94319f7f4bf8', '30152efb-067c-5bff-b291-b5c079e6f771', 'mensalidade', '{"valor": 3500, "horas": 20, "excedente": 0}'::jsonb, 2),
+  ('8728388c-2f86-54d6-9063-0e0f37b352a7', '635a3fcb-ee41-59bd-9a66-b418dc8f48fa', 'implantacao', '{}'::jsonb, 0),
+  ('84d13cb2-8c49-5204-9adc-8324c63eba40', '635a3fcb-ee41-59bd-9a66-b418dc8f48fa', 'usuario', '{"valor": 59, "minimo": 5}'::jsonb, 1),
+  ('2812a9a1-4f2d-5a52-8671-ed7b7b4d0cf0', '0e3962f2-5424-54b3-8a1e-550f0adfe7b5', 'marco', '{"parcelas": [40, 30, 30]}'::jsonb, 0),
+  ('c29d74c5-f97b-5b89-a676-b032592d8614', '0e3962f2-5424-54b3-8a1e-550f0adfe7b5', 'mensalidade', '{"valor": 1200, "horas": 8, "excedente": 0}'::jsonb, 1),
+  ('30ad3e8e-d4d9-5ba5-9085-ec9123b70920', '0807b44d-6f69-5089-b9f3-9b278f0e3975', 'hora', '{}'::jsonb, 0),
+  ('9bc4613b-dfe4-596c-a258-72636f02159c', '0807b44d-6f69-5089-b9f3-9b278f0e3975', 'banco_horas', '{"horas": 20, "validade": 3}'::jsonb, 1),
+  ('5b65f796-c223-5707-92eb-a1f9b585a522', '40fc7936-50b1-5951-8d8f-3a373f1bbaba', 'fixo', '{"nome": "Diagnóstico inicial"}'::jsonb, 0),
+  ('66240030-a282-525d-9766-41f9110e9a1c', '40fc7936-50b1-5951-8d8f-3a373f1bbaba', 'hora', '{"mult": 1.2}'::jsonb, 1),
+  ('aa72d0c6-a19a-537d-8a25-24f6a2d89ab5', 'd853e838-05c7-5e5e-a228-a443d7fe1883', 'fixo', '{}'::jsonb, 0),
+  ('44f9db43-b366-516a-aceb-b4815caae697', 'd853e838-05c7-5e5e-a228-a443d7fe1883', 'repasse', '{"markup": 15}'::jsonb, 1),
+  ('8d3365ea-5b2a-5fe6-afdd-2f11aa7a9948', 'd853e838-05c7-5e5e-a228-a443d7fe1883', 'mensalidade', '{"valor": 400, "horas": 2, "excedente": 0}'::jsonb, 2),
+  ('9f65d95d-fba1-5de3-b0e2-1a69149cedcd', 'fd39b09d-10a7-5b78-ad5f-4421c498e154', 'implantacao', '{}'::jsonb, 0),
+  ('9dad4366-f018-5be1-840e-f028cd78779c', 'fd39b09d-10a7-5b78-ad5f-4421c498e154', 'uso', '{"unidade": "mil chamadas", "valor": 18, "franquia": 5}'::jsonb, 1),
+  ('0eaa4f37-baec-5ea2-823d-aecefda30a74', 'fd39b09d-10a7-5b78-ad5f-4421c498e154', 'valor', '{"ganho": 120000, "pct": 15}'::jsonb, 2),
+  ('17a8449d-de66-5a49-9b56-cbe8e56da2db', '7c80a2f6-e352-5997-95a2-3f595f002ac1', 'fixo', '{}'::jsonb, 0),
+  ('3e5768eb-c2a0-5a54-ac05-1680151c469c', '5c8891c1-11b2-5497-aae3-052fe40ccbec', 'mensalidade', '{"valor": 0, "horas": 20, "excedente": 0}'::jsonb, 0),
+  ('54e4ced5-c371-5d2d-ada6-d55b1c236866', '5c8891c1-11b2-5497-aae3-052fe40ccbec', 'faixas', '{"faixas": [{"nome": "Essencial", "horas": 10, "valor": 0}, {"nome": "Profissional", "horas": 20, "valor": 0}, {"nome": "Dedicado", "horas": 80, "valor": 0}]}'::jsonb, 1)
+on conflict (id) do nothing;
+
+update public.aplicacoes set servico_id = '635a3fcb-ee41-59bd-9a66-b418dc8f48fa' where no_id = '3991414f-b7a6-5abf-a62e-064efa9a9adf' and servico_id is null;
+update public.aplicacoes set servico_id = '0e3962f2-5424-54b3-8a1e-550f0adfe7b5' where no_id = '38ff5917-3d08-5887-ba5f-57a82861493f' and servico_id is null;
+update public.aplicacoes set servico_id = '635a3fcb-ee41-59bd-9a66-b418dc8f48fa' where no_id = 'd23ede90-b2b5-56e0-b294-cc0ff4f9c41a' and servico_id is null;
+update public.aplicacoes set servico_id = '635a3fcb-ee41-59bd-9a66-b418dc8f48fa' where no_id = '3d08e58a-8710-5ec5-b23e-7e8e9d36dbd3' and servico_id is null;
+update public.aplicacoes set servico_id = '635a3fcb-ee41-59bd-9a66-b418dc8f48fa' where no_id = '3435d48c-e3bc-5887-a742-b1500492faf0' and servico_id is null;
+update public.aplicacoes set servico_id = '635a3fcb-ee41-59bd-9a66-b418dc8f48fa' where no_id = 'b3e427e0-9332-567b-8915-a2363b97dc03' and servico_id is null;
+update public.aplicacoes set servico_id = '0e3962f2-5424-54b3-8a1e-550f0adfe7b5' where no_id = 'c37cc0c0-2eec-59e2-bebf-989417c684ee' and servico_id is null;
+update public.aplicacoes set servico_id = '635a3fcb-ee41-59bd-9a66-b418dc8f48fa' where no_id = '28e89fc6-dff1-5d34-afee-da7cd76b42f4' and servico_id is null;
+update public.aplicacoes set servico_id = '635a3fcb-ee41-59bd-9a66-b418dc8f48fa' where no_id = 'e917b7b5-2dbb-5517-8ebf-5bf904b7b5dd' and servico_id is null;
+update public.aplicacoes set servico_id = '635a3fcb-ee41-59bd-9a66-b418dc8f48fa' where no_id = '755ed714-e550-5cb4-a418-a437bda3ba4d' and servico_id is null;
+update public.aplicacoes set servico_id = '635a3fcb-ee41-59bd-9a66-b418dc8f48fa' where no_id = '3894255a-60fd-5aef-aea7-10dc60f62d87' and servico_id is null;
+
+insert into public.servicos_requisitos (servico_id, requisito_id) values
+  ('eecf79c8-6a01-5673-99c7-4d51966097a5', 'dc454f6c-ee34-504f-a186-7cadbbd55c1f'),
+  ('eecf79c8-6a01-5673-99c7-4d51966097a5', '3e522ccb-a100-5446-a83c-8140434edad9'),
+  ('9f0f3c79-eebd-5097-a614-1fa4a7b2e4d8', '3e522ccb-a100-5446-a83c-8140434edad9'),
+  ('4fd4e566-689b-551a-8198-81451df52331', '17c66ec9-6227-5597-9cc3-7123b11c708f'),
+  ('4fd4e566-689b-551a-8198-81451df52331', 'dc454f6c-ee34-504f-a186-7cadbbd55c1f'),
+  ('4fd4e566-689b-551a-8198-81451df52331', '3e522ccb-a100-5446-a83c-8140434edad9'),
+  ('4fd4e566-689b-551a-8198-81451df52331', 'd2f7d9d9-6d59-592e-83c2-a113da178ebd'),
+  ('30152efb-067c-5bff-b291-b5c079e6f771', '7a57186b-a49b-5644-86e0-da0bdededc6c'),
+  ('30152efb-067c-5bff-b291-b5c079e6f771', 'a6d3d6f4-c8e1-5022-a63d-348ed92caaa6'),
+  ('30152efb-067c-5bff-b291-b5c079e6f771', '17c66ec9-6227-5597-9cc3-7123b11c708f'),
+  ('30152efb-067c-5bff-b291-b5c079e6f771', 'e80d6409-3277-5870-82d4-99573c74aab2'),
+  ('30152efb-067c-5bff-b291-b5c079e6f771', 'd2f7d9d9-6d59-592e-83c2-a113da178ebd'),
+  ('30152efb-067c-5bff-b291-b5c079e6f771', 'dc454f6c-ee34-504f-a186-7cadbbd55c1f'),
+  ('30152efb-067c-5bff-b291-b5c079e6f771', '3e522ccb-a100-5446-a83c-8140434edad9'),
+  ('635a3fcb-ee41-59bd-9a66-b418dc8f48fa', '7a57186b-a49b-5644-86e0-da0bdededc6c'),
+  ('635a3fcb-ee41-59bd-9a66-b418dc8f48fa', '17c66ec9-6227-5597-9cc3-7123b11c708f'),
+  ('635a3fcb-ee41-59bd-9a66-b418dc8f48fa', 'e80d6409-3277-5870-82d4-99573c74aab2'),
+  ('635a3fcb-ee41-59bd-9a66-b418dc8f48fa', 'dc454f6c-ee34-504f-a186-7cadbbd55c1f'),
+  ('0e3962f2-5424-54b3-8a1e-550f0adfe7b5', '7a57186b-a49b-5644-86e0-da0bdededc6c'),
+  ('0e3962f2-5424-54b3-8a1e-550f0adfe7b5', 'a6d3d6f4-c8e1-5022-a63d-348ed92caaa6'),
+  ('0e3962f2-5424-54b3-8a1e-550f0adfe7b5', '17c66ec9-6227-5597-9cc3-7123b11c708f'),
+  ('0e3962f2-5424-54b3-8a1e-550f0adfe7b5', 'd2f7d9d9-6d59-592e-83c2-a113da178ebd'),
+  ('0807b44d-6f69-5089-b9f3-9b278f0e3975', 'd2f7d9d9-6d59-592e-83c2-a113da178ebd'),
+  ('40fc7936-50b1-5951-8d8f-3a373f1bbaba', 'd2f7d9d9-6d59-592e-83c2-a113da178ebd'),
+  ('40fc7936-50b1-5951-8d8f-3a373f1bbaba', 'e80d6409-3277-5870-82d4-99573c74aab2'),
+  ('d853e838-05c7-5e5e-a228-a443d7fe1883', 'e80d6409-3277-5870-82d4-99573c74aab2'),
+  ('d853e838-05c7-5e5e-a228-a443d7fe1883', '3e522ccb-a100-5446-a83c-8140434edad9'),
+  ('fd39b09d-10a7-5b78-ad5f-4421c498e154', 'e80d6409-3277-5870-82d4-99573c74aab2'),
+  ('fd39b09d-10a7-5b78-ad5f-4421c498e154', '7a57186b-a49b-5644-86e0-da0bdededc6c'),
+  ('fd39b09d-10a7-5b78-ad5f-4421c498e154', 'dc454f6c-ee34-504f-a186-7cadbbd55c1f'),
+  ('5c8891c1-11b2-5497-aae3-052fe40ccbec', '7a57186b-a49b-5644-86e0-da0bdededc6c'),
+  ('5c8891c1-11b2-5497-aae3-052fe40ccbec', 'a6d3d6f4-c8e1-5022-a63d-348ed92caaa6'),
+  ('5c8891c1-11b2-5497-aae3-052fe40ccbec', 'd2f7d9d9-6d59-592e-83c2-a113da178ebd')
+on conflict (servico_id, requisito_id) do nothing;
+
+insert into public.regras_calculo (vigente_desde, regime, aliq_simples, aliq_presumido, aliq_real, inss_patronal, rat, terceiros, fgts, ferias, terco_ferias, decimo_terceiro, multa_fgts, horas_mes, faturavel_pct, margem_pct, contingencia_pct, folga_rateio_pct, manutencao_pct, cambio_usd, complexidade, urgencia) values
+  ('2025-01-01', 'simples', 6, 16.33, 17.5, 20, 2, 5.8, 8, 8.33, 2.78, 8.33, 3.2, 168, 65, 20, 15, 10, 18, 5.4, '{"Baixa": 0.85, "Média": 1, "Alta": 1.3, "Muito alta": 1.6}'::jsonb, '{"Normal": 1, "Prioritária": 1.15, "Urgente": 1.3}'::jsonb)
+on conflict (vigente_desde) do nothing;
+
+insert into public.pessoas_custos (id, pessoa_id, vinculo, salario, prolabore, valor_pj, beneficios, vigente_desde) values
+  ('4e8b6d71-0f8c-5258-ba31-f6b560ee4067', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 'socio', 0, 15000, 0, 0, '2025-01-01'),
+  ('42e1f576-4a11-5f48-a6bc-6cc26186d99f', 'b5510531-2c75-59fb-b2c1-006a90d0775f', 'clt', 8500, 0, 0, 1100, '2025-01-01'),
+  ('90dcc04f-474e-57d0-8af8-8617faf7d0b9', '29f7bce5-bf6e-5a2f-8e3b-c25e855a33c4', 'pj', 0, 0, 9000, 0, '2025-01-01')
+on conflict (id) do nothing;
+
+insert into public.custos_operacao (id, nome, categoria, valor, moeda, recorrencia, meses_depreciacao, inicio) values
+  ('02af4638-7d5b-5075-a660-a583955a1647', 'Assinaturas de IA do time (Claude, outros)', 'Ferramentas', 600, 'BRL', 'mensal', null, '2025-01-01'),
+  ('a5534c50-1bea-50fe-aa1f-68e79f95bc25', 'GitHub Team', 'Ferramentas', 12, 'USD', 'mensal', null, '2025-01-01'),
+  ('93a09241-e17a-5043-922e-1beef885c1ce', 'Figma', 'Ferramentas', 45, 'USD', 'mensal', null, '2025-01-01'),
+  ('99f2aa08-1039-58bc-b772-a9fd1fa93083', 'Contabilidade', 'Administrativo', 900, 'BRL', 'mensal', null, '2025-01-01'),
+  ('9cfce1a1-f728-5944-8955-25474b25ec79', 'Coworking', 'Estrutura', 1800, 'BRL', 'mensal', null, '2025-01-01'),
+  ('bbc69320-efc4-5d17-b673-86f9a164f652', 'Internet e telefone', 'Estrutura', 250, 'BRL', 'mensal', null, '2025-01-01'),
+  ('68d6daf1-f26d-5b94-a9ac-73a4887ff0cd', 'Notebooks (depreciação em 36 meses)', 'Equipamentos', 21600, 'BRL', 'depreciacao', 36, '2025-01-01'),
+  ('c0c41794-bc81-5ca8-bcfb-f9c19a60072b', 'Domínio itia.com.br', 'Estrutura', 40, 'BRL', 'anual', null, '2025-01-01')
+on conflict (id) do nothing;
+
+insert into public.custos_tecnicos (id, no_id, fornecedor, categoria, descricao, recorrencia, moeda, valor, unidade, limite, plano, proximo_plano, proximo_valor, extra_por_unidade, repasse, taxa_repasse_pct, inicio) values
+  ('ae294633-0c8f-5ae2-b941-31b3f7a13ef9', '3991414f-b7a6-5abf-a62e-064efa9a9adf', 'Supabase', 'Banco de dados', 'Plano Pro do banco BL', 'mensal', 'USD', 25, 'GB de banco', 8, 'Pro (8 GB inclusos)', 'Pro + disco extra', 25, 0.125, true, 15, '2025-07-05'),
+  ('5ae322e9-5e25-5850-b20b-569bf1187698', '3991414f-b7a6-5abf-a62e-064efa9a9adf', 'Supabase', 'Armazenamento', 'Storage de arquivos (documentos dos clientes)', 'mensal', 'USD', 0, 'GB de arquivos', 100, 'Incluso no Pro (100 GB)', 'Storage adicional', null, 0.021, true, 15, '2025-07-05'),
+  ('594352b6-40d7-56a8-a2b2-321f2a869c57', '3991414f-b7a6-5abf-a62e-064efa9a9adf', 'Anthropic', 'API de IA', 'Billy: consumo da API', 'uso', 'USD', 1, 'US$ de consumo', 150, 'Limite de gasto mensal definido', 'Aumentar o limite de gasto', null, null, true, 25, '2026-01-05'),
+  ('6b8d7682-9bfe-5309-a903-12d330072b45', 'd23ede90-b2b5-56e0-b294-cc0ff4f9c41a', 'WhatsGW', 'Mensageria', 'WhatsApp dos departamentos', 'mensal', 'BRL', 349, 'números conectados', 10, 'Plano 10 números', 'Plano 20 números', 599, null, true, 10, '2025-01-05'),
+  ('86b36766-7820-5266-9b6d-596a6d7df85a', 'c37cc0c0-2eec-59e2-bebf-989417c684ee', 'Vercel', 'Hospedagem', 'Área do Cliente (web)', 'mensal', 'USD', 20, 'GB de tráfego', 1000, 'Pro (1 TB)', 'Pro + tráfego extra', 20, 0.15, true, 15, '2025-11-05'),
+  ('7b9ddb00-f0c1-52b1-ae8c-3c0834797adf', '3d08e58a-8710-5ec5-b23e-7e8e9d36dbd3', 'Conexa', 'Integração', 'Taxa da integração de cobrança', 'mensal', 'BRL', 120, null, null, null, null, null, null, false, 0, '2025-09-05'),
+  ('a871b08c-3f87-558d-80e0-b5df05caca45', '28e89fc6-dff1-5d34-afee-da7cd76b42f4', 'Registro.br', 'Domínio', 'Domínio da Realizze', 'anual', 'BRL', 40, null, null, null, null, null, null, true, 0, '2024-03-05'),
+  ('f4f67ac0-b170-5e8e-9d85-cbf68f96e554', '3894255a-60fd-5aef-aea7-10dc60f62d87', 'Marketplaces', 'Integração', 'Taxa por pedido integrado', 'uso', 'BRL', 1, 'R$ de taxa', 500, 'Sem plano fixo', 'Negociar plano por volume', null, null, true, 0, '2026-05-05')
+on conflict (id) do nothing;
+
+insert into public.custos_uso (custo_id, mes, quantidade) values
+  ('ae294633-0c8f-5ae2-b941-31b3f7a13ef9', '2026-04-01', 4.1),
+  ('ae294633-0c8f-5ae2-b941-31b3f7a13ef9', '2026-05-01', 4.43),
+  ('ae294633-0c8f-5ae2-b941-31b3f7a13ef9', '2026-06-01', 4.78),
+  ('ae294633-0c8f-5ae2-b941-31b3f7a13ef9', '2026-07-01', 5.16),
+  ('ae294633-0c8f-5ae2-b941-31b3f7a13ef9', '2026-08-01', 5.58),
+  ('ae294633-0c8f-5ae2-b941-31b3f7a13ef9', '2026-09-01', 6.02),
+  ('5ae322e9-5e25-5850-b20b-569bf1187698', '2026-04-01', 52),
+  ('5ae322e9-5e25-5850-b20b-569bf1187698', '2026-05-01', 55.64),
+  ('5ae322e9-5e25-5850-b20b-569bf1187698', '2026-06-01', 59.53),
+  ('5ae322e9-5e25-5850-b20b-569bf1187698', '2026-07-01', 63.7),
+  ('5ae322e9-5e25-5850-b20b-569bf1187698', '2026-08-01', 68.16),
+  ('5ae322e9-5e25-5850-b20b-569bf1187698', '2026-09-01', 72.93),
+  ('594352b6-40d7-56a8-a2b2-321f2a869c57', '2026-04-01', 38),
+  ('594352b6-40d7-56a8-a2b2-321f2a869c57', '2026-05-01', 44.84),
+  ('594352b6-40d7-56a8-a2b2-321f2a869c57', '2026-06-01', 52.91),
+  ('594352b6-40d7-56a8-a2b2-321f2a869c57', '2026-07-01', 62.44),
+  ('594352b6-40d7-56a8-a2b2-321f2a869c57', '2026-08-01', 73.67),
+  ('594352b6-40d7-56a8-a2b2-321f2a869c57', '2026-09-01', 86.93),
+  ('6b8d7682-9bfe-5309-a903-12d330072b45', '2026-04-01', 6),
+  ('6b8d7682-9bfe-5309-a903-12d330072b45', '2026-05-01', 6),
+  ('6b8d7682-9bfe-5309-a903-12d330072b45', '2026-06-01', 7),
+  ('6b8d7682-9bfe-5309-a903-12d330072b45', '2026-07-01', 7),
+  ('6b8d7682-9bfe-5309-a903-12d330072b45', '2026-08-01', 8),
+  ('6b8d7682-9bfe-5309-a903-12d330072b45', '2026-09-01', 9),
+  ('86b36766-7820-5266-9b6d-596a6d7df85a', '2026-04-01', 180),
+  ('86b36766-7820-5266-9b6d-596a6d7df85a', '2026-05-01', 201.6),
+  ('86b36766-7820-5266-9b6d-596a6d7df85a', '2026-06-01', 225.79),
+  ('86b36766-7820-5266-9b6d-596a6d7df85a', '2026-07-01', 252.89),
+  ('86b36766-7820-5266-9b6d-596a6d7df85a', '2026-08-01', 283.23),
+  ('86b36766-7820-5266-9b6d-596a6d7df85a', '2026-09-01', 317.22),
+  ('f4f67ac0-b170-5e8e-9d85-cbf68f96e554', '2026-04-01', 0),
+  ('f4f67ac0-b170-5e8e-9d85-cbf68f96e554', '2026-05-01', 0),
+  ('f4f67ac0-b170-5e8e-9d85-cbf68f96e554', '2026-06-01', 40),
+  ('f4f67ac0-b170-5e8e-9d85-cbf68f96e554', '2026-07-01', 95),
+  ('f4f67ac0-b170-5e8e-9d85-cbf68f96e554', '2026-08-01', 160),
+  ('f4f67ac0-b170-5e8e-9d85-cbf68f96e554', '2026-09-01', 240)
+on conflict (custo_id, mes) do nothing;
+
+insert into public.receitas (id, no_id, servico_id, descricao, modelo, valor, moeda, forma, parcelas, inicio, fim) values
+  ('8040caee-9b00-51ea-a60e-94393dc33c22', 'cea3db88-841f-5511-98d1-3bedcc411131', '30152efb-067c-5bff-b291-b5c079e6f771', 'Projeto BL: implantação em 6 parcelas', 'marco', 180000, 'BRL', 'parcelada', 6, '2026-06-10', null),
+  ('d4da586a-d3bf-51f1-b1e7-d4bcf38757fa', '3991414f-b7a6-5abf-a62e-064efa9a9adf', '5c8891c1-11b2-5497-aae3-052fe40ccbec', 'Sustentação mensal do Java BL', 'mensalidade', 6500, 'BRL', 'mensal', null, '2026-08-10', null),
+  ('c29f5a21-8a91-5ea7-b2e8-f5d07fb6be46', 'd23ede90-b2b5-56e0-b294-cc0ff4f9c41a', '30152efb-067c-5bff-b291-b5c079e6f771', 'Javas da YOU e Área do Cliente', 'mensalidade', 4800, 'BRL', 'mensal', null, '2025-12-10', null),
+  ('45d99b93-0ef4-5d8d-9d04-d17a736836a9', '3894255a-60fd-5aef-aea7-10dc60f62d87', 'd853e838-05c7-5e5e-a228-a443d7fe1883', 'Integração com marketplaces', 'fixo', 28000, 'BRL', 'unica', null, '2026-09-16', null)
+on conflict (id) do nothing;
+
+insert into public.slas (no_id, gravidade, horas_resposta, horas_solucao) values
+  ('a615f8ab-48db-550e-bbe7-f11524ae2669', 'parado', 1, 8),
+  ('a615f8ab-48db-550e-bbe7-f11524ae2669', 'quebrada', 4, 24),
+  ('a615f8ab-48db-550e-bbe7-f11524ae2669', 'incomodo', 8, 72),
+  ('a615f8ab-48db-550e-bbe7-f11524ae2669', 'cosmetico', 24, 168)
+on conflict (no_id, gravidade) do nothing;
+
+insert into public.sprints (id, projeto_id, nome, meta, inicio, fim, status) values
+  ('e6d05bf8-1f53-5dcf-8ec6-1fcc0887432c', 'cea3db88-841f-5511-98d1-3bedcc411131', 'Ciclo 1 · Painel do CEO e Fiscal', 'Painel central do CEO no ar e filtro de competência corrigido', '2026-09-14', '2026-09-27', 'ativo')
+on conflict (id) do nothing;
+
+insert into public.marcos (id, no_id, tipo, nome, descricao, data, visivel_cliente, entregue_em) values
+  ('795bbb2e-f16f-5bcd-adc6-891d2ebdee0e', 'cea3db88-841f-5511-98d1-3bedcc411131', 'marco', 'Painel do CEO no ar', 'O CEO acompanha o grupo pelo app e pelo Java BL', '2026-10-08', true, null),
+  ('32ab3563-4f92-5013-882e-4f2180502b52', '70b80c6e-aa4f-5cd7-8663-4439f0084edf', 'release', 'YOU v0.5', 'Fiscal com competência corrigida e Área do Cliente com login por CPF', '2026-10-26', true, null),
+  ('02209c37-29cd-58fb-94d4-acfedde299ef', 'cea3db88-841f-5511-98d1-3bedcc411131', 'marco', 'Financeiro no ar', 'Conexa integrada nos Javas', '2026-11-25', true, null)
+on conflict (id) do nothing;
+
+insert into public.automacoes (id, no_id, nome, gatilho, condicao, acao, parametros, ativa, criado_por) values
+  ('074ffdd1-7c41-53c8-a2d8-9854a8226144', 'cea3db88-841f-5511-98d1-3bedcc411131', 'Bug concluído avisa quem abriu', 'status_mudou', '{"tipo": "bug", "grupo": "done"}'::jsonb, 'notificar', '{"para": "relator", "titulo": "O bug que você abriu foi resolvido"}'::jsonb, true, 'd148fdc5-eef3-5398-bf89-f49b55b5cd28'),
+  ('4a757b83-3a06-590c-b199-1626920faefc', 'cea3db88-841f-5511-98d1-3bedcc411131', 'Item bloqueado sobe a prioridade', 'status_mudou', '{"grupo": "blocked"}'::jsonb, 'mudar_prioridade', '{"prioridade": "high"}'::jsonb, true, 'd148fdc5-eef3-5398-bf89-f49b55b5cd28')
+on conflict (id) do nothing;
+
+insert into public.campos_personalizados (id, no_id, nome, tipo, opcoes, ordem) values
+  ('2a870456-898f-5fce-afb8-e3ce554161e5', 'cea3db88-841f-5511-98d1-3bedcc411131', 'Ambiente', 'lista', array['Teste','Produção']::text[], 0)
+on conflict (id) do nothing;
+
+insert into public.itens (id, frente_id, pai_id, tipo, titulo, descricao, status_id, prioridade, responsavel_id, relator_id, estimativa_h, pontos, inicio, prazo, data_prevista, visivel_cliente, sprint_id, marco_id, criado_em, iniciado_em, concluido_em) values
+  ('8a3977f7-b358-541c-970b-79ea511033f7', '00d6a88c-4baf-50e4-a0b7-72c2e36a21af', null, 'epic', 'Ficha única do cliente no banco BL', null, 'c492b85a-8079-5176-a476-fac31bcc1aaa', 'highest', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 40, null, '2026-07-28', '2026-10-16', '2026-10-16', true, null, null, '2026-07-23T12:00:00-03:00', '2026-07-28T09:00:00-03:00', null),
+  ('d8015c00-3a4a-51e0-90f7-b56e7edd6a2d', '71d5831e-a4c2-5b2c-8120-16ed8f0eb28a', null, 'story', 'Resumo diário do grupo no celular', null, '4549c18d-0fb2-5425-9d63-62360e2c4a88', 'high', '29f7bce5-bf6e-5a2f-8e3b-c25e855a33c4', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 16, null, '2026-09-29', '2026-10-21', '2026-10-24', true, null, null, '2026-09-24T12:00:00-03:00', null, null),
+  ('7a67550a-f4f0-5e6a-a7cd-a9dba3387090', '71d5831e-a4c2-5b2c-8120-16ed8f0eb28a', null, 'task', 'Aprovações pendentes em um toque', null, '04c022f2-6169-5a25-adfe-1a43f66c093a', 'medium', '29f7bce5-bf6e-5a2f-8e3b-c25e855a33c4', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 10, null, '2026-10-11', '2026-11-05', '2026-11-08', false, null, null, '2026-10-06T12:00:00-03:00', null, null),
+  ('2600ca8e-80f4-5573-bc0c-25d10602850e', 'f8de61c6-cdfd-5f0e-8058-1e6a5e970ac5', null, 'task', 'Notificações do CEO', null, '4549c18d-0fb2-5425-9d63-62360e2c4a88', 'medium', '29f7bce5-bf6e-5a2f-8e3b-c25e855a33c4', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 6, null, '2026-10-01', '2026-10-14', '2026-10-17', false, null, null, '2026-09-26T12:00:00-03:00', null, null),
+  ('4df9e111-74c1-52ae-b763-6f3ef1e59fad', '5ab3fbab-102b-57f7-a47c-8f5ac0beb539', null, 'task', 'Carteira de clientes do Fiscal', null, 'c81b6d0b-de4d-53ce-85e9-d24600183909', 'high', 'b5510531-2c75-59fb-b2c1-006a90d0775f', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 12, null, '2026-08-12', '2026-09-06', '2026-09-09', false, null, null, '2026-08-07T12:00:00-03:00', '2026-08-12T09:00:00-03:00', '2026-09-04T17:00:00-03:00'),
+  ('34e36605-30c9-5eb8-a1fa-0043eb1b6c2e', '0b5048b2-af47-59de-8fd1-8bc8bf2c8470', null, 'story', 'Importar obrigações do mês', null, 'c492b85a-8079-5176-a476-fac31bcc1aaa', 'high', 'b5510531-2c75-59fb-b2c1-006a90d0775f', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 14, null, '2026-09-18', '2026-10-01', '2026-10-04', true, null, null, '2026-09-13T12:00:00-03:00', '2026-09-18T09:00:00-03:00', null),
+  ('a1453820-697f-5834-947c-544319d7048d', '68118257-a8c5-5852-a1b0-c0192c4e705f', null, 'bug', 'Filtro por competência não respeita o mês', null, '4549c18d-0fb2-5425-9d63-62360e2c4a88', 'highest', 'b5510531-2c75-59fb-b2c1-006a90d0775f', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 3, null, '2026-09-23', '2026-09-25', '2026-09-25', false, null, null, '2026-09-18T12:00:00-03:00', null, null),
+  ('edd71102-1084-5f62-893b-7e960fa8a290', '68118257-a8c5-5852-a1b0-c0192c4e705f', null, 'task', 'Tela de guias e vencimentos', null, '4549c18d-0fb2-5425-9d63-62360e2c4a88', 'medium', '29f7bce5-bf6e-5a2f-8e3b-c25e855a33c4', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 10, null, '2026-09-28', '2026-10-12', '2026-10-15', false, null, null, '2026-09-23T12:00:00-03:00', null, null),
+  ('0f07e627-5656-5248-a912-45778d4334ac', 'c63be23e-3cfb-552e-86ae-dadb7d703e31', null, 'story', 'Reflexo financeiro decidido pelo CEO', null, 'c492b85a-8079-5176-a476-fac31bcc1aaa', 'highest', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 20, null, '2026-09-14', '2026-10-06', '2026-10-06', true, null, null, '2026-09-09T12:00:00-03:00', '2026-09-14T09:00:00-03:00', null),
+  ('bdb0cca2-c9ee-5385-bf36-765defb34811', 'c63be23e-3cfb-552e-86ae-dadb7d703e31', null, 'task', 'Integração com a Conexa', null, 'e4da0819-465a-5cd8-b70e-2c837053429e', 'high', 'b5510531-2c75-59fb-b2c1-006a90d0775f', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 12, null, '2026-09-08', '2026-09-26', '2026-09-29', false, null, null, '2026-09-03T12:00:00-03:00', '2026-09-08T09:00:00-03:00', null),
+  ('58f2ad43-4326-5199-908c-edaf162cf37e', '3cb585a7-ec87-5719-aabf-7022b23dc2c2', null, 'task', 'Contas a receber por empresa', null, '4549c18d-0fb2-5425-9d63-62360e2c4a88', 'medium', '29f7bce5-bf6e-5a2f-8e3b-c25e855a33c4', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 10, null, '2026-10-02', '2026-10-18', '2026-10-21', false, null, null, '2026-09-27T12:00:00-03:00', null, null),
+  ('b6cf630e-0701-568e-9dd6-5c4ea9dff73a', '9de59366-98dd-54bc-b1fc-7f54725a318b', null, 'task', 'Folha e eventos do mês', null, '04c022f2-6169-5a25-adfe-1a43f66c093a', 'medium', null, 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 16, null, '2026-10-16', '2026-11-15', '2026-11-18', false, null, null, '2026-10-11T12:00:00-03:00', null, null),
+  ('ede1c23b-8e93-54f1-a51a-c2376ea8c027', 'ce5e204e-18a7-54ba-bf94-6dd9581e94e6', null, 'task', 'Processos societários e prazos', null, '04c022f2-6169-5a25-adfe-1a43f66c093a', 'low', null, 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 16, null, '2026-10-26', '2026-12-05', '2026-12-08', false, null, null, '2026-10-21T12:00:00-03:00', null, null),
+  ('87d225b6-f37f-5f1f-a6b1-375ee9a5b22a', '22ea1d28-a27c-5b7f-9dfd-5ea181bcb67a', null, 'story', 'Login do cliente por CPF', null, 'c492b85a-8079-5176-a476-fac31bcc1aaa', 'high', '29f7bce5-bf6e-5a2f-8e3b-c25e855a33c4', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 8, null, '2026-09-20', '2026-10-04', '2026-10-07', true, null, null, '2026-09-15T12:00:00-03:00', '2026-09-20T09:00:00-03:00', null),
+  ('fe4b9844-6a48-5076-8f8b-e0238f0c27d2', '22ea1d28-a27c-5b7f-9dfd-5ea181bcb67a', null, 'story', 'Envio de documentos pelo celular', null, '4549c18d-0fb2-5425-9d63-62360e2c4a88', 'high', '29f7bce5-bf6e-5a2f-8e3b-c25e855a33c4', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 14, null, '2026-10-05', '2026-10-24', '2026-10-27', true, null, null, '2026-09-30T12:00:00-03:00', null, null),
+  ('b7258ab3-15e9-5df4-bc90-9177b229f690', '7b6911f0-12de-5ea1-9304-f811fb404c42', null, 'task', 'Botão de feedback do Kit IT.IA', null, '4549c18d-0fb2-5425-9d63-62360e2c4a88', 'medium', 'b5510531-2c75-59fb-b2c1-006a90d0775f', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 6, null, '2026-09-30', '2026-10-10', '2026-10-13', false, null, null, '2026-09-25T12:00:00-03:00', null, null),
+  ('f773d5fc-e3f6-51f7-9a3e-b89184348318', 'ef73d1da-63a0-5595-ae39-e5c65377918f', null, 'story', 'Agenda de emissão de certificados', null, 'c492b85a-8079-5176-a476-fac31bcc1aaa', 'medium', 'b5510531-2c75-59fb-b2c1-006a90d0775f', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 12, null, '2026-09-21', '2026-10-08', '2026-10-11', false, null, null, '2026-09-16T12:00:00-03:00', '2026-09-21T09:00:00-03:00', null),
+  ('edfcb991-3fc4-53f2-906b-6368f2179447', '072b1896-e400-5d6d-9d2f-6bd0bc25a70e', null, 'task', 'Tela de validade dos certificados', null, 'c81b6d0b-de4d-53ce-85e9-d24600183909', 'medium', '29f7bce5-bf6e-5a2f-8e3b-c25e855a33c4', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 8, null, '2026-09-01', '2026-09-14', '2026-09-17', false, null, null, '2026-08-27T12:00:00-03:00', '2026-09-01T09:00:00-03:00', '2026-09-13T17:00:00-03:00'),
+  ('8e22501f-6f05-5438-a680-4ac68cd051ba', '0d5599d5-0ffc-5ea6-a763-bd51d6309ffa', null, 'task', 'Módulo de chips por loja', null, '4549c18d-0fb2-5425-9d63-62360e2c4a88', 'low', '29f7bce5-bf6e-5a2f-8e3b-c25e855a33c4', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 10, null, '2026-10-08', '2026-10-31', '2026-11-03', false, null, null, '2026-10-03T12:00:00-03:00', null, null),
+  ('0abf5256-5faa-5b27-859d-b7e5c6b31ada', 'a747a148-99f3-5f75-90d0-9d82e260970d', null, 'epic', 'Integração com marketplaces', null, 'c492b85a-8079-5176-a476-fac31bcc1aaa', 'high', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 40, null, '2026-09-22', '2026-11-10', '2026-11-13', true, null, null, '2026-09-17T12:00:00-03:00', '2026-09-22T09:00:00-03:00', null),
+  ('2eaa0315-945c-52b8-a1c8-08faffe7631b', 'a747a148-99f3-5f75-90d0-9d82e260970d', null, 'task', 'Robô de cobrança automática', null, '4549c18d-0fb2-5425-9d63-62360e2c4a88', 'high', 'b5510531-2c75-59fb-b2c1-006a90d0775f', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 16, null, '2026-10-03', '2026-10-26', '2026-10-29', false, null, null, '2026-09-28T12:00:00-03:00', null, null),
+  ('5d590ea1-84f1-5356-a38e-e41d05ff2cd1', '5aa97a0f-6ca7-5ad4-9fa9-783fdd9ff6d6', null, 'task', 'Cobrança pelo faturamento via Pix', null, '04c022f2-6169-5a25-adfe-1a43f66c093a', 'medium', null, 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 12, null, '2026-10-16', '2026-11-15', '2026-11-18', false, null, null, '2026-10-11T12:00:00-03:00', null, null),
+  ('9e11825c-aed2-5d36-968d-03a62362c33c', '23362b3e-9566-5331-9496-6d7f6dea9339', null, 'task', 'Painel de campanhas', null, '04c022f2-6169-5a25-adfe-1a43f66c093a', 'low', null, 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 10, null, '2026-10-26', '2026-11-25', '2026-11-28', false, null, null, '2026-10-21T12:00:00-03:00', null, null),
+  ('43b9faed-ad85-5c4c-b372-3cda3cb3eefa', 'a1683a67-a153-5423-94a5-791ae7b85df9', null, 'task', 'Tela de login do Java BL', null, 'c81b6d0b-de4d-53ce-85e9-d24600183909', 'low', 'b5510531-2c75-59fb-b2c1-006a90d0775f', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 4, null, '2026-08-04', '2026-08-08', '2026-08-11', false, null, null, '2026-07-30T12:00:00-03:00', '2026-08-04T09:00:00-03:00', '2026-08-08T17:00:00-03:00'),
+  ('6a9c1fff-4415-594b-94fe-a386a7963874', 'f8de61c6-cdfd-5f0e-8058-1e6a5e970ac5', null, 'task', 'Ícones do app do CEO', null, 'c81b6d0b-de4d-53ce-85e9-d24600183909', 'low', '29f7bce5-bf6e-5a2f-8e3b-c25e855a33c4', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 4, null, '2026-08-09', '2026-08-13', '2026-08-16', false, null, null, '2026-08-04T12:00:00-03:00', '2026-08-09T09:00:00-03:00', '2026-08-13T17:00:00-03:00'),
+  ('be459ca1-b812-5ab2-8b54-c01b898a5de3', 'a1683a67-a153-5423-94a5-791ae7b85df9', null, 'task', 'Índices da tabela de clientes', null, 'c81b6d0b-de4d-53ce-85e9-d24600183909', 'low', 'b5510531-2c75-59fb-b2c1-006a90d0775f', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 4, null, '2026-08-16', '2026-08-20', '2026-08-23', false, null, null, '2026-08-11T12:00:00-03:00', '2026-08-16T09:00:00-03:00', '2026-08-20T17:00:00-03:00'),
+  ('8ab86c6f-af9c-5d51-8375-edaeedf456a0', 'a1683a67-a153-5423-94a5-791ae7b85df9', null, 'task', 'Contrato de eventos do cadastro', null, 'c81b6d0b-de4d-53ce-85e9-d24600183909', 'low', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 4, null, '2026-08-18', '2026-08-22', '2026-08-25', false, null, null, '2026-08-13T12:00:00-03:00', '2026-08-18T09:00:00-03:00', '2026-08-22T17:00:00-03:00'),
+  ('e8e9d95c-b45a-51fd-9226-7b5a852cd1b6', '0b5048b2-af47-59de-8fd1-8bc8bf2c8470', null, 'task', 'Exportação de obrigações em PDF', null, 'c81b6d0b-de4d-53ce-85e9-d24600183909', 'low', 'b5510531-2c75-59fb-b2c1-006a90d0775f', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 4, null, '2026-08-24', '2026-08-28', '2026-08-31', false, null, null, '2026-08-19T12:00:00-03:00', '2026-08-24T09:00:00-03:00', '2026-08-28T17:00:00-03:00'),
+  ('1b209a5d-135e-5d98-89b7-6efa1d43416e', '7b6911f0-12de-5ea1-9304-f811fb404c42', null, 'task', 'Tela de documentos do cliente', null, 'c81b6d0b-de4d-53ce-85e9-d24600183909', 'low', '29f7bce5-bf6e-5a2f-8e3b-c25e855a33c4', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 4, null, '2026-08-30', '2026-09-03', '2026-09-06', false, null, null, '2026-08-25T12:00:00-03:00', '2026-08-30T09:00:00-03:00', '2026-09-03T17:00:00-03:00'),
+  ('cc8ffb85-2e8a-5064-bf91-40b4c1f5c960', '0b5048b2-af47-59de-8fd1-8bc8bf2c8470', null, 'task', 'Correção do fuso nos vencimentos', null, 'c81b6d0b-de4d-53ce-85e9-d24600183909', 'low', 'b5510531-2c75-59fb-b2c1-006a90d0775f', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 4, null, '2026-09-06', '2026-09-10', '2026-09-13', false, null, null, '2026-09-01T12:00:00-03:00', '2026-09-06T09:00:00-03:00', '2026-09-10T17:00:00-03:00'),
+  ('4eb80240-8177-5e3a-b1d3-976cd5b90824', 'ef73d1da-63a0-5595-ae39-e5c65377918f', null, 'task', 'Aviso de certificado vencendo', null, 'c81b6d0b-de4d-53ce-85e9-d24600183909', 'low', '29f7bce5-bf6e-5a2f-8e3b-c25e855a33c4', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 4, null, '2026-09-07', '2026-09-11', '2026-09-14', false, null, null, '2026-09-02T12:00:00-03:00', '2026-09-07T09:00:00-03:00', '2026-09-11T17:00:00-03:00'),
+  ('013b420d-67ff-5487-830a-47096059f9a5', 'a1683a67-a153-5423-94a5-791ae7b85df9', null, 'task', 'Registro de quem fez o quê', null, 'c81b6d0b-de4d-53ce-85e9-d24600183909', 'low', 'b5510531-2c75-59fb-b2c1-006a90d0775f', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 4, null, '2026-09-13', '2026-09-17', '2026-09-20', false, null, null, '2026-09-08T12:00:00-03:00', '2026-09-13T09:00:00-03:00', '2026-09-17T17:00:00-03:00'),
+  ('7e034b06-b598-5e1b-a240-72a72a5a44cc', 'a1683a67-a153-5423-94a5-791ae7b85df9', null, 'task', 'Revisão das regras de acesso', null, 'c81b6d0b-de4d-53ce-85e9-d24600183909', 'low', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 4, null, '2026-09-14', '2026-09-18', '2026-09-21', false, null, null, '2026-09-09T12:00:00-03:00', '2026-09-14T09:00:00-03:00', '2026-09-18T17:00:00-03:00'),
+  ('9b1a19c7-b6ec-5214-ab3e-ffda925fff6b', '7b6911f0-12de-5ea1-9304-f811fb404c42', null, 'task', 'Ajuste de layout da Área do Cliente', null, 'c81b6d0b-de4d-53ce-85e9-d24600183909', 'low', '29f7bce5-bf6e-5a2f-8e3b-c25e855a33c4', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 4, null, '2026-09-19', '2026-09-23', '2026-09-26', false, null, null, '2026-09-14T12:00:00-03:00', '2026-09-19T09:00:00-03:00', '2026-09-23T17:00:00-03:00'),
+  ('d0c12602-067b-5fbb-93d9-1d3e9869ab5c', '27ed01ff-b4ea-5354-aaa2-c34d711304d0', null, 'story', 'Painel central do CEO', null, 'e4da0819-465a-5cd8-b70e-2c837053429e', 'high', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 14, null, '2026-09-11', '2026-09-28', '2026-10-01', true, 'e6d05bf8-1f53-5dcf-8ec6-1fcc0887432c', '795bbb2e-f16f-5bcd-adc6-891d2ebdee0e', '2026-09-06T12:00:00-03:00', '2026-09-11T09:00:00-03:00', null),
+  ('a7d3df61-f110-5f3d-8863-d2075ecc8ec8', '27ed01ff-b4ea-5354-aaa2-c34d711304d0', null, 'task', 'Login e níveis de acesso', null, 'c81b6d0b-de4d-53ce-85e9-d24600183909', 'medium', 'b5510531-2c75-59fb-b2c1-006a90d0775f', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 10, null, '2026-08-07', '2026-08-27', '2026-08-30', false, 'e6d05bf8-1f53-5dcf-8ec6-1fcc0887432c', null, '2026-08-02T12:00:00-03:00', '2026-08-07T09:00:00-03:00', '2026-08-26T17:00:00-03:00'),
+  ('7061c178-900a-5e80-a36e-080147aca0ad', '127109a4-0854-5e51-af3d-3864af4a1b0d', null, 'epic', 'Billy: ouvinte, operacional e voz', null, '4549c18d-0fb2-5425-9d63-62360e2c4a88', 'medium', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 60, null, '2026-10-06', '2026-12-25', '2026-12-28', false, null, null, '2026-10-01T12:00:00-03:00', null, null),
+  ('97feb758-c850-5aac-a658-59ca42ad853c', '127109a4-0854-5e51-af3d-3864af4a1b0d', null, 'task', 'Níveis de permissão das function calls', null, '04c022f2-6169-5a25-adfe-1a43f66c093a', 'medium', null, 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 12, null, '2026-10-16', '2026-11-10', '2026-11-13', false, null, null, '2026-10-11T12:00:00-03:00', null, null),
+  ('03712cfe-cd5e-54d3-821f-12efe367bf38', '00d6a88c-4baf-50e4-a0b7-72c2e36a21af', '8a3977f7-b358-541c-970b-79ea511033f7', 'task', 'Tabela de clientes com vínculo ativo e inativo', null, 'c81b6d0b-de4d-53ce-85e9-d24600183909', 'high', 'b5510531-2c75-59fb-b2c1-006a90d0775f', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 12, null, '2026-07-30', '2026-08-17', '2026-08-20', false, null, null, '2026-07-25T12:00:00-03:00', '2026-07-30T09:00:00-03:00', '2026-08-16T17:00:00-03:00'),
+  ('177a89a3-e23d-5a1d-8c9b-8b024385d639', '00d6a88c-4baf-50e4-a0b7-72c2e36a21af', '8a3977f7-b358-541c-970b-79ea511033f7', 'task', 'Regras de acesso por empresa (RLS)', null, 'c81b6d0b-de4d-53ce-85e9-d24600183909', 'high', 'b5510531-2c75-59fb-b2c1-006a90d0775f', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 10, null, '2026-08-17', '2026-09-01', '2026-09-04', false, null, null, '2026-08-12T12:00:00-03:00', '2026-08-17T09:00:00-03:00', '2026-08-31T17:00:00-03:00'),
+  ('0cd891b9-53a2-5077-b74f-f99cb4f60a77', 'a1683a67-a153-5423-94a5-791ae7b85df9', '8a3977f7-b358-541c-970b-79ea511033f7', 'story', 'API de transferência de clientes para os Javas', null, 'c492b85a-8079-5176-a476-fac31bcc1aaa', 'highest', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 16, null, '2026-09-06', '2026-10-02', '2026-10-02', true, null, null, '2026-09-01T12:00:00-03:00', '2026-09-06T09:00:00-03:00', null),
+  ('9e805ad3-d394-52a8-addf-149375c03c4c', 'a1683a67-a153-5423-94a5-791ae7b85df9', '8a3977f7-b358-541c-970b-79ea511033f7', 'task', 'Webhook de atualização de cadastro', null, '852fa09a-b876-585e-a93a-c51409240120', 'high', 'b5510531-2c75-59fb-b2c1-006a90d0775f', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 8, null, '2026-09-16', '2026-09-30', '2026-10-03', false, null, null, '2026-09-11T12:00:00-03:00', '2026-09-16T09:00:00-03:00', null)
+on conflict (id) do nothing;
+
+insert into public.itens_checklist (id, item_id, texto, feito, ordem) values
+  ('0d680c50-88e4-58bd-a63c-319fc66fd579', '0cd891b9-53a2-5077-b74f-f99cb4f60a77', 'Contrato da API aprovado', true, 0),
+  ('e819e11d-11b8-516c-bb7c-6982b0a3f6a3', '0cd891b9-53a2-5077-b74f-f99cb4f60a77', 'Autenticação por token', true, 1),
+  ('61d86d7e-ec10-55ae-a153-f10d3f0ff7f7', '0cd891b9-53a2-5077-b74f-f99cb4f60a77', 'Teste com duas empresas', false, 2)
+on conflict (id) do nothing;
+
+insert into public.itens_ligacoes (origem_id, destino_id, tipo) values
+  ('0cd891b9-53a2-5077-b74f-f99cb4f60a77', '9e805ad3-d394-52a8-addf-149375c03c4c', 'bloqueia')
+on conflict (origem_id, destino_id, tipo) do nothing;
+
+insert into public.comentarios (id, item_id, autor_id, texto, visivel_cliente, criado_em) values
+  ('6f520df9-4242-5034-ad1e-65e1c2f65782', '87d225b6-f37f-5f1f-a6b1-375ee9a5b22a', '2246aac4-fcc9-5564-af95-054b9cc42889', 'Consigo entrar só com o CPF, sem e-mail?', true, '2026-09-24T10:00:00-03:00')
+on conflict (id) do nothing;
+
+insert into public.blocos_agenda (id, item_id, pessoa_id, inicio, fim) values
+  ('0aa767cb-f3e1-5499-bd9f-427b96bee199', '0cd891b9-53a2-5077-b74f-f99cb4f60a77', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', '2026-09-26T09:00:00-03:00', '2026-09-26T11:30:00-03:00'),
+  ('97d8c6dd-91cc-5653-8427-fbd1a4e0ad3c', 'd0c12602-067b-5fbb-93d9-1d3e9869ab5c', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', '2026-09-28T10:00:00-03:00', '2026-09-28T12:00:00-03:00'),
+  ('e3264f25-f67e-56c7-8a12-566f7985589b', '0f07e627-5656-5248-a912-45778d4334ac', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', '2026-09-27T14:00:00-03:00', '2026-09-27T17:00:00-03:00')
+on conflict (id) do nothing;
+
+insert into public.ficha_campos (no_id, secao, campo, valor, personalizado) values
+  ('cea3db88-841f-5511-98d1-3bedcc411131', 'Visual identity', 'Manual de identidade', 'Manual Blanco & Lisboa 2026 (versão azul) e manual YOU "New DS 01"', false),
+  ('cea3db88-841f-5511-98d1-3bedcc411131', 'Stack', 'Linguagens e versões', 'Java 21', false),
+  ('cea3db88-841f-5511-98d1-3bedcc411131', 'Stack', 'Frameworks', 'Spring Boot, JavaFX', false),
+  ('cea3db88-841f-5511-98d1-3bedcc411131', 'Stack', 'Plataformas', 'Desktop (Java), celular', false),
+  ('cea3db88-841f-5511-98d1-3bedcc411131', 'Database', 'Banco e schema', 'Supabase tfcvoszeewmpghgxztuy', false),
+  ('cea3db88-841f-5511-98d1-3bedcc411131', 'Integrations', 'Sistemas ligados', 'WhatsGW, Conexa, Gmail', false),
+  ('cea3db88-841f-5511-98d1-3bedcc411131', 'Business rules', 'Regras de negócio do cliente', 'Carteira de clientes só existe no Fiscal. CNPJ e CPF são assuntos separados.', false),
+  ('cea3db88-841f-5511-98d1-3bedcc411131', 'Custom fields', 'Holding', 'Blanco & Lisboa', true),
+  ('d23ede90-b2b5-56e0-b294-cc0ff4f9c41a', 'Stack', 'Plataformas', 'Desktop (Java)', false)
+on conflict (no_id, secao, campo) do nothing;
+
+insert into public.etapas_modelo (id, chave, nome, explicacao, lente, entrega, ordem) values
+  ('662a56b1-0fe9-5bd1-8776-7bce89f6ee04', 'et_0', 'Intake', 'entrada e triagem do pedido', 'Triagem', null, 0),
+  ('af44fe96-f85f-5815-b727-4b172fcfb729', 'et_1', 'Scoping', 'recorte do escopo', 'Supervisor · Arquitetura e mapeamento', null, 1),
+  ('aba3573c-fb85-589c-b1de-180f61803c76', 'et_2', 'Discovery', 'levantamento do que existe', 'Investigação do legado · Produto', null, 2),
+  ('960e16bb-9657-5168-a6ef-ddbc14ff0ec8', 'et_3', 'Design', 'desenho da solução', 'Arquiteto · Banco de dados · Segurança · Impacto', null, 3),
+  ('6fb03194-df1f-5789-be31-4aa7ac30f56f', 'et_4', 'Planning', 'planejamento', 'Supervisor · Dev líder · AI PO', null, 4),
+  ('ff200273-4e16-5a73-9d89-43c75d1689ae', 'et_5', 'Build', 'construção', 'Dev especialista', null, 5),
+  ('3369c902-ec7f-5904-92e0-cda9650f81d8', 'et_6', 'QA & Security', 'testes e segurança', 'QA · Segurança · Auditoria técnica', null, 6),
+  ('c0d39cf8-5786-50c2-aa93-2f3451130d99', 'et_7', 'Verification', 'verificação final', 'Verificador final', null, 7),
+  ('69bff48e-3ff0-5197-bcfe-cd4fa56c662a', 'et_8', 'Approval', 'aprovação', 'William', null, 8),
+  ('8f1d21f3-c820-50f5-bf07-8f1139d1372d', 'et_9', 'Release', 'entrega no ar', 'Dev líder · Impacto e regressão', null, 9),
+  ('2a068aec-dfe8-57e3-a4c6-92c3b51ed763', 'et_10', 'Retrospective', 'aprender com a entrega', 'Aprendizado e prevenção', null, 10)
+on conflict (id) do nothing;
+
+insert into public.etapas_modelo_itens (id, etapa_id, texto, modo, obrigatorio, prova_tipo, quem_cumpre, so_terceiros, ordem) values
+  ('983be369-bc26-56fe-8afd-52ff277c0c07', '662a56b1-0fe9-5bd1-8776-7bce89f6ee04', 'Quem pediu, qual sistema e qual empresa', 'aviso', true, 'nenhuma', 'responsavel_etapa', false, 0),
+  ('86f897a0-db25-589a-a361-90715176886c', '662a56b1-0fe9-5bd1-8776-7bce89f6ee04', 'Tipo: projeto novo, em andamento, melhoria ou incidente', 'aviso', true, 'nenhuma', 'responsavel_etapa', false, 1),
+  ('87e188a3-bc4a-5412-9db2-2d83debf9e68', '662a56b1-0fe9-5bd1-8776-7bce89f6ee04', 'Urgência e autorização mínima para começar', 'aviso', true, 'nenhuma', 'responsavel_etapa', false, 2),
+  ('acaff49b-da46-5980-b5cc-0c401cb03d0c', 'af44fe96-f85f-5815-b727-4b172fcfb729', 'Objetivo, perfis de usuário e critérios de aceite', 'aviso', true, 'nenhuma', 'responsavel_etapa', false, 0),
+  ('98ac4985-3fc0-5808-a675-4169afb46d21', 'af44fe96-f85f-5815-b727-4b172fcfb729', 'Repositório, banco e ambiente confirmados', 'aviso', true, 'nenhuma', 'responsavel_etapa', false, 1),
+  ('7fcadd16-e9a7-5ce9-83ff-29f51093face', 'af44fe96-f85f-5815-b727-4b172fcfb729', 'O que fica de fora, por escrito', 'aviso', true, 'nenhuma', 'responsavel_etapa', false, 2),
+  ('290ff705-7732-553f-b470-ef7e16be4877', 'aba3573c-fb85-589c-b1de-180f61803c76', 'Código e banco confrontados', 'aviso', true, 'nenhuma', 'responsavel_etapa', false, 0),
+  ('ba675695-df22-5edb-8c46-cdc3bacb5dfb', 'aba3573c-fb85-589c-b1de-180f61803c76', 'Quem usa, como usa e as jornadas de cada perfil', 'aviso', true, 'nenhuma', 'responsavel_etapa', false, 1),
+  ('25e28a59-a8c6-55ff-bf51-449cc71f39a5', 'aba3573c-fb85-589c-b1de-180f61803c76', 'Achados marcados como fato, inferência, hipótese ou proposta', 'aviso', true, 'nenhuma', 'responsavel_etapa', false, 2),
+  ('6ff15df9-06ba-5297-8002-dc1fb0e33f47', 'aba3573c-fb85-589c-b1de-180f61803c76', 'Acesso ao código, ao banco e à documentação do sistema de terceiros', 'aviso', true, 'texto', 'responsavel_etapa', true, 3),
+  ('d86717d7-c7b2-55cb-a8eb-180846791ea5', 'aba3573c-fb85-589c-b1de-180f61803c76', 'Mapa dos riscos do código feito por outra empresa', 'aviso', true, 'arquivo', 'responsavel_etapa', true, 4),
+  ('50bed218-7f2e-52c3-9934-b3f3688de7c9', 'aba3573c-fb85-589c-b1de-180f61803c76', 'O que dá para aproveitar e o que precisa ser refeito', 'aviso', true, 'texto', 'responsavel_etapa', true, 5),
+  ('35a8cf39-daf2-5c4d-98ed-6d6ba5b9fb21', '960e16bb-9657-5168-a6ef-ddbc14ff0ec8', 'Arquitetura, contratos de API e eventos, modelo de dados', 'aviso', true, 'nenhuma', 'responsavel_etapa', false, 0),
+  ('a8c38e31-e4eb-526e-943a-4eed4ffb5815', '960e16bb-9657-5168-a6ef-ddbc14ff0ec8', 'Regras de acesso desenhadas antes de criar', 'aviso', true, 'nenhuma', 'responsavel_etapa', false, 1),
+  ('b5eb5781-24dd-5d34-ae40-5f932a83dceb', '960e16bb-9657-5168-a6ef-ddbc14ff0ec8', 'Quem mais é afetado e como voltar atrás', 'aviso', true, 'nenhuma', 'responsavel_etapa', false, 2),
+  ('cf2dbff3-0b5f-5a9e-a545-f50df2ee56a5', '6fb03194-df1f-5789-be31-4aa7ac30f56f', 'Epics, stories e tasks com critério de aceite', 'aviso', true, 'nenhuma', 'responsavel_etapa', false, 0),
+  ('20b1b428-ba1e-563c-8f17-79572786eecc', '6fb03194-df1f-5789-be31-4aa7ac30f56f', 'Estimativa e datas previstas', 'aviso', true, 'nenhuma', 'responsavel_etapa', false, 1),
+  ('5d0ffbbf-8503-5893-b6bc-d30eae972996', '6fb03194-df1f-5789-be31-4aa7ac30f56f', 'Marcos e dependências ligados', 'aviso', true, 'nenhuma', 'responsavel_etapa', false, 2),
+  ('79932756-4a3c-57a5-9290-b1564f98c2ed', 'ff200273-4e16-5a73-9d89-43c75d1689ae', 'Mudança mínima e reversível', 'aviso', true, 'nenhuma', 'responsavel_etapa', false, 0),
+  ('a0d0da90-9034-5756-8bd3-47ba6c04666c', 'ff200273-4e16-5a73-9d89-43c75d1689ae', 'Teste escrito antes do código, quando se aplica', 'aviso', true, 'nenhuma', 'responsavel_etapa', false, 1),
+  ('d791b2fe-253d-553a-9a90-7dd2f8c6c981', 'ff200273-4e16-5a73-9d89-43c75d1689ae', 'Só no repositório e ambiente autorizados', 'aviso', true, 'nenhuma', 'responsavel_etapa', false, 2),
+  ('7034c9e0-967c-5f95-a23d-11e7bcadaf86', '3369c902-ec7f-5904-92e0-cda9650f81d8', 'Testes funcionais, de integração e de regressão', 'aviso', true, 'captura', 'responsavel_etapa', false, 0),
+  ('962bc464-0e87-51ec-bdc9-9741f2e1b95d', '3369c902-ec7f-5904-92e0-cda9650f81d8', 'Autorização no servidor, segredos e dependências', 'aviso', true, 'captura', 'responsavel_etapa', false, 1),
+  ('ac9ba9f5-eee4-5f5f-b300-be5efab6add4', '3369c902-ec7f-5904-92e0-cda9650f81d8', 'Isolamento provado com dois clientes', 'aviso', true, 'captura', 'responsavel_etapa', false, 2),
+  ('cd0e946c-f4da-5685-8b12-f938dc90e7f8', 'c0d39cf8-5786-50c2-aa93-2f3451130d99', 'Build, lint e testes rodados, com a saída real', 'aviso', true, 'captura', 'responsavel_etapa', false, 0),
+  ('88b7bfe0-d173-5b54-8009-6d40346193e6', 'c0d39cf8-5786-50c2-aa93-2f3451130d99', 'Checklist completo e riscos que sobram declarados', 'aviso', true, 'captura', 'responsavel_etapa', false, 1),
+  ('b54003ba-0495-5c27-b323-e91f5b77d38e', 'c0d39cf8-5786-50c2-aa93-2f3451130d99', 'Requisitos obrigatórios da aplicação cumpridos', 'aviso', true, 'captura', 'responsavel_etapa', false, 2),
+  ('4b9601cd-99a5-528d-8c6b-10fc6bb9f47b', '69bff48e-3ff0-5197-bcfe-cd4fa56c662a', 'Push, merge, deploy e migração só com o "sim" dele', 'aviso', true, 'aprovacao', 'responsavel_etapa', false, 0),
+  ('d41a83ad-77cb-501d-9761-663abd9d323b', '69bff48e-3ff0-5197-bcfe-cd4fa56c662a', 'Decisões pendentes respondidas', 'aviso', true, 'aprovacao', 'responsavel_etapa', false, 1),
+  ('d5503ce4-1472-527f-a3da-21dca21a34a4', '8f1d21f3-c820-50f5-bf07-8f1139d1372d', 'Plano de migração com paridade e rollback', 'aviso', true, 'nenhuma', 'responsavel_etapa', false, 0),
+  ('52a78022-9b8b-5707-8629-9d3277eaa1a4', '8f1d21f3-c820-50f5-bf07-8f1139d1372d', 'Convivência com o sistema antigo', 'aviso', true, 'nenhuma', 'responsavel_etapa', false, 1),
+  ('d912442e-35d5-5c6a-a607-b040fdba852b', '8f1d21f3-c820-50f5-bf07-8f1139d1372d', 'Changelog publicado para o cliente', 'aviso', true, 'nenhuma', 'responsavel_etapa', false, 2),
+  ('ccfda1b9-57a7-5b62-b0ff-ced860bca655', '2a068aec-dfe8-57e3-a4c6-92c3b51ed763', 'Causa do que deu errado e o controle que evita repetir', 'aviso', true, 'nenhuma', 'responsavel_etapa', false, 0),
+  ('1d008284-dcac-5159-be49-26d003d89047', '2a068aec-dfe8-57e3-a4c6-92c3b51ed763', 'Lições gravadas na memória', 'aviso', true, 'nenhuma', 'responsavel_etapa', false, 1)
+on conflict (id) do nothing;
+
+insert into public.etapas_nos (no_id, item_modelo_id, situacao, cumprido_por, cumprido_em, motivo_dispensa) values
+  ('cea3db88-841f-5511-98d1-3bedcc411131', '983be369-bc26-56fe-8afd-52ff277c0c07', 'cumprido', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', '2026-08-07T12:00:00-03:00', null),
+  ('cea3db88-841f-5511-98d1-3bedcc411131', '86f897a0-db25-589a-a361-90715176886c', 'cumprido', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', '2026-08-07T12:00:00-03:00', null),
+  ('cea3db88-841f-5511-98d1-3bedcc411131', '87e188a3-bc4a-5412-9db2-2d83debf9e68', 'cumprido', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', '2026-08-07T12:00:00-03:00', null),
+  ('cea3db88-841f-5511-98d1-3bedcc411131', 'acaff49b-da46-5980-b5cc-0c401cb03d0c', 'cumprido', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', '2026-08-07T12:00:00-03:00', null),
+  ('cea3db88-841f-5511-98d1-3bedcc411131', '98ac4985-3fc0-5808-a675-4169afb46d21', 'cumprido', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', '2026-08-07T12:00:00-03:00', null),
+  ('cea3db88-841f-5511-98d1-3bedcc411131', '290ff705-7732-553f-b470-ef7e16be4877', 'cumprido', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', '2026-08-07T12:00:00-03:00', null),
+  ('cea3db88-841f-5511-98d1-3bedcc411131', '7fcadd16-e9a7-5ce9-83ff-29f51093face', 'dispensado', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', '2026-08-12T12:00:00-03:00', 'Escopo aberto por decisão do William: o projeto cresce por produto'),
+  ('cea3db88-841f-5511-98d1-3bedcc411131', '35a8cf39-daf2-5c4d-98ed-6d6ba5b9fb21', 'cumprido', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', '2026-09-06T12:00:00-03:00', null)
+on conflict (no_id, item_modelo_id) do nothing;
+
+insert into public.provas (id, no_id, item_modelo_id, tipo, valor, enviado_por) values
+  ('67c6e848-f89a-5708-a213-42e693cd7e2b', 'cea3db88-841f-5511-98d1-3bedcc411131', '983be369-bc26-56fe-8afd-52ff277c0c07', 'texto', 'Registrado no Intake do projeto BL', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28'),
+  ('ae810f7d-0d9e-53cf-9d18-ef0df5173f76', 'cea3db88-841f-5511-98d1-3bedcc411131', '86f897a0-db25-589a-a361-90715176886c', 'texto', 'Registrado no Intake do projeto BL', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28'),
+  ('f8a62d26-cd14-53e1-bb6d-beb04607e56a', 'cea3db88-841f-5511-98d1-3bedcc411131', '87e188a3-bc4a-5412-9db2-2d83debf9e68', 'texto', 'Registrado no Intake do projeto BL', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28'),
+  ('f6389416-5196-5cee-b485-5a17a2bef898', 'cea3db88-841f-5511-98d1-3bedcc411131', 'acaff49b-da46-5980-b5cc-0c401cb03d0c', 'texto', 'Registrado no Intake do projeto BL', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28'),
+  ('ee4dbd32-79be-50f9-8e38-c8238a2224d6', 'cea3db88-841f-5511-98d1-3bedcc411131', '98ac4985-3fc0-5808-a675-4169afb46d21', 'texto', 'Registrado no Intake do projeto BL', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28'),
+  ('453ac331-2eab-59de-a107-de8aaf28928c', 'cea3db88-841f-5511-98d1-3bedcc411131', '290ff705-7732-553f-b470-ef7e16be4877', 'texto', 'Registrado no Intake do projeto BL', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28'),
+  ('fbdcd999-b027-5cf9-80b7-db220922a969', 'cea3db88-841f-5511-98d1-3bedcc411131', '35a8cf39-daf2-5c4d-98ed-6d6ba5b9fb21', 'link', 'Canvas de estruturação do BL', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28')
+on conflict (id) do nothing;
+
+insert into public.agentes (id, codigo, nome, papel, instrucoes, regras_passagem) values
+  ('e9104d90-ba48-5020-9888-c995298bb0d0', 'ag_po', 'AI PO', 'Product Owner: planos de execução, capacidade do time, previsão e replanejamento', 'Organize as demandas em epics, stories e tasks. Use a capacidade de cada pessoa. Nunca mude prazo, pessoa ou cliente sem a aprovação do Master.', 'Qualquer decisão de prazo, custo ou cliente'),
+  ('41e3b626-1c1d-5011-9dfe-8551b88390eb', 'ag_at', 'Agente de atendimento', 'Primeira resposta no Service Desk: entende, classifica e resolve dúvidas', 'Converse primeiro, faça perguntas objetivas e tente reproduzir. Dúvida de uso: explique com base no manual. Falha real: resuma com passos e provas e passe para a equipe.', 'Cliente pede uma pessoa, sistema parado, ou duas tentativas sem resolver'),
+  ('6b674e96-56c2-5bbe-aaab-95ae0d2ac587', 'ag_billy', 'Billy', 'Assistente do grupo: ouvinte, operacional e voz', 'Siga os níveis de permissão. Toda function call é validada pelo Java antes de executar.', 'Qualquer ação fora do nível Livre')
+on conflict (id) do nothing;
+
+insert into public.agentes_fontes (id, agente_id, nome) values
+  ('95887200-b2a4-53ad-a251-6f96f63ef1ba', 'e9104d90-ba48-5020-9888-c995298bb0d0', 'Banco do projeto'),
+  ('2a9e92f4-f3d7-51b0-8094-caca54dd1717', 'e9104d90-ba48-5020-9888-c995298bb0d0', 'Canvas do projeto'),
+  ('188e982c-1cef-5224-a311-a43df3ae0545', 'e9104d90-ba48-5020-9888-c995298bb0d0', 'Ficha técnica'),
+  ('a8689980-10a7-5c2b-9665-086e662fe213', 'e9104d90-ba48-5020-9888-c995298bb0d0', 'Histórico de entregas'),
+  ('a2bdfe2c-4ab4-5309-ad03-f3c387594e51', '41e3b626-1c1d-5011-9dfe-8551b88390eb', 'Manual de cada aplicação'),
+  ('a795acfe-5e87-5d30-a38f-2581a427798a', '41e3b626-1c1d-5011-9dfe-8551b88390eb', 'Base de conhecimento'),
+  ('a5788818-3257-52ea-b19d-7d7457b8378e', '41e3b626-1c1d-5011-9dfe-8551b88390eb', 'Histórico de pedidos'),
+  ('bf5ccc1e-a7c8-5d43-9f45-3dd368d317fc', '6b674e96-56c2-5bbe-aaab-95ae0d2ac587', 'Banco BL'),
+  ('3719dfe0-27ab-5bb2-bbda-c938c8827390', '6b674e96-56c2-5bbe-aaab-95ae0d2ac587', 'Reuniões'),
+  ('31063adb-ea7b-5860-8a2a-1cde9a9fe027', '6b674e96-56c2-5bbe-aaab-95ae0d2ac587', 'Tarefas')
+on conflict (id) do nothing;
+
+insert into public.agentes_ferramentas (agente_id, ferramenta, permissao) values
+  ('e9104d90-ba48-5020-9888-c995298bb0d0', 'Criar tarefa', 'confirmacao'),
+  ('e9104d90-ba48-5020-9888-c995298bb0d0', 'Mudar status', 'automatica'),
+  ('e9104d90-ba48-5020-9888-c995298bb0d0', 'Mudar prazo', 'confirmacao'),
+  ('e9104d90-ba48-5020-9888-c995298bb0d0', 'Atribuir pessoa', 'confirmacao'),
+  ('e9104d90-ba48-5020-9888-c995298bb0d0', 'Gerar relatório', 'livre'),
+  ('e9104d90-ba48-5020-9888-c995298bb0d0', 'Apagar item', 'bloqueada'),
+  ('41e3b626-1c1d-5011-9dfe-8551b88390eb', 'Responder o cliente', 'automatica'),
+  ('41e3b626-1c1d-5011-9dfe-8551b88390eb', 'Classificar pedido', 'automatica'),
+  ('41e3b626-1c1d-5011-9dfe-8551b88390eb', 'Juntar pedidos repetidos', 'confirmacao'),
+  ('41e3b626-1c1d-5011-9dfe-8551b88390eb', 'Criar item no board', 'confirmacao'),
+  ('41e3b626-1c1d-5011-9dfe-8551b88390eb', 'Fechar pedido', 'confirmacao'),
+  ('6b674e96-56c2-5bbe-aaab-95ae0d2ac587', 'Consultar dados', 'livre'),
+  ('6b674e96-56c2-5bbe-aaab-95ae0d2ac587', 'Criar tarefa', 'confirmacao'),
+  ('6b674e96-56c2-5bbe-aaab-95ae0d2ac587', 'Enviar mensagem', 'confirmacao'),
+  ('6b674e96-56c2-5bbe-aaab-95ae0d2ac587', 'Mexer em financeiro', 'bloqueada')
+on conflict (agente_id, ferramenta) do nothing;
+
+insert into public.pedidos (id, no_id, autor_id, tipo, gravidade, status, titulo, contexto, item_id, criado_em, resolvido_em) values
+  ('a7b735ee-a6a3-543c-8b82-31c4b8687986', 'd23ede90-b2b5-56e0-b294-cc0ff4f9c41a', '2246aac4-fcc9-5564-af95-054b9cc42889', 'bug', 'quebrada', 'aguardando_voce', 'Guias do mês anterior aparecendo no filtro de setembro', '{"resumo": "Tela: Guias e vencimentos · Versão 0.4.2 · Chrome 128 · Erro: nenhum"}'::jsonb, null, '2026-09-25T09:00:00-03:00', null),
+  ('92e61f72-37c7-5606-9391-2850c2c953ef', 'c37cc0c0-2eec-59e2-bebf-989417c684ee', '2246aac4-fcc9-5564-af95-054b9cc42889', 'duvida', 'incomodo', 'resolvido', 'Como reenviar um documento rejeitado', '{"resumo": "Tela: Documentos · Versão 0.2.0 · App Android"}'::jsonb, null, '2026-09-23T09:00:00-03:00', '2026-09-23T09:00:00-03:00'),
+  ('4b6ff104-2e8d-5ae1-961d-aeccc76f2977', '38ff5917-3d08-5887-ba5f-57a82861493f', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 'funcionalidade', 'cosmetico', 'novo', 'Ver o faturamento consolidado das empresas no celular', '{"resumo": "Tela: Resumo diário · App iOS"}'::jsonb, null, '2026-09-26T09:00:00-03:00', null)
+on conflict (id) do nothing;
+
+insert into public.pedidos_mensagens (id, pedido_id, autor_tipo, pessoa_id, agente_id, texto, criado_em) values
+  ('cbbbb4fe-b0ee-5b65-850d-0348829ee774', 'a7b735ee-a6a3-543c-8b82-31c4b8687986', 'cliente', '2246aac4-fcc9-5564-af95-054b9cc42889', null, 'Quando filtro setembro aparecem guias de agosto também.', '2026-09-25T09:01:00-03:00'),
+  ('bc532fc8-57cc-5770-9487-7fc446d6ecda', 'a7b735ee-a6a3-543c-8b82-31c4b8687986', 'ia', null, '41e3b626-1c1d-5011-9dfe-8551b88390eb', 'Entendi. Consegue me dizer se isso acontece com todos os clientes ou só com algum específico?', '2026-09-25T09:04:00-03:00'),
+  ('0a90a70f-5822-5f35-a056-332b51b4bc49', 'a7b735ee-a6a3-543c-8b82-31c4b8687986', 'cliente', '2246aac4-fcc9-5564-af95-054b9cc42889', null, 'Com todos. Mandei o print.', '2026-09-25T09:07:00-03:00'),
+  ('3995aaa1-42c5-5ca4-9e31-71d3236350bf', 'a7b735ee-a6a3-543c-8b82-31c4b8687986', 'ia', null, '41e3b626-1c1d-5011-9dfe-8551b88390eb', 'Obrigado. Reproduzi o comportamento com os dados do print: o filtro está usando a data de vencimento em vez da competência. Classifiquei como falha real e passei para a equipe.', '2026-09-25T09:10:00-03:00'),
+  ('d784db51-d765-5626-b4b7-d25435f6b1cd', '92e61f72-37c7-5606-9391-2850c2c953ef', 'cliente', '2246aac4-fcc9-5564-af95-054b9cc42889', null, '(áudio transcrito) Mandei o documento errado, como faço para mandar de novo?', '2026-09-23T09:01:00-03:00'),
+  ('47bbe6b2-64c1-59ef-ae85-21e4ff247125', '92e61f72-37c7-5606-9391-2850c2c953ef', 'ia', null, '41e3b626-1c1d-5011-9dfe-8551b88390eb', 'É só abrir o documento com a etiqueta Rejeitado e tocar em Reenviar. O arquivo antigo fica guardado no histórico.', '2026-09-23T09:04:00-03:00'),
+  ('af77e683-b8ca-5d4e-a70a-fdca09cc704e', '92e61f72-37c7-5606-9391-2850c2c953ef', 'cliente', '2246aac4-fcc9-5564-af95-054b9cc42889', null, 'Deu certo, obrigado.', '2026-09-23T09:07:00-03:00'),
+  ('dfd08714-19c8-5d47-8d68-57dbaa6d776e', '4b6ff104-2e8d-5ae1-961d-aeccc76f2977', 'cliente', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', null, 'Queria ver o faturamento de todas as empresas juntas, na primeira tela.', '2026-09-26T09:01:00-03:00'),
+  ('bd38e37d-964d-5eb7-89aa-1215942eb4ac', '4b6ff104-2e8d-5ae1-961d-aeccc76f2977', 'ia', null, '41e3b626-1c1d-5011-9dfe-8551b88390eb', 'Anotado como pedido de funcionalidade nova. Quer ver o total do mês ou comparar com o mês anterior também?', '2026-09-26T09:04:00-03:00')
+on conflict (id) do nothing;
+
+insert into public.anexos (id, nome, tipo, tamanho_bytes, storage_path, url, item_id, enviado_por, pedido_id) values
+  ('3c4b66dd-9607-5e5b-afec-af0224ea20c9', 'Canvas de estruturação do BL', 'link', null, null, 'https://claude.ai/artifact/GYBDTp5XrcAVbA5Z8Aqa88', 'd0c12602-067b-5fbb-93d9-1d3e9869ab5c', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', null),
+  ('61914708-368b-5a03-b25c-7af8ff098e26', 'rascunho-painel-ceo.png', 'imagem', 184000, 'exemplo/rascunho-painel-ceo.png', null, 'd0c12602-067b-5fbb-93d9-1d3e9869ab5c', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', null),
+  ('a92baad0-09a3-581c-a7bb-f3ae8fb0c0c8', 'print-filtro-competencia.png', 'imagem', null, 'exemplo/print-filtro-competencia.png', null, null, '2246aac4-fcc9-5564-af95-054b9cc42889', 'a7b735ee-a6a3-543c-8b82-31c4b8687986'),
+  ('99a0b436-b169-506c-a7ae-112a95dcedb6', 'audio-duvida.m4a', 'audio', null, 'exemplo/audio-duvida.m4a', null, null, '2246aac4-fcc9-5564-af95-054b9cc42889', '92e61f72-37c7-5606-9391-2850c2c953ef')
+on conflict (id) do nothing;
+
+delete from auditoria.registros where tabela = 'itens' and mudancas ? 'semente';
+insert into auditoria.registros (tabela, registro_id, acao, mudancas, pessoa_id, em) values
+  ('itens', '9e11825c-aed2-5d36-968d-03a62362c33c', 'U', '{"comentario": [null, null], "semente": true}'::jsonb, 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', '2026-09-26T15:22:00+00:00'),
+  ('itens', 'bdb0cca2-c9ee-5385-bf36-765defb34811', 'I', '{"titulo": "Integração com a Conexa", "semente": true}'::jsonb, 'b5510531-2c75-59fb-b2c1-006a90d0775f', '2026-09-26T12:41:00+00:00'),
+  ('itens', '8a3977f7-b358-541c-970b-79ea511033f7', 'U', '{"status_id": [null, null], "semente": true}'::jsonb, 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', '2026-09-26T09:00:00+00:00'),
+  ('itens', '58f2ad43-4326-5199-908c-edaf162cf37e', 'U', '{"comentario": [null, null], "semente": true}'::jsonb, '29f7bce5-bf6e-5a2f-8e3b-c25e855a33c4', '2026-09-25T15:58:00+00:00'),
+  ('itens', '0cd891b9-53a2-5077-b74f-f99cb4f60a77', 'I', '{"titulo": "API de transferência de clientes para os Javas", "semente": true}'::jsonb, 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', '2026-09-25T12:17:00+00:00'),
+  ('itens', '9e805ad3-d394-52a8-addf-149375c03c4c', 'U', '{"comentario": [null, null], "semente": true}'::jsonb, 'b5510531-2c75-59fb-b2c1-006a90d0775f', '2026-09-24T15:34:00+00:00'),
+  ('itens', 'b6cf630e-0701-568e-9dd6-5c4ea9dff73a', 'U', '{"prazo": [null, null], "semente": true}'::jsonb, 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', '2026-09-24T09:15:00+00:00'),
+  ('itens', '9b1a19c7-b6ec-5214-ab3e-ffda925fff6b', 'U', '{"status_id": [null, null], "semente": true}'::jsonb, '29f7bce5-bf6e-5a2f-8e3b-c25e855a33c4', '2026-09-23T15:13:00+00:00'),
+  ('itens', 'ede1c23b-8e93-54f1-a51a-c2376ea8c027', 'U', '{"status_id": [null, null], "semente": true}'::jsonb, 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', '2026-09-23T12:32:00+00:00'),
+  ('itens', 'd0c12602-067b-5fbb-93d9-1d3e9869ab5c', 'U', '{"prazo": [null, null], "semente": true}'::jsonb, 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', '2026-09-23T09:51:00+00:00'),
+  ('itens', '87d225b6-f37f-5f1f-a6b1-375ee9a5b22a', 'I', '{"titulo": "Login do cliente por CPF", "semente": true}'::jsonb, '29f7bce5-bf6e-5a2f-8e3b-c25e855a33c4', '2026-09-22T15:49:00+00:00'),
+  ('itens', '7061c178-900a-5e80-a36e-080147aca0ad', 'U', '{"status_id": [null, null], "semente": true}'::jsonb, 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', '2026-09-22T12:08:00+00:00'),
+  ('itens', '97feb758-c850-5aac-a658-59ca42ad853c', 'I', '{"titulo": "Níveis de permissão das function calls", "semente": true}'::jsonb, 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', '2026-09-21T15:25:00+00:00'),
+  ('itens', 'fe4b9844-6a48-5076-8f8b-e0238f0c27d2', 'U', '{"status_id": [null, null], "semente": true}'::jsonb, '29f7bce5-bf6e-5a2f-8e3b-c25e855a33c4', '2026-09-21T09:06:00+00:00'),
+  ('itens', 'b7258ab3-15e9-5df4-bc90-9177b229f690', 'I', '{"titulo": "Botão de feedback do Kit IT.IA", "semente": true}'::jsonb, 'b5510531-2c75-59fb-b2c1-006a90d0775f', '2026-09-20T12:23:00+00:00'),
+  ('itens', 'd8015c00-3a4a-51e0-90f7-b56e7edd6a2d', 'U', '{"status_id": [null, null], "semente": true}'::jsonb, '29f7bce5-bf6e-5a2f-8e3b-c25e855a33c4', '2026-09-20T09:42:00+00:00'),
+  ('itens', 'f773d5fc-e3f6-51f7-9a3e-b89184348318', 'U', '{"comentario": [null, null], "semente": true}'::jsonb, 'b5510531-2c75-59fb-b2c1-006a90d0775f', '2026-09-19T15:40:00+00:00'),
+  ('itens', '7a67550a-f4f0-5e6a-a7cd-a9dba3387090', 'I', '{"titulo": "Aprovações pendentes em um toque", "semente": true}'::jsonb, '29f7bce5-bf6e-5a2f-8e3b-c25e855a33c4', '2026-09-19T12:59:00+00:00'),
+  ('itens', '2600ca8e-80f4-5573-bc0c-25d10602850e', 'U', '{"comentario": [null, null], "semente": true}'::jsonb, '29f7bce5-bf6e-5a2f-8e3b-c25e855a33c4', '2026-09-18T15:16:00+00:00'),
+  ('itens', '7e034b06-b598-5e1b-a240-72a72a5a44cc', 'U', '{"status_id": [null, null], "semente": true}'::jsonb, 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', '2026-09-18T12:56:00+00:00'),
+  ('itens', '8e22501f-6f05-5438-a680-4ac68cd051ba', 'U', '{"status_id": [null, null], "semente": true}'::jsonb, '29f7bce5-bf6e-5a2f-8e3b-c25e855a33c4', '2026-09-17T12:14:00+00:00'),
+  ('itens', '013b420d-67ff-5487-830a-47096059f9a5', 'U', '{"status_id": [null, null], "semente": true}'::jsonb, 'b5510531-2c75-59fb-b2c1-006a90d0775f', '2026-09-17T09:39:00+00:00'),
+  ('itens', '34e36605-30c9-5eb8-a1fa-0043eb1b6c2e', 'U', '{"prazo": [null, null], "semente": true}'::jsonb, 'b5510531-2c75-59fb-b2c1-006a90d0775f', '2026-09-17T09:33:00+00:00'),
+  ('itens', '0abf5256-5faa-5b27-859d-b7e5c6b31ada', 'I', '{"titulo": "Integração com marketplaces", "semente": true}'::jsonb, 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', '2026-09-16T15:31:00+00:00'),
+  ('itens', 'a1453820-697f-5834-947c-544319d7048d', 'U', '{"status_id": [null, null], "semente": true}'::jsonb, 'b5510531-2c75-59fb-b2c1-006a90d0775f', '2026-09-16T12:50:00+00:00'),
+  ('itens', 'edd71102-1084-5f62-893b-7e960fa8a290', 'I', '{"titulo": "Tela de guias e vencimentos", "semente": true}'::jsonb, '29f7bce5-bf6e-5a2f-8e3b-c25e855a33c4', '2026-09-15T15:07:00+00:00'),
+  ('itens', '2eaa0315-945c-52b8-a1c8-08faffe7631b', 'U', '{"status_id": [null, null], "semente": true}'::jsonb, 'b5510531-2c75-59fb-b2c1-006a90d0775f', '2026-09-15T09:48:00+00:00'),
+  ('itens', '5d590ea1-84f1-5356-a38e-e41d05ff2cd1', 'I', '{"titulo": "Cobrança pelo faturamento via Pix", "semente": true}'::jsonb, 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', '2026-09-14T12:05:00+00:00'),
+  ('itens', '0f07e627-5656-5248-a912-45778d4334ac', 'U', '{"status_id": [null, null], "semente": true}'::jsonb, 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', '2026-09-14T09:24:00+00:00'),
+  ('itens', 'edfcb991-3fc4-53f2-906b-6368f2179447', 'U', '{"status_id": [null, null], "semente": true}'::jsonb, '29f7bce5-bf6e-5a2f-8e3b-c25e855a33c4', '2026-09-13T09:57:00+00:00');
+
+alter table public.nos enable trigger nos_auditoria;
+alter table public.itens enable trigger itens_auditoria;
+alter table public.itens enable trigger itens_automacoes;
+alter table public.comentarios enable trigger comentarios_auditoria;
+alter table public.pedidos enable trigger pedidos_auditoria;
+alter table public.custos_tecnicos enable trigger custos_tecnicos_auditoria;
+alter table public.receitas enable trigger receitas_auditoria;
+alter table public.regras_calculo enable trigger regras_calculo_auditoria;
+alter table public.pessoas_custos enable trigger pessoas_custos_auditoria;
+alter table public.servicos enable trigger servicos_auditoria;
+alter table public.agentes enable trigger agentes_auditoria;
+alter table public.marcos enable trigger marcos_auditoria;
+alter table public.sprints enable trigger sprints_auditoria;
+alter table public.automacoes enable trigger automacoes_auditoria;
+commit;
+
+select bi.atualizar();
+
+-- >>>>>>>>>> 09_arquivos_SUPABASE.sql
+-- =====================================================================
+-- Sistema IT.IA · 09 · Depósito de arquivos (Supabase Storage). SÓ NO SUPABASE (o schema storage não existe no Postgres puro).
+-- Bucket privado "anexos". O arquivo só abre para quem enxerga o registro de anexos que aponta para ele.
+-- Caminho do arquivo: <id da pessoa no login>/<uuid>-<nome do arquivo>
+-- =====================================================================
+insert into storage.buckets (id, name, public, file_size_limit)
+values ('anexos', 'anexos', false, 52428800)   -- até 50 MB por arquivo
+on conflict (id) do update set public = false, file_size_limit = excluded.file_size_limit;
+
+drop policy if exists anexos_ver on storage.objects;
+drop policy if exists anexos_enviar on storage.objects;
+drop policy if exists anexos_apagar on storage.objects;
+
+-- ver: precisa existir um anexo visível (a RLS de public.anexos roda dentro do exists)
+create policy anexos_ver on storage.objects for select to authenticated
+  using (bucket_id = 'anexos' and exists (select 1 from public.anexos a where a.storage_path = storage.objects.name));
+
+-- enviar: só dentro da própria pasta
+create policy anexos_enviar on storage.objects for insert to authenticated
+  with check (bucket_id = 'anexos' and (storage.foldername(name))[1] = (select auth.uid())::text);
+
+-- apagar: o dono do arquivo ou o Master
+create policy anexos_apagar on storage.objects for delete to authenticated
+  using (bucket_id = 'anexos' and (owner = (select auth.uid()) or (select interno.eh_master())));
+
+-- >>>>>>>>>> 10_rotinas_agendadas_SUPABASE.sql
+-- =====================================================================
+-- Sistema IT.IA · 10 · Rotinas agendadas (pg_cron). SÓ NO SUPABASE.
+-- Horários em UTC (Brasília = UTC − 3).
+-- =====================================================================
+create extension if not exists pg_cron;
+
+-- tira os agendamentos antigos com o mesmo nome antes de criar (pode rodar de novo)
+select cron.unschedule(jobid) from cron.job where jobname in ('itia_bi_atualizar', 'itia_prazo_vencido');
+
+-- atualiza o ritmo semanal (visão materializada) a cada 10 minutos, sem travar a leitura
+select cron.schedule('itia_bi_atualizar', '*/10 * * * *', $$select bi.atualizar()$$);
+
+-- todo dia às 08:07 de Brasília: dispara as automações de "prazo vencido"
+select cron.schedule('itia_prazo_vencido', '7 11 * * *', $$select interno.automacoes_prazo_vencido()$$);
