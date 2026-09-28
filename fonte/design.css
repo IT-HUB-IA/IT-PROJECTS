@@ -703,3 +703,11 @@ dialog.modal.modal-larga{max-width:min(960px,calc(100% - 32px))}
 .adm-hist .tabela{font-size:13px}
 .adm-tab th:first-child,.adm-tab td:first-child{min-width:220px}
 .adm-tab td:first-child small{overflow-wrap:anywhere}
+
+/* cabeçalho da Estrutura: recolher à esquerda, título no centro, "+" à direita */
+.ops-arvore .cab.arv-cab{display:grid;grid-template-columns:32px 1fr 32px;align-items:center;gap:8px;padding:0 12px 12px;margin-bottom:4px;border-bottom:1px solid var(--linha)}
+.ops-arvore .arv-cab .rotulo-mini{text-align:center;justify-self:center;margin:0}
+.ops-arvore .arv-cab .ico-btn{width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;padding:0;margin:0}
+.ops-arvore .arv-cab .arv-novo{border:1px solid var(--linha)}
+.ops-arvore .arv-cab .arv-novo:hover{border-color:var(--preto);background:var(--preto);color:var(--branco)}
+.arv-vago{width:32px;height:32px}
