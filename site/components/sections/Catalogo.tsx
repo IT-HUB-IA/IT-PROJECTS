@@ -11,8 +11,8 @@ export function Catalogo() {
       <div className="container">
         <div className="secao-cab">
           <Rotulo>Catálogo</Rotulo>
-          <Titulo id="cat-titulo">Sistemas que já saíram da linha</Titulo>
-          <p className="lead">Produtos próprios da IT.IA, prontos para usar.</p>
+          <Titulo id="cat-titulo">Sistemas prontos para usar</Titulo>
+          <p className="lead">Produtos próprios da IT.IA, feitos com o mesmo método que usamos nos projetos dos nossos clientes.</p>
         </div>
         <Revelar className="cartao cat-card">
           <div className="cat-card-cab">
