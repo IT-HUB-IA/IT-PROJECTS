@@ -468,3 +468,43 @@
 .view-casa .info{margin:0 8px 0 -8px;flex:none}
 .ops-cab .view-casa .info{border-color:var(--grafite);color:var(--nevoa)}
 .ops-cab .view-casa .info:hover,.ops-cab .view-casa .info:focus-visible{border-color:var(--nevoa);color:#fff}
+/* produtos da estrutura: nome em preto e negrito (as aplicações continuam como estão) */
+.no-arv[data-no^="product:"]:not(.escolhido) .nome{color:#000;font-weight:700}
+.no-arv[data-no^="product:"].pausado:not(.escolhido) .nome{color:#000;opacity:.55}
+/* Board: cada coluna termina no fim da tela; os cartões que não cabem rolam dentro da coluna */
+@media (min-width:961px){
+  .board > .coluna{height:var(--col-min,420px);min-height:0}
+  .board > .coluna > .coluna-corpo{overflow-y:auto;min-height:0;scrollbar-width:thin}
+  .board > .coluna > .coluna-corpo > *{flex:none}
+}
+/* ---------- Clients: ficha completa do cliente ---------- */
+.linha-clicavel{cursor:pointer}
+.linha-clicavel:hover > *{background:rgba(255,0,0,.04)}
+.link-ficha{border:0;background:none;padding:0;font:inherit;font-weight:700;color:inherit;cursor:pointer;text-align:left}
+.link-ficha:hover,.link-ficha:focus-visible{color:var(--vermelho);text-decoration:underline}
+dialog.modal.modal-ficha{max-width:min(1180px,calc(100% - 32px))}
+.modal-ficha .modal-corpo{max-height:78vh;display:block}
+.modal-ficha .modal-rod:empty{display:none}
+.modal-ficha .modal-cab h2{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.fc-tipo,.fc-doc{font-family:var(--font-mono);font-size:11px;letter-spacing:.08em;font-weight:500;border:1px solid var(--nevoa);padding:2px 8px;text-transform:uppercase}
+.fc-doc{text-transform:none;letter-spacing:0}
+.fc-abas{margin:0 0 18px;border-bottom:1px solid var(--nevoa)}
+.fc-sec{margin:0 0 18px}
+.fc-sec h3{margin:0 0 10px;font-size:13px;letter-spacing:.1em;text-transform:uppercase}
+.fc-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.fc-card{display:flex;flex-direction:column;gap:10px;text-align:left;padding:16px;border:1px solid var(--nevoa);border-left:3px solid var(--vermelho);background:var(--branco);cursor:pointer;font:inherit;color:inherit}
+.fc-card:hover,.fc-card:focus-visible{border-color:var(--preto);border-left-color:var(--vermelho);box-shadow:0 4px 14px rgba(5,5,6,.1)}
+.fc-card-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;font-size:16px}
+.fc-st{font-size:11px;font-family:var(--font-mono);text-transform:uppercase;padding:2px 6px;background:#E8F5EE;color:#0E8A55;white-space:nowrap}
+.fc-st-on_hold{background:#FFF3E0;color:#B04A00}.fc-st-done,.fc-st-archived{background:#EEE;color:#555}
+.fc-card-num{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--text-secondary,#555)}
+.fc-card-num b{color:var(--preto)}
+.fc-barra{height:6px;background:#EBEBEE;display:block}.fc-barra i{display:block;height:100%;background:#0E8A55}
+.fc-card-rod{display:flex;justify-content:space-between;font-size:13px}.fc-atr{color:var(--vermelho);font-weight:600}
+.fc-card-datas{font-size:12px;color:var(--text-secondary,#666)}
+.fc-nav{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;margin:0 0 14px}
+.fc-trilha{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:13px}
+.fc-trilha button{border:0;background:none;padding:2px 0;font:inherit;cursor:pointer;color:var(--text-secondary,#555)}
+.fc-trilha button:hover{color:var(--vermelho);text-decoration:underline}
+.fc-trilha button[aria-current]{color:var(--preto);font-weight:700}
+.fc-nav-dir{display:flex;gap:8px;align-items:center}

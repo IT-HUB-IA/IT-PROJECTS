@@ -1041,7 +1041,10 @@ function esticarColunas(){
   document.querySelectorAll('.board').forEach(b => {
     if (b.closest('.raia')) return;
     const rolo = b.closest('.principal'); const sobe = rolo ? rolo.scrollTop : 0;
-    const alt = Math.round(window.innerHeight - (b.getBoundingClientRect().top + sobe) - 24);
+    // desconta os espaços embaixo do quadro (margens de quem está em volta) para a coluna terminar exatamente no fim da tela
+    let folga = 0; for (let e = b; e && e !== rolo; e = e.parentElement){ const s = getComputedStyle(e); folga += parseFloat(s.paddingBottom) + parseFloat(s.borderBottomWidth) + (e === b ? 0 : parseFloat(s.marginBottom)); }
+    const rs = rolo ? getComputedStyle(rolo) : null; if (rs) folga += parseFloat(rs.paddingBottom);
+    const alt = Math.floor(window.innerHeight - (b.getBoundingClientRect().top + sobe) - folga - 2);
     b.style.setProperty('--col-min', Math.max(alt, 240) + 'px');
   });
 }
@@ -1123,7 +1126,7 @@ function montarDados(T, eu){
   const ord = T.nos.slice().sort((a, b) => porOrdem(a, b) || String(a.nome).localeCompare(String(b.nome)));
   ord.forEach(n => {
     if (n.tipo === 'cliente'){ const c = cli.get(n.id) || {}; const s = slas.get(n.id);
-      d.clients.push(Object.assign(base(n), {tipo:c.tipo_cliente || 'empresa', holding:c.holding_id || null, doc:c.documento || '', sla: s ? Object.fromEntries(s.map(x => [x.gravidade, [+x.horas_resposta, +x.horas_solucao]])) : undefined})); }
+      d.clients.push(Object.assign(base(n), {tipo:c.tipo_cliente || 'empresa', holding:c.holding_id || null, doc:c.documento || '', ficha:Object.fromEntries(CAMPOS_FICHA_CLI.map(k => [k, c[k] == null ? '' : c[k]])), sla: s ? Object.fromEntries(s.map(x => [x.gravidade, [+x.horas_resposta, +x.horas_solucao]])) : undefined})); }
     else if (n.tipo === 'projeto'){ const p = prj.get(n.id) || {}; d.projects.push(Object.assign(base(n), {client:n.pai_id, origem:p.origem || 'greenfield', inicio:p.inicio, alvo:p.alvo})); }
     else if (n.tipo === 'produto') d.products.push(Object.assign(base(n), {project:acima(n.id, 'projeto'), client:acima(n.id, 'cliente')}));
     else if (n.tipo === 'aplicacao'){ const a = apl.get(n.id) || {}; d.apps.push(Object.assign(base(n), {project:acima(n.id, 'projeto'), product:acima(n.id, 'produto'), plataforma:a.plataforma || 'web', servico:a.servico_id || '', origemCodigo:a.origem_codigo || 'proprio'})); }
@@ -1248,3 +1251,100 @@ function painelBanco(){
     (b.erros.length ? '<p class="sec" style="font-size:13px;color:var(--vermelho,#FF0000)">Não deu para ler: ' + b.erros.map(esc).join(' · ') + '</p>' : '') +
     '<div class="acoes"><button class="btn sec" type="button" data-acao="reler-banco">Ler o banco de novo</button><span class="sec" style="font-size:13px">Por enquanto, as mudanças feitas nas telas (fora da aba Domínios) ainda não são gravadas no banco e somem ao recarregar.</span></div>';
 }
+
+/* ---------- Clients: ficha completa numa janela (cadastro, projetos e o painel de cada projeto) ---------- */
+const FICHA_CLI = [
+  ['Identificação', [['razao_social','Razão social','largo'], ['nome_fantasia','Nome fantasia'], ['documento','CNPJ ou CPF'], ['inscricao_estadual','Inscrição estadual'], ['inscricao_municipal','Inscrição municipal'],
+    ['data_abertura','Data de abertura','', 'date'], ['natureza_juridica','Natureza jurídica'], ['porte','Porte'],
+    ['regime_tributario','Regime tributário','', 'sel', [['','Não informado'],['simples','Simples Nacional'],['mei','MEI'],['presumido','Lucro Presumido'],['real','Lucro Real'],['isento','Isento'],['outro','Outro']]],
+    ['cnae_principal','CNAE principal','largo'], ['situacao_cadastral','Situação cadastral']]],
+  ['Endereço', [['cep','CEP'], ['logradouro','Rua ou avenida','largo'], ['numero','Número'], ['complemento','Complemento'], ['bairro','Bairro'], ['cidade','Cidade'], ['uf','UF']]],
+  ['Contato', [['email','E-mail da empresa','', 'email'], ['telefone','Telefone'], ['site','Site','largo'], ['contato_nome','Pessoa de contato'], ['contato_cargo','Cargo'], ['contato_email','E-mail do contato','', 'email'], ['contato_telefone','Telefone do contato']]],
+  ['Observações', [['observacoes','Observações','largo', 'area']]]
+];
+const CAMPOS_FICHA_CLI = FICHA_CLI.flatMap(s => s[1].map(c => c[0])).filter(k => k !== 'documento');
+const FC = {cli:null, aba:'ficha', sel:null, dlg:null};
+const fichaDe = c => Object.assign({documento:c.doc || ''}, c.ficha || {});
+const somenteNum = v => String(v || '').replace(/\D/g, '');
+function fmtDoc(v){ const n = somenteNum(v); if (n.length === 14) return n.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5'); if (n.length === 11) return n.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4'); return v || ''; }
+const projsDoCliente = id => D.projects.filter(p => p.client === id);
+
+function fcCorpoFicha(c){
+  const f = fichaDe(c), m = souMaster(), dis = m ? '' : ' disabled';
+  const campo = ([k, rot, larg, tipo, ops]) => {
+    const v = f[k] == null ? '' : String(f[k]);
+    const ctl = tipo === 'sel' ? '<select class="sel" data-fc="' + k + '"' + dis + '>' + ops.map(([o, n]) => '<option value="' + o + '"' + (v === o ? ' selected' : '') + '>' + n + '</option>').join('') + '</select>'
+      : tipo === 'area' ? '<textarea class="campo" data-fc="' + k + '" rows="3"' + dis + '>' + esc(v) + '</textarea>'
+      : '<input class="campo" data-fc="' + k + '" type="' + (tipo || 'text') + '" value="' + esc(k === 'documento' ? fmtDoc(v) : v) + '"' + (k === 'uf' ? ' maxlength="2" style="text-transform:uppercase"' : '') + dis + '>';
+    return '<label class="lb' + (larg ? ' ' + larg : '') + '">' + rot + ctl + '</label>';
+  };
+  return '<div class="fc-ficha">' + FICHA_CLI.map(([tit, cs]) => '<section class="fc-sec"><h3>' + tit + '</h3><div class="grade-form">' + cs.map(campo).join('') + '</div></section>').join('') +
+    (m ? '<div class="acoes"><button class="btn acento" type="button" data-fc-salvar>Salvar ficha</button>' + (COM_BANCO ? '<span class="sec" style="font-size:13px">Grava direto no banco.</span>' : '') + '</div>' : '') + '</div>';
+}
+function fcCardProjeto(p){
+  const chave = 'project:' + p.id, m = metricas(issuesEm(chave));
+  const prods = D.products.filter(x => x.project === p.id).length, apps = D.apps.filter(a => a.project === p.id).length;
+  const st = {active:'Ativo', on_hold:'Pausado', done:'Concluído', archived:'Arquivado'}[p.status] || p.status;
+  return '<button type="button" class="fc-card" data-fc-ir="' + chave + '"><span class="fc-card-top"><b>' + esc(p.nome) + '</b><span class="fc-st fc-st-' + esc(p.status) + '">' + st + '</span></span>' +
+    '<span class="fc-card-num"><span><b>' + prods + '</b> produto' + (prods === 1 ? '' : 's') + '</span><span><b>' + apps + '</b> aplicaç' + (apps === 1 ? 'ão' : 'ões') + '</span><span><b>' + m.n + '</b> ite' + (m.n === 1 ? 'm' : 'ns') + '</span></span>' +
+    '<span class="fc-barra"><i style="width:' + m.prog + '%"></i></span><span class="fc-card-rod"><span>' + m.prog + '% concluído</span>' + (m.atr ? '<span class="fc-atr">' + m.atr + ' atrasado' + (m.atr === 1 ? '' : 's') + '</span>' : '') + '</span>' +
+    '<span class="fc-card-datas">' + (p.inicio ? 'Início ' + fmtData(p.inicio) : 'Sem data de início') + (p.alvo ? ' · Meta ' + fmtData(p.alvo) : '') + '</span></button>';
+}
+function fcCorpoProjetos(c){
+  const ps = projsDoCliente(c.id);
+  if (!FC.sel){
+    if (!ps.length) return '<p class="sec" style="margin:0">Este cliente ainda não tem projeto. Crie em Operações, no botão "+ Projeto" da Estrutura.</p>';
+    return '<p class="sec" style="margin:0 0 12px">Clique num projeto para abrir o painel dele.</p><div class="fc-cards">' + ps.map(fcCardProjeto).join('') + '</div>';
+  }
+  const trilha = caminho(FC.sel).filter(([k]) => !k.startsWith('client:'));
+  return '<div class="fc-nav"><nav class="fc-trilha" aria-label="Onde você está"><button type="button" data-fc-ir="">Projetos</button>' + trilha.map(([k, n]) => '<span aria-hidden="true">›</span><button type="button" data-fc-ir="' + k + '"' + (k === FC.sel ? ' aria-current="page"' : '') + '>' + esc(n) + '</button>').join('') + '</nav>' +
+    '<div class="fc-nav-dir">' + (ps.length > 1 ? '<select class="sel" data-fc-projeto aria-label="Trocar de projeto">' + ps.map(p => '<option value="project:' + p.id + '"' + (trilha[0] && trilha[0][0] === 'project:' + p.id ? ' selected' : '') + '>' + esc(p.nome) + '</option>').join('') + '</select>' : '') +
+    '<button class="btn sec peq" type="button" data-fc-operacoes>Abrir em Operações</button></div></div>' +
+    '<div class="fc-painel">' + painelHTML(FC.sel) + '</div>';
+}
+function fcDesenhar(){
+  const dlg = FC.dlg; if (!dlg || !dlg.isConnected) return;
+  const c = byId('clients', FC.cli); if (!c){ dlg.close(); dlg.remove(); return; }
+  const f = fichaDe(c), n = projsDoCliente(c.id).length;
+  const tipo = {holding:'Holding', empresa:'Empresa', pessoa:'Pessoa'}[c.tipo] || c.tipo;
+  dlg.querySelector('.modal-cab h2').innerHTML = esc(c.nome) + ' <span class="fc-tipo">' + esc(tipo) + '</span>' + (f.documento ? ' <span class="fc-doc">' + esc(fmtDoc(f.documento)) + '</span>' : '');
+  const rolo = dlg.querySelector('.modal-corpo'); const topo = rolo.scrollTop;
+  rolo.innerHTML = '<div class="views fc-abas" role="tablist"><button class="view-b" type="button" role="tab" data-fc-aba="ficha" aria-selected="' + (FC.aba === 'ficha') + '">Ficha cadastral</button>' +
+    '<button class="view-b" type="button" role="tab" data-fc-aba="projetos" aria-selected="' + (FC.aba === 'projetos') + '">Projetos (' + n + ')</button></div>' +
+    (FC.aba === 'ficha' ? fcCorpoFicha(c) : fcCorpoProjetos(c));
+  rolo.scrollTop = FC.aba === 'projetos' && FC.sel ? 0 : topo;
+}
+function abrirFichaCliente(id, aba){
+  FC.cli = id; FC.aba = aba || 'ficha'; FC.sel = null;
+  FC.dlg = modal('', '', []); FC.dlg.classList.add('modal-ficha');
+  fcDesenhar();
+}
+async function fcSalvar(){
+  const c = byId('clients', FC.cli); if (!c || !souMaster()) return;
+  const dlg = FC.dlg, val = k => { const e = dlg.querySelector('[data-fc="' + k + '"]'); return e ? e.value.trim() : ''; };
+  const novo = {}; CAMPOS_FICHA_CLI.forEach(k => { novo[k] = val(k) || null; });
+  if (novo.uf) novo.uf = novo.uf.toUpperCase();
+  if (novo.uf && !/^[A-Z]{2}$/.test(novo.uf)){ toast('A UF tem 2 letras, como SP'); return; }
+  const doc = val('documento'), nd = somenteNum(doc);
+  if (doc && nd.length !== 11 && nd.length !== 14){ toast('O CNPJ tem 14 números e o CPF tem 11'); return; }
+  const btn = dlg.querySelector('[data-fc-salvar]'); if (btn) btn.disabled = true;
+  if (COM_BANCO && window.itiaBanco){
+    const {data, error} = await window.itiaBanco.from('clientes').update(Object.assign({documento: doc ? fmtDoc(doc) : null}, novo)).eq('no_id', c.id).select('no_id');
+    if (btn) btn.disabled = false;
+    if (error){ toast('Não gravou no banco: ' + error.message); return; }
+    if (!data || !data.length){ toast('O banco não deixou gravar (confira se você entrou como Master)'); return; }
+  } else if (btn) btn.disabled = false;
+  c.doc = doc ? fmtDoc(doc) : ''; c.ficha = novo; salvar(); fcDesenhar(); rClientes(); toast('Ficha salva');
+}
+document.addEventListener('click', ev => {
+  const linha = ev.target.closest('[data-ficha-cliente]');
+  if (linha && !ev.target.closest('button, a, input, select, .tag, .tags')){ abrirFichaCliente(linha.dataset.fichaCliente); return; }
+  const b = ev.target.closest('[data-abrir-ficha]'); if (b){ abrirFichaCliente(b.dataset.abrirFicha); return; }
+  if (!FC.dlg || !FC.dlg.contains(ev.target)) return;
+  let x;
+  if ((x = ev.target.closest('[data-fc-aba]'))){ FC.aba = x.dataset.fcAba; FC.sel = null; fcDesenhar(); return; }
+  if ((x = ev.target.closest('[data-fc-ir], .fc-painel [data-ir]'))){ ev.stopPropagation(); FC.sel = (x.dataset.fcIr !== undefined ? x.dataset.fcIr : x.dataset.ir) || null; fcDesenhar(); return; }
+  if (ev.target.closest('[data-fc-salvar]')){ fcSalvar(); return; }
+  if (ev.target.closest('[data-fc-operacoes]')){ const k = FC.sel; FC.dlg.close(); FC.dlg.remove(); FC.dlg = null; UI.sel = k; UI.view = 'dashboard'; abrirArvore(k); abrirModulo('operacoes'); return; }
+}, true);
+document.addEventListener('change', ev => { if (FC.dlg && ev.target.matches('[data-fc-projeto]')){ FC.sel = ev.target.value; fcDesenhar(); } });
