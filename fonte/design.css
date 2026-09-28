@@ -711,3 +711,8 @@ dialog.modal.modal-larga{max-width:min(960px,calc(100% - 32px))}
 .ops-arvore .arv-cab .arv-novo{border:1px solid var(--linha)}
 .ops-arvore .arv-cab .arv-novo:hover{border-color:var(--preto);background:var(--preto);color:var(--branco)}
 .arv-vago{width:32px;height:32px}
+
+/* faixa preta de Operações mais baixa: menos espaço entre trilha, título e abas */
+.ops-cab{gap:6px;padding-top:12px}
+.ops-cab .views{margin-top:2px}
+.ops-cab .view-b{height:36px}
