@@ -2,7 +2,7 @@
 
 ## Situação: aplicado no Supabase em 26/09/2026
 
-O banco está no ar no projeto `tfcvoszeewmpghgxztuy` ("IT-Systems", Postgres 17, São Paulo), em 15 migrações:
+O banco está no ar no projeto `tfcvoszeewmpghgxztuy` ("IT-Systems", Postgres 17, São Paulo), em 16 migrações:
 
 | Migração | O que entrou |
 |---|---|
@@ -11,6 +11,7 @@ O banco está no ar no projeto `tfcvoszeewmpghgxztuy` ("IT-Systems", Postgres 17
 | `itia_09`, `itia_10` | Depósito de arquivos e rotinas agendadas |
 | `itia_11_ajustes_verificador` | O que o verificador do Supabase pediu (ver "Ajustes do verificador") |
 | `itia_12_login` | A rotina `vincular_meu_login`: no primeiro login, liga a pessoa do time ao usuário pelo e-mail confirmado e devolve o papel dela (Master, Dev ou Stakeholder) |
+| `itia_13_dominios` | Cadastro de domínios (partes 11 e 12): tabelas `dominios` e `dominios_registros`, a visão `bi.dominios_situacao`, o aviso diário de vencimento para o Master (60, 30, 7, 1 e 0 dias antes) e o `it-ia.tec.br` com os 9 registros do Cloudflare |
 
 **Conferência feita depois de aplicar:**
 - Dados: as 54 tabelas têm o mesmo número de linhas e o mesmo conteúdo, linha por linha, que o banco de teste montado com estes arquivos. As únicas diferenças são a ordem alfabética de palavras com acento (o Supabase ordena de outro jeito) e a hora de envio das provas, que é a hora em que a semente rodou.
@@ -39,6 +40,8 @@ O banco está no ar no projeto `tfcvoszeewmpghgxztuy` ("IT-Systems", Postgres 17
 | `08_semente.sql` | Os dados de exemplo que o sistema já mostra (gerado por `gerar_semente.py`) | Sim |
 | `09_arquivos_SUPABASE.sql` | Depósito de arquivos privado `anexos` e as regras dele | Sim (só existe no Supabase) |
 | `10_rotinas_agendadas_SUPABASE.sql` | Atualiza o BI a cada 10 minutos e dispara as automações de prazo vencido todo dia | Sim (só existe no Supabase) |
+| `11_dominios.sql` | Cadastro de domínios e registros de DNS, só o Master vê. Custo aponta para os custos que já existem, sem repetir | Sim |
+| `12_dominios_dados.sql` | Os domínios reais já conhecidos (hoje, o it-ia.tec.br) | Sim |
 | `90_testes_LOCAL.sql` | 16 testes das regras (tem que terminar em "TODOS OS TESTES PASSARAM") | Não |
 | `91_usuarios_teste_LOCAL.sql`, `92_carga_volume_LOCAL.sql` | Logins falsos e volume grande para medir desempenho | Não |
 

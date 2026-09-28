@@ -2,7 +2,9 @@
 
 Coisas combinadas com o William para fazer depois. Quando uma ficar pronta, marcar como feita com a data (não apagar).
 
-## 1. Cadastro de domínios (pedido em 28/09/2026)
+## 1. Cadastro de domínios (pedido em 28/09/2026) · FEITO em 28/09/2026
+
+Pronto em Costs, aba Domínios. No banco: tabelas `dominios` e `dominios_registros` (partes 11 e 12). Decidido: fica como aba dentro de Costs.
 
 Um lugar no sistema para guardar cada domínio do grupo e tudo o que depende dele.
 

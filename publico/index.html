@@ -1311,6 +1311,33 @@
 /* o aviso passageiro só informa: o clique passa para o que está atrás dele */
 .toast{pointer-events:none}
 
+/* Costs › Domínios */
+.dm-nome{border:0;background:none;padding:0;font:inherit;font-weight:600;color:inherit;cursor:pointer;text-decoration:underline;text-underline-offset:3px;text-align:left}
+.dm-nome:hover{color:var(--vermelho)}
+.tabela tr.dm-aberto > *{background:var(--preto-04)}
+.tabela tr.dm-det > td{background:var(--preto-04);padding:16px}
+.dm-dados{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px 24px}
+.dm-dados span{display:block;font-size:12px;color:var(--grafite)}
+.dm-dados b{font-weight:500;word-break:break-word}
+.dm-tit{margin:0;font-size:15px;display:flex;align-items:center;gap:6px}
+.dm-quebra{word-break:break-all}
+.lb.ck{flex-direction:row;align-items:center;gap:8px;font-weight:500}
+.rc-sit.perigo{border-color:var(--vermelho);background:var(--vermelho);color:var(--branco)}
+
+/* Estrutura: projeto sempre preto com borda vermelha; aplicação com camada vermelha leve e a mesma borda */
+.no-arv[data-no^="project:"]{background:var(--carvao);color:var(--branco)}
+.no-arv[data-no^="project:"] .tipo{color:var(--nevoa)}
+.no-arv[data-no^="project:"]::before,
+.no-arv[data-no^="app:"]::before{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--vermelho)}
+.no-arv[data-no^="app:"]:not(.escolhido){background:rgba(255,0,0,.07)}
+.no-arv[data-no^="app:"]:not(.escolhido):hover{background:rgba(255,0,0,.13)}
+.no-arv[data-no^="app:"]{margin-bottom:1px}
+
+/* Estrutura fixa na tela (igual ao menu principal): acompanha a rolagem e rola por dentro quando é maior que a tela */
+@media (min-width: 961px){
+  .ops-arvore,.ops.sem-arvore .arv-trilho{position:sticky;top:0;align-self:start;max-height:100vh;overflow-y:auto}
+}
+
   .conteudo.sem-pad{padding:0;display:flex;flex-direction:column;flex:1}
   .conteudo.sem-pad > div{flex:1;display:flex;flex-direction:column}
 /* ===== Tela de login (só na versão publicada na Vercel) ===== */
@@ -4459,6 +4486,190 @@ window.itiaEntrouComo = function(p){
   if (s){ s.value = p.papel; s.hidden = p.papel !== 'master'; const r = s.closest('.menu-rodape'); if (r){ const l = r.querySelector('label[for=ver-como]'); if (l) l.hidden = p.papel !== 'master'; } }
   aplicarVerComo(); salvarUI(); abrirModulo(UI.modulo);
 };
+
+/* ---------- Costs › Domínios. Com login (versão publicada) lê e grava no banco; sem login, usa os dados de exemplo ---------- */
+ABAS_CUSTO.push(['dominios','Domínios']);
+const DOM = {cache:null, carregando:false, aberto:null, erro:null};
+const domBanco = () => (window.itiaBanco && document.body.classList.contains('logado')) ? window.itiaBanco : null;
+const DOM_TIPOS = ['CNAME','A','AAAA','MX','TXT','NS','CAA','Túnel','Outro'];
+function domSemente(){
+  if (D.dominios) return;
+  const r = (nome, tipo, aponta_para, servico, para_que, proxy) => ({id:uid('dr'), nome, tipo, aponta_para, servico, para_que, proxy:!!proxy});
+  D.dominios = [{id:'dm_1', nome:'it-ia.tec.br', no_id:null, registrador:'Registro.br', dns_em:'Cloudflare', servidores_dns:['karsyn.ns.cloudflare.com','kellen.ns.cloudflare.com'],
+    comprado_em:'2026-09-09', vence_em:'2036-09-09', renovacao_automatica:null, custo_operacao_id:null, custo_tecnico_id:null, email_provedor:'Google (Gmail)', acesso_onde:null,
+    observacoes:'Domínio da própria IT.IA. Envio de e-mails do sistema pelo Resend (domínio verificado).',
+    registros:[r('system','CNAME','cname.vercel-dns.com','Vercel','Sistema IT.IA (system.it-ia.tec.br)'), r('conversor','Túnel','conversor-billy','Cloudflare Tunnel','Conversor do Billy',true),
+      r('@','MX','smtp.google.com','Google','Receber e-mails do domínio'), r('@','TXT','v=spf1 include:_spf.google.com ~all','Google','SPF: quem pode enviar e-mail pelo domínio'),
+      r('_dmarc','TXT','v=DMARC1; p=reject;','E-mail','DMARC: recusar e-mail falso com o domínio'), r('@','TXT','google-site-verification (valor no Cloudflare)','Google','Prova de que o domínio é nosso para o Google'),
+      r('resend._domainkey','TXT','chave DKIM do Resend (valor no Cloudflare)','Resend','Assinatura dos e-mails enviados pelo Resend'),
+      r('send','CNAME','send.forge.rmta.net','Resend','Envio de e-mails pelo Resend'), r('rsend','CNAME','rsend.forge.rmta.net','Resend','Envio de e-mails pelo Resend')]}];
+  salvar();
+}
+async function domCarregar(){
+  const sb = domBanco();
+  if (!sb){
+    domSemente();
+    DOM.cache = {dominios:D.dominios,
+      donos:[...D.clients.map(x => ({id:x.id, nome:x.nome, tipo:'cliente'})), ...D.projects.map(x => ({id:x.id, nome:x.nome, tipo:'projeto'})), ...D.products.map(x => ({id:x.id, nome:x.nome, tipo:'produto'})), ...D.apps.map(x => ({id:x.id, nome:x.nome, tipo:'aplicacao'}))],
+      custos:[...D.opCustos.map(x => ({id:'op:' + x.id, nome:x.nome, grupo:'Operação interna'})), ...D.custos.map(x => ({id:'tec:' + x.id, nome:x.fornecedor + (x.desc ? ' · ' + x.desc : ''), grupo:'Custos técnicos'}))]};
+    return;
+  }
+  DOM.carregando = true;
+  const res = await Promise.all([
+    sb.from('dominios').select('*').order('nome'),
+    sb.from('dominios_registros').select('*').order('nome'),
+    sb.from('nos').select('id,nome,tipo').in('tipo', ['cliente','projeto','produto','aplicacao']).neq('status', 'arquivado').order('nome'),
+    sb.from('custos_operacao').select('id,nome').order('nome'),
+    sb.from('custos_tecnicos').select('id,fornecedor,descricao').order('fornecedor')]);
+  DOM.carregando = false;
+  const falha = res.find(x => x.error);
+  if (falha){ DOM.erro = falha.error.message; return; }
+  const [d, r, n, co, ct] = res.map(x => x.data);
+  DOM.erro = null;
+  DOM.cache = {dominios: d.map(x => Object.assign(x, {registros: r.filter(y => y.dominio_id === x.id)})), donos: n,
+    custos:[...co.map(x => ({id:'op:' + x.id, nome:x.nome, grupo:'Operação interna'})), ...ct.map(x => ({id:'tec:' + x.id, nome:x.fornecedor + (x.descricao ? ' · ' + x.descricao : ''), grupo:'Custos técnicos'}))]};
+}
+function domSituacao(d){
+  if (!d.vence_em) return ['Sem data', 'alerta'];
+  const dias = Math.round((parse(d.vence_em) - parse(iso(HOJE))) / 864e5);
+  if (dias < 0) return ['Vencido', 'perigo'];
+  if (dias <= 30) return ['Vence em ' + dias + (dias === 1 ? ' dia' : ' dias'), 'perigo'];
+  if (dias <= 60) return ['Vence em ' + dias + ' dias', 'alerta'];
+  return ['Em dia', ''];
+}
+const domDono = d => { const x = DOM.cache.donos.find(o => o.id === d.no_id); return x ? x.nome : 'IT.IA'; };
+const domCusto = d => { const k = d.custo_operacao_id ? 'op:' + d.custo_operacao_id : d.custo_tecnico_id ? 'tec:' + d.custo_tecnico_id : ''; const x = DOM.cache.custos.find(o => o.id === k); return x ? x.nome : ''; };
+const domHost = (r, d) => r.nome === '@' ? d.nome : r.nome + '.' + d.nome;
+function domDominios(){
+  if (!souMaster()) return '<p class="intro">Só o Master vê os domínios.</p>';
+  if (!DOM.cache){ if (!DOM.carregando) domCarregar().then(() => { if (UI.modulo === 'custos' && UI.ctAba === 'dominios') rCustos(); }); return '<p class="intro">Carregando os domínios…</p>'; }
+  if (DOM.erro) return '<p class="intro">Não foi possível ler os domínios do banco: ' + esc(DOM.erro) + '</p><button class="btn sec" type="button" data-dm="recarregar">Tentar de novo</button>';
+  const lista = DOM.cache.dominios;
+  const linhas = lista.map(d => { const [s, c] = domSituacao(d); const ab = DOM.aberto === d.id;
+    return '<tr' + (ab ? ' class="dm-aberto"' : '') + '><th scope="row"><button class="dm-nome" type="button" data-dm-abrir="' + d.id + '" aria-expanded="' + ab + '">' + esc(d.nome) + '</button></th><td>' + esc(domDono(d)) + '</td><td>' + esc(d.registrador) + '</td><td>' + esc(d.dns_em || '—') + '</td><td>' + (d.vence_em ? fmtData(d.vence_em) : '—') + ' <span class="rc-sit' + (c ? ' ' + c : '') + '">' + s + '</span></td><td>' + (d.renovacao_automatica === true ? 'Automática' : d.renovacao_automatica === false ? 'Manual' : 'Não informada') + '</td><td>' + d.registros.length + '</td>' +
+      '<td><div class="acoes"><button class="btn sec peq" type="button" data-dm-editar="' + d.id + '">Editar</button><button class="ico-btn perigo" type="button" data-dm-excluir="' + d.id + '" aria-label="Excluir ' + esc(d.nome) + '">' + ICO.fechar + '</button></div></td></tr>' +
+      (ab ? '<tr class="dm-det"><td colspan="8">' + domDetalhe(d) + '</td></tr>' : ''); }).join('');
+  return '<div class="topo-tela"><p class="intro" style="margin:0">Cada domínio do grupo: onde foi comprado, onde o DNS' + I('DNS: o "catálogo de endereços" da internet, que diz para onde cada endereço do domínio aponta') + ' é administrado, quando vence e para onde cada subdomínio' + I('Subdomínio: um endereço dentro do domínio, como system.it-ia.tec.br dentro de it-ia.tec.br') + ' aponta. O Master recebe um aviso 60, 30, 7 e 1 dia antes de vencer.</p><div class="acoes"><button class="btn" type="button" data-dm="novo">' + ICO.mais + 'Novo domínio</button></div></div><div style="height:12px"></div>' +
+    (lista.length ? '<div class="tabela-rolo"><table class="tabela"><thead><tr><th>Domínio</th><th>Empresa dona</th><th>Comprado em</th><th>DNS em</th><th>Vence em</th><th>Renovação</th><th>Registros</th><th></th></tr></thead><tbody>' + linhas + '</tbody></table></div>'
+      : '<p class="intro">Nenhum domínio cadastrado ainda.</p>');
+}
+function domDetalhe(d){
+  const cst = domCusto(d);
+  const dados = [['Comprado em', d.comprado_em ? fmtData(d.comprado_em) : '—'], ['Servidores de DNS', (d.servidores_dns || []).join(', ') || '—'], ['E-mail do domínio', d.email_provedor || '—'], ['Custo', cst || 'Não ligado a um custo'], ['Onde fica o acesso', d.acesso_onde || '—'], ['Observações', d.observacoes || '—']];
+  return '<div class="dm-dados">' + dados.map(([k, v]) => '<div><span>' + k + '</span><b>' + esc(v) + '</b></div>').join('') + '</div>' +
+    '<div class="topo-tela" style="margin-top:16px"><h3 class="dm-tit">Registros do domínio' + I('Registros: cada linha do DNS do domínio, como um subdomínio, o e-mail ou uma verificação de serviço') + '</h3><div class="acoes"><button class="btn sec peq" type="button" data-dm-novo-reg="' + d.id + '">' + ICO.mais + 'Novo registro</button></div></div>' +
+    (d.registros.length ? '<div class="tabela-rolo"><table class="tabela"><thead><tr><th>Endereço</th><th>Tipo</th><th>Aponta para</th><th>Serviço</th><th>Para que serve</th><th></th></tr></thead><tbody>' +
+      d.registros.map(r => '<tr><th scope="row">' + esc(domHost(r, d)) + '</th><td>' + esc(r.tipo) + (r.proxy ? ' <span class="rc-sit">Proxy</span>' : '') + '</td><td class="dm-quebra">' + esc(r.aponta_para) + '</td><td>' + esc(r.servico || '—') + '</td><td>' + esc(r.para_que || '—') + '</td><td><div class="acoes"><button class="btn sec peq" type="button" data-dm-editar-reg="' + d.id + '|' + r.id + '">Editar</button><button class="ico-btn perigo" type="button" data-dm-excluir-reg="' + d.id + '|' + r.id + '" aria-label="Excluir registro">' + ICO.fechar + '</button></div></td></tr>').join('') + '</tbody></table></div>'
+      : '<p class="intro">Nenhum registro ainda.</p>');
+}
+async function domGravar(tabela, valores, id){
+  const sb = domBanco();
+  if (!sb) return {ok:true};
+  const q = id ? sb.from(tabela).update(valores).eq('id', id).select() : sb.from(tabela).insert(valores).select();
+  const {data, error} = await q;
+  if (error) return {ok:false, msg: /duplicate|unique/i.test(error.message) ? 'Já existe um domínio com esse nome.' : /check/i.test(error.message) ? 'Algum campo está num formato que o banco não aceita. Confira o nome e as datas.' : error.message};
+  if (!data || !data.length) return {ok:false, msg:'O banco não confirmou a gravação. Confira se você entrou como Master.'};
+  return {ok:true, linha:data[0]};
+}
+async function domApagar(tabela, id){
+  const sb = domBanco(); if (!sb) return {ok:true};
+  const {data, error} = await sb.from(tabela).delete().eq('id', id).select();
+  if (error) return {ok:false, msg:error.message};
+  if (!data || !data.length) return {ok:false, msg:'O banco não confirmou a exclusão.'};
+  return {ok:true};
+}
+function domForm(d){
+  d = d || {};
+  const donos = DOM.cache.donos, custos = DOM.cache.custos;
+  const custoAtual = d.custo_operacao_id ? 'op:' + d.custo_operacao_id : d.custo_tecnico_id ? 'tec:' + d.custo_tecnico_id : '';
+  const grupos = [...new Set(custos.map(c => c.grupo))];
+  const rot = {cliente:'Cliente', projeto:'Projeto', produto:'Produto', aplicacao:'Aplicação'};
+  modal(d.id ? 'Editar ' + esc(d.nome) : 'Novo domínio',
+    '<div class="grade-form">' +
+    '<label class="lb">Domínio<input class="campo" id="dm-n" value="' + esc(d.nome || '') + '" placeholder="exemplo.com.br" autocomplete="off"></label>' +
+    '<label class="lb">Empresa dona' + I('Empresa dona: a quem o domínio pertence. Vazio quer dizer que é da própria IT.IA') + '<select class="sel" id="dm-dono"><option value="">IT.IA</option>' + ['cliente','projeto','produto','aplicacao'].map(t => donos.filter(o => o.tipo === t).length ? '<optgroup label="' + rot[t] + '">' + donos.filter(o => o.tipo === t).map(o => '<option value="' + o.id + '"' + (d.no_id === o.id ? ' selected' : '') + '>' + esc(o.nome) + '</option>').join('') + '</optgroup>' : '').join('') + '</select></label>' +
+    '<label class="lb">Comprado em (registrador)' + I('Registrador: a empresa onde o domínio foi comprado e é renovado, como o Registro.br') + '<input class="campo" id="dm-reg" value="' + esc(d.registrador || 'Registro.br') + '"></label>' +
+    '<label class="lb">Onde o DNS é administrado<input class="campo" id="dm-dns" value="' + esc(d.dns_em || '') + '" placeholder="Cloudflare"></label>' +
+    '<label class="lb">Servidores de DNS' + I('Servidores de DNS: os endereços que o registrador usa para saber onde o DNS do domínio fica. Separe por vírgula') + '<input class="campo" id="dm-ns" value="' + esc((d.servidores_dns || []).join(', ')) + '"></label>' +
+    '<label class="lb">Data da compra<input class="campo" type="date" id="dm-c" value="' + esc(d.comprado_em || '') + '"></label>' +
+    '<label class="lb">Data de vencimento<input class="campo" type="date" id="dm-v" value="' + esc(d.vence_em || '') + '"></label>' +
+    '<label class="lb">Renovação<select class="sel" id="dm-ren"><option value=""' + (d.renovacao_automatica == null ? ' selected' : '') + '>Não informada</option><option value="sim"' + (d.renovacao_automatica === true ? ' selected' : '') + '>Automática</option><option value="nao"' + (d.renovacao_automatica === false ? ' selected' : '') + '>Manual</option></select></label>' +
+    '<label class="lb">Custo' + I('Custo: liga o domínio a um custo já cadastrado em Costs, para ele entrar nas contas sem ser digitado duas vezes') + '<select class="sel" id="dm-custo"><option value="">Não ligado a um custo</option>' + grupos.map(g => '<optgroup label="' + g + '">' + custos.filter(c => c.grupo === g).map(c => '<option value="' + c.id + '"' + (custoAtual === c.id ? ' selected' : '') + '>' + esc(c.nome) + '</option>').join('') + '</optgroup>').join('') + '</select></label>' +
+    '<label class="lb">E-mail do domínio<input class="campo" id="dm-em" value="' + esc(d.email_provedor || '') + '" placeholder="Google, Microsoft, nenhum"></label>' +
+    '<label class="lb">Onde fica o acesso ao painel' + I('Onde fica o acesso: em qual cofre ou com quem está a senha do painel. Nunca escreva a senha aqui') + '<input class="campo" id="dm-ac" value="' + esc(d.acesso_onde || '') + '" placeholder="Ex.: cofre de senhas da IT.IA (nunca a senha)"></label>' +
+    '<label class="lb">Observações<textarea class="campo" id="dm-ob" rows="2">' + esc(d.observacoes || '') + '</textarea></label></div>',
+    [{txt:'Cancelar', cls:'sec'}, {txt:'Salvar', acao:dlg => {
+      const nome = $('#dm-n', dlg).value.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+      if (!/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/.test(nome)){ toast('Escreva o domínio sem espaço, como exemplo.com.br'); return false; }
+      const c = $('#dm-c', dlg).value || null, v = $('#dm-v', dlg).value || null;
+      if (c && v && v < c){ toast('O vencimento não pode ser antes da compra'); return false; }
+      const custo = $('#dm-custo', dlg).value, ren = $('#dm-ren', dlg).value;
+      const val = {nome, no_id: $('#dm-dono', dlg).value || null, registrador: $('#dm-reg', dlg).value.trim() || 'Não informado', dns_em: $('#dm-dns', dlg).value.trim() || null,
+        servidores_dns: $('#dm-ns', dlg).value.split(',').map(s => s.trim()).filter(Boolean), comprado_em: c, vence_em: v, renovacao_automatica: ren === '' ? null : ren === 'sim',
+        custo_operacao_id: custo.startsWith('op:') ? custo.slice(3) : null, custo_tecnico_id: custo.startsWith('tec:') ? custo.slice(4) : null,
+        email_provedor: $('#dm-em', dlg).value.trim() || null, acesso_onde: $('#dm-ac', dlg).value.trim() || null, observacoes: $('#dm-ob', dlg).value.trim() || null};
+      if (!domBanco() && D.dominios.some(x => x.nome === nome && x.id !== d.id)){ toast('Já existe um domínio com esse nome.'); return false; }
+      domGravar('dominios', val, d.id).then(res => {
+        if (!res.ok){ toast(res.msg); return; }
+        if (domBanco()) DOM.cache = null; else { if (d.id) Object.assign(d, val); else D.dominios.push(Object.assign({id:uid('dm'), registros:[]}, val)); salvar(); }
+        rCustos(); toast('Domínio salvo');
+      });
+    }}]);
+}
+function domFormReg(d, r){
+  r = r || {};
+  const apps = DOM.cache.donos.filter(o => o.tipo === 'aplicacao');
+  modal((r.id ? 'Editar registro de ' : 'Novo registro em ') + esc(d.nome),
+    '<div class="grade-form">' +
+    '<label class="lb">Nome' + I('Nome: a parte antes do domínio. Para system.it-ia.tec.br, escreva system. Para o próprio domínio, escreva @') + '<span class="com-suf"><input class="campo" id="dr-n" value="' + esc(r.nome || '') + '" placeholder="system"><span>.' + esc(d.nome) + '</span></span></label>' +
+    '<label class="lb">Tipo' + I('Tipo do registro: CNAME aponta para outro endereço; A aponta para um número de IP; MX recebe e-mail; TXT guarda verificações') + '<select class="sel" id="dr-t">' + DOM_TIPOS.map(t => '<option' + (r.tipo === t ? ' selected' : '') + '>' + t + '</option>').join('') + '</select></label>' +
+    '<label class="lb">Aponta para<input class="campo" id="dr-a" value="' + esc(r.aponta_para || '') + '" placeholder="cname.vercel-dns.com"></label>' +
+    '<label class="lb">Serviço<input class="campo" id="dr-s" value="' + esc(r.servico || '') + '" placeholder="Vercel, Google, Resend"></label>' +
+    '<label class="lb">Para que serve<input class="campo" id="dr-p" value="' + esc(r.para_que || '') + '"></label>' +
+    (apps.length ? '<label class="lb">Aplicação ligada<select class="sel" id="dr-app"><option value="">Nenhuma</option>' + apps.map(a => '<option value="' + a.id + '"' + (r.aplicacao_id === a.id ? ' selected' : '') + '>' + esc(a.nome) + '</option>').join('') + '</select></label>' : '') +
+    '<label class="lb ck"><input type="checkbox" id="dr-px"' + (r.proxy ? ' checked' : '') + '> Passa pelo proxy do Cloudflare (nuvem laranja)' + I('Proxy: o Cloudflare fica no meio do caminho. Para sites na Vercel deve ficar desligado (nuvem cinza)') + '</label></div>',
+    [{txt:'Cancelar', cls:'sec'}, {txt:'Salvar', acao:dlg => {
+      let nome = $('#dr-n', dlg).value.trim().toLowerCase(); if (nome === '' ) nome = '@';
+      nome = nome.replace(new RegExp('\\.?' + d.nome.replace(/\./g, '\\.') + '$'), '') || '@';
+      if (nome !== '@' && !/^[a-z0-9_]([a-z0-9_.-]*[a-z0-9])?$/.test(nome)){ toast('O nome aceita só letras, números, ponto, hífen e sublinhado'); return false; }
+      const aponta = $('#dr-a', dlg).value.trim(); if (!aponta){ toast('Diga para onde o registro aponta'); return false; }
+      const appSel = $('#dr-app', dlg);
+      const val = {dominio_id: d.id, nome, tipo: $('#dr-t', dlg).value, aponta_para: aponta, servico: $('#dr-s', dlg).value.trim() || null, para_que: $('#dr-p', dlg).value.trim() || null,
+        aplicacao_id: appSel && appSel.value ? appSel.value : null, proxy: $('#dr-px', dlg).checked};
+      domGravar('dominios_registros', val, r.id).then(res => {
+        if (!res.ok){ toast(res.msg); return; }
+        if (domBanco()) DOM.cache = null; else { delete val.dominio_id; if (r.id) Object.assign(r, val); else d.registros.push(Object.assign({id:uid('dr')}, val)); salvar(); }
+        DOM.aberto = d.id; rCustos(); toast('Registro salvo');
+      });
+    }}]);
+}
+const rCustosAntes = rCustos;
+rCustos = function(){
+  if (UI.ctAba !== 'dominios') return rCustosAntes();
+  UI.ctAba = 'regras'; rCustosAntes(); UI.ctAba = 'dominios';
+  const el = $('#m-custos'); if (!el) return;
+  el.querySelectorAll('[data-ct-aba]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.ctAba === 'dominios')));
+  const esp = el.querySelector('.views').nextElementSibling;
+  while (esp.nextSibling) esp.nextSibling.remove();
+  esp.insertAdjacentHTML('afterend', '<div id="dm-area">' + domDominios() + '</div>');
+};
+document.addEventListener('click', ev => {
+  const t = ev.target.closest('[data-dm],[data-dm-abrir],[data-dm-editar],[data-dm-excluir],[data-dm-novo-reg],[data-dm-editar-reg],[data-dm-excluir-reg]');
+  if (!t || !DOM.cache && t.dataset.dm !== 'recarregar') return;
+  const acha = id => DOM.cache.dominios.find(x => String(x.id) === String(id));
+  if (t.dataset.dm === 'recarregar'){ DOM.cache = null; DOM.erro = null; rCustos(); return; }
+  if (t.dataset.dm === 'novo') return domForm();
+  if (t.dataset.dmAbrir){ DOM.aberto = DOM.aberto === t.dataset.dmAbrir ? null : t.dataset.dmAbrir; rCustos(); return; }
+  if (t.dataset.dmEditar) return domForm(acha(t.dataset.dmEditar));
+  if (t.dataset.dmNovoReg) return domFormReg(acha(t.dataset.dmNovoReg));
+  if (t.dataset.dmEditarReg){ const [di, ri] = t.dataset.dmEditarReg.split('|'); const d = acha(di); return domFormReg(d, d.registros.find(r => String(r.id) === ri)); }
+  if (t.dataset.dmExcluir){ const d = acha(t.dataset.dmExcluir);
+    return modal('Excluir ' + esc(d.nome) + '?', '<p style="margin:0">O domínio e os ' + d.registros.length + ' registros dele saem do cadastro. O domínio continua existindo no registrador; só deixa de estar anotado aqui.</p>',
+      [{txt:'Cancelar', cls:'sec'}, {txt:'Excluir', cls:'acento', acao:() => { domApagar('dominios', d.id).then(res => { if (!res.ok) return toast(res.msg); if (domBanco()) DOM.cache = null; else { D.dominios = D.dominios.filter(x => x.id !== d.id); salvar(); DOM.cache.dominios = D.dominios; } rCustos(); toast('Domínio excluído'); }); }}]); }
+  if (t.dataset.dmExcluirReg){ const [di, ri] = t.dataset.dmExcluirReg.split('|'); const d = acha(di); const r = d.registros.find(x => String(x.id) === ri);
+    return modal('Excluir o registro ' + esc(domHost(r, d)) + '?', '<p style="margin:0">Sai só do cadastro. No Cloudflare (ou onde o DNS fica) ele continua valendo até ser apagado lá.</p>',
+      [{txt:'Cancelar', cls:'sec'}, {txt:'Excluir', cls:'acento', acao:() => { domApagar('dominios_registros', r.id).then(res => { if (!res.ok) return toast(res.msg); if (domBanco()) DOM.cache = null; else { d.registros = d.registros.filter(x => x.id !== r.id); salvar(); } DOM.aberto = d.id; rCustos(); toast('Registro excluído'); }); }}]); }
+});
 
 abrirModulo(UI.modulo);
 })();

@@ -422,3 +422,30 @@
 
 /* o aviso passageiro só informa: o clique passa para o que está atrás dele */
 .toast{pointer-events:none}
+
+/* Costs › Domínios */
+.dm-nome{border:0;background:none;padding:0;font:inherit;font-weight:600;color:inherit;cursor:pointer;text-decoration:underline;text-underline-offset:3px;text-align:left}
+.dm-nome:hover{color:var(--vermelho)}
+.tabela tr.dm-aberto > *{background:var(--preto-04)}
+.tabela tr.dm-det > td{background:var(--preto-04);padding:16px}
+.dm-dados{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px 24px}
+.dm-dados span{display:block;font-size:12px;color:var(--grafite)}
+.dm-dados b{font-weight:500;word-break:break-word}
+.dm-tit{margin:0;font-size:15px;display:flex;align-items:center;gap:6px}
+.dm-quebra{word-break:break-all}
+.lb.ck{flex-direction:row;align-items:center;gap:8px;font-weight:500}
+.rc-sit.perigo{border-color:var(--vermelho);background:var(--vermelho);color:var(--branco)}
+
+/* Estrutura: projeto sempre preto com borda vermelha; aplicação com camada vermelha leve e a mesma borda */
+.no-arv[data-no^="project:"]{background:var(--carvao);color:var(--branco)}
+.no-arv[data-no^="project:"] .tipo{color:var(--nevoa)}
+.no-arv[data-no^="project:"]::before,
+.no-arv[data-no^="app:"]::before{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--vermelho)}
+.no-arv[data-no^="app:"]:not(.escolhido){background:rgba(255,0,0,.07)}
+.no-arv[data-no^="app:"]:not(.escolhido):hover{background:rgba(255,0,0,.13)}
+.no-arv[data-no^="app:"]{margin-bottom:1px}
+
+/* Estrutura fixa na tela (igual ao menu principal): acompanha a rolagem e rola por dentro quando é maior que a tela */
+@media (min-width: 961px){
+  .ops-arvore,.ops.sem-arvore .arv-trilho{position:sticky;top:0;align-self:start;max-height:100vh;overflow-y:auto}
+}
