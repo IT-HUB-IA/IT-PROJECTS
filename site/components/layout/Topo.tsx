@@ -3,10 +3,10 @@ import { useEffect, useState } from "react";
 import { Logo } from "@/components/ui/Logo";
 
 const LINKS = [
-  { href: "#frentes", txt: "O que fazemos" },
-  { href: "#catalogo", txt: "Catálogo" },
-  { href: "#metodo", txt: "Método" },
-  { href: "#laboratorio", txt: "Laboratório" },
+  { href: "/#frentes", txt: "O que fazemos" },
+  { href: "/#catalogo", txt: "Catálogo" },
+  { href: "/#metodo", txt: "Método" },
+  { href: "/#laboratorio", txt: "Laboratório" },
 ];
 
 export function Topo() {
@@ -26,13 +26,13 @@ export function Topo() {
   return (
     <header className={"topo" + (rolou ? " rolou" : "")}>
       <div className="container topo-in">
-        <a href="#inicio" className="topo-marca" aria-label="IT.IA, voltar ao início">
+        <a href="/" className="topo-marca" aria-label="IT.IA, voltar ao início">
           <Logo className="h-[24px] w-auto" titulo="" />
         </a>
         <nav aria-label="Principal" className="topo-nav">
           {LINKS.map(l => <a key={l.href} href={l.href} className="link">{l.txt}</a>)}
         </nav>
-        <a href="#contato" className="btn btn-claro topo-cta"><span className="ponto-sm" aria-hidden="true" /><span className="txt">Falar com a IT.IA</span></a>
+        <a href="/#contato" className="btn btn-claro topo-cta"><span className="ponto-sm" aria-hidden="true" /><span className="txt">Falar com a IT.IA</span></a>
         <button type="button" className="topo-menu" aria-expanded={aberto} aria-controls="menu-celular" onClick={() => setAberto(a => !a)}>
           <span className="sr-only">{aberto ? "Fechar menu" : "Abrir menu"}</span>
           <span aria-hidden="true" className={"hamb" + (aberto ? " x" : "")}><i /><i /></span>

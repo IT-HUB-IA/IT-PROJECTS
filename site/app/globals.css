@@ -235,3 +235,29 @@ a { color: inherit; }
   .listras-movendo { animation: none; }
   *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
+
+/* ---------- páginas legais ---------- */
+.lg-capa { padding: calc(64px + 64px) 0 56px; }
+.lg-capa .capa-canto.a { top: calc(64px + 16px); }
+.lg-titulo { font-size: clamp(40px, 6vw, 72px); color: var(--branco); margin: 18px 0 16px; }
+.lg-data { text-transform: none; letter-spacing: .06em; }
+.lg-in { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 48px; padding-block: 56px 96px; align-items: start; }
+.lg-indice { position: sticky; top: calc(64px + 24px + env(safe-area-inset-top, 0px)); display: grid; gap: 14px; }
+.lg-indice ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; font-size: 14px; }
+.lg-indice ol a { text-decoration: none; color: var(--tinta-2); }
+.lg-indice ol a:hover { color: var(--preto); }
+.lg-outra { font-family: var(--font-mono); font-size: 12px; letter-spacing: .06em; text-decoration: none; margin-top: 8px; }
+.lg-texto { max-width: 760px; display: grid; gap: 40px; }
+.lg-resumo { display: grid; gap: 10px; }
+.lg-resumo p:last-child { margin: 0; font-size: 17px; }
+.lg-secao { scroll-margin-top: calc(64px + 24px); display: grid; gap: 14px; }
+.lg-secao h2 { font-family: var(--font-display); font-weight: 600; font-size: 26px; letter-spacing: -.02em; margin: 0; display: flex; align-items: baseline; gap: 14px; }
+.lg-secao p, .lg-secao li { color: var(--tinta-2); margin: 0; }
+.lg-secao ul { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+.lg-secao .tabela tbody th { font-size: 15px; font-family: var(--font-body); font-weight: 500; width: 58%; }
+.ro-legais { display: flex; gap: 20px; }
+.ro-legais a { text-decoration: none; }
+@media (max-width: 860px) {
+  .lg-in { grid-template-columns: 1fr; gap: 32px; }
+  .lg-indice { position: static; }
+}

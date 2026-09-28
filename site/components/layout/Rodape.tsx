@@ -18,7 +18,7 @@ export function Rodape() {
           <div><dt className="rotulo">Catálogo</dt><dd>{produtos.map(p => <span key={p.serie}><a className="link" href={p.link} target="_blank" rel="noopener noreferrer">{p.nome}</a><br /></span>)}</dd></div>
           <div><dt className="rotulo">Laboratório</dt><dd><a className="link" href={contato.instagram} target="_blank" rel="noopener noreferrer">{contato.instagramTexto}</a></dd></div>
         </dl>
-        <p className="ro-base rotulo"><span>© {ano} IT.IA. Todos os direitos reservados.</span><span>Este site não usa cookies nem formulários.</span></p>
+        <p className="ro-base rotulo"><span>© {ano} IT.IA. Todos os direitos reservados.</span><span className="ro-legais"><a className="link" href="/termos">Termos de Uso</a><a className="link" href="/privacidade">Política de Privacidade</a></span><span>Este site não usa cookies nem formulários.</span></p>
       </div>
     </footer>
   );
