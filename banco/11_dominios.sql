@@ -1,7 +1,7 @@
 -- =====================================================================
--- Sistema IT.IA · 11 · Cadastro de domínios (pedido do William em 28/09/2026)
+-- CicloDev · 11 · Cadastro de domínios (pedido do William em 28/09/2026)
 -- Cada domínio, onde foi comprado, onde o DNS é administrado, vencimento, custo e os registros (subdomínios, e-mail, verificações).
--- Sem repetir informação: o custo aponta para custos_operacao (domínio da própria IT.IA) ou custos_tecnicos (domínio de cliente);
+-- Sem repetir informação: o custo aponta para custos_operacao (domínio da própria CicloDev) ou custos_tecnicos (domínio de cliente);
 -- a empresa dona vem da árvore (no_id). Só o Master vê e muda.
 -- =====================================================================
 
@@ -25,7 +25,7 @@ create table if not exists public.dominios (
   check (vence_em is null or comprado_em is null or vence_em >= comprado_em),
   check (num_nonnulls(custo_operacao_id, custo_tecnico_id) <= 1)
 );
-comment on table public.dominios is 'Domínios do grupo. no_id vazio = domínio da própria IT.IA. acesso_onde diz onde fica o acesso ao painel, nunca a senha.';
+comment on table public.dominios is 'Domínios do grupo. no_id vazio = domínio da própria CicloDev. acesso_onde diz onde fica o acesso ao painel, nunca a senha.';
 comment on column public.dominios.renovacao_automatica is 'Vazio = ainda não informado.';
 create index if not exists dominios_no_idx on public.dominios (no_id) where no_id is not null;
 create index if not exists dominios_vence_idx on public.dominios (vence_em) where vence_em is not null;
@@ -104,7 +104,7 @@ grant execute on function interno.avisar_vencimento_dominios() to service_role;
 -- rotina diária do aviso (SÓ NO SUPABASE: precisa do pg_cron, criado na parte 10). 08:17 de Brasília.
 do $$ begin
   if exists (select 1 from pg_extension where extname = 'pg_cron') then
-    perform cron.unschedule(jobid) from cron.job where jobname = 'itia_dominios_vencimento';
-    perform cron.schedule('itia_dominios_vencimento', '17 11 * * *', 'select interno.avisar_vencimento_dominios()');
+    perform cron.unschedule(jobid) from cron.job where jobname = 'ciclodev_dominios_vencimento';
+    perform cron.schedule('ciclodev_dominios_vencimento', '17 11 * * *', 'select interno.avisar_vencimento_dominios()');
   end if;
 end $$;

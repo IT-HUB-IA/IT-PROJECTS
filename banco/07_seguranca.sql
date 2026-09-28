@@ -1,5 +1,5 @@
 -- =====================================================================
--- Sistema IT.IA · 07 · Segurança: RLS (quem vê cada linha) + GRANT (quem pode cada operação)
+-- CicloDev · 07 · Segurança: RLS (quem vê cada linha) + GRANT (quem pode cada operação)
 -- Papéis:  master = vê e muda tudo · dev = trabalha onde participa · stakeholder = só o visível ao cliente, sem valores
 -- Padrão de desempenho: toda função dentro de uma regra vai entre parênteses com select, "(select interno.eh_master())",
 -- para o banco calcular uma vez por consulta, e não uma vez por linha.

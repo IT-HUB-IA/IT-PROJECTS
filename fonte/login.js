@@ -39,7 +39,7 @@ if (!window.supabase || !window.supabase.createClient){
   return;
 }
 const sb = window.supabase.createClient(URL_BANCO, CHAVE_PUBLICA, {auth:{persistSession:true, autoRefreshToken:true, detectSessionInUrl:true}});
-window.itiaBanco = sb;
+window.ciclodevBanco = sb;
 let trocandoSenha = tipoLink === 'recovery' || tipoLink === 'invite';
 if (tipoLink === 'signup' || tipoLink === 'email') history.replaceState(null, '', location.pathname);
 
@@ -54,7 +54,7 @@ async function entrar(sessao){
 }
 async function abrirSistema(p){
   // primeiro lê o banco (a tela de "carregando" continua aparecendo), depois mostra o sistema
-  if (window.itiaEntrouComo) await window.itiaEntrouComo(p);
+  if (window.ciclodevEntrouComo) await window.ciclodevEntrouComo(p);
   document.body.classList.add('logado');
 }
 /* quem entrou pelo Google, GitHub, Apple ou Microsoft não tem CPF, nascimento, endereço nem uso: pede antes de abrir o sistema.
@@ -73,7 +73,7 @@ async function faltaCadastro(p){
 function mostrarTrocar(){
   const f = raiz.querySelector('[data-etapa="trocar"]');
   const convite = tipoLink === 'invite';
-  f.querySelector('h1').textContent = convite ? 'Bem-vindo ao Sistema IT.IA' : 'Criar a senha nova';
+  f.querySelector('h1').textContent = convite ? 'Bem-vindo ao CicloDev' : 'Criar a senha nova';
   f.querySelector('.entrada-sub').textContent = convite ? 'Crie a sua senha para entrar. Ela precisa seguir as regras abaixo.' : 'A senha precisa seguir as regras abaixo.';
   mostrar('trocar');
 }

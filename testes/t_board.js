@@ -10,12 +10,12 @@ const { chromium } = require('/opt/node22/lib/node_modules/playwright');
   const id = await p.getAttribute('[data-bj-coluna="auto:todo"] .bj-cartao', 'data-item');
   const alvo = p.locator('[data-bj-coluna="auto:doing"] .bj-cartao').first();
   await p.locator('[data-item="' + id + '"]').dragTo(alvo, { targetPosition: { x: 20, y: 5 } }); await p.waitForTimeout(300);
-  ok(await p.evaluate(id => window.itiaDados().issues.find(i => i.id === id).status, id) === 'doing', 'arrastar muda o status');
+  ok(await p.evaluate(id => window.ciclodevDados().issues.find(i => i.id === id).status, id) === 'doing', 'arrastar muda o status');
   ok(await p.getAttribute('[data-bj-coluna="auto:doing"] .bj-cartao', 'data-item') === id, 'e o cartão fica na posição onde foi solto (primeiro da coluna)');
   // sinalizar pelo item aberto
   await p.click('[data-item="' + id + '"]'); await p.waitForTimeout(300);
   await p.click('.bj-sinal-btn'); await p.fill('#bj-motivo', 'Esperando cliente'); await p.click('dialog[open] [data-b="1"]'); await p.waitForTimeout(300);
-  ok(await p.evaluate(id => !!window.itiaDados().issues.find(i => i.id === id).sinal, id), 'sinalizar marca o item');
+  ok(await p.evaluate(id => !!window.ciclodevDados().issues.find(i => i.id === id).sinal, id), 'sinalizar marca o item');
   await p.keyboard.press('Escape'); await p.evaluate(() => { const f = document.querySelector('[data-fechar-gaveta]'); if (f) f.click(); }); await p.waitForTimeout(300);
   ok(await p.locator('[data-item="' + id + '"].sinalizado').count() === 1, 'o cartão aparece sinalizado');
   // configurar colunas: juntar In Review em In Progress com máximo 2
@@ -36,7 +36,7 @@ const { chromium } = require('/opt/node22/lib/node_modules/playwright');
   await p.click('.item[data-tela=time]'); await p.waitForTimeout(300);
   await p.click('[data-bj-equipe=""]'); await p.fill('[data-eq=nome]', 'Time Java'); await p.locator('[data-eq-pessoa]').first().check(); await p.waitForTimeout(100); await p.locator('[data-eq-no]').nth(1).check(); await p.waitForTimeout(100);
   await p.click('dialog[open] [data-b]:last-child'); await p.waitForTimeout(300);
-  ok((await p.textContent('.bj-equipes')).includes('Time Java') && await p.evaluate(() => window.itiaDados().equipes[0].membros.length === 1 && window.itiaDados().equipes[0].nos.length === 1), 'criar equipe com membro e ponto da estrutura');
+  ok((await p.textContent('.bj-equipes')).includes('Time Java') && await p.evaluate(() => window.ciclodevDados().equipes[0].membros.length === 1 && window.ciclodevDados().equipes[0].nos.length === 1), 'criar equipe com membro e ponto da estrutura');
   const larg = await p.evaluate(() => [document.documentElement.scrollWidth, innerWidth]); ok(larg[0] <= larg[1], 'sem rolagem da página para o lado');
   ok(erros.length === 0, 'sem erro ' + JSON.stringify(erros.slice(0, 3)));
   console.log(falhas ? falhas + ' FALHAS' : 'TUDO OK'); await b.close();

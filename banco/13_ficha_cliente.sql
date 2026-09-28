@@ -1,5 +1,5 @@
 -- =====================================================================
--- Sistema IT.IA · 13 · Ficha cadastral completa do cliente (pedido do William em 28/09/2026)
+-- CicloDev · 13 · Ficha cadastral completa do cliente (pedido do William em 28/09/2026)
 -- O CNPJ ou CPF continua em clientes.documento. Os campos novos são todos opcionais.
 -- As regras de acesso de clientes já valem para eles (só o Master muda; quem vê o cliente vê a ficha).
 -- =====================================================================

@@ -1,5 +1,5 @@
 -- =====================================================================
--- Sistema IT.IA · 14 · Board no formato Jira e Trello, equipes e integrações (pedido do William em 28/09/2026)
+-- CicloDev · 14 · Board no formato Jira e Trello, equipes e integrações (pedido do William em 28/09/2026)
 -- Regra: nada repetido. Um item é um item, venha do Jira (issue), do Trello (card) ou daqui.
 -- Ver docs/INTEGRACOES-MODELO.md.
 -- =====================================================================

@@ -1,5 +1,5 @@
 -- =====================================================================
--- Sistema IT.IA · 15 · Muitos usuários: cadastro aberto, espaço próprio para cada um e compartilhamento por ponto
+-- CicloDev · 15 · Muitos usuários: cadastro aberto, espaço próprio para cada um e compartilhamento por ponto
 -- Pedido do William em 28/09/2026. Análise e decisões: docs/ARQUITETURA-MULTIUSUARIO.md
 --   · um nível só de usuário (não existe mais Master, Dev ou Stakeholder como nível de conta);
 --   · o cadastro cria a pessoa, o número de ID público e o espaço próprio;
@@ -325,8 +325,12 @@ begin
 end $$;
 do $$ begin
   if exists (select 1 from information_schema.columns where table_schema = 'auth' and table_name = 'users' and column_name = 'raw_user_meta_data') then
-    execute 'drop trigger if exists itia_ao_criar_usuario on auth.users';
-    execute 'create trigger itia_ao_criar_usuario after insert on auth.users for each row execute function interno.ao_criar_usuario()';
+    -- cria só se ainda não houver um gatilho chamando interno.ao_criar_usuario (em bancos antigos ele existe com outro nome,
+    -- que o Supabase não deixa trocar porque auth.users é dele); assim nunca roda duas vezes por cadastro
+    if not exists (select 1 from pg_trigger t join pg_proc f on f.oid = t.tgfoid join pg_namespace n on n.oid = f.pronamespace
+                    where t.tgrelid = 'auth.users'::regclass and n.nspname = 'interno' and f.proname = 'ao_criar_usuario') then
+      execute 'create trigger ciclodev_ao_criar_usuario after insert on auth.users for each row execute function interno.ao_criar_usuario()';
+    end if;
   end if;
 end $$;
 

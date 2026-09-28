@@ -12,7 +12,7 @@ create table if not exists interno.donos_sistema (
   pessoa_id  uuid primary key references public.pessoas(id) on delete cascade,
   desde      timestamptz not null default now()
 );
-comment on table interno.donos_sistema is 'Dono(s) do Sistema IT.IA. Só muda pelo banco. Hoje: William (login admin@it-ia.tec.br).';
+comment on table interno.donos_sistema is 'Dono(s) do CicloDev. Só muda pelo banco. Hoje: William (login admin@it-ia.tec.br).';
 revoke all on interno.donos_sistema from public, anon, authenticated;
 insert into interno.donos_sistema (pessoa_id)
   select id from public.pessoas where id = 'd148fdc5-eef3-5398-bf89-f49b55b5cd28' on conflict do nothing;
@@ -223,7 +223,7 @@ grant execute on function public.sou_dono_sistema(), public.admin_resumo(), publ
 -- Política de Privacidade: o registro de uso fica no máximo 12 meses (rotina diária; só no Supabase, onde existe pg_cron)
 do $$ begin
   if exists (select 1 from pg_extension where extname = 'pg_cron') then
-    perform cron.unschedule(jobid) from cron.job where jobname = 'itia_limpar_uso';
-    perform cron.schedule('itia_limpar_uso', '17 3 * * *', $c$delete from public.uso_eventos where em < now() - interval '12 months'$c$);
+    perform cron.unschedule(jobid) from cron.job where jobname = 'ciclodev_limpar_uso';
+    perform cron.schedule('ciclodev_limpar_uso', '17 3 * * *', $c$delete from public.uso_eventos where em < now() - interval '12 months'$c$);
   end if;
 end $$;

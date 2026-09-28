@@ -33,7 +33,7 @@ base_js=r'''
   const app = document.getElementById('app');
   const botao = document.getElementById('alternar');
   const dica = document.getElementById('dica');
-  const CHAVE = 'sistema-itia-menu-recolhido';
+  const CHAVE = 'ciclodev-menu-recolhido';
   function aplicar(recolhido){
     app.classList.toggle('recolhido', recolhido);
     botao.setAttribute('aria-expanded', String(!recolhido));
@@ -96,7 +96,7 @@ base_js=r'''
 
   // abas do Playbook
   const abas = Array.from(document.querySelectorAll('.aba'));
-  const CHAVE_ABA = 'sistema-itia-aba-playbook';
+  const CHAVE_ABA = 'ciclodev-aba-playbook';
   function abrirAba(id){
     const alvo = abas.find(a => a.id === id) || abas[0];
     abas.forEach(a => { const sel = a === alvo; a.setAttribute('aria-selected', String(sel)); a.tabIndex = sel ? 0 : -1; document.getElementById(a.getAttribute('aria-controls')).hidden = !sel; });
@@ -118,7 +118,7 @@ html=head+'<style>'+css+'''
 <div class="app" id="app">
   <nav class="menu" id="menu" aria-label="Menu principal">
     <div class="menu-topo">
-      <div class="logo" aria-label="IT.IA">IT<b>.</b>IA</div>
+      <div class="logo" aria-label="CicloDev">Ciclo<b>Dev</b></div>
       <button class="alternar" id="alternar" type="button" aria-controls="menu" aria-expanded="true" aria-label="Recolher menu" title="Recolher menu">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true"><rect x="3" y="3" width="18" height="18"></rect><path d="M9 3v18"></path><path d="M16 15l-3-3 3-3"></path></svg>
       </button>

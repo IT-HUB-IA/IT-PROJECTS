@@ -1,5 +1,5 @@
 -- =====================================================================
--- Sistema IT.IA · 06 · Rotinas chamadas pela tela (RPC) e motor das automações
+-- CicloDev · 06 · Rotinas chamadas pela tela (RPC) e motor das automações
 -- Toda rotina confere a permissão da pessoa atual antes de agir.
 -- O miolo com poder de dono (security definer) fica no schema interno, fora da API.
 -- Na API (schema public) fica só a casca, sem poder especial, que chama o miolo.

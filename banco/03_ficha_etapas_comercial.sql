@@ -1,5 +1,5 @@
 -- =====================================================================
--- Sistema IT.IA · 03 · Ficha técnica, requisitos, etapas obrigatórias, catálogo, custos e receitas
+-- CicloDev · 03 · Ficha técnica, requisitos, etapas obrigatórias, catálogo, custos e receitas
 -- =====================================================================
 
 -- FICHA TÉCNICA: um campo por linha. A aplicação herda do projeto o que não preencher (ver bi.ficha_do_no)

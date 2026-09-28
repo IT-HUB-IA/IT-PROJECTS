@@ -11,7 +11,7 @@ const { chromium } = require('/opt/node22/lib/node_modules/playwright');
     await p.fill('.modal-ficha [data-fc="documento"]', '12345678000199'); await p.fill('.modal-ficha [data-fc="razao_social"]', 'Blanco e Lisboa Participações Ltda'); await p.fill('.modal-ficha [data-fc="uf"]', 'sp');
     await p.click('[data-fc-salvar]'); await p.waitForTimeout(200);
     ok((await p.textContent('.modal-ficha .modal-cab h2')).includes('12.345.678/0001-99'), w + ' salvar mostra o CNPJ formatado no topo');
-    ok(await p.evaluate(() => window.itiaDados().clients[0].ficha.uf) === 'SP', w + ' UF salva em maiúscula');
+    ok(await p.evaluate(() => window.ciclodevDados().clients[0].ficha.uf) === 'SP', w + ' UF salva em maiúscula');
     if (w > 800) await p.screenshot({ path: 'ficha_cad.png' });
     await p.click('[data-fc-aba=projetos]'); await p.waitForTimeout(200);
     ok(await p.locator('.fc-card').count() >= 1, w + ' aba Projetos mostra os cards');

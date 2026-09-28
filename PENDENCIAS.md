@@ -1,4 +1,4 @@
-# Pendências do Sistema IT.IA
+# Pendências do CicloDev
 
 Coisas combinadas com o William para fazer depois. Quando uma ficar pronta, marcar como feita com a data (não apagar).
 
@@ -13,7 +13,7 @@ Um lugar no sistema para guardar cada domínio do grupo e tudo o que depende del
 | Informação | Exemplo |
 |---|---|
 | Domínio | `it-ia.tec.br` |
-| Empresa ou produto dono | IT.IA (ligado a um ponto da árvore: cliente, projeto, produto ou aplicação) |
+| Empresa ou produto dono | CicloDev (ligado a um ponto da árvore: cliente, projeto, produto ou aplicação) |
 | Onde foi comprado (registrador) | Registro.br |
 | Onde o DNS é administrado | Cloudflare (servidores `karsyn` e `kellen.ns.cloudflare.com`) |
 | Data da compra | 09/09/2026 |
@@ -29,7 +29,7 @@ Um lugar no sistema para guardar cada domínio do grupo e tudo o que depende del
 | Informação | Exemplo |
 |---|---|
 | Subdomínio | `system.it-ia.tec.br` |
-| Para que serve | Sistema IT.IA |
+| Para que serve | CicloDev |
 | Aponta para | Vercel (projeto `sistema-itia`) |
 | Tipo de registro | CNAME para `cname.vercel-dns.com`, com o proxy do Cloudflare desligado |
 | Aplicação ligada | a aplicação da árvore que usa o endereço |
@@ -44,5 +44,5 @@ Um lugar no sistema para guardar cada domínio do grupo e tudo o que depende del
 **Onde fica na tela:** uma aba "Domínios" dentro de Costs, ou um módulo próprio. Decidir com o William quando for fazer.
 
 **Domínios já conhecidos para cadastrar:**
-- `it-ia.tec.br`: Registro.br, DNS no Cloudflare, comprado em 09/09/2026, vence em 09/09/2036. Subdomínio `system` para o Sistema IT.IA.
+- `it-ia.tec.br`: Registro.br, DNS no Cloudflare, comprado em 09/09/2026, vence em 09/09/2036. Subdomínio `system` para o CicloDev.
 - Domínios das empresas do grupo (YOU, Realizze, BEEC, Blanco & Lisboa...): levantar com o William.

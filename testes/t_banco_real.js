@@ -28,16 +28,16 @@ window.supabase = { createClient(){ let sess = JSON.parse(localStorage.getItem('
   await p.route(/fonts\.(googleapis|gstatic)/, r => r.abort());
   await p.goto('file://' + process.cwd() + '/vercel/index.html');
   // simula navegador que já tinha os dados de exemplo guardados
-  await p.evaluate(() => { localStorage.clear(); localStorage.setItem('itia-sistema-dados-v1', JSON.stringify({v:2, people:[{id:'x', nome:'Fantasma do Navegador'}]})); });
+  await p.evaluate(() => { localStorage.clear(); localStorage.setItem('ciclodev-dados-v1', JSON.stringify({v:2, people:[{id:'x', nome:'Fantasma do Navegador'}]})); });
   await p.reload(); await p.waitForTimeout(300);
   await p.fill('[data-etapa=login] [name=email]', 'admin@it-ia.tec.br'); await p.fill('[data-etapa=login] [name=senha]', 'x');
   await p.click('[data-etapa=login] .entrada-botao'); await p.waitForTimeout(1200);
   ok(await p.evaluate(() => document.body.classList.contains('logado')), 'entrou');
   ok((await p.textContent('.chip-exemplo')).trim() === 'Dados do banco', 'selo diz "Dados do banco"');
-  const dados = await p.evaluate(() => window.itiaDados());
+  const dados = await p.evaluate(() => window.ciclodevDados());
   ok(dados.people.map(x => x.nome).sort().join('|') === B.pessoas.map(x => x.nome).sort().join('|'), 'pessoas = só as do banco: ' + dados.people.map(x => x.nome).join(', '));
   ok(dados.issues.length === B.itens.length && dados.ws.length === B.frentes.length && dados.apps.length === B.aplicacoes.length && dados.requests.length === B.pedidos.length && dados.catalog.length === B.servicos.length && dados.custos.length === B.custos_tecnicos.length, 'contagens batem com o banco (itens ' + dados.issues.length + ', frentes ' + dados.ws.length + ', apps ' + dados.apps.length + ', pedidos ' + dados.requests.length + ')');
-  ok(await p.evaluate(() => localStorage.getItem('itia-sistema-dados-v1') === null), 'nada de dados guardado no navegador');
+  ok(await p.evaluate(() => localStorage.getItem('ciclodev-dados-v1') === null), 'nada de dados guardado no navegador');
   const mods = ['overview','operacoes','clientes','catalog','custos','servicedesk','time','agentes','playbook','configuracoes'];
   for (const m of mods){
     await p.click('.item[data-tela=' + m + ']'); await p.waitForTimeout(250);
@@ -58,7 +58,7 @@ window.supabase = { createClient(){ let sess = JSON.parse(localStorage.getItem('
   const aba = p.locator('[data-aba-custo=dominios], [data-ct-aba=dominios], button:has-text("Domínios")').first(); if (await aba.count()) { await aba.click(); await p.waitForTimeout(500); }
   ok((await p.evaluate(() => document.querySelector('.principal').innerText)).includes('it-ia.tec.br'), 'Domínios vem do banco');
   await p.reload(); await p.waitForTimeout(1200);
-  ok((await p.evaluate(() => window.itiaDados().people.length)) === B.pessoas.length, 'recarregar: lê o banco de novo');
+  ok((await p.evaluate(() => window.ciclodevDados().people.length)) === B.pessoas.length, 'recarregar: lê o banco de novo');
   ok(erros.length === 0, 'sem erro na página ' + JSON.stringify(erros.slice(0, 5)));
   console.log(falhas ? falhas + ' FALHAS' : 'TUDO OK'); await b.close();
 })();

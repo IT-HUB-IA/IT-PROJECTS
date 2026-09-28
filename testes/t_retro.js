@@ -8,7 +8,7 @@ const { chromium } = require('/opt/node22/lib/node_modules/playwright');
   console.log('BL', await kpi()); await p.screenshot({path:'r_bl.png'});
   // custo retroativo: começou em 01/01/2025, R$ 100 por mês
   await p.click('[data-acao=novo-custo-escopo]'); await p.fill('#fc2-for','Teste retro'); await p.fill('#fc2-desc','Custo antigo'); await p.fill('#fc2-valor','100'); await p.fill('#fc2-ini','2025-01-01'); await p.click('dialog [data-b="1"]'); await p.waitForTimeout(200);
-  const d = await p.evaluate(()=>JSON.parse(localStorage.getItem('itia-sistema-dados-v1')));
+  const d = await p.evaluate(()=>JSON.parse(localStorage.getItem('ciclodev-dados-v1')));
   const hoje = new Date(); const meses = (hoje.getFullYear()*12+hoje.getMonth()) - (2025*12+0) + 1;
   console.log('meses esperados', meses, 'R$ esperado', meses*100);
   console.log('linha', await p.evaluate(()=>[...document.querySelectorAll('#ops-corpo tbody tr')].find(t=>t.textContent.includes('Teste retro')).textContent.replace(/\s+/g,' ').slice(0,160)));

@@ -4,7 +4,7 @@
    Os números vêm das funções admin_* do banco (banco/16_admin_sistema.sql), que conferem o dono por dentro.
    ===================================================================== */
 const ADM = {dono:false, aba:'visao', dias:30, busca:'', ordem:'criado_em', desc:true, resumo:null, usuarios:null, diario:null, telas:null, banco:null, carregando:false, erro:null};
-const admBanco = () => (COM_BANCO && window.itiaBanco && MU.eu) ? window.itiaBanco : null;
+const admBanco = () => (COM_BANCO && window.ciclodevBanco && MU.eu) ? window.ciclodevBanco : null;
 
 /* ---------- registro de uso: entradas, telas, minutos ativos, tempo de carregar e salvar, erros ---------- */
 const USO = {chave:'', interagiu:Date.now(), erros:0};
@@ -17,14 +17,14 @@ function anotarUso(tipo, extra){
 function chaveTela(){ return UI.modulo + (UI.modulo === 'operacoes' && UI.view ? '/' + UI.view : ''); }
 function conferirTela(){ const k = chaveTela(); if (k && k !== USO.chave){ USO.chave = k; anotarUso('tela', {tela:k.slice(0, 60)}); } }
 if (COM_BANCO){
-  const _entrou = window.itiaEntrouComo;
-  window.itiaEntrouComo = function(p){
+  const _entrou = window.ciclodevEntrouComo;
+  window.ciclodevEntrouComo = function(p){
     const t0 = performance.now();
     const r = _entrou(p);
     Promise.resolve(r).then(async () => {
       if (!admBanco()) return;
       anotarUso('entrou'); anotarUso('carregou', {ms:performance.now() - t0});
-      const {data} = await window.itiaBanco.rpc('sou_dono_sistema');
+      const {data} = await window.ciclodevBanco.rpc('sou_dono_sistema');
       ADM.dono = data === true;
       const li = document.querySelector('.item[data-tela="admin"]'); if (li) li.parentElement.hidden = !ADM.dono;
       USO.chave = ''; conferirTela();
@@ -91,7 +91,7 @@ const admKpi = (v, t, alerta) => '<div class="kpi' + (alerta ? ' alerta' : '') +
 function rAdmin(){
   const el = $('#m-admin'); if (!el) return;
   if (!ADM.dono){ el.innerHTML = '<p class="vazio-linha">Só o dono do sistema abre este módulo.</p>'; return; }
-  const topo = '<div class="topo-tela"><div><h1><span>Admin</span>' + I('Admin: painel do dono do sistema. Mostra quem usa, quanto usa e como o sistema está respondendo. Não mostra o conteúdo dos projetos de ninguém.') + '</h1><p class="lead">Usuários, cadastro, uso e desempenho do Sistema IT.IA.</p></div>' +
+  const topo = '<div class="topo-tela"><div><h1><span>Admin</span>' + I('Admin: painel do dono do sistema. Mostra quem usa, quanto usa e como o sistema está respondendo. Não mostra o conteúdo dos projetos de ninguém.') + '</h1><p class="lead">Usuários, cadastro, uso e desempenho do CicloDev.</p></div>' +
     '<div class="acoes"><label class="adm-per">Período <select class="sel peq" data-adm-dias>' + [7, 30, 90].map(d => '<option value="' + d + '"' + (ADM.dias === d ? ' selected' : '') + '>Últimos ' + d + ' dias</option>').join('') + '</select></label><button class="btn sec" type="button" data-adm-atualizar' + (ADM.carregando ? ' disabled' : '') + '>' + (ADM.carregando ? 'Atualizando…' : 'Atualizar') + '</button></div></div>';
   const abas = '<div class="adm-abas" role="tablist">' + [['visao','Visão geral'],['usuarios','Usuários' + (ADM.usuarios ? ' (' + ADM.usuarios.length + ')' : '')],['desempenho','Desempenho']].map(([k, n]) => '<button type="button" role="tab" aria-selected="' + (ADM.aba === k) + '" data-adm-aba="' + k + '">' + esc(n) + '</button>').join('') + '</div>';
   if (!ADM.resumo){
@@ -152,7 +152,7 @@ function admCsv(){
   const cols = ['numero','nome','nome_completo','email','usuario','criado_em','email_confirmado','ultimo_acesso','data_nascimento','cpf','cep','logradouro','numero_end','complemento','bairro','cidade','uf','uso','cargo','empresa','termos_aceitos_em','clientes','projetos','aplicacoes','itens','itens_concluidos','compartilhou','recebeu','entradas_30d','dias_ativos_30d','minutos_ativos_30d','erros_30d','indice_uso'];
   const cel = v => { const s = v == null ? '' : String(v); return /[";\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
   const txt = '﻿' + cols.join(';') + '\n' + admFiltrados().map(u => cols.map(c => cel(u[c])).join(';')).join('\n');
-  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([txt], {type:'text/csv;charset=utf-8'})); a.download = 'usuarios-itia-' + new Date().toISOString().slice(0, 10) + '.csv';
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([txt], {type:'text/csv;charset=utf-8'})); a.download = 'usuarios-ciclodev-' + new Date().toISOString().slice(0, 10) + '.csv';
   document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
 }
 async function admFicha(id){
@@ -167,7 +167,7 @@ async function admFicha(id){
     '</div><section class="adm-hist"><h4>Histórico de uso</h4><div data-adm-hist><p class="vazio-linha">Lendo…</p></div></section>';
   const dlg = modal(esc(u.nome_completo || u.nome), corpo, [{txt:'Fechar', cls:'sec'}]);
   dlg.classList.add('adm-modal');
-  const {data, error} = await window.itiaBanco.rpc('admin_historico', {p_pessoa:id, p_limite:200});
+  const {data, error} = await window.ciclodevBanco.rpc('admin_historico', {p_pessoa:id, p_limite:200});
   const alvo = dlg.querySelector('[data-adm-hist]'); if (!alvo) return;
   if (error){ alvo.innerHTML = '<p class="entrada-erro">' + esc(error.message) + '</p>'; return; }
   alvo.innerHTML = (data || []).length ? '<table class="tabela"><thead><tr><th>Quando</th><th>O quê</th><th>Detalhe</th></tr></thead><tbody>' + data.map(e => '<tr><td>' + esc(admHora(e.em)) + '</td><td>' + esc(ADM_EV[e.tipo] || e.tipo) + '</td><td>' + esc(e.tipo === 'tela' ? nomeTela(e.tela) : e.ms != null ? admMs(e.ms) : e.detalhe && e.detalhe.msg ? e.detalhe.msg : '') + '</td></tr>').join('') + '</tbody></table>' : '<p class="vazio-linha">Ainda sem uso registrado.</p>';

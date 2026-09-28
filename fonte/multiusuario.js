@@ -6,8 +6,8 @@ const MU = {eu:null};
 
 /* ---------- entrar: guarda quem sou eu (número de ID e espaço) e tira o "Ver como" ---------- */
 if (COM_BANCO){
-  const _entrouComo = window.itiaEntrouComo;
-  window.itiaEntrouComo = function(p){
+  const _entrouComo = window.ciclodevEntrouComo;
+  window.ciclodevEntrouComo = function(p){
     MU.eu = p || null;
     if (p) p.papel = 'master';          // um nível só: todo usuário tem o sistema inteiro no próprio espaço
     const r = _entrouComo(p);
@@ -123,7 +123,7 @@ async function abrirCompartilhar(chave){
   const noId = chave.split(':')[1];
   dl.addEventListener('submit', async e => {
     const f = e.target.closest('[data-mu-add]'); if (!f) return; e.preventDefault();
-    const q = f.q.value.trim(); if (!q) return; const sb = window.itiaBanco; if (!sb) return;
+    const q = f.q.value.trim(); if (!q) return; const sb = window.ciclodevBanco; if (!sb) return;
     const btn = f.querySelector('button'); btn.disabled = true; msg('');
     try {
       const {data:achou, error:e1} = await sb.rpc('buscar_pessoa', {p_busca:q});
@@ -148,7 +148,7 @@ async function abrirCompartilhar(chave){
     finally { btn.disabled = false; }
   });
   dl.addEventListener('click', async e => {
-    const x = e.target.closest('[data-mu-tirar],[data-mu-tirar-convite]'); if (!x) return; const sb = window.itiaBanco; if (!sb) return;
+    const x = e.target.closest('[data-mu-tirar],[data-mu-tirar-convite]'); if (!x) return; const sb = window.ciclodevBanco; if (!sb) return;
     if (x.dataset.muTirar){
       const {error} = await sb.from('participacoes').delete().match({pessoa_id:x.dataset.muTirar, no_id:noId});
       if (error){ msg('Não deu para tirar o acesso: ' + error.message, true); return; }
@@ -193,7 +193,7 @@ document.addEventListener('click', async e => {
   const nome = ($('[data-mu-perfil=nome]') || {}).value.trim(), usuario = (($('[data-mu-perfil=usuario]') || {}).value || '').trim().toLowerCase().replace(/^@/, '');
   if (nome.length < 2){ toast('Escreva o seu nome'); return; }
   if (usuario && !/^[a-z0-9_.]{3,30}$/.test(usuario)){ toast('O @usuário tem de 3 a 30 letras minúsculas, números, ponto ou sublinhado'); return; }
-  const {data, error} = await window.itiaBanco.from('pessoas').update({nome, usuario:usuario || null}).eq('id', MU.eu.pessoa_id).select('id');
+  const {data, error} = await window.ciclodevBanco.from('pessoas').update({nome, usuario:usuario || null}).eq('id', MU.eu.pessoa_id).select('id');
   if (error){ toast(/duplicate|unique/i.test(error.message) ? 'Esse @usuário já está em uso' : 'Não gravou: ' + error.message); return; }
   if (!data || !data.length){ toast('O banco não deixou gravar'); return; }
   const p = pessoa(MU.eu.pessoa_id); if (p){ p.nome = nome; p.usuario = usuario || null; }

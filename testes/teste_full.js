@@ -18,11 +18,11 @@ const { chromium } = require('/opt/node22/lib/node_modules/playwright');
   const card = await p.$('.cartao');
   const tit = await card.evaluate(e => e.querySelector('.tt').textContent);
   await p.dragAndDrop('.cartao', '[data-soltar-status=done]'); await p.waitForTimeout(200);
-  const st = await p.evaluate(t => { const d = JSON.parse(localStorage.getItem('itia-sistema-dados-v1')); return d.issues.find(i=>i.titulo===t).status; }, tit);
+  const st = await p.evaluate(t => { const d = JSON.parse(localStorage.getItem('ciclodev-dados-v1')); return d.issues.find(i=>i.titulo===t).status; }, tit);
   console.log('drag', tit, '->', st);
   // quick add
   await p.fill('[data-add-status=todo] input', 'Item criado pelo teste'); await p.press('[data-add-status=todo] input', 'Enter');
-  console.log('quick add', await p.evaluate(() => !!JSON.parse(localStorage.getItem('itia-sistema-dados-v1')).issues.find(i=>i.titulo==='Item criado pelo teste')));
+  console.log('quick add', await p.evaluate(() => !!JSON.parse(localStorage.getItem('ciclodev-dados-v1')).issues.find(i=>i.titulo==='Item criado pelo teste')));
   // open drawer
   await p.click('.cartao'); await shot('gaveta');
   await p.click('[data-acao=cron]'); await p.waitForTimeout(1200); await p.click('[data-acao=cron]');

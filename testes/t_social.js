@@ -1,7 +1,7 @@
 // Cadastro completo + módulo Admin, contra um Postgres local com as regras de acesso de verdade (papel authenticated).
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const { execFileSync } = require('child_process');
-const BD = process.env.BD || 'itia_m16';
+const BD = process.env.BD || 'ciclodev_m16';
 const psqlRaw = sql => execFileSync('psql', ['-h', '/tmp', '-p', '55432', '-U', 'postgres', '-d', BD, '-v', 'ON_ERROR_STOP=1', '-Atq', '-c', sql], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
 const lit = o => '$j$' + JSON.stringify(o) + '$j$';
 const ESCALAR = ['admin_resumo', 'sou_dono_sistema'];

@@ -1,4 +1,4 @@
-# Banco do Sistema IT.IA (Supabase `tfcvoszeewmpghgxztuy`, no ar)
+# Banco do CicloDev (Supabase `tfcvoszeewmpghgxztuy`, no ar)
 
 ## Situação: aplicado no Supabase em 26/09/2026
 
@@ -6,12 +6,12 @@ O banco está no ar no projeto `tfcvoszeewmpghgxztuy` ("IT-Systems", Postgres 17
 
 | Migração | O que entrou |
 |---|---|
-| `itia_01` a `itia_07` | As partes 01 a 07 abaixo |
-| `itia_08a` a `itia_08d` | A semente (parte 08) em quatro pedaços, por causa do tamanho |
-| `itia_09`, `itia_10` | Depósito de arquivos e rotinas agendadas |
-| `itia_11_ajustes_verificador` | O que o verificador do Supabase pediu (ver "Ajustes do verificador") |
-| `itia_12_login` | A rotina `vincular_meu_login`: no primeiro login, liga a pessoa do time ao usuário pelo e-mail confirmado e devolve o papel dela (Master, Dev ou Stakeholder) |
-| `itia_13_dominios` | Cadastro de domínios (partes 11 e 12): tabelas `dominios` e `dominios_registros`, a visão `bi.dominios_situacao`, o aviso diário de vencimento para o Master (60, 30, 7, 1 e 0 dias antes) e o `it-ia.tec.br` com os 9 registros do Cloudflare |
+| `ciclodev_01` a `ciclodev_07` | As partes 01 a 07 abaixo |
+| `ciclodev_08a` a `ciclodev_08d` | A semente (parte 08) em quatro pedaços, por causa do tamanho |
+| `ciclodev_09`, `ciclodev_10` | Depósito de arquivos e rotinas agendadas |
+| `ciclodev_11_ajustes_verificador` | O que o verificador do Supabase pediu (ver "Ajustes do verificador") |
+| `ciclodev_12_login` | A rotina `vincular_meu_login`: no primeiro login, liga a pessoa do time ao usuário pelo e-mail confirmado e devolve o papel dela (Master, Dev ou Stakeholder) |
+| `ciclodev_13_dominios` | Cadastro de domínios (partes 11 e 12): tabelas `dominios` e `dominios_registros`, a visão `bi.dominios_situacao`, o aviso diário de vencimento para o Master (60, 30, 7, 1 e 0 dias antes) e o `it-ia.tec.br` com os 9 registros do Cloudflare |
 
 **Conferência feita depois de aplicar:**
 - Dados: as 54 tabelas têm o mesmo número de linhas e o mesmo conteúdo, linha por linha, que o banco de teste montado com estes arquivos. As únicas diferenças são a ordem alfabética de palavras com acento (o Supabase ordena de outro jeito) e a hora de envio das provas, que é a hora em que a semente rodou.
@@ -64,7 +64,7 @@ O banco está no ar no projeto `tfcvoszeewmpghgxztuy` ("IT-Systems", Postgres 17
 | **Nada se apaga no dia a dia** | Item arquivado some das telas e continua guardado; a auditoria guarda o resto |
 | **Segredos: só o nome** | O nome segue o padrão de variável (MAIÚSCULAS) justamente para não caber um valor ali |
 
-## Ajustes do verificador (migração itia_11)
+## Ajustes do verificador (migração ciclodev_11)
 
 | Aviso do Supabase | O que foi feito |
 |---|---|

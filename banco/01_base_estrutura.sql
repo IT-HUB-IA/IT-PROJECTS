@@ -1,5 +1,5 @@
 -- =====================================================================
--- Sistema IT.IA · 01 · Base: schemas, funções de apoio, estrutura (árvore), pessoas e etiquetas
+-- CicloDev · 01 · Base: schemas, funções de apoio, estrutura (árvore), pessoas e etiquetas
 -- Banco: Supabase tfcvoszeewmpghgxztuy
 -- Convenções:
 --   * nomes em português, snake_case; chaves uuid; datas timestamptz (UTC no banco)
@@ -165,7 +165,7 @@ create table public.aplicacoes (
   servico_id     uuid,  -- ligado ao catálogo em 03_comercial
   foreign key (no_id, tipo) references public.nos (id, tipo) on delete cascade
 );
-comment on column public.aplicacoes.origem_codigo is 'proprio: sistema feito pela IT.IA. terceiros: feito por outra empresa e trazido para manutenção.';
+comment on column public.aplicacoes.origem_codigo is 'proprio: sistema feito pela CicloDev. terceiros: feito por outra empresa e trazido para manutenção.';
 
 create table public.frentes (
   no_id       uuid primary key,

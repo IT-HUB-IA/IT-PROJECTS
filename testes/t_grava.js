@@ -1,7 +1,7 @@
 // A tela grava num Postgres local de verdade (mesmas tabelas, regras e gatilhos do Supabase).
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const { execFileSync } = require('child_process');
-const BD = process.env.BD || 'itia_grava';
+const BD = process.env.BD || 'ciclodev_grava';
 const psql = sql => execFileSync('psql', ['-h', '/tmp', '-p', '55432', '-U', 'postgres', '-d', BD, '-v', 'ON_ERROR_STOP=1', '-Atq', '-c', sql], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
 const lit = o => '$j$' + JSON.stringify(o) + '$j$';
 // com a parte 15 (muitos usuários), a tela grava como o usuário logado (papel authenticated), igual ao Supabase
@@ -43,7 +43,7 @@ function q(t){ const st = {t, op:'select', filtro:{}, de:0, ate:998};
     if (k === 'eq') return (c, v) => { st.filtro[c] = v; return px; };
     return () => px; } }); return px; }
 window.supabase = { createClient(){ let sess = {user:{id:'u1', email:'admin@it-ia.tec.br'}}; return { auth:{ async getSession(){ return {data:{session:sess}}; }, onAuthStateChange(){ return {data:{subscription:{unsubscribe(){}}}}; }, async signOut(){} },
-  from:q, async rpc(fn){ if (fn !== 'vincular_meu_login') return {data:null, error:null}; return {data:[{pessoa_id:window.__eu, nome:'William', papel:'master', numero:100001, espaco_id:window.__esp || null}], error:null}; } }; } };`;
+  from:q, async rpc(fn){ if (fn === 'sou_dono_sistema') return {data:true, error:null}; if (fn !== 'vincular_meu_login') return {data:null, error:null}; return {data:[{pessoa_id:window.__eu, nome:'William', papel:'master', numero:100001, espaco_id:window.__esp || null}], error:null}; } }; } };`;
 (async () => {
   prepararLogin();
   const eu = COMO ? 'd148fdc5-eef3-5398-bf89-f49b55b5cd28' : psql("select id from public.pessoas where papel='master' order by nome limit 1").trim();
@@ -56,24 +56,24 @@ window.supabase = { createClient(){ let sess = {user:{id:'u1', email:'admin@it-i
   await p.route('**/supabase-js@*/**', r => r.fulfill({ contentType: 'text/javascript', body: FALSO }));
   await p.route(/fonts\.(googleapis|gstatic)/, r => r.abort());
   await p.goto('file://' + process.cwd() + '/vercel/index.html'); await p.waitForTimeout(2500);
-  ok(await p.evaluate(() => document.body.classList.contains('logado') && window.itiaBancoInfo().carregado), 'entrou e leu o banco local');
-  const espera = async () => { await p.waitForTimeout(500); await p.waitForFunction(() => !window.itiaSync.rodando && !window.itiaSync.pendente, null, {timeout: 20000}); };
-  const semErro = async m => { const e = await p.evaluate(() => window.itiaSync.erros); ok(!e.length, m + (e.length ? ' ' + JSON.stringify(e.slice(0, 3)) : '')); };
+  ok(await p.evaluate(() => document.body.classList.contains('logado') && window.ciclodevBancoInfo().carregado), 'entrou e leu o banco local');
+  const espera = async () => { await p.waitForTimeout(500); await p.waitForFunction(() => !window.ciclodevSync.rodando && !window.ciclodevSync.pendente, null, {timeout: 20000}); };
+  const semErro = async m => { const e = await p.evaluate(() => window.ciclodevSync.erros); ok(!e.length, m + (e.length ? ' ' + JSON.stringify(e.slice(0, 3)) : '')); };
   const conta = sql => psql(sql).trim();
 
   // 1) nada muda: salvar sem mudança não manda nada
-  ops.length = 0; await p.evaluate(() => { window.itiaGravarAgora(); }); await espera();
+  ops.length = 0; await p.evaluate(() => { window.ciclodevGravarAgora(); }); await espera();
   ok(!ops.some(o => !o.startsWith('select')), 'salvar sem mudança não grava nada (' + ops.filter(o => !o.startsWith('select')).length + ' operações)');
 
   // 2) cria cliente, projeto, produto, aplicação, frente e item pela própria estrutura de dados da tela
-  const ids = await p.evaluate(() => { const D = window.itiaDados(); const u = () => crypto.randomUUID();
+  const ids = await p.evaluate(() => { const D = window.ciclodevDados(); const u = () => crypto.randomUUID();
     const c = {id:u(), nome:'Cliente Teste', tipo:'empresa', holding:null, doc:'', status:'active', motivo:''}; D.clients.push(c);
     const pj = {id:u(), client:c.id, nome:'Projeto Teste', status:'active', motivo:'', origem:'greenfield', inicio:'2026-10-01', alvo:'2026-12-01'}; D.projects.push(pj);
     const pr = {id:u(), project:pj.id, client:c.id, nome:'Produto Teste', status:'active', motivo:''}; D.products.push(pr);
     const ap = {id:u(), project:pj.id, product:pr.id, nome:'App Teste', plataforma:'web', status:'active', motivo:'', servico:'', origemCodigo:'proprio'}; D.apps.push(ap);
     const ws = {id:u(), app:ap.id, nome:'Frontend', status:'active', wip:3}; D.ws.push(ws);
     const ep = {id:u(), ws:ws.id, tipo:'epic', titulo:'Epic teste', desc:'', status:'todo', prio:'high', resp:null, rep:null, ini:'2026-10-01', fim:'2026-11-01', alvo:'2026-11-01', est:10, vis:'interno', pai:null, check:[], links:[], coments:[], tempo:[], refs:[], bloco:null};
-    const it = Object.assign({}, ep, {id:u(), tipo:'story', titulo:'História teste', pai:ep.id, check:[{t:'Passo 1', f:false}], coments:[{quem:window.itiaDados().people[0].id, txt:'Primeiro comentário', quando:'2026-10-01', cliente:false}], refs:[{nome:'Figma', tipo:'link', url:'https://figma.com/x'}], links:[]});
+    const it = Object.assign({}, ep, {id:u(), tipo:'story', titulo:'História teste', pai:ep.id, check:[{t:'Passo 1', f:false}], coments:[{quem:window.ciclodevDados().people[0].id, txt:'Primeiro comentário', quando:'2026-10-01', cliente:false}], refs:[{nome:'Figma', tipo:'link', url:'https://figma.com/x'}], links:[]});
     D.issues.push(ep, it);
     const sp = {id:u(), project:pj.id, nome:'Sprint 1', meta:'Meta', ini:'2026-10-01', fim:'2026-10-14', status:'planejado'}; D.sprints.push(sp); it.sprint = sp.id;
     D.marcos.push({id:u(), no:'project:' + pj.id, tipo:'release', nome:'v1', desc:'', data:'2026-11-01', vis:true, entregue:null});
@@ -84,7 +84,7 @@ window.supabase = { createClient(){ let sess = {user:{id:'u1', email:'admin@it-i
     D.opCustos.push({id:u(), nome:'Notebook', cat:'Equipamento', valor:8000, moeda:'BRL', rec:'Depreciação', meses:36});
     D.receitas.push({id:u(), cliente:c.id, project:pj.id, app:'', servico:'', desc:'Implantação', modelo:'fixo', valor:5000, rec:'Parcelado', parcelas:3, inicio:'2026-10-01', fim:''});
     D.people.push({id:u(), nome:'Pessoa Teste', funcao:'Dev', skills:['JS'], cap:30, acesso:'dev', custo:{vinculo:'PJ', salario:0, valorPJ:7000, beneficios:0}});
-    window.itiaGravarAgora(); return {c:c.id, pj:pj.id, ap:ap.id, ws:ws.id, ep:ep.id, it:it.id, sp:sp.id}; });
+    window.ciclodevGravarAgora(); return {c:c.id, pj:pj.id, ap:ap.id, ws:ws.id, ep:ep.id, it:it.id, sp:sp.id}; });
   await espera(); await semErro('criar cliente, projeto, produto, app, frente, épico, história, sprint, marco, tag, status, campo, custos, receita e pessoa sem erro');
   ok(conta("select count(*) from public.nos where id in ('" + [ids.c, ids.pj, ids.ap, ids.ws].join("','") + "')") === '4', 'estrutura gravada no banco');
   ok(conta("select titulo || '|' || coalesce(sprint_id::text,'') from public.itens where id='" + ids.it + "'") === 'História teste|' + ids.sp, 'item gravado com o sprint');
@@ -93,24 +93,24 @@ window.supabase = { createClient(){ let sess = {user:{id:'u1', email:'admin@it-i
 
   // 3) alterar só o que mudou
   ops.length = 0;
-  await p.evaluate(ids => { const D = window.itiaDados(); const i = D.issues.find(x => x.id === ids.it); i.titulo = 'História alterada'; i.status = 'doing'; i.check[0].f = true; window.itiaGravarAgora(); }, ids);
+  await p.evaluate(ids => { const D = window.ciclodevDados(); const i = D.issues.find(x => x.id === ids.it); i.titulo = 'História alterada'; i.status = 'doing'; i.check[0].f = true; window.ciclodevGravarAgora(); }, ids);
   await espera(); await semErro('alterar título, status e checklist sem erro');
   const esc = ops.filter(o => !o.startsWith('select'));
   ok(esc.length === 2 && esc.includes('update itens') && esc.includes('update itens_checklist'), 'mandou só 2 alterações: ' + JSON.stringify(esc));
   ok(conta("select titulo || '|' || (iniciado_em is not null) from public.itens where id='" + ids.it + "'") === 'História alterada|true', 'título mudou e o banco marcou o início sozinho');
 
   // 4) status personalizado e concluir
-  await p.evaluate(ids => { const D = window.itiaDados(); const i = D.issues.find(x => x.id === ids.it); const s = D.statusCustom.find(x => x.nome === 'Aguardando teste'); i.st = s.id; i.status = 'blocked'; window.itiaGravarAgora(); }, ids);
+  await p.evaluate(ids => { const D = window.ciclodevDados(); const i = D.issues.find(x => x.id === ids.it); const s = D.statusCustom.find(x => x.nome === 'Aguardando teste'); i.st = s.id; i.status = 'blocked'; window.ciclodevGravarAgora(); }, ids);
   await espera(); await semErro('status personalizado grava');
-  await p.evaluate(ids => { const D = window.itiaDados(); const i = D.issues.find(x => x.id === ids.it); delete i.st; i.status = 'done'; window.itiaGravarAgora(); }, ids);
+  await p.evaluate(ids => { const D = window.ciclodevDados(); const i = D.issues.find(x => x.id === ids.it); delete i.st; i.status = 'done'; window.ciclodevGravarAgora(); }, ids);
   await espera(); ok(conta("select concluido_em is not null from public.itens where id='" + ids.it + "'") === 't', 'concluir: o banco grava a data de conclusão');
 
   // 5) recarregar e conferir que a tela volta igual (ida e volta)
-  const antes = await p.evaluate(() => JSON.stringify(window.itiaDados().issues.map(i => [i.id, i.titulo, i.status, i.sprint, i.check.length, i.coments.length]).sort()));
+  const antes = await p.evaluate(() => JSON.stringify(window.ciclodevDados().issues.map(i => [i.id, i.titulo, i.status, i.sprint, i.check.length, i.coments.length]).sort()));
   await p.reload(); await p.waitForTimeout(2500);
-  const depois = await p.evaluate(() => JSON.stringify(window.itiaDados().issues.map(i => [i.id, i.titulo, i.status, i.sprint, i.check.length, i.coments.length]).sort()));
+  const depois = await p.evaluate(() => JSON.stringify(window.ciclodevDados().issues.map(i => [i.id, i.titulo, i.status, i.sprint, i.check.length, i.coments.length]).sort()));
   ok(antes === depois, 'depois de recarregar, os itens voltam iguais do banco');
-  ops.length = 0; await p.evaluate(() => window.itiaGravarAgora()); await espera();
+  ops.length = 0; await p.evaluate(() => window.ciclodevGravarAgora()); await espera();
   ok(!ops.some(o => !o.startsWith('select')), 'depois de recarregar, nada fica "pendente" para gravar');
 
   // 6) pela tela: criar item pelo Quick add do Board
@@ -125,7 +125,7 @@ window.supabase = { createClient(){ let sess = {user:{id:'u1', email:'admin@it-i
 
   // 6b) alterar um registro de cada tipo (todas as tabelas) e recarregar
   ops.length = 0;
-  await p.evaluate(() => { const D = window.itiaDados(); const um = l => l && l[0];
+  await p.evaluate(() => { const D = window.ciclodevDados(); const um = l => l && l[0];
     um(D.clients).nome += ' ✓'; um(D.clients).sla = {parado:[2, 10]};
     um(D.projects).alvo = '2027-03-01'; um(D.products).nome += ' ✓'; um(D.apps).plataforma = 'mobile'; um(D.ws).wip = 5;
     const pe = D.people.find(x => x.acesso !== 'owner') || D.people[0]; pe.cap = 25; pe.skills = ['A', 'B']; if (pe.custo) pe.custo.beneficios = 123;
@@ -147,43 +147,43 @@ window.supabase = { createClient(){ let sess = {user:{id:'u1', email:'admin@it-i
     const k = Object.keys(D.stages)[0]; if (k){ const s2 = D.stages[k]; const mid = D.template[1].itens[0].id; s2[mid] = {feito:true, quem:D.people[0].id, quando:'2026-09-28', prova:{tipo:'Texto', valor:'ok'}}; }
     const ag = um(D.agents); ag.instr = 'mudou'; ag.fontes.push('Fonte nova'); ag.ferramentas[0][1] = 'Livre';
     const r = um(D.requests); if (r){ r.status = 'Resolvido'; r.msgs.push({de:'voce', txt:'Resolvido, obrigado'}); }
-    window.itiaGravarAgora(); });
+    window.ciclodevGravarAgora(); });
   await espera(); await semErro('alterar um registro de cada tabela sem erro');
   const tabs = [...new Set(ops.filter(o => /^(update|insert|upsert|delete) /.test(o)).map(o => o.split(' ')[1]))].sort();
   console.log('     tabelas gravadas:', tabs.join(', '));
   ok(tabs.length >= 25, 'gravou em ' + tabs.length + ' tabelas diferentes');
-  const snap = () => p.evaluate(() => { const D = window.itiaDados(); return JSON.stringify([D.clients[0].nome, D.clients[0].sla, D.apps[0].plataforma, D.ws[0].wip, D.regras.margem, D.opCustos[0].valor, D.receitas[0] && D.receitas[0].valor, D.sprints[0] && D.sprints[0].meta, D.agents[0].instr, D.agents[0].fontes.length, D.template[0].expl, D.requests[0] && D.requests[0].status, D.catalog[0].horas]); });
+  const snap = () => p.evaluate(() => { const D = window.ciclodevDados(); return JSON.stringify([D.clients[0].nome, D.clients[0].sla, D.apps[0].plataforma, D.ws[0].wip, D.regras.margem, D.opCustos[0].valor, D.receitas[0] && D.receitas[0].valor, D.sprints[0] && D.sprints[0].meta, D.agents[0].instr, D.agents[0].fontes.length, D.template[0].expl, D.requests[0] && D.requests[0].status, D.catalog[0].horas]); });
   const a1 = await snap(); await p.reload(); await p.waitForTimeout(2500); const a2 = await snap();
   if (a1 !== a2) console.log('ANTES ', a1, '\nDEPOIS', a2);
   ok(a1 === a2, 'depois de recarregar, tudo o que mudou voltou do banco');
   if (a1 !== a2) console.log('     antes ', a1, '\n     depois', a2);
-  ops.length = 0; await p.evaluate(() => window.itiaGravarAgora()); await espera();
+  ops.length = 0; await p.evaluate(() => window.ciclodevGravarAgora()); await espera();
   ok(!ops.some(o => !o.startsWith('select')), 'e nada fica pendente depois de recarregar ' + JSON.stringify(ops.filter(o => !o.startsWith('select')).slice(0, 6)));
 
   // 6c) Board no formato Jira: sinal, pessoas, etiquetas, ordem, colunas e equipes
-  await p.evaluate(() => { const D = window.itiaDados(); const i = D.issues[0], pj = D.projects[0];
+  await p.evaluate(() => { const D = window.ciclodevDados(); const i = D.issues[0], pj = D.projects[0];
     i.sinal = new Date().toISOString(); i.motivoSinal = 'Esperando acesso'; i.membros = [D.people[0].id]; i.observadores = [D.people[0].id]; i.votos = [D.people[0].id];
     i.etiquetas = [D.tags[0].id]; i.ordem = 12.5; i.restante = 3; i.resolucao = 'feito'; if (i.check[0]){ i.check[0].grupo = 'Revisão'; i.check[0].prazo = '2026-10-10'; }
     D.boards['project:' + pj.id] = {tipo:'scrum', estimativa:'horas', backlog:true, subtarefas:false, colunas:[{id:crypto.randomUUID(), nome:'A fazer', ordem:0, min:null, max:5, status:['backlog','todo']}, {id:crypto.randomUUID(), nome:'Fazendo', ordem:1, min:1, max:3, status:['doing','review','blocked']}, {id:crypto.randomUUID(), nome:'Pronto', ordem:2, min:null, max:null, status:['done']}]};
     D.equipes.push({id:crypto.randomUUID(), nome:'Time do teste', desc:'teste', cor:'#123456', ativa:true, membros:[{pessoa:D.people[0].id, papel:'lider'}], nos:[{no:'project:' + pj.id, papel:'dev'}]});
-    window.itiaGravarAgora(); });
+    window.ciclodevGravarAgora(); });
   await espera(); await semErro('gravar sinal, pessoas, etiquetas, ordem, colunas do Board e equipe sem erro');
-  const s1 = await p.evaluate(() => { const D = window.itiaDados(); const i = D.issues.find(x => x.sinal); const b = Object.values(D.boards)[0]; const q = D.equipes.find(x => x.nome === 'Time do teste');
+  const s1 = await p.evaluate(() => { const D = window.ciclodevDados(); const i = D.issues.find(x => x.sinal); const b = Object.values(D.boards)[0]; const q = D.equipes.find(x => x.nome === 'Time do teste');
     return JSON.stringify([i && i.motivoSinal, i && i.membros.length, i && i.observadores.length, i && i.votos.length, i && i.etiquetas.length, i && i.ordem, i && i.restante, i && i.resolucao, b && b.tipo, b && b.colunas.map(c => c.nome + ':' + c.status.join('+') + ':' + c.max).join('|'), q && q.membros.length, q && q.nos.length]); });
   await p.reload(); await p.waitForTimeout(2500);
-  const s2 = await p.evaluate(() => { const D = window.itiaDados(); const i = D.issues.find(x => x.sinal); const b = Object.values(D.boards)[0]; const q = D.equipes.find(x => x.nome === 'Time do teste');
+  const s2 = await p.evaluate(() => { const D = window.ciclodevDados(); const i = D.issues.find(x => x.sinal); const b = Object.values(D.boards)[0]; const q = D.equipes.find(x => x.nome === 'Time do teste');
     return JSON.stringify([i && i.motivoSinal, i && i.membros.length, i && i.observadores.length, i && i.votos.length, i && i.etiquetas.length, i && i.ordem, i && i.restante, i && i.resolucao, b && b.tipo, b && b.colunas.map(c => c.nome + ':' + c.status.join('+') + ':' + c.max).join('|'), q && q.membros.length, q && q.nos.length]); });
   ok(s1 === s2, 'Board no formato Jira volta igual do banco: ' + s2);
-  ops.length = 0; await p.evaluate(() => window.itiaGravarAgora()); await espera();
+  ops.length = 0; await p.evaluate(() => window.ciclodevGravarAgora()); await espera();
   ok(!ops.some(o => !o.startsWith('select')), 'e nada fica pendente ' + JSON.stringify(ops.filter(o => !o.startsWith('select')).slice(0, 5)));
-  ok(await p.evaluate(() => window.itiaDados().issues.every(i => !!i.chave)), 'todo item tem chave vinda do banco (BL-123)');
-  await p.evaluate(() => { const D = window.itiaDados(); const ws = D.ws[0]; const ni = {id:crypto.randomUUID(), ws:ws.id, tipo:'task', titulo:'Item com chave nova', desc:'', status:'todo', prio:'lowest', resp:null, rep:null, ini:null, fim:null, alvo:null, est:null, vis:'interno', pai:null, check:[], links:[], coments:[], tempo:[], refs:[], bloco:null, membros:[], observadores:[], votos:[], etiquetas:[], ordem:1}; D.issues.push(ni); window.itiaGravarAgora(); });
+  ok(await p.evaluate(() => window.ciclodevDados().issues.every(i => !!i.chave)), 'todo item tem chave vinda do banco (BL-123)');
+  await p.evaluate(() => { const D = window.ciclodevDados(); const ws = D.ws[0]; const ni = {id:crypto.randomUUID(), ws:ws.id, tipo:'task', titulo:'Item com chave nova', desc:'', status:'todo', prio:'lowest', resp:null, rep:null, ini:null, fim:null, alvo:null, est:null, vis:'interno', pai:null, check:[], links:[], coments:[], tempo:[], refs:[], bloco:null, membros:[], observadores:[], votos:[], etiquetas:[], ordem:1}; D.issues.push(ni); window.ciclodevGravarAgora(); });
   await espera(); await semErro('criar item com prioridade Lowest');
-  ok(await p.evaluate(() => /^[A-Z0-9]+-\d+$/.test((window.itiaDados().issues.find(i => i.titulo === 'Item com chave nova') || {}).chave || '')), 'o item novo recebe a chave do banco na hora: ' + await p.evaluate(() => (window.itiaDados().issues.find(i => i.titulo === 'Item com chave nova') || {}).chave));
+  ok(await p.evaluate(() => /^[A-Z0-9]+-\d+$/.test((window.ciclodevDados().issues.find(i => i.titulo === 'Item com chave nova') || {}).chave || '')), 'o item novo recebe a chave do banco na hora: ' + await p.evaluate(() => (window.ciclodevDados().issues.find(i => i.titulo === 'Item com chave nova') || {}).chave));
 
   // 7) apagar: item, frente e cliente somem do banco
-  await p.evaluate(ids => { const D = window.itiaDados(); D.issues = D.issues.filter(i => ![ids.it, ids.ep].includes(i.id) && i.ws !== ids.ws);
-    D.ws = D.ws.filter(w => w.id !== ids.ws); window.itiaGravarAgora(); }, ids);
+  await p.evaluate(ids => { const D = window.ciclodevDados(); D.issues = D.issues.filter(i => ![ids.it, ids.ep].includes(i.id) && i.ws !== ids.ws);
+    D.ws = D.ws.filter(w => w.id !== ids.ws); window.ciclodevGravarAgora(); }, ids);
   await espera(); await semErro('apagar itens e frente sem erro');
   ok(conta("select count(*) from public.itens where id in ('" + ids.it + "','" + ids.ep + "')") === '0' && conta("select count(*) from public.nos where id='" + ids.ws + "'") === '0', 'itens e frente apagados no banco');
   ok(erros.length === 0, 'sem erro na página ' + JSON.stringify(erros.slice(0, 3)));

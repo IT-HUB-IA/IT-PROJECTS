@@ -1,5 +1,5 @@
 -- =====================================================================
--- Sistema IT.IA · 05 · BI: toda conta do sistema mora aqui, num lugar só
+-- CicloDev · 05 · BI: toda conta do sistema mora aqui, num lugar só
 -- Critério de desempenho:
 --   * o que é pequeno e muda toda hora (custos, receitas, painel) é calculado na hora, com índice;
 --   * o que é histórico e cresce sem parar (ritmo semanal dos itens) fica numa visão materializada

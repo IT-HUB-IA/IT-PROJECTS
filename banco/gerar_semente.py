@@ -35,7 +35,7 @@ def ins(tabela, linhas, conflito='do nothing'):
 ST = {'active': 'ativo', 'on_hold': 'pausado', 'done': 'concluido', 'archived': 'arquivado'}
 
 w('-- =====================================================================')
-w('-- Sistema IT.IA · 08 · Semente: os dados de exemplo que o sistema já mostra (gerado por gerar_semente.py)')
+w('-- CicloDev · 08 · Semente: os dados de exemplo que o sistema já mostra (gerado por gerar_semente.py)')
 w('-- Pode rodar de novo: nada duplica. As datas relativas foram calculadas em %s.' % HOJE.isoformat())
 w('-- =====================================================================')
 w('begin;')

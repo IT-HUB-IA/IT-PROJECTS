@@ -4,7 +4,7 @@ const { chromium } = require('/opt/node22/lib/node_modules/playwright');
   const erros = []; p.on('pageerror', e => erros.push(e.message));
   const ok = (cond, msg) => { console.log((cond ? 'OK   ' : 'FALHA') + ' ' + msg); if (!cond) erros.push('FALHA: ' + msg); };
   await p.goto('file://' + process.cwd() + '/wrap.html'); await p.evaluate(() => localStorage.clear()); await p.reload(); await p.waitForTimeout(300);
-  const D = () => p.evaluate(() => JSON.parse(JSON.stringify(window.itiaDados())));
+  const D = () => p.evaluate(() => JSON.parse(JSON.stringify(window.ciclodevDados())));
   let d = await D();
   ok(d.sprints.length === 1 && d.marcos.length === 3 && d.automacoes.length === 2 && d.statusCustom.length === 1, 'dados novos criados na primeira carga');
   // Board com coluna personalizada
@@ -59,7 +59,7 @@ const { chromium } = require('/opt/node22/lib/node_modules/playwright');
   await p.screenshot({path:'rc_gaveta.png'});
   await p.click('.gaveta-cab [data-fechar-gaveta]'); await p.waitForTimeout(150);
   // automação: bug concluído avisa quem abriu
-  await p.evaluate(() => { const D = window.itiaDados(); const bug = D.issues.find(i => i.tipo === 'bug' && i.status !== 'done'); bug.rep = 'pe_w'; window.__bug = bug.id; });
+  await p.evaluate(() => { const D = window.ciclodevDados(); const bug = D.issues.find(i => i.tipo === 'bug' && i.status !== 'done'); bug.rep = 'pe_w'; window.__bug = bug.id; });
   const bugId = await p.evaluate(() => window.__bug);
   await p.evaluate(id => { const b = document.createElement('button'); b.dataset.abrirItem = id; document.body.appendChild(b); b.click(); b.remove(); }, bugId); await p.waitForTimeout(200);
   await p.selectOption('.gaveta select[data-g=status]', 'done'); await p.waitForTimeout(200);

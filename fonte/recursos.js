@@ -394,7 +394,7 @@ rOperacoes = function(){
   const arv = $('.ops-arvore [role="tree"]');
   if (arv) arv.insertAdjacentHTML('afterbegin', '<div class="no-arv rc-tudo" data-rc-tudo role="treeitem" aria-selected="false" style="padding-left:8px"><span class="seta"></span><span class="nome">Everything</span><span class="tipo">tudo</span></div>');
   if (tipo === 'app' && podeEditar()){ const a = byId('apps', id); const ac = $('.ops-cab .acoes');
-    if (a && ac) ac.insertAdjacentHTML('afterbegin', '<label class="rotulo-mini" style="display:flex;gap:8px;align-items:center">Código' + I('Origem do código: nosso (feito pela IT.IA) ou de terceiros (feito por outra empresa). Quando é de terceiros, o Discovery ganha itens a mais para entender o código antes de mexer.') + '<select class="sel peq" data-rc-origem="' + a.id + '"><option value="proprio"' + (a.origemCodigo !== 'terceiros' ? ' selected' : '') + '>Nosso</option><option value="terceiros"' + (a.origemCodigo === 'terceiros' ? ' selected' : '') + '>De terceiros</option></select></label>'); }
+    if (a && ac) ac.insertAdjacentHTML('afterbegin', '<label class="rotulo-mini" style="display:flex;gap:8px;align-items:center">Código' + I('Origem do código: nosso (feito pela CicloDev) ou de terceiros (feito por outra empresa). Quando é de terceiros, o Discovery ganha itens a mais para entender o código antes de mexer.') + '<select class="sel peq" data-rc-origem="' + a.id + '"><option value="proprio"' + (a.origemCodigo !== 'terceiros' ? ' selected' : '') + '>Nosso</option><option value="terceiros"' + (a.origemCodigo === 'terceiros' ? ' selected' : '') + '>De terceiros</option></select></label>'); }
 };
 function rEverything(){
   const el = $('#m-operacoes');
@@ -683,7 +683,7 @@ function slaDoPedido(r){
 const _formCliente = formCliente;
 formCliente = function(c){
   const s = (c && c.sla) || SLA_PADRAO;
-  return _formCliente(c) + '<div class="bloco-g"><h4>SLA' + I('SLA (prazo combinado): o tempo máximo para a IT.IA responder e resolver um pedido deste cliente, por gravidade. O Service Desk avisa quando um pedido passa do prazo.') + '</h4><div class="tabela-rolo"><table class="tabela"><thead><tr><th>Gravidade</th><th>Responder em (horas)</th><th>Resolver em (horas)</th></tr></thead><tbody>' +
+  return _formCliente(c) + '<div class="bloco-g"><h4>SLA' + I('SLA (prazo combinado): o tempo máximo para a CicloDev responder e resolver um pedido deste cliente, por gravidade. O Service Desk avisa quando um pedido passa do prazo.') + '</h4><div class="tabela-rolo"><table class="tabela"><thead><tr><th>Gravidade</th><th>Responder em (horas)</th><th>Resolver em (horas)</th></tr></thead><tbody>' +
     [['parado','Sistema parado'],['quebrada','Função quebrada'],['incomodo','Incômodo'],['cosmetico','Cosmético']].map(([k, n]) => '<tr><th scope="row">' + n + '</th><td><input class="campo peq" type="number" min="0" step="0.5" data-rc-sla="' + k + '|0" value="' + (s[k] || SLA_PADRAO[k])[0] + '"></td><td><input class="campo peq" type="number" min="0" step="0.5" data-rc-sla="' + k + '|1" value="' + (s[k] || SLA_PADRAO[k])[1] + '"></td></tr>').join('') + '</tbody></table></div></div>';
 };
 const _salvarCliente = salvarCliente;
@@ -841,28 +841,28 @@ salvar();
 setTimeout(atualizarSino, 0);
 
 /* ---------- login: quem entrou define o papel (só na versão com login) ---------- */
-window.itiaEntrouComo = function(p){
+window.ciclodevEntrouComo = function(p){
   if (!p || !['master','dev','stakeholder'].includes(p.papel)) return;
   UI.verComo = p.papel;
   const s = $('#ver-como');
   if (s){ s.value = p.papel; s.hidden = p.papel !== 'master'; const r = s.closest('.menu-rodape'); if (r){ const l = r.querySelector('label[for=ver-como]'); if (l) l.hidden = p.papel !== 'master'; } }
   const seguir = () => { document.body.classList.add('logado'); aplicarVerComo(); salvarUI(); abrirModulo(UI.modulo); };
-  if (COM_BANCO && window.itiaBanco) return carregarDoBanco(p).then(seguir, e => { toast('Não foi possível ler o banco: ' + e.message); seguir(); });
+  if (COM_BANCO && window.ciclodevBanco) return carregarDoBanco(p).then(seguir, e => { toast('Não foi possível ler o banco: ' + e.message); seguir(); });
   seguir();
 };
 
 /* ---------- Costs › Domínios. Com login (versão publicada) lê e grava no banco; sem login, usa os dados de exemplo ---------- */
 ABAS_CUSTO.push(['dominios','Domínios']);
 const DOM = {cache:null, carregando:false, aberto:null, erro:null};
-const domBanco = () => (window.itiaBanco && document.body.classList.contains('logado')) ? window.itiaBanco : null;
+const domBanco = () => (window.ciclodevBanco && document.body.classList.contains('logado')) ? window.ciclodevBanco : null;
 const DOM_TIPOS = ['CNAME','A','AAAA','MX','TXT','NS','CAA','Túnel','Outro'];
 function domSemente(){
   if (D.dominios) return;
   const r = (nome, tipo, aponta_para, servico, para_que, proxy) => ({id:uid('dr'), nome, tipo, aponta_para, servico, para_que, proxy:!!proxy});
   D.dominios = [{id:'dm_1', nome:'it-ia.tec.br', no_id:null, registrador:'Registro.br', dns_em:'Cloudflare', servidores_dns:['karsyn.ns.cloudflare.com','kellen.ns.cloudflare.com'],
     comprado_em:'2026-09-09', vence_em:'2036-09-09', renovacao_automatica:null, custo_operacao_id:null, custo_tecnico_id:null, email_provedor:'Google (Gmail)', acesso_onde:null,
-    observacoes:'Domínio da própria IT.IA. Envio de e-mails do sistema pelo Resend (domínio verificado).',
-    registros:[r('system','CNAME','cname.vercel-dns.com','Vercel','Sistema IT.IA (system.it-ia.tec.br)'), r('conversor','Túnel','conversor-billy','Cloudflare Tunnel','Conversor do Billy',true),
+    observacoes:'Domínio da própria CicloDev. Envio de e-mails do sistema pelo Resend (domínio verificado).',
+    registros:[r('system','CNAME','cname.vercel-dns.com','Vercel','CicloDev (system.it-ia.tec.br)'), r('conversor','Túnel','conversor-billy','Cloudflare Tunnel','Conversor do Billy',true),
       r('@','MX','smtp.google.com','Google','Receber e-mails do domínio'), r('@','TXT','v=spf1 include:_spf.google.com ~all','Google','SPF: quem pode enviar e-mail pelo domínio'),
       r('_dmarc','TXT','v=DMARC1; p=reject;','E-mail','DMARC: recusar e-mail falso com o domínio'), r('@','TXT','google-site-verification (valor no Cloudflare)','Google','Prova de que o domínio é nosso para o Google'),
       r('resend._domainkey','TXT','chave DKIM do Resend (valor no Cloudflare)','Resend','Assinatura dos e-mails enviados pelo Resend'),
@@ -902,7 +902,7 @@ function domSituacao(d){
   if (dias <= 60) return ['Vence em ' + dias + ' dias', 'alerta'];
   return ['Em dia', ''];
 }
-const domDono = d => { const x = DOM.cache.donos.find(o => o.id === d.no_id); return x ? x.nome : 'IT.IA'; };
+const domDono = d => { const x = DOM.cache.donos.find(o => o.id === d.no_id); return x ? x.nome : 'CicloDev'; };
 const domCusto = d => { const k = d.custo_operacao_id ? 'op:' + d.custo_operacao_id : d.custo_tecnico_id ? 'tec:' + d.custo_tecnico_id : ''; const x = DOM.cache.custos.find(o => o.id === k); return x ? x.nome : ''; };
 const domHost = (r, d) => r.nome === '@' ? d.nome : r.nome + '.' + d.nome;
 function domDominios(){
@@ -952,7 +952,7 @@ function domForm(d){
   modal(d.id ? 'Editar ' + esc(d.nome) : 'Novo domínio',
     '<div class="grade-form">' +
     '<label class="lb">Domínio<input class="campo" id="dm-n" value="' + esc(d.nome || '') + '" placeholder="exemplo.com.br" autocomplete="off"></label>' +
-    '<label class="lb">Empresa dona' + I('Empresa dona: a quem o domínio pertence. Vazio quer dizer que é da própria IT.IA') + '<select class="sel" id="dm-dono"><option value="">IT.IA</option>' + ['cliente','projeto','produto','aplicacao'].map(t => donos.filter(o => o.tipo === t).length ? '<optgroup label="' + rot[t] + '">' + donos.filter(o => o.tipo === t).map(o => '<option value="' + o.id + '"' + (d.no_id === o.id ? ' selected' : '') + '>' + esc(o.nome) + '</option>').join('') + '</optgroup>' : '').join('') + '</select></label>' +
+    '<label class="lb">Empresa dona' + I('Empresa dona: a quem o domínio pertence. Vazio quer dizer que é da própria CicloDev') + '<select class="sel" id="dm-dono"><option value="">CicloDev</option>' + ['cliente','projeto','produto','aplicacao'].map(t => donos.filter(o => o.tipo === t).length ? '<optgroup label="' + rot[t] + '">' + donos.filter(o => o.tipo === t).map(o => '<option value="' + o.id + '"' + (d.no_id === o.id ? ' selected' : '') + '>' + esc(o.nome) + '</option>').join('') + '</optgroup>' : '').join('') + '</select></label>' +
     '<label class="lb">Comprado em (registrador)' + I('Registrador: a empresa onde o domínio foi comprado e é renovado, como o Registro.br') + '<input class="campo" id="dm-reg" value="' + esc(d.registrador || 'Registro.br') + '"></label>' +
     '<label class="lb">Onde o DNS é administrado<input class="campo" id="dm-dns" value="' + esc(d.dns_em || '') + '" placeholder="Cloudflare"></label>' +
     '<label class="lb">Servidores de DNS' + I('Servidores de DNS: os endereços que o registrador usa para saber onde o DNS do domínio fica. Separe por vírgula') + '<input class="campo" id="dm-ns" value="' + esc((d.servidores_dns || []).join(', ')) + '"></label>' +
@@ -961,7 +961,7 @@ function domForm(d){
     '<label class="lb">Renovação<select class="sel" id="dm-ren"><option value=""' + (d.renovacao_automatica == null ? ' selected' : '') + '>Não informada</option><option value="sim"' + (d.renovacao_automatica === true ? ' selected' : '') + '>Automática</option><option value="nao"' + (d.renovacao_automatica === false ? ' selected' : '') + '>Manual</option></select></label>' +
     '<label class="lb">Custo' + I('Custo: liga o domínio a um custo já cadastrado em Costs, para ele entrar nas contas sem ser digitado duas vezes') + '<select class="sel" id="dm-custo"><option value="">Não ligado a um custo</option>' + grupos.map(g => '<optgroup label="' + g + '">' + custos.filter(c => c.grupo === g).map(c => '<option value="' + c.id + '"' + (custoAtual === c.id ? ' selected' : '') + '>' + esc(c.nome) + '</option>').join('') + '</optgroup>').join('') + '</select></label>' +
     '<label class="lb">E-mail do domínio<input class="campo" id="dm-em" value="' + esc(d.email_provedor || '') + '" placeholder="Google, Microsoft, nenhum"></label>' +
-    '<label class="lb">Onde fica o acesso ao painel' + I('Onde fica o acesso: em qual cofre ou com quem está a senha do painel. Nunca escreva a senha aqui') + '<input class="campo" id="dm-ac" value="' + esc(d.acesso_onde || '') + '" placeholder="Ex.: cofre de senhas da IT.IA (nunca a senha)"></label>' +
+    '<label class="lb">Onde fica o acesso ao painel' + I('Onde fica o acesso: em qual cofre ou com quem está a senha do painel. Nunca escreva a senha aqui') + '<input class="campo" id="dm-ac" value="' + esc(d.acesso_onde || '') + '" placeholder="Ex.: cofre de senhas da CicloDev (nunca a senha)"></label>' +
     '<label class="lb">Observações<textarea class="campo" id="dm-ob" rows="2">' + esc(d.observacoes || '') + '</textarea></label></div>',
     [{txt:'Cancelar', cls:'sec'}, {txt:'Salvar', acao:dlg => {
       const nome = $('#dm-n', dlg).value.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
@@ -1228,7 +1228,7 @@ function montarDados(T, eu){
 }
 
 async function carregarDoBanco(eu){
-  const sb = window.itiaBanco; if (!sb) return;
+  const sb = window.ciclodevBanco; if (!sb) return;
   const T = {}; BANCO.erros = [];
   await Promise.all(TABELAS_BANCO.map(async t => { try { T[t] = await lerTabela(sb, t); } catch(e){ T[t] = []; BANCO.erros.push(e.message); } }));
   clearTimeout(SYNC.timer);
@@ -1245,8 +1245,8 @@ async function carregarDoBanco(eu){
   const chip = $('.chip-exemplo'); if (chip){ chip.textContent = 'Dados do banco'; chip.classList.add('do-banco'); chip.title = 'Tudo nesta tela vem do banco (Supabase), lido em ' + BANCO.quando.toLocaleString('pt-BR'); }
   if (BANCO.erros.length){ console.warn('Tabelas que não deu para ler:', BANCO.erros); toast('Algumas partes do banco não puderam ser lidas (' + BANCO.erros.length + '). Veja em Settings.'); }
 }
-window.itiaCarregarBanco = carregarDoBanco;
-window.itiaBancoInfo = () => BANCO;
+window.ciclodevCarregarBanco = carregarDoBanco;
+window.ciclodevBancoInfo = () => BANCO;
 function painelBanco(){
   const b = BANCO, cont = [['Pessoas', D.people.length], ['Clientes', D.clients.length], ['Projetos', D.projects.length], ['Produtos', D.products.length], ['Aplicações', D.apps.length],
     ['Frentes', D.ws.length], ['Itens', D.issues.length], ['Pedidos', D.requests.length], ['Serviços', D.catalog.length], ['Custos técnicos', D.custos.length],
@@ -1334,8 +1334,8 @@ async function fcSalvar(){
   const doc = val('documento'), nd = somenteNum(doc);
   if (doc && nd.length !== 11 && nd.length !== 14){ toast('O CNPJ tem 14 números e o CPF tem 11'); return; }
   const btn = dlg.querySelector('[data-fc-salvar]'); if (btn) btn.disabled = true;
-  if (COM_BANCO && window.itiaBanco){
-    const {data, error} = await window.itiaBanco.from('clientes').update(Object.assign({documento: doc ? fmtDoc(doc) : null}, novo)).eq('no_id', c.id).select('no_id');
+  if (COM_BANCO && window.ciclodevBanco){
+    const {data, error} = await window.ciclodevBanco.from('clientes').update(Object.assign({documento: doc ? fmtDoc(doc) : null}, novo)).eq('no_id', c.id).select('no_id');
     if (btn) btn.disabled = false;
     if (error){ toast('Não gravou no banco: ' + error.message); return; }
     if (!data || !data.length){ toast('O banco não deixou gravar (confira se você entrou como Master)'); return; }
@@ -1491,7 +1491,7 @@ function marcarBase(){ SYNC.base = indexar(JSON.parse(JSON.stringify(linhasDaTel
 function selo(txt, erro){ const c = $('.chip-exemplo'); if (!c) return; c.textContent = txt; c.classList.toggle('com-erro', !!erro); }
 
 async function gravarNoBanco(){
-  const sb = window.itiaBanco; if (!sb || !SYNC.base) return;
+  const sb = window.ciclodevBanco; if (!sb || !SYNC.base) return;
   if (SYNC.rodando){ SYNC.deNovo = true; return; }
   SYNC.rodando = true; SYNC.pendente = false; SYNC.erros = []; selo('Salvando...');
   const agora = indexar(JSON.parse(JSON.stringify(linhasDaTela(D))));
@@ -1541,5 +1541,5 @@ if (COM_BANCO){
   checarPrazosVencidos = function(){};
   window.addEventListener('beforeunload', e => { if (SYNC.rodando || SYNC.pendente){ e.preventDefault(); e.returnValue = ''; } });
 }
-window.itiaGravarAgora = gravarNoBanco;
-window.itiaSync = SYNC;
+window.ciclodevGravarAgora = gravarNoBanco;
+window.ciclodevSync = SYNC;

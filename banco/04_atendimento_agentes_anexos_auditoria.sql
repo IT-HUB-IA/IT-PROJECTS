@@ -1,5 +1,5 @@
 -- =====================================================================
--- Sistema IT.IA · 04 · Service Desk, agentes, anexos e auditoria
+-- CicloDev · 04 · Service Desk, agentes, anexos e auditoria
 -- =====================================================================
 
 -- SLA: prazo combinado por nível da estrutura (vale o mais próximo acima do pedido)

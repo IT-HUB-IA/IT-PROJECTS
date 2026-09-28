@@ -23,7 +23,7 @@ f1 = [defs]
 f1.append(caixa(20, 40, 170, 60, 'Master', ['vê e muda tudo']))
 f1.append(caixa(20, 130, 170, 60, 'Dev', ['onde participa']))
 f1.append(caixa(20, 220, 170, 60, 'Stakeholder', ['só o visível']))
-f1.append(caixa(270, 40, 250, 240, 'Sistema IT.IA (a tela)', ['Overview · Operações', 'Clients · Catalog · Costs', 'Service Desk · Team', 'Agent Studio · Playbook', 'Settings', '', 'Board, Table, Calendar...', 'leem o mesmo registro']))
+f1.append(caixa(270, 40, 250, 240, 'CicloDev (a tela)', ['Overview · Operações', 'Clients · Catalog · Costs', 'Service Desk · Team', 'Agent Studio · Playbook', 'Settings', '', 'Board, Table, Calendar...', 'leem o mesmo registro']))
 f1.append(caixa(600, 40, 230, 110, 'Rotinas (RPC)', ['mover na estrutura', 'foco e cronômetro', 'converter pedido', 'cumprir etapa']))
 f1.append(caixa(600, 170, 230, 110, 'Regras de acesso (RLS)', ['quem vê cada linha', 'Master · Dev · Stakeholder', 'anon não vê nada']))
 f1.append('<g class="bp-banco"><rect x="900" y="20" width="280" height="440"/><text x="914" y="44" class="bp-tt">Banco tfcvoszeewmpghgxztuy</text></g>')
@@ -33,7 +33,7 @@ f1.append(caixa(916, 266, 248, 66, 'auditoria', ['quem fez o quê']))
 f1.append(caixa(916, 346, 248, 50, 'storage: anexos', []))
 f1.append(caixa(916, 406, 248, 44, 'pg_cron: a cada 10 min', []))
 f1.append(caixa(270, 360, 250, 90, 'Agentes de IA', ['AI PO · atendimento · Billy', 'provedor ainda não ligado'], 'pendente'))
-f1.append(caixa(600, 360, 230, 90, 'Kit IT.IA', ['nos sistemas dos clientes', 'painel · feedback · status'], 'pendente'))
+f1.append(caixa(600, 360, 230, 90, 'Kit CicloDev', ['nos sistemas dos clientes', 'painel · feedback · status'], 'pendente'))
 # setas
 f1.append(seta([(190, 70), (268, 70)], 'usa', 229, 62))
 f1.append(seta([(190, 160), (268, 160)], 'usa', 229, 152))
@@ -48,10 +48,10 @@ f1.append(seta([(1172, 108), (1190, 108), (1190, 299), (1166, 299)], 'triggers',
 f1.append(seta([(1164, 428), (1176, 428), (1176, 211), (1166, 211)], '', 0, 0))
 f1.append(seta([(520, 405), (560, 405), (560, 250), (598, 250)], 'permissões', 548, 396, 'pendente', 'end'))
 f1.append(seta([(830, 405), (870, 405), (870, 140), (914, 140)], 'pedidos e leitura', 874, 482, 'pendente'))
-svg1 = '<svg class="bp-svg" viewBox="0 0 1260 490" role="img" aria-label="A tela chama rotinas e lê o banco através das regras de acesso; as contas ficam no schema bi, o registro de quem fez o quê na auditoria, e agentes de IA e o Kit IT.IA dependem de ligação externa.">' + ''.join(f1) + '</svg>'
+svg1 = '<svg class="bp-svg" viewBox="0 0 1260 490" role="img" aria-label="A tela chama rotinas e lê o banco através das regras de acesso; as contas ficam no schema bi, o registro de quem fez o quê na auditoria, e agentes de IA e o Kit CicloDev dependem de ligação externa.">' + ''.join(f1) + '</svg>'
 
 # ---------- figura 2: caminho de um pedido ----------
-etapas = [('Cliente', 'abre o pedido', 'Kit IT.IA ou Service Desk'), ('IA de atendimento', 'responde primeiro', 'dúvida resolve sozinha'), ('Equipe', 'responde', 'carimba o SLA'),
+etapas = [('Cliente', 'abre o pedido', 'Kit CicloDev ou Service Desk'), ('IA de atendimento', 'responde primeiro', 'dúvida resolve sozinha'), ('Equipe', 'responde', 'carimba o SLA'),
           ('converter_pedido', 'vira item', 'Bug ou Story no board'), ('Board', 'item anda', 'status muda'), ('Automação', 'dispara', 'avisa quem abriu')]
 f2 = [defs]; w, gap, y = 175, 26, 30
 for k, (t, a, b) in enumerate(etapas):
@@ -63,7 +63,7 @@ f2.append('<text x="%d" y="150" class="bp-rot" text-anchor="middle">pedidos · p
 svg2 = '<svg class="bp-svg" viewBox="0 0 1210 165" role="img" aria-label="O pedido do cliente passa pela IA de atendimento, pela equipe que responde e carimba o SLA, vira item pelo converter_pedido, anda no board e uma automação avisa quem abriu.">' + ''.join(f2) + '</svg>'
 
 painel = ('      <div class="painel-aba" role="tabpanel" id="pn-blueprint" aria-labelledby="aba-blueprint" hidden>\n'
-  '        <p class="intro">O ' + T('Blueprint', 'planta do sistema: o desenho de como as partes se ligam, para validar tudo junto antes de construir') + ' do Sistema IT.IA. Tracejado é o que já está desenhado mas depende de algo de fora para funcionar.</p>\n'
+  '        <p class="intro">O ' + T('Blueprint', 'planta do sistema: o desenho de como as partes se ligam, para validar tudo junto antes de construir') + ' do CicloDev. Tracejado é o que já está desenhado mas depende de algo de fora para funcionar.</p>\n'
   '        <figure class="bp-fig">' + svg1 + '<figcaption>Quem fala com quem. A tela nunca escreve direto nas contas: ela chama as rotinas, grava no <code>public</code> passando pelas regras de acesso, e as contas saem do <code>bi</code>. Os gatilhos do banco escrevem a auditoria sozinhos, e a rotina agendada atualiza o ritmo a cada 10 minutos. O traço vermelho é a escrita de dados.</figcaption></figure>\n'
   '        <figure class="bp-fig">' + svg2 + '<figcaption>O caminho de um pedido do cliente até avisar quem pediu. A conversão em item é o ponto em que o pedido entra no trabalho do time (em vermelho); a resposta da IA depende do provedor de IA ser ligado.</figcaption></figure>\n'
   '      </div>\n')

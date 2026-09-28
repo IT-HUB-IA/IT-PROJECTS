@@ -3,7 +3,7 @@ const { chromium } = require('/opt/node22/lib/node_modules/playwright');
   const b = await chromium.launch(); const p = await b.newPage({viewport:{width:1600,height:950}});
   const erros=[]; p.on('pageerror', e => erros.push('PAGEERR ' + e.message));
   await p.goto('file://' + process.cwd() + '/wrap.html'); await p.evaluate(()=>localStorage.clear()); await p.reload(); await p.waitForTimeout(300);
-  const dados = () => p.evaluate(()=>JSON.parse(localStorage.getItem('itia-sistema-dados-v1')));
+  const dados = () => p.evaluate(()=>JSON.parse(localStorage.getItem('ciclodev-dados-v1')));
   const shot = async n => { await p.waitForTimeout(200); await p.screenshot({path:'n_'+n+'.png'}); };
   await p.click('[data-tela=operacoes]'); await p.click('[data-view=board]'); await shot('board');
   // novo item com referencia

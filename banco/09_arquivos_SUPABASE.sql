@@ -1,5 +1,5 @@
 -- =====================================================================
--- Sistema IT.IA · 09 · Depósito de arquivos (Supabase Storage). SÓ NO SUPABASE (o schema storage não existe no Postgres puro).
+-- CicloDev · 09 · Depósito de arquivos (Supabase Storage). SÓ NO SUPABASE (o schema storage não existe no Postgres puro).
 -- Bucket privado "anexos". O arquivo só abre para quem enxerga o registro de anexos que aponta para ele.
 -- Caminho do arquivo: <id da pessoa no login>/<uuid>-<nome do arquivo>
 -- =====================================================================

@@ -1,4 +1,4 @@
-# Sistema IT.IA para muitos usuários: análise e arquitetura
+# CicloDev para muitos usuários: análise e arquitetura
 
 Pedido do William (28/09/2026):
 - **Um nível só de usuário.** Qualquer pessoa cria a própria conta.

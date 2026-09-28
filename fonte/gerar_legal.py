@@ -48,15 +48,15 @@ def pagina(arq, titulo, olho, resumo, secoes, ativo):
     nav = ''.join(f'<a href="{h}"' + (' aria-current="page"' if h == ativo else '') + f'>{n}</a>' for h,n in [('/termos','Termos de Uso'),('/privacidade','Privacidade'),('/','Entrar no sistema')])
     doc = f'''<!doctype html>
 <html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{html.escape(titulo)} · IT.IA</title><meta name="description" content="{html.escape(titulo)} do Sistema IT.IA.">
+<title>{html.escape(titulo)} · CicloDev</title><meta name="description" content="{html.escape(titulo)} do CicloDev.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
 <style>{CSS}</style></head><body>
-<header class="topo"><div class="topo-in"><div class="barra"><a class="logo" href="/"><i aria-hidden="true"></i>IT.IA</a><nav class="nav" aria-label="Documentos">{nav}</nav></div>
+<header class="topo"><div class="topo-in"><div class="barra"><a class="logo" href="/"><i aria-hidden="true"></i>CicloDev</a><nav class="nav" aria-label="Documentos">{nav}</nav></div>
 <p class="olho">{html.escape(olho)}</p><h1>{html.escape(titulo)}</h1><p class="atual">Última atualização: {ATUAL}</p></div></header>
 <div class="corpo"><aside class="indice" aria-label="Índice"><b>Nesta página</b><ol>{ind}</ol></aside>
 <main><div class="resumo">{resumo}</div>{sec}</main></div>
-<footer class="rodape"><div><span>© 2026 IT.IA · Gestão de projetos de software</span><span><a href="/termos">Termos de Uso</a> · <a href="/privacidade">Política de Privacidade</a> · <a href="mailto:admin@it-ia.tec.br">admin@it-ia.tec.br</a></span></div></footer>
+<footer class="rodape"><div><span>© 2026 CicloDev · Gestão de projetos de software</span><span><a href="/termos">Termos de Uso</a> · <a href="/privacidade">Política de Privacidade</a> · <a href="mailto:admin@it-ia.tec.br">admin@it-ia.tec.br</a></span></div></footer>
 </body></html>
 '''
     assert '—' not in doc, arq
@@ -64,10 +64,10 @@ def pagina(arq, titulo, olho, resumo, secoes, ativo):
 
 # ======================= PRIVACIDADE =======================
 P = [
-('Quem somos e como falar com a gente', '''<p>Esta política explica como o <b>Sistema IT.IA</b> (o "Sistema"), oferecido pela IT.IA no endereço <a href="https://system.it-ia.tec.br">system.it-ia.tec.br</a>, trata dados pessoais, de acordo com a Lei Geral de Proteção de Dados (Lei nº 13.709/2018, "LGPD") e o Marco Civil da Internet (Lei nº 12.965/2014).</p>
-<p>A IT.IA é a <b>controladora</b> dos dados da sua conta e do seu uso do Sistema. Para qualquer assunto sobre os seus dados, inclusive para falar com o encarregado (DPO), escreva para <a href="mailto:admin@it-ia.tec.br">admin@it-ia.tec.br</a>.</p>'''),
+('Quem somos e como falar com a gente', '''<p>Esta política explica como o <b>CicloDev</b> (o "Sistema"), oferecido pela CicloDev no endereço <a href="https://system.it-ia.tec.br">system.it-ia.tec.br</a>, trata dados pessoais, de acordo com a Lei Geral de Proteção de Dados (Lei nº 13.709/2018, "LGPD") e o Marco Civil da Internet (Lei nº 12.965/2014).</p>
+<p>A CicloDev é a <b>controladora</b> dos dados da sua conta e do seu uso do Sistema. Para qualquer assunto sobre os seus dados, inclusive para falar com o encarregado (DPO), escreva para <a href="mailto:admin@it-ia.tec.br">admin@it-ia.tec.br</a>.</p>'''),
 ('Quais dados tratamos', '''<div class="tabela"><table><thead><tr><th>Grupo</th><th>Dados</th><th>De onde vêm</th></tr></thead><tbody>
-<tr><td>Conta</td><td>Nome, e-mail, número de ID do Sistema, nome de usuário (se você criar) e senha. A senha é guardada de forma cifrada (hash); nem a IT.IA consegue lê-la.</td><td>Você, no cadastro</td></tr>
+<tr><td>Conta</td><td>Nome, e-mail, número de ID do Sistema, nome de usuário (se você criar) e senha. A senha é guardada de forma cifrada (hash); nem a CicloDev consegue lê-la.</td><td>Você, no cadastro</td></tr>
 <tr><td>Cadastro</td><td>Nome completo, data de nascimento, CPF, endereço residencial (CEP, rua, número, complemento, bairro, cidade e estado), finalidade de uso (trabalho, estudo, pessoal ou outro), cargo ou curso e empresa ou instituição.</td><td>Você, no cadastro ou em "Complete o seu cadastro"</td></tr>
 <tr><td>Login com outras contas</td><td>Se você entrar com Google, GitHub, Apple ou Microsoft: nome, e-mail, foto do perfil e o identificador da conta nesse serviço. Não recebemos a sua senha dessas contas.</td><td>O serviço que você escolheu</td></tr>
 <tr><td>Conteúdo</td><td>O que você cria ou recebe no Sistema: clientes, projetos, aplicações, tarefas, sprints, comentários, links, custos, receitas, equipes e demais registros.</td><td>Você e as pessoas com quem você trabalha</td></tr>
@@ -89,7 +89,7 @@ P = [
 ('Quem vê os seus dados dentro do Sistema', '''<ul>
 <li><b>Você</b> vê e pode alterar os seus dados de conta e de cadastro.</li>
 <li><b>Pessoas com quem você compartilha</b> um cliente, projeto ou aplicação veem apenas o seu nome, número de ID e nome de usuário, além do conteúdo compartilhado. Elas <b>não</b> veem o seu CPF, nascimento, endereço, cargo ou dados de uso.</li>
-<li><b>A administração do Sistema IT.IA</b> tem acesso aos dados de cadastro e aos números de uso de cada conta (por exemplo, quantos projetos existem e quantos dias houve acesso), para dar suporte, prevenir fraudes e cuidar do funcionamento. A administração <b>não</b> acessa o conteúdo dos seus projetos no uso normal do Sistema.</li>
+<li><b>A administração do CicloDev</b> tem acesso aos dados de cadastro e aos números de uso de cada conta (por exemplo, quantos projetos existem e quantos dias houve acesso), para dar suporte, prevenir fraudes e cuidar do funcionamento. A administração <b>não</b> acessa o conteúdo dos seus projetos no uso normal do Sistema.</li>
 </ul>'''),
 ('Com quem compartilhamos', '''<p>Usamos empresas que prestam serviços para o Sistema funcionar (operadores, na linguagem da LGPD). Elas só podem tratar os dados para prestar esses serviços:</p>
 <div class="tabela"><table><thead><tr><th>Empresa</th><th>Para quê</th><th>Onde</th></tr></thead><tbody>
@@ -130,17 +130,17 @@ P = [
 </ul>
 <p>Nenhum sistema é totalmente imune a falhas. Se acontecer um incidente de segurança que possa trazer risco ou dano relevante a você, avisaremos você e a ANPD, como manda o art. 48 da LGPD.</p>'''),
 ('Armazenamento no navegador (cookies)', '''<p>O Sistema guarda no seu navegador apenas o que é necessário para funcionar: a sessão de login (para você não precisar entrar a cada página) e preferências da tela, como o menu recolhido. Não usamos cookies de publicidade nem ferramentas de rastreamento de terceiros. Se você limpar os dados do navegador, só vai precisar entrar de novo.</p>'''),
-('Dados de terceiros que você coloca no Sistema', '''<p>Ao cadastrar no Sistema dados de outras pessoas (por exemplo, contatos de clientes ou membros de equipe sem conta), você é o controlador desses dados e a IT.IA atua como operadora, tratando-os só para oferecer o Sistema a você. Você deve ter uma base legal para usar esses dados e informar essas pessoas quando a lei exigir.</p>'''),
+('Dados de terceiros que você coloca no Sistema', '''<p>Ao cadastrar no Sistema dados de outras pessoas (por exemplo, contatos de clientes ou membros de equipe sem conta), você é o controlador desses dados e a CicloDev atua como operadora, tratando-os só para oferecer o Sistema a você. Você deve ter uma base legal para usar esses dados e informar essas pessoas quando a lei exigir.</p>'''),
 ('Crianças e adolescentes', '''<p>O Sistema é feito para uso profissional e educacional. Menores de 18 anos só podem usá-lo com autorização e acompanhamento do responsável legal. Se soubermos que dados de uma criança foram cadastrados sem o consentimento de um responsável, apagaremos esses dados.</p>'''),
 ('Mudanças nesta política', '''<p>Podemos atualizar esta política para refletir mudanças no Sistema ou na lei. A data da última atualização fica no topo. Se a mudança for relevante, avisaremos pelo e-mail da conta ou dentro do Sistema antes de ela valer.</p>
 <div class="contato"><b>Contato:</b> <a href="mailto:admin@it-ia.tec.br">admin@it-ia.tec.br</a></div>'''),
 ]
-pagina('privacidade.html', 'Política de Privacidade', 'Sistema IT.IA · LGPD',
+pagina('privacidade.html', 'Política de Privacidade', 'CicloDev · LGPD',
  '<p><b>Resumo:</b> usamos os seus dados só para oferecer o Sistema, manter a sua conta segura e melhorar o serviço. Não vendemos dados e não fazemos publicidade. O seu CPF, nascimento e endereço não aparecem para as pessoas com quem você compartilha projetos. Você pode pedir acesso, correção ou exclusão pelo e-mail admin@it-ia.tec.br.</p>', P, '/privacidade')
 
 # ======================= TERMOS =======================
 T = [
-('Aceite destes termos', '''<p>Estes Termos de Uso regulam o uso do <b>Sistema IT.IA</b> (o "Sistema"), uma plataforma de gestão de projetos de software oferecida pela IT.IA em <a href="https://system.it-ia.tec.br">system.it-ia.tec.br</a>. Ao criar uma conta ou usar o Sistema, você declara que leu e concorda com estes Termos e com a <a href="/privacidade">Política de Privacidade</a>. Se não concordar, não use o Sistema.</p>'''),
+('Aceite destes termos', '''<p>Estes Termos de Uso regulam o uso do <b>CicloDev</b> (o "Sistema"), uma plataforma de gestão de projetos de software oferecida pela CicloDev em <a href="https://system.it-ia.tec.br">system.it-ia.tec.br</a>. Ao criar uma conta ou usar o Sistema, você declara que leu e concorda com estes Termos e com a <a href="/privacidade">Política de Privacidade</a>. Se não concordar, não use o Sistema.</p>'''),
 ('O que o Sistema oferece', '''<p>O Sistema reúne ferramentas para planejar e acompanhar projetos de software, como estrutura de clientes, projetos e aplicações, Board, Backlog, Sprints, cronograma, calendário, carga do time, custos e receitas, atendimento (Service Desk), catálogo de serviços, modelos de etapas (Playbook), agentes e compartilhamento de trabalho entre contas. As funções podem mudar, ser melhoradas ou retiradas com o tempo.</p>'''),
 ('Sua conta', '''<ul>
 <li>Para criar uma conta você precisa informar dados verdadeiros, completos e atualizados. Menores de 18 anos só podem usar o Sistema com autorização do responsável legal.</li>
@@ -159,9 +159,9 @@ T = [
 <li>se passar por outra pessoa ou empresa.</li>
 </ul>'''),
 ('O seu conteúdo', '''<ul>
-<li>O que você cria no Sistema continua sendo seu. A IT.IA não se torna dona do seu conteúdo.</li>
-<li>Para o Sistema funcionar, você autoriza a IT.IA a armazenar, copiar para segurança, processar e exibir o seu conteúdo, apenas para oferecer o serviço a você e às pessoas com quem você compartilhar.</li>
-<li>Você garante que tem o direito de usar o conteúdo que coloca no Sistema, inclusive dados de clientes e de outras pessoas. Nesses casos, você é o controlador desses dados e a IT.IA é a operadora, como explica a <a href="/privacidade">Política de Privacidade</a>.</li>
+<li>O que você cria no Sistema continua sendo seu. A CicloDev não se torna dona do seu conteúdo.</li>
+<li>Para o Sistema funcionar, você autoriza a CicloDev a armazenar, copiar para segurança, processar e exibir o seu conteúdo, apenas para oferecer o serviço a você e às pessoas com quem você compartilhar.</li>
+<li>Você garante que tem o direito de usar o conteúdo que coloca no Sistema, inclusive dados de clientes e de outras pessoas. Nesses casos, você é o controlador desses dados e a CicloDev é a operadora, como explica a <a href="/privacidade">Política de Privacidade</a>.</li>
 <li>Você pode pedir uma cópia dos seus dados a qualquer momento pelo e-mail admin@it-ia.tec.br.</li>
 </ul>'''),
 ('Compartilhamento entre contas', '''<ul>
@@ -169,23 +169,23 @@ T = [
 <li>Quem recebe um compartilhamento pode ver e trabalhar em tudo o que está dentro do ponto compartilhado. Compartilhe só com quem você confia e retire o acesso quando não for mais necessário.</li>
 <li>Você é responsável pelas decisões de compartilhamento que tomar.</li>
 </ul>'''),
-('Propriedade intelectual', '''<p>O Sistema, a marca IT.IA, o design, os textos, os modelos e o código pertencem à IT.IA ou aos seus licenciantes e são protegidos pela lei. Estes Termos dão a você apenas o direito de usar o Sistema, de forma pessoal e intransferível, enquanto a sua conta estiver ativa. Marcas de terceiros (como Google, GitHub, Apple, Microsoft, Jira e Trello) pertencem aos seus donos e são citadas só para identificar serviços.</p>'''),
-('Preço', '''<p>No momento, o uso do Sistema é gratuito. Se a IT.IA passar a cobrar por algum plano ou função, isso será informado com pelo menos 30 dias de antecedência, com o preço e as condições. Nada será cobrado sem a sua concordância.</p>'''),
+('Propriedade intelectual', '''<p>O Sistema, a marca CicloDev, o design, os textos, os modelos e o código pertencem à CicloDev ou aos seus licenciantes e são protegidos pela lei. Estes Termos dão a você apenas o direito de usar o Sistema, de forma pessoal e intransferível, enquanto a sua conta estiver ativa. Marcas de terceiros (como Google, GitHub, Apple, Microsoft, Jira e Trello) pertencem aos seus donos e são citadas só para identificar serviços.</p>'''),
+('Preço', '''<p>No momento, o uso do Sistema é gratuito. Se a CicloDev passar a cobrar por algum plano ou função, isso será informado com pelo menos 30 dias de antecedência, com o preço e as condições. Nada será cobrado sem a sua concordância.</p>'''),
 ('Disponibilidade e mudanças no serviço', '''<p>Trabalhamos para manter o Sistema funcionando sempre, mas podem ocorrer interrupções para manutenção, atualizações ou por falhas de serviços de terceiros, como hospedagem e internet. Quando possível, avisaremos manutenções programadas com antecedência.</p>'''),
 ('Responsabilidades', '''<ul>
-<li>A IT.IA responde pelos danos que causar, nos termos da lei, inclusive do Código de Defesa do Consumidor quando ele se aplicar.</li>
-<li>Na medida permitida pela lei, a IT.IA não responde por danos causados por uso do Sistema em desacordo com estes Termos, por conteúdo inserido pelos usuários, por decisões tomadas com base nas informações do Sistema, por falhas de serviços de terceiros fora do seu controle ou por caso fortuito e força maior.</li>
+<li>A CicloDev responde pelos danos que causar, nos termos da lei, inclusive do Código de Defesa do Consumidor quando ele se aplicar.</li>
+<li>Na medida permitida pela lei, a CicloDev não responde por danos causados por uso do Sistema em desacordo com estes Termos, por conteúdo inserido pelos usuários, por decisões tomadas com base nas informações do Sistema, por falhas de serviços de terceiros fora do seu controle ou por caso fortuito e força maior.</li>
 <li>Os cálculos do Sistema (como custos, preço sugerido e margem) servem de apoio à decisão e dependem dos dados informados. Confira-os antes de usar em propostas, contratos ou obrigações fiscais.</li>
 </ul>'''),
 ('Suspensão e encerramento', '''<ul>
 <li>Você pode deixar de usar o Sistema e pedir a exclusão da sua conta a qualquer momento, pelo e-mail <a href="mailto:admin@it-ia.tec.br">admin@it-ia.tec.br</a>.</li>
-<li>A IT.IA pode suspender ou encerrar uma conta que descumpra estes Termos ou a lei, ou quando uma autoridade exigir. Sempre que possível e permitido, avisaremos antes e daremos a chance de corrigir o problema e de exportar os dados.</li>
+<li>A CicloDev pode suspender ou encerrar uma conta que descumpra estes Termos ou a lei, ou quando uma autoridade exigir. Sempre que possível e permitido, avisaremos antes e daremos a chance de corrigir o problema e de exportar os dados.</li>
 <li>Depois do encerramento, os dados são tratados como descrito na <a href="/privacidade">Política de Privacidade</a>.</li>
 </ul>'''),
 ('Mudanças nestes termos', '''<p>Podemos atualizar estes Termos. A data da última atualização fica no topo. Mudanças relevantes serão avisadas pelo e-mail da conta ou dentro do Sistema com pelo menos 15 dias de antecedência. Se você não concordar, pode encerrar a conta antes de a mudança valer; continuar usando o Sistema depois disso significa que você concorda.</p>'''),
 ('Lei aplicável e foro', '''<p>Estes Termos seguem as leis do Brasil. Fica eleito o foro do domicílio do usuário para resolver qualquer questão, sem prejuízo de outro foro que a lei garanta a você. Antes de ir à Justiça, procure a gente: a maioria dos problemas se resolve por e-mail.</p>
 <div class="contato"><b>Contato:</b> <a href="mailto:admin@it-ia.tec.br">admin@it-ia.tec.br</a></div>'''),
 ]
-pagina('termos.html', 'Termos de Uso', 'Sistema IT.IA · Condições de uso',
+pagina('termos.html', 'Termos de Uso', 'CicloDev · Condições de uso',
  '<p><b>Resumo:</b> use o Sistema de acordo com a lei e com dados verdadeiros. O que você cria é seu. Compartilhe só com quem confia. O uso é gratuito por enquanto e qualquer cobrança futura será avisada antes. Dúvidas: admin@it-ia.tec.br.</p>', T, '/termos')
 print('ok')

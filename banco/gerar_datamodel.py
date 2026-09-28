@@ -56,7 +56,7 @@ GRUPOS = [
   ('provas', 'As provas anexadas nos itens de etapa', T),
  ]),
  ('Comercial e custos', [
-  ('servicos', 'O Catalog: cada serviço que a IT.IA vende', 'Master e time'),
+  ('servicos', 'O Catalog: cada serviço que a CicloDev vende', 'Master e time'),
   ('servicos_cobranca', 'Os modelos de cobrança de cada serviço', M),
   ('servicos_requisitos', 'Quais requisitos valem para cada serviço', 'Master e time'),
   ('regras_calculo', 'As regras de cálculo, com a data em que passam a valer', M),

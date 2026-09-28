@@ -1,5 +1,5 @@
 -- =====================================================================
--- Sistema IT.IA · 02 · Trabalho: status, itens (issues), ciclos, marcos, tempo, visões, automações
+-- CicloDev · 02 · Trabalho: status, itens (issues), ciclos, marcos, tempo, visões, automações
 -- =====================================================================
 
 -- STATUS: fluxo padrão (no_id nulo) ou personalizado para um nó e tudo abaixo dele
