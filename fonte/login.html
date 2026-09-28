@@ -30,7 +30,11 @@
 
       <form class="entrada-form" data-etapa="login" hidden novalidate>
         <h1>Entrar</h1>
-        <p class="entrada-sub">Use o e-mail e a senha da sua conta.</p>
+        <p class="entrada-sub">Entre com a sua conta de trabalho ou com e-mail e senha.</p>
+        <div class="entrada-sociais" data-sociais data-so-cadastro>
+          <div class="entrada-sociais-botoes"></div>
+          <p class="entrada-ou"><span>ou entre com e-mail</span></p>
+        </div>
         <label class="entrada-campo"><span>E-mail</span>
           <input type="email" name="email" autocomplete="username" inputmode="email" required></label>
         <label class="entrada-campo"><span>Senha</span>
@@ -45,6 +49,10 @@
       <form class="entrada-form entrada-cadastro" data-etapa="cadastro" hidden novalidate>
         <h1>Criar conta</h1>
         <p class="entrada-sub">Você ganha um espaço só seu, com o sistema inteiro. Depois pode compartilhar clientes, projetos e aplicações com quem quiser.</p>
+<div class="entrada-sociais" data-sociais data-so-cadastro data-so-passo1>
+          <div class="entrada-sociais-botoes"></div>
+          <p class="entrada-ou"><span>ou preencha os seus dados</span></p>
+        </div>
         <ol class="entrada-passos" aria-label="Etapas do cadastro">
           <li data-p="1">Você</li><li data-p="2">Endereço</li><li data-p="3">Uso</li><li data-p="4">Senha</li>
         </ol>
@@ -59,7 +67,7 @@
             <label class="entrada-campo"><span>CPF</span>
               <input type="text" name="cpf" inputmode="numeric" autocomplete="off" placeholder="000.000.000-00" maxlength="14" required></label>
           </div>
-          <label class="entrada-campo"><span>E-mail</span>
+          <label class="entrada-campo" data-so-cadastro><span>E-mail</span>
             <input type="email" name="email" autocomplete="username" inputmode="email" required></label>
         </fieldset>
 
@@ -103,17 +111,17 @@
         </fieldset>
 
         <fieldset class="entrada-passo" data-passo="4" hidden>
-          <legend>Escolha uma senha</legend>
-          <label class="entrada-campo"><span>Senha</span>
+          <legend data-legenda-4>Escolha uma senha</legend>
+          <label class="entrada-campo" data-so-cadastro><span>Senha</span>
             <span class="entrada-senha"><input type="password" name="senha" autocomplete="new-password" required>
             <button type="button" class="entrada-ver" data-ver-senha aria-label="Mostrar a senha">Mostrar</button></span></label>
-          <ul class="entrada-regras" data-regras aria-live="polite">
+          <ul class="entrada-regras" data-so-cadastro data-regras aria-live="polite">
           <li data-r="tam">Pelo menos 8 caracteres</li>
           <li data-r="mai">Uma letra maiúscula</li>
           <li data-r="num">Um número</li>
           <li data-r="esp">Um caractere especial (ex.: ! @ # $ %)</li>
         </ul>
-          <label class="entrada-campo"><span>Repita a senha</span>
+          <label class="entrada-campo" data-so-cadastro><span>Repita a senha</span>
             <input type="password" name="senha2" autocomplete="new-password" required></label>
           <label class="entrada-aceite"><input type="checkbox" name="termos"><span>Concordo em guardar os meus dados para criar a conta. Eles ficam visíveis só para mim e para a administração do Sistema IT.IA, nunca para quem compartilha projetos comigo.</span></label>
         </fieldset>
@@ -124,7 +132,8 @@
           <button class="entrada-voltar" type="button" data-voltar hidden>Voltar</button>
           <button class="entrada-botao" type="submit">Continuar</button>
         </div>
-        <p class="entrada-troca">Já tem conta? <button class="entrada-link" type="button" data-ir="login">Entrar</button></p>
+        <p class="entrada-troca" data-so-cadastro>Já tem conta? <button class="entrada-link" type="button" data-ir="login">Entrar</button></p>
+        <p class="entrada-troca" data-so-completar hidden>Não é você? <button class="entrada-link" type="button" data-sair>Usar outra conta</button></p>
       </form>
 
       <form class="entrada-form" data-etapa="esqueci" hidden novalidate>

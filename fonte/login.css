@@ -129,3 +129,13 @@ body.com-login.logado #entrada{display:none}
 @media (max-height:620px){ .entrada-apoio{display:none} }
 @media (max-width:1100px){ .entrada-recursos{grid-template-columns:1fr} .entrada-previa{display:none} }
 @media (max-width:760px){ .entrada-meio{display:none} .entrada-marca{gap:0} }
+
+/* entrar com Google, GitHub, Apple ou Microsoft */
+.entrada-sociais{display:flex;flex-direction:column;gap:14px}
+.entrada-sociais-botoes{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.entrada-social{display:flex;align-items:center;justify-content:center;gap:10px;height:44px;border:1px solid var(--nevoa);background:var(--branco);color:var(--preto);font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+.entrada-social:hover{border-color:var(--preto);background:var(--preto-04)}
+.entrada-social:focus-visible{outline:2px solid var(--preto);outline-offset:2px}
+.entrada-social:disabled{opacity:.6;cursor:wait}
+.entrada-ou{margin:0;display:flex;align-items:center;gap:12px;font-size:12px;color:var(--grafite);text-transform:uppercase;letter-spacing:.12em;font-family:var(--font-mono)}
+.entrada-ou::before,.entrada-ou::after{content:"";flex:1;height:1px;background:var(--nevoa)}

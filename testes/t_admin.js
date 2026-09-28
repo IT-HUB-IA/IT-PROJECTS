@@ -47,6 +47,8 @@ window.supabase = { createClient(){ const sess = window.__sessao; return { auth:
 
 (async () => {
   const conta = sql => psqlRaw(sql).trim();
+  // limpa o usuário que o próprio teste cria no fim (senão a busca acha dois de São Paulo na próxima vez)
+  psqlRaw("delete from public.pessoas where email = 'carlos@teste.com'; delete from auth.users where email = 'carlos@teste.com'");
   const W = {uid: conta("select auth_user_id from pessoas where id = 'd148fdc5-eef3-5398-bf89-f49b55b5cd28'"), email: 'william@teste.com'};
   const M = {uid: '00000000-0000-0000-0000-0000000000b1', email: 'maria@teste.com'};
   const b = await chromium.launch(); let falhas = 0; const ok = (c, m) => { if (!c) falhas++; console.log((c ? 'OK   ' : 'FALHA') + ' ' + m); };
@@ -101,6 +103,8 @@ window.supabase = { createClient(){ const sess = window.__sessao; return { auth:
   await p.close();
 
   // ===== 2) usuário comum não vê o Admin =====
+  // a Maria já completou o cadastro (senão a tela pede os dados antes de abrir o sistema)
+  psqlRaw("insert into public.pessoas_privado (pessoa_id, nome_completo, data_nascimento, cpf, cep, logradouro, numero, bairro, cidade, uf, uso, termos_aceitos_em) select id, 'Maria Souza', '1992-07-01', '39053344705', '80010000', 'Rua XV', '10', 'Centro', 'Curitiba', 'PR', 'pessoal', now() from public.pessoas where email = 'maria@teste.com' on conflict (pessoa_id) do nothing");
   p = await abrir(M, {user:{id:M.uid, email:M.email}});
   ok(await p.evaluate(() => document.body.classList.contains('logado')), 'Maria entrou');
   ok(!(await p.isVisible('.item[data-tela="admin"]')), 'Maria NÃO vê o módulo Admin');
@@ -109,6 +113,7 @@ window.supabase = { createClient(){ const sess = window.__sessao; return { auth:
   ok(await p.evaluate(() => document.querySelector('#tela-admin').hidden), 'mesmo forçando, a tela do Admin não abre para a Maria');
   await p.close();
 
+  psqlRaw("delete from public.pessoas_privado where pessoa_id = (select id from public.pessoas where email = 'maria@teste.com')");
   // ===== 3) cadastro completo =====
   p = await abrir(W, null);
   await p.click('text=Criar conta grátis');
