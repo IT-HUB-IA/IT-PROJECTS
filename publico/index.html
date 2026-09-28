@@ -1536,6 +1536,62 @@ dialog.modal.modal-larga{max-width:min(960px,calc(100% - 32px))}
 .bj-eq-lin{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .pr-lowest{color:#1E40AF}
 
+/* =================== muitos usuários: meu ID, compartilhar, recebidos =================== */
+.mu-meu-id{display:flex;flex-direction:column;align-items:flex-start;gap:1px;width:100%;margin:0 0 8px;padding:6px 8px;border:1px solid var(--grafite);background:transparent;color:var(--branco);font:inherit;font-size:12px;cursor:pointer;text-align:left}
+.mu-meu-id b{font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;color:var(--nevoa)}
+.mu-meu-id:hover{border-color:var(--nevoa)}
+.app.recolhido .mu-meu-id{display:none}
+.mu-comp-box{display:flex;align-items:center;gap:8px;margin-left:auto}
+.mu-compartilhar{display:inline-flex;align-items:center;gap:6px}
+.mu-compartilhar svg{width:14px;height:14px}
+.mu-recebido-txt{font-size:12px;color:var(--nevoa);font-family:var(--font-mono);letter-spacing:.04em}
+.mu-selo{display:inline-flex;align-items:center;margin-left:4px;color:#3355E0}
+.mu-selo svg{width:12px;height:12px}
+.no-arv.mu-caminho .nome{color:#8993A4;font-style:italic}
+.mu-modal .modal-corpo{display:block}
+.mu-add{display:flex;gap:8px;margin:12px 0 6px}
+.mu-add .campo{flex:1;min-width:0}
+.mu-msg{margin:0 0 8px;font-size:13px}
+.mu-msg.erro{color:var(--vermelho)}
+.mu-tit{margin:14px 0 6px;font-size:13px;letter-spacing:.1em;text-transform:uppercase}
+.mu-lista{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.mu-pessoa{display:flex;align-items:center;gap:10px;padding:8px;border:1px solid #DFE1E6;background:#fff}
+.mu-p-nome{display:flex;flex-direction:column;flex:1;min-width:0}
+.mu-p-nome small{color:#5E6C84;font-size:12px}
+.mu-papel{font-size:12px;color:#5E6C84;white-space:nowrap}
+.mu-meu{margin:12px 0 0;font-size:13px}
+.mu-conta{margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--nevoa)}
+
+/* ===== Admin (dono do sistema) ===== */
+.adm-per{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600}
+.adm-abas{display:flex;gap:0;border-bottom:1px solid var(--linha);margin:8px 0 24px;overflow-x:auto}
+.adm-abas button{border:0;background:none;padding:12px 18px;font:inherit;font-size:14px;font-weight:600;color:var(--tinta-2);border-bottom:2px solid transparent;margin-bottom:-1px;cursor:pointer;white-space:nowrap}
+.adm-abas button[aria-selected="true"]{color:var(--preto);border-bottom-color:var(--preto)}
+.adm-corpo .kpis{margin-top:0;margin-bottom:16px}
+.adm-barras{width:100%;height:auto;color:var(--preto);display:block}
+.adm-fin{display:grid;grid-template-columns:110px 1fr 32px;align-items:center;gap:12px;font-size:13px}
+.adm-fin b{text-align:right;font-variant-numeric:tabular-nums}
+.adm-filtros{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.adm-filtros .campo{flex:1 1 280px;min-width:0}
+.adm-tab tbody tr{cursor:pointer}
+.adm-tab tbody tr:hover > *,.adm-tab tbody tr:focus-visible > *{background:var(--preto-04)}
+.adm-tab tbody tr:focus-visible{outline:2px solid var(--preto);outline-offset:-2px}
+.adm-tab td{vertical-align:top}
+.adm-sub{display:block;font-size:12px;color:var(--tinta-2);margin-top:2px}
+.adm-indice{display:grid;grid-template-columns:1fr 28px;align-items:center;gap:8px;min-width:90px}
+.adm-indice b{text-align:right;font-variant-numeric:tabular-nums}
+.adm-rodape{font-size:12px;color:var(--tinta-2);margin:16px 0 0}
+.adm-modal{width:min(920px,calc(100vw - 32px))}
+.adm-ficha{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:24px}
+.adm-ficha h4,.adm-hist h4{font-size:13px;letter-spacing:.08em;text-transform:uppercase;margin:0 0 10px}
+.adm-lin{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--linha);font-size:13px}
+.adm-lin span{color:var(--tinta-2)}
+.adm-lin b{font-weight:600;text-align:right;overflow-wrap:anywhere}
+.adm-hist{margin-top:24px}
+.adm-hist .tabela{font-size:13px}
+.adm-tab th:first-child,.adm-tab td:first-child{min-width:220px}
+.adm-tab td:first-child small{overflow-wrap:anywhere}
+
   .conteudo.sem-pad{padding:0;display:flex;flex-direction:column;flex:1}
   .conteudo.sem-pad > div{flex:1;display:flex;flex-direction:column}
 /* ===== Tela de login (só na versão publicada na Vercel) ===== */
@@ -1580,6 +1636,43 @@ body.com-login.logado #entrada{display:none}
   .entrada-lado{align-items:flex-start;padding:32px 16px}
 }
 
+.entrada-troca{margin:14px 0 0;font-size:14px;text-align:center;color:inherit}
+.entrada-troca .entrada-link{display:inline;margin:0;padding:0}
+
+/* cadastro completo em 4 passos */
+.entrada-caixa:has(.entrada-cadastro:not([hidden])){max-width:460px}
+.entrada-passos{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;counter-reset:passo}
+.entrada-passos li{counter-increment:passo;font-size:12px;font-weight:600;color:var(--grafite);padding-top:10px;border-top:3px solid var(--nevoa)}
+.entrada-passos li::before{content:counter(passo) ". "}
+.entrada-passos li.atual{color:var(--preto);border-top-color:var(--preto)}
+.entrada-passos li.feito{color:var(--preto);border-top-color:var(--grafite);cursor:pointer}
+.entrada-passo{border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:14px;min-width:0}
+.entrada-passo legend{font-family:var(--font-display);font-weight:600;font-size:18px;padding:0;margin-bottom:14px}
+.entrada-dupla{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:end}
+.entrada-cidade{grid-template-columns:1fr 96px}
+.entrada-campo i{font-style:normal;font-weight:400;color:var(--grafite)}
+.entrada-campo select{font:inherit;font-weight:400;font-size:15px;height:44px;padding:0 8px;border:1px solid var(--nevoa);background:var(--branco);color:var(--preto);border-radius:0;width:100%}
+.entrada-campo select:focus{outline:none;border-color:var(--preto);box-shadow:inset 0 0 0 1px var(--preto)}
+.entrada-dica{margin:0 0 12px;font-size:13px;color:var(--grafite);line-height:1.4}
+.entrada-opcoes{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.entrada-opcoes label{position:relative;cursor:pointer}
+.entrada-opcoes input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.entrada-opcoes span{display:flex;align-items:center;justify-content:center;height:46px;border:1px solid var(--nevoa);font-size:14px;font-weight:600}
+.entrada-opcoes input:checked + span{border-color:var(--preto);box-shadow:inset 0 0 0 1px var(--preto);background:var(--preto-04)}
+.entrada-opcoes input:focus-visible + span{outline:2px solid var(--preto);outline-offset:2px}
+.entrada-regras{list-style:none;margin:-4px 0 0;padding:0;display:grid;gap:4px;font-size:13px;color:var(--grafite)}
+.entrada-regras li{display:flex;align-items:center;gap:8px}
+.entrada-regras li::before{content:"";width:10px;height:10px;border:1px solid var(--grafite);flex:0 0 10px}
+.entrada-regras li.ok{color:var(--preto)}
+.entrada-regras li.ok::before{background:var(--preto);border-color:var(--preto)}
+.entrada-aceite{display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.45;cursor:pointer}
+.entrada-aceite input{margin:2px 0 0;width:16px;height:16px;flex:0 0 16px;accent-color:var(--preto)}
+.entrada-navega{display:flex;gap:10px}
+.entrada-navega .entrada-botao{flex:1}
+.entrada-voltar{height:46px;margin-top:4px;padding:0 18px;border:1px solid var(--preto);background:none;color:var(--preto);font:inherit;font-weight:600;font-size:15px;cursor:pointer}
+.entrada-voltar:hover{background:var(--preto-04)}
+@media (max-width:420px){ .entrada-dupla{grid-template-columns:1fr} .entrada-cidade{grid-template-columns:1fr 88px} .entrada-passos li{font-size:11px} }
+
 </style>
 
 <div class="app" id="app">
@@ -1603,6 +1696,7 @@ body.com-login.logado #entrada{display:none}
         <li><button class="item" type="button" data-nome="Agent Studio" data-tela="agentes"><span class="item-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true"><rect x="4" y="7" width="16" height="12"></rect><path d="M12 3v4M9 12v2M15 12v2M2 12v3M22 12v3"></path></svg></span><span class="item-nome">Agent Studio</span></button></li>
         <li><button class="item" type="button" data-nome="Playbook" data-tela="playbook"><span class="item-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true"><path d="M4 4h6a2 2 0 0 1 2 2v14a2 2 0 0 0-2-2H4z"></path><path d="M20 4h-6a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h6z"></path></svg></span><span class="item-nome">Playbook</span></button></li>
         <li><button class="item" type="button" data-nome="Settings" data-tela="configuracoes"><span class="item-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"></path></svg></span><span class="item-nome">Settings</span></button></li>
+        <li hidden><button class="item" type="button" data-nome="Admin" data-tela="admin"><span class="item-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"></path><path d="M9 12l2 2 4-4"></path></svg></span><span class="item-nome">Admin</span></button></li>
       </ul>
     </div>
     <div class="menu-rodape" title="Ver como">
@@ -1622,6 +1716,7 @@ body.com-login.logado #entrada{display:none}
     <section class="conteudo cheio" id="tela-time" hidden><div id="m-time"></div></section>
     <section class="conteudo cheio" id="tela-agentes" hidden><div id="m-agentes"></div></section>
     <section class="conteudo cheio" id="tela-configuracoes" hidden><div id="m-configuracoes"></div></section>
+    <section class="conteudo cheio" id="tela-admin" hidden><div id="m-admin"></div></section>
     <section class="conteudo cheio" id="tela-playbook" aria-labelledby="titulo-pb" hidden>
       <div class="topo-hero"><div><h1 id="titulo-pb"><span>Playbook</span><button class="info" type="button" data-info="Playbook (manual de regras): as regras que valem para todo projeto, sempre, do banco de dados às etapas obrigatórias." aria-label="O que é: Playbook (manual de regras): as regras que valem para todo projeto, sempre, do banco de dados às etapas obrigatórias.">i</button></h1>
       <p class="lead">As regras que todo projeto da IT.IA segue, do jeito que o banco se comporta até as etapas que nenhum projeto pode pular, mesmo com uma pessoa só no time.</p></div></div>
@@ -1868,7 +1963,7 @@ body.com-login.logado #entrada{display:none}
 
       <form class="entrada-form" data-etapa="login" hidden novalidate>
         <h1>Entrar</h1>
-        <p class="entrada-sub">Use o e-mail e a senha do seu acesso.</p>
+        <p class="entrada-sub">Use o e-mail e a senha da sua conta.</p>
         <label class="entrada-campo"><span>E-mail</span>
           <input type="email" name="email" autocomplete="username" inputmode="email" required></label>
         <label class="entrada-campo"><span>Senha</span>
@@ -1877,6 +1972,92 @@ body.com-login.logado #entrada{display:none}
         <p class="entrada-erro" data-erro hidden></p>
         <button class="entrada-botao" type="submit">Entrar</button>
         <button class="entrada-link" type="button" data-ir="esqueci">Esqueci minha senha</button>
+        <p class="entrada-troca">Ainda não tem conta? <button class="entrada-link" type="button" data-ir="cadastro">Criar conta grátis</button></p>
+      </form>
+
+      <form class="entrada-form entrada-cadastro" data-etapa="cadastro" hidden novalidate>
+        <h1>Criar conta</h1>
+        <p class="entrada-sub">Você ganha um espaço só seu, com o sistema inteiro. Depois pode compartilhar clientes, projetos e aplicações com quem quiser.</p>
+        <ol class="entrada-passos" aria-label="Etapas do cadastro">
+          <li data-p="1">Você</li><li data-p="2">Endereço</li><li data-p="3">Uso</li><li data-p="4">Senha</li>
+        </ol>
+
+        <fieldset class="entrada-passo" data-passo="1">
+          <legend>Seus dados</legend>
+          <label class="entrada-campo"><span>Nome completo</span>
+            <input type="text" name="nome" autocomplete="name" required maxlength="160"></label>
+          <div class="entrada-dupla">
+            <label class="entrada-campo"><span>Data de nascimento</span>
+              <input type="date" name="nascimento" autocomplete="bday" required></label>
+            <label class="entrada-campo"><span>CPF</span>
+              <input type="text" name="cpf" inputmode="numeric" autocomplete="off" placeholder="000.000.000-00" maxlength="14" required></label>
+          </div>
+          <label class="entrada-campo"><span>E-mail</span>
+            <input type="email" name="email" autocomplete="username" inputmode="email" required></label>
+        </fieldset>
+
+        <fieldset class="entrada-passo" data-passo="2" hidden>
+          <legend>Endereço residencial</legend>
+          <div class="entrada-dupla">
+            <label class="entrada-campo"><span>CEP</span>
+              <input type="text" name="cep" inputmode="numeric" autocomplete="postal-code" placeholder="00000-000" maxlength="9" required></label>
+            <p class="entrada-dica" data-cep-aviso>Digite o CEP que o endereço se preenche sozinho.</p>
+          </div>
+          <label class="entrada-campo"><span>Rua</span>
+            <input type="text" name="logradouro" autocomplete="address-line1" required maxlength="160"></label>
+          <div class="entrada-dupla">
+            <label class="entrada-campo"><span>Número</span>
+              <input type="text" name="numero" autocomplete="off" required maxlength="20"></label>
+            <label class="entrada-campo"><span>Complemento <i>(opcional)</i></span>
+              <input type="text" name="complemento" autocomplete="address-line2" maxlength="80"></label>
+          </div>
+          <label class="entrada-campo"><span>Bairro</span>
+            <input type="text" name="bairro" required maxlength="80"></label>
+          <div class="entrada-dupla entrada-cidade">
+            <label class="entrada-campo"><span>Cidade</span>
+              <input type="text" name="cidade" autocomplete="address-level2" required maxlength="80"></label>
+            <label class="entrada-campo"><span>UF</span>
+              <select name="uf" autocomplete="address-level1" required><option value="">--</option><option>AC</option><option>AL</option><option>AP</option><option>AM</option><option>BA</option><option>CE</option><option>DF</option><option>ES</option><option>GO</option><option>MA</option><option>MT</option><option>MS</option><option>MG</option><option>PA</option><option>PB</option><option>PR</option><option>PE</option><option>PI</option><option>RJ</option><option>RN</option><option>RS</option><option>RO</option><option>RR</option><option>SC</option><option>SP</option><option>SE</option><option>TO</option></select></label>
+          </div>
+        </fieldset>
+
+        <fieldset class="entrada-passo" data-passo="3" hidden>
+          <legend>Como você vai usar</legend>
+          <div class="entrada-opcoes" role="radiogroup" aria-label="Para que vai usar o sistema">
+            <label><input type="radio" name="uso" value="trabalho"><span>Trabalho</span></label>
+            <label><input type="radio" name="uso" value="estudo"><span>Estudo</span></label>
+            <label><input type="radio" name="uso" value="pessoal"><span>Uso pessoal</span></label>
+            <label><input type="radio" name="uso" value="outro"><span>Outro</span></label>
+          </div>
+          <label class="entrada-campo"><span data-rotulo-cargo>Cargo</span>
+            <input type="text" name="cargo" autocomplete="organization-title" maxlength="80" placeholder="Ex.: Gerente de projetos"></label>
+          <label class="entrada-campo"><span data-rotulo-empresa>Empresa <i>(opcional)</i></span>
+            <input type="text" name="empresa" autocomplete="organization" maxlength="120"></label>
+        </fieldset>
+
+        <fieldset class="entrada-passo" data-passo="4" hidden>
+          <legend>Escolha uma senha</legend>
+          <label class="entrada-campo"><span>Senha</span>
+            <span class="entrada-senha"><input type="password" name="senha" autocomplete="new-password" required>
+            <button type="button" class="entrada-ver" data-ver-senha aria-label="Mostrar a senha">Mostrar</button></span></label>
+          <ul class="entrada-regras" data-regras aria-live="polite">
+          <li data-r="tam">Pelo menos 8 caracteres</li>
+          <li data-r="mai">Uma letra maiúscula</li>
+          <li data-r="num">Um número</li>
+          <li data-r="esp">Um caractere especial (ex.: ! @ # $ %)</li>
+        </ul>
+          <label class="entrada-campo"><span>Repita a senha</span>
+            <input type="password" name="senha2" autocomplete="new-password" required></label>
+          <label class="entrada-aceite"><input type="checkbox" name="termos"><span>Concordo em guardar os meus dados para criar a conta. Eles ficam visíveis só para mim e para a administração do Sistema IT.IA, nunca para quem compartilha projetos comigo.</span></label>
+        </fieldset>
+
+        <p class="entrada-erro" data-erro hidden></p>
+        <p class="entrada-ok" data-ok hidden></p>
+        <div class="entrada-navega">
+          <button class="entrada-voltar" type="button" data-voltar hidden>Voltar</button>
+          <button class="entrada-botao" type="submit">Continuar</button>
+        </div>
+        <p class="entrada-troca">Já tem conta? <button class="entrada-link" type="button" data-ir="login">Entrar</button></p>
       </form>
 
       <form class="entrada-form" data-etapa="esqueci" hidden novalidate>
@@ -1892,18 +2073,25 @@ body.com-login.logado #entrada{display:none}
 
       <form class="entrada-form" data-etapa="trocar" hidden novalidate>
         <h1>Criar a senha nova</h1>
-        <p class="entrada-sub">Use pelo menos 8 caracteres.</p>
+        <p class="entrada-sub">A senha precisa seguir as regras abaixo.</p>
         <label class="entrada-campo"><span>Senha nova</span>
-          <input type="password" name="senha" autocomplete="new-password" minlength="8" required></label>
+          <span class="entrada-senha"><input type="password" name="senha" autocomplete="new-password" required>
+          <button type="button" class="entrada-ver" data-ver-senha aria-label="Mostrar a senha">Mostrar</button></span></label>
+        <ul class="entrada-regras" data-regras aria-live="polite">
+          <li data-r="tam">Pelo menos 8 caracteres</li>
+          <li data-r="mai">Uma letra maiúscula</li>
+          <li data-r="num">Um número</li>
+          <li data-r="esp">Um caractere especial (ex.: ! @ # $ %)</li>
+        </ul>
         <label class="entrada-campo"><span>Repita a senha</span>
-          <input type="password" name="senha2" autocomplete="new-password" minlength="8" required></label>
+          <input type="password" name="senha2" autocomplete="new-password" required></label>
         <p class="entrada-erro" data-erro hidden></p>
         <button class="entrada-botao" type="submit">Salvar e entrar</button>
       </form>
 
       <div class="entrada-form" data-etapa="sem-acesso" hidden>
-        <h1>Acesso ainda não liberado</h1>
-        <p class="entrada-sub">Você entrou como <b data-email></b>, mas esse e-mail ainda não está ligado a ninguém do time. Peça para o Master liberar o seu acesso.</p>
+        <h1>Não foi possível abrir o seu espaço</h1>
+        <p class="entrada-sub">Você entrou como <b data-email></b>, mas não foi possível preparar o seu espaço agora. Tente entrar de novo em alguns instantes.</p>
         <button class="entrada-botao" type="button" data-sair>Sair</button>
       </div>
     </div>
@@ -5264,6 +5452,7 @@ const garantirId = o => o._id || (o._id = novoUuid());
 
 function linhasDaTela(d){
   const L = Object.fromEntries(GRAVAR.map(([t]) => [t, []]));
+  if (!L.participacoes) L.participacoes = [];   // com muitos usuários, compartilhar grava direto (a lista fica fora do GRAVAR)
   const eu = idEu('master') || null;
   d.people.forEach(p => {
     L.pessoas.push({id:p.id, nome:p.nome, funcao:semVazio(p.funcao), habilidades:p.skills || [], capacidade_h:Math.max(0, Math.min(80, +p.cap || 0)), papel:p.acesso === 'owner' ? 'master' : p.acesso, ativo:p.ativo !== false});
@@ -5987,6 +6176,397 @@ linhasDaTela = function(d){
   return L;
 };
 
+/* =====================================================================
+   MUITOS USUÁRIOS: cada conta tem o próprio espaço; compartilhar cliente, projeto ou aplicação por número de ID.
+   Um nível só de usuário. Como Trello, Jira, Notion e Google Drive (ver docs/ARQUITETURA-MULTIUSUARIO.md).
+   ===================================================================== */
+const MU = {eu:null};
+
+/* ---------- entrar: guarda quem sou eu (número de ID e espaço) e tira o "Ver como" ---------- */
+if (COM_BANCO){
+  const _entrouComo = window.itiaEntrouComo;
+  window.itiaEntrouComo = function(p){
+    MU.eu = p || null;
+    if (p) p.papel = 'master';          // um nível só: todo usuário tem o sistema inteiro no próprio espaço
+    const r = _entrouComo(p);
+    const s = $('#ver-como'); if (s){ s.hidden = true; const rod = s.closest('.menu-rodape'); if (rod){ const l = rod.querySelector('label[for=ver-como]'); if (l) l.hidden = true; } }
+    mostrarMeuId();
+    return r;
+  };
+}
+function mostrarMeuId(){
+  const rod = $('.menu-rodape .rodape-txt'); if (!rod || !MU.eu) return;
+  let b = $('.mu-meu-id', rod);
+  if (!b){ b = document.createElement('button'); b.type = 'button'; b.className = 'mu-meu-id'; b.dataset.muCopiar = '1'; rod.insertBefore(b, rod.firstChild); }
+  b.innerHTML = '<span>' + esc(MU.eu.nome || '') + '</span><b>ID ' + esc(MU.eu.numero || '') + '</b>';
+  b.title = 'Seu número de ID. Passe para quem vai compartilhar algo com você. Clique para copiar.';
+}
+
+/* ---------- ler do banco: espaço de cada ponto, compartilhamentos e convites ---------- */
+TABELAS_BANCO.push('convites', 'espacos');
+(function(){ const k = GRAVAR.findIndex(g => g[0] === 'participacoes'); if (k >= 0) GRAVAR.splice(k, 1);   // compartilhar grava direto (janela Compartilhar)
+  const r = GRAVAR.find(g => g[0] === 'regras_calculo'); if (r) r[1] = ['espaco_id', 'vigente_desde']; })();
+const _montarDadosMU = montarDados;
+montarDados = function(T, eu){
+  const d = _montarDadosMU(T, eu);
+  const esp = new Map((T.nos || []).map(n => [n.id, n.espaco_id]));
+  ['clients','projects','products','apps','ws'].forEach(k => d[k].forEach(x => { x._espaco = esp.get(x.id) || null; }));
+  const tipoNo = {cliente:'client', projeto:'project', produto:'product', aplicacao:'app', frente:'ws'};
+  const nos = new Map((T.nos || []).map(n => [n.id, n]));
+  const chaveNo = id => { const n = nos.get(id); return n ? tipoNo[n.tipo] + ':' + n.id : null; };
+  d.compartilhamentos = (T.participacoes || []).map(p => ({pessoa:p.pessoa_id, no:chaveNo(p.no_id), papel:p.papel, por:p.criado_por || null})).filter(x => x.no);
+  d.convites = (T.convites || []).filter(c => !c.aceito_em).map(c => ({id:c.id, no:chaveNo(c.no_id), email:c.email, por:c.criado_por})).filter(x => x.no);
+  d.espacos = (T.espacos || []).map(e => ({id:e.id, nome:e.nome, dono:e.dono_id}));
+  const pT = new Map((T.pessoas || []).map(p => [p.id, p]));
+  d.people.forEach(p => { const r = pT.get(p.id) || {}; p.numero = r.numero || null; p.usuario = r.usuario || null; p._login = !!r.auth_user_id; });
+  d.meuEspaco = (MU.eu && MU.eu.espaco_id) || null;
+  if (d.regras) d.regras._espaco = d.meuEspaco;
+  return d;
+};
+const _linhasDaTelaMU = linhasDaTela;
+linhasDaTela = function(d){
+  const L = _linhasDaTelaMU(d);
+  delete L.participacoes;
+  // só gravo o meu perfil e as pessoas sem login do meu espaço (as outras contas são de cada um)
+  const euId = MU.eu && MU.eu.pessoa_id;
+  const alheias = new Set(d.people.filter(p => (p._login && p.id !== euId) || p._externa).map(p => p.id));
+  L.pessoas = (L.pessoas || []).filter(r => !alheias.has(r.id));
+  L.pessoas_custos = (L.pessoas_custos || []).filter(r => !d.people.some(p => p.id === r.pessoa_id && p._externa));
+  (L.regras_calculo || []).forEach(r => { r.espaco_id = (d.regras && d.regras._espaco) || d.meuEspaco; });
+  if (L.regras_calculo && !d.meuEspaco) L.regras_calculo = [];
+  return L;
+};
+
+/* ---------- o que é meu e o que foi compartilhado comigo ---------- */
+const objDoNo = chave => { const [t, id] = String(chave || '').split(':'); const m = {client:'clients', project:'projects', product:'products', app:'apps', ws:'ws'}[t]; return m ? byId(m, id) : null; };
+function ehMeu(chave){ const o = objDoNo(chave); return !COM_BANCO || !o || !o._espaco || !D.meuEspaco || o._espaco === D.meuEspaco; }
+function compartilhadoComigo(chave){
+  if (ehMeu(chave)) return null;
+  const eu = MU.eu && MU.eu.pessoa_id, acima = new Set(caminho(chave).map(p => p[0]));
+  return (D.compartilhamentos || []).find(c => c.pessoa === eu && acima.has(c.no)) || null;
+}
+const soParaSituar = chave => !ehMeu(chave) && !compartilhadoComigo(chave);
+function donoDoNo(chave){ const o = objDoNo(chave); const e = o && (D.espacos || []).find(x => x.id === o._espaco); return e ? pessoa(e.dono) : null; }
+
+/* ---------- marca na Estrutura (como "Compartilhados comigo" do Drive) ---------- */
+function marcarCompartilhados(){
+  if (!COM_BANCO) return;
+  document.querySelectorAll('.ops-arvore .no-arv[data-no]').forEach(n => {
+    const k = n.dataset.no; if (k === 'all') return;
+    const cam = soParaSituar(k), rec = !ehMeu(k) && !cam;
+    n.classList.toggle('mu-recebido', rec); n.classList.toggle('mu-caminho', cam);
+    if ((rec || cam) && !n.querySelector('.mu-selo')){ const dono = donoDoNo(k);
+      n.querySelector('.nome') && n.querySelector('.nome').insertAdjacentHTML('afterend', '<span class="mu-selo" title="' + esc(cam ? 'Só o nome, para situar: você recebeu algo dentro dele' : 'Compartilhado com você' + (dono ? ' por ' + dono.nome : '')) + '">' + (cam ? '·' : SV('<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/>')) + '</span>'); }
+  });
+}
+let muPedido = 0;
+new MutationObserver(() => { cancelAnimationFrame(muPedido); muPedido = requestAnimationFrame(() => { marcarCompartilhados(); botaoCompartilhar(); }); }).observe(document.querySelector('.principal') || document.body, {childList:true, subtree:true});
+
+/* ---------- botão Compartilhar no topo de Operações (e na ficha do cliente) ---------- */
+function botaoCompartilhar(){
+  const t = $('#m-operacoes .ops-titulo'); if (!t || UI.sel === 'all' || t.querySelector('.mu-compartilhar')) return;
+  const cam = COM_BANCO && soParaSituar(UI.sel);
+  t.insertAdjacentHTML('beforeend', '<div class="mu-comp-box">' + (compartilhadoComigo(UI.sel) ? '<span class="mu-recebido-txt">Compartilhado com você' + (donoDoNo(UI.sel) ? ' por ' + esc(donoDoNo(UI.sel).nome) : '') + '</span>' : '') +
+    (cam ? '<span class="mu-recebido-txt">Só o nome, para situar</span>' : '<button type="button" class="btn sec peq mu-compartilhar" data-mu-compartilhar="' + esc(UI.sel) + '">' + SV('<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/>') + 'Compartilhar</button>') + '</div>');
+}
+
+/* ---------- janela Compartilhar (como a do Google Drive, do Trello e do Notion) ---------- */
+async function abrirCompartilhar(chave){
+  const nome = nomeDe(chave), tipoTxt = ({client:'o cliente', project:'o projeto', product:'o produto', app:'a aplicação', ws:'a frente'})[chave.split(':')[0]] || 'isto';
+  const dl = modal('Compartilhar ' + esc(nome), '', [{txt:'Pronto'}]);
+  dl.classList.add('mu-modal');
+  const desenhar = () => {
+    const acima = caminho(chave).map(p => p[0]);
+    const diretos = (D.compartilhamentos || []).filter(c => c.no === chave);
+    const herdados = (D.compartilhamentos || []).filter(c => c.no !== chave && acima.includes(c.no));
+    const equipes = (D.equipes || []).filter(q => q.ativa !== false && q.nos.some(n => acima.includes(n.no)));
+    const conv = (D.convites || []).filter(c => c.no === chave);
+    const dono = donoDoNo(chave) || (MU.eu ? {nome:MU.eu.nome, numero:MU.eu.numero, id:MU.eu.pessoa_id} : null);
+    const lin = (p, papel, extra) => '<li class="mu-pessoa">' + (p && p.id ? avatar(p.id) : '<span class="avatar">?</span>') + '<div class="mu-p-nome"><b>' + esc((p && p.nome) || 'Pessoa') + '</b>' + (p && p.numero ? '<small>ID ' + esc(p.numero) + (p.usuario ? ' · @' + esc(p.usuario) : '') + '</small>' : '') + '</div><span class="mu-papel">' + papel + '</span>' + (extra || '') + '</li>';
+    $('.modal-corpo', dl).innerHTML =
+      '<p class="sec" style="margin:0">Quem recebe trabalha junto em ' + tipoTxt + ' e em tudo o que está dentro dele, no próprio sistema. O resto do seu espaço continua só seu.</p>' +
+      (COM_BANCO ? '<form class="mu-add" data-mu-add><input class="campo" name="q" placeholder="Número de ID (ex.: 100002), @usuário ou e-mail" autocomplete="off" aria-label="Com quem compartilhar"><button class="btn" type="submit">Compartilhar</button></form><p class="mu-msg" data-mu-msg hidden></p>'
+        : '<p class="mu-msg">Na demonstração não há outros usuários. Entre no sistema publicado para compartilhar pelo número de ID.</p>') +
+      '<h3 class="mu-tit">Quem tem acesso</h3><ul class="mu-lista">' +
+        (dono ? lin(dono, 'Dono') : '') +
+        diretos.map(c => lin(pessoa(c.pessoa), 'Pode trabalhar', '<button type="button" class="ico-btn perigo" data-mu-tirar="' + c.pessoa + '" aria-label="Tirar o acesso">' + ICO.fechar + '</button>')).join('') +
+        herdados.map(c => lin(pessoa(c.pessoa), 'Pelo ' + esc(nomeDe(c.no)))).join('') +
+        equipes.map(q => '<li class="mu-pessoa"><span class="avatar" style="background:' + esc(q.cor) + '">' + esc(ini(q.nome)) + '</span><div class="mu-p-nome"><b>Equipe ' + esc(q.nome) + '</b><small>' + q.membros.length + ' pessoa' + (q.membros.length === 1 ? '' : 's') + '</small></div><span class="mu-papel">Pela equipe</span></li>').join('') +
+        conv.map(c => '<li class="mu-pessoa"><span class="avatar">@</span><div class="mu-p-nome"><b>' + esc(c.email) + '</b><small>Convite enviado: vira acesso quando a pessoa criar a conta</small></div><span class="mu-papel">Convidado</span><button type="button" class="ico-btn perigo" data-mu-tirar-convite="' + c.id + '" aria-label="Cancelar o convite">' + ICO.fechar + '</button></li>').join('') +
+      '</ul>' + (MU.eu ? '<p class="sec mu-meu">Seu número de ID é <b>' + esc(MU.eu.numero) + '</b>. Passe para quem for compartilhar algo com você.</p>' : '');
+  };
+  const msg = (t, erro) => { const m = $('[data-mu-msg]', dl); if (!m) return; m.hidden = !t; m.textContent = t || ''; m.classList.toggle('erro', !!erro); };
+  const noId = chave.split(':')[1];
+  dl.addEventListener('submit', async e => {
+    const f = e.target.closest('[data-mu-add]'); if (!f) return; e.preventDefault();
+    const q = f.q.value.trim(); if (!q) return; const sb = window.itiaBanco; if (!sb) return;
+    const btn = f.querySelector('button'); btn.disabled = true; msg('');
+    try {
+      const {data:achou, error:e1} = await sb.rpc('buscar_pessoa', {p_busca:q});
+      if (e1) throw e1;
+      const p = achou && achou[0];
+      if (p){
+        if (MU.eu && p.id === MU.eu.pessoa_id){ msg('Esse é o seu próprio ID.', true); return; }
+        if ((D.compartilhamentos || []).some(c => c.no === chave && c.pessoa === p.id)){ msg(p.nome + ' já tem acesso.', true); return; }
+        const {data, error} = await sb.from('participacoes').insert({pessoa_id:p.id, no_id:noId, papel:'owner', criado_por:MU.eu && MU.eu.pessoa_id}).select('pessoa_id');
+        if (error) throw error; if (!data || !data.length) throw new Error('o banco não deixou compartilhar');
+        if (!pessoa(p.id)) D.people.push({id:p.id, nome:p.nome, numero:p.numero, usuario:p.usuario, funcao:'', skills:[], cap:0, acesso:'dev', _externa:true});
+        else Object.assign(pessoa(p.id), {numero:p.numero, usuario:p.usuario});
+        D.compartilhamentos.push({pessoa:p.id, no:chave, papel:'owner', por:MU.eu && MU.eu.pessoa_id});
+        f.q.value = ''; desenhar(); toast('Compartilhado com ' + p.nome);
+      } else if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(q)){
+        const {data, error} = await sb.from('convites').insert({no_id:noId, email:q.toLowerCase(), criado_por:MU.eu && MU.eu.pessoa_id}).select('id');
+        if (error) throw /duplicate|unique/i.test(error.message) ? new Error('esse e-mail já foi convidado') : error;
+        D.convites.push({id:data[0].id, no:chave, email:q.toLowerCase()}); f.q.value = ''; desenhar();
+        toast('Convite guardado. Quando ' + q + ' criar a conta, o acesso aparece sozinho.');
+      } else msg('Nenhuma conta com esse número de ID ou @usuário. Para quem ainda não tem conta, use o e-mail.', true);
+    } catch (err){ msg('Não deu para compartilhar: ' + (err.message || err), true); }
+    finally { btn.disabled = false; }
+  });
+  dl.addEventListener('click', async e => {
+    const x = e.target.closest('[data-mu-tirar],[data-mu-tirar-convite]'); if (!x) return; const sb = window.itiaBanco; if (!sb) return;
+    if (x.dataset.muTirar){
+      const {error} = await sb.from('participacoes').delete().match({pessoa_id:x.dataset.muTirar, no_id:noId});
+      if (error){ msg('Não deu para tirar o acesso: ' + error.message, true); return; }
+      D.compartilhamentos = D.compartilhamentos.filter(c => !(c.no === chave && c.pessoa === x.dataset.muTirar)); desenhar(); toast('Acesso retirado');
+    } else {
+      const {error} = await sb.from('convites').delete().eq('id', x.dataset.muTirarConvite);
+      if (error){ msg('Não deu para cancelar: ' + error.message, true); return; }
+      D.convites = D.convites.filter(c => c.id !== x.dataset.muTirarConvite); desenhar();
+    }
+  });
+  desenhar();
+  const i = $('[data-mu-add] input', dl); if (i) setTimeout(() => i.focus(), 30);
+}
+document.addEventListener('click', e => {
+  const x = e.target.closest('[data-mu-compartilhar]'); if (x){ abrirCompartilhar(x.dataset.muCompartilhar); return; }
+  const c = e.target.closest('[data-mu-copiar]'); if (c && MU.eu){ try { navigator.clipboard.writeText(String(MU.eu.numero)); toast('Seu ID ' + MU.eu.numero + ' foi copiado'); } catch (er){ toast('Seu ID é ' + MU.eu.numero); } }
+});
+
+/* ---------- ficha do cliente: botão Compartilhar ---------- */
+const _fcDesenharMU = fcDesenhar;
+fcDesenhar = function(){
+  _fcDesenharMU();
+  const h = FC.dlg && FC.dlg.querySelector('.modal-cab h2'); if (!h || h.querySelector('.mu-compartilhar')) return;
+  h.insertAdjacentHTML('beforeend', '<button type="button" class="btn sec peq mu-compartilhar" data-mu-compartilhar="client:' + esc(FC.cli) + '">Compartilhar</button>');
+};
+
+/* ---------- Settings: Minha conta (nome, @usuário, número de ID e espaço) ---------- */
+const _rConfigMU = rConfig;
+rConfig = function(){
+  _rConfigMU();
+  const el = $('#m-configuracoes'); if (!el || !COM_BANCO || !MU.eu) return;
+  const eu = pessoa(MU.eu.pessoa_id) || {};
+  el.insertAdjacentHTML('afterbegin', '<section class="mu-conta"><h2 class="sub">Minha conta</h2><div class="grade-form">' +
+    '<label class="lb">Nome<input class="campo" data-mu-perfil="nome" value="' + esc(eu.nome || MU.eu.nome || '') + '"></label>' +
+    '<label class="lb">@usuário' + I('Um nome curto para outras pessoas acharem você ao compartilhar (como no Trello). Só letras minúsculas, números, ponto e sublinhado.') + '<input class="campo" data-mu-perfil="usuario" value="' + esc(eu.usuario || '') + '" placeholder="ex.: william"></label>' +
+    '<div class="lb"><span>Número de ID</span><button type="button" class="btn sec" data-mu-copiar>ID ' + esc(MU.eu.numero) + ' · copiar</button></div>' +
+    '<div class="lb"><span>Espaço</span><span class="sec" style="padding-top:8px">' + esc(MU.eu.espaco_nome || '') + '</span></div></div>' +
+    '<div class="acoes"><button class="btn" type="button" data-mu-salvar-perfil>Salvar minha conta</button></div></section>');
+};
+document.addEventListener('click', async e => {
+  if (!e.target.closest('[data-mu-salvar-perfil]') || !MU.eu) return;
+  const nome = ($('[data-mu-perfil=nome]') || {}).value.trim(), usuario = (($('[data-mu-perfil=usuario]') || {}).value || '').trim().toLowerCase().replace(/^@/, '');
+  if (nome.length < 2){ toast('Escreva o seu nome'); return; }
+  if (usuario && !/^[a-z0-9_.]{3,30}$/.test(usuario)){ toast('O @usuário tem de 3 a 30 letras minúsculas, números, ponto ou sublinhado'); return; }
+  const {data, error} = await window.itiaBanco.from('pessoas').update({nome, usuario:usuario || null}).eq('id', MU.eu.pessoa_id).select('id');
+  if (error){ toast(/duplicate|unique/i.test(error.message) ? 'Esse @usuário já está em uso' : 'Não gravou: ' + error.message); return; }
+  if (!data || !data.length){ toast('O banco não deixou gravar'); return; }
+  const p = pessoa(MU.eu.pessoa_id); if (p){ p.nome = nome; p.usuario = usuario || null; }
+  MU.eu.nome = nome; mostrarMeuId(); salvar(); toast('Conta salva');
+});
+
+/* =====================================================================
+   ADMIN (só o dono do sistema) e REGISTRO DE USO (todos os usuários)
+   O dono do sistema vê números e o cadastro de cada usuário; nunca o conteúdo dos projetos deles.
+   Os números vêm das funções admin_* do banco (banco/16_admin_sistema.sql), que conferem o dono por dentro.
+   ===================================================================== */
+const ADM = {dono:false, aba:'visao', dias:30, busca:'', ordem:'criado_em', desc:true, resumo:null, usuarios:null, diario:null, telas:null, banco:null, carregando:false, erro:null};
+const admBanco = () => (COM_BANCO && window.itiaBanco && MU.eu) ? window.itiaBanco : null;
+
+/* ---------- registro de uso: entradas, telas, minutos ativos, tempo de carregar e salvar, erros ---------- */
+const USO = {chave:'', interagiu:Date.now(), erros:0};
+function anotarUso(tipo, extra){
+  const sb = admBanco(); if (!sb) return;
+  const linha = Object.assign({tipo}, extra || {});
+  if (linha.ms != null) linha.ms = Math.max(0, Math.min(600000, Math.round(linha.ms)));
+  sb.from('uso_eventos').insert(linha).then(r => { if (r && r.error) console.warn('Uso', tipo, r.error.message); }, () => {});
+}
+function chaveTela(){ return UI.modulo + (UI.modulo === 'operacoes' && UI.view ? '/' + UI.view : ''); }
+function conferirTela(){ const k = chaveTela(); if (k && k !== USO.chave){ USO.chave = k; anotarUso('tela', {tela:k.slice(0, 60)}); } }
+if (COM_BANCO){
+  const _entrou = window.itiaEntrouComo;
+  window.itiaEntrouComo = function(p){
+    const t0 = performance.now();
+    const r = _entrou(p);
+    Promise.resolve(r).then(async () => {
+      if (!admBanco()) return;
+      anotarUso('entrou'); anotarUso('carregou', {ms:performance.now() - t0});
+      const {data} = await window.itiaBanco.rpc('sou_dono_sistema');
+      ADM.dono = data === true;
+      const li = document.querySelector('.item[data-tela="admin"]'); if (li) li.parentElement.hidden = !ADM.dono;
+      USO.chave = ''; conferirTela();
+    });
+    return r;
+  };
+  document.addEventListener('click', () => setTimeout(conferirTela, 60), true);
+  ['pointerdown','keydown','wheel'].forEach(ev => document.addEventListener(ev, () => { USO.interagiu = Date.now(); }, {passive:true, capture:true}));
+  // minutos ativos: a cada 5 minutos com a tela aberta e alguém mexendo nela
+  setInterval(() => { if (document.visibilityState === 'visible' && Date.now() - USO.interagiu < 5 * 60000) anotarUso('ativo'); }, 5 * 60000);
+  const erroTela = (msg, onde) => { if (USO.erros++ >= 10) return; anotarUso('erro', {tela:onde, detalhe:{msg:String(msg || '').slice(0, 200)}}); };
+  window.addEventListener('error', e => erroTela(e.message, 'tela'));
+  window.addEventListener('unhandledrejection', e => erroTela(e.reason && (e.reason.message || e.reason), 'tela'));
+  const _gravar = gravarNoBanco;
+  gravarNoBanco = async function(){
+    if (SYNC.rodando || !SYNC.base) return _gravar();
+    const t0 = performance.now();
+    await _gravar();
+    if (SYNC.erros.length) anotarUso('erro', {tela:'salvar', detalhe:{n:SYNC.erros.length, msg:String(SYNC.erros[0]).slice(0, 200)}});
+    else anotarUso('salvou', {ms:performance.now() - t0});
+  };
+}
+
+/* ---------- módulo Admin no menu (escondido para quem não é o dono) ---------- */
+{ const li = document.querySelector('.item[data-tela="admin"]'); if (li) li.parentElement.hidden = true; }
+const _abrirModulo = abrirModulo;
+abrirModulo = function(id){ if (id === 'admin' && !ADM.dono) id = 'overview'; return _abrirModulo(id); };
+const _render = render;
+render = function(){ if (UI.modulo === 'admin') return rAdmin(); return _render(); };
+
+async function admCarregar(forcar){
+  const sb = admBanco(); if (!sb || !ADM.dono || ADM.carregando) return;
+  if (ADM.resumo && !forcar) return;
+  ADM.carregando = true; ADM.erro = null; rAdmin();
+  const [r, u, d, t, b] = await Promise.all([sb.rpc('admin_resumo'), sb.rpc('admin_usuarios'), sb.rpc('admin_uso_diario', {p_dias:ADM.dias}), sb.rpc('admin_telas', {p_dias:ADM.dias}), sb.rpc('admin_banco')]);
+  const erro = [r, u, d, t, b].find(x => x.error);
+  ADM.carregando = false;
+  if (erro){ ADM.erro = erro.error.message; }
+  else { ADM.resumo = r.data || {}; ADM.usuarios = u.data || []; ADM.diario = d.data || []; ADM.telas = t.data || []; ADM.banco = b.data || []; }
+  if (UI.modulo === 'admin') rAdmin();
+}
+
+const admData = v => v ? new Date(v).toLocaleDateString('pt-BR') : '';
+const admHora = v => v ? new Date(v).toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'}) : '';
+const admCpf = v => v ? String(v).replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4') : '';
+const admCep = v => v ? String(v).replace(/^(\d{5})(\d{3})$/, '$1-$2') : '';
+const ADM_USO = {trabalho:'Trabalho', estudo:'Estudo', pessoal:'Uso pessoal', outro:'Outro'};
+const ADM_EV = {entrou:'Entrou no sistema', tela:'Abriu', carregou:'Carregou os dados', salvou:'Salvou', erro:'Erro', saiu:'Saiu'};
+const ADM_TELA = {overview:'Overview', operacoes:'Operações', clientes:'Clients', catalog:'Catalog', custos:'Costs', servicedesk:'Service Desk', time:'Team', agentes:'Agent Studio', playbook:'Playbook', configuracoes:'Settings', admin:'Admin'};
+const nomeTela = t => { if (!t) return ''; const [m, v] = String(t).split('/'); return (ADM_TELA[m] || m) + (v ? ' › ' + v.charAt(0).toUpperCase() + v.slice(1) : ''); };
+function admIdade(iso){ if (!iso) return ''; const n = new Date(iso + 'T00:00:00'), h = new Date(); let a = h.getFullYear() - n.getFullYear(); if (h < new Date(h.getFullYear(), n.getMonth(), n.getDate())) a--; return a + ' anos'; }
+function admMs(v){ return v == null ? 'sem dado' : v >= 1000 ? num(v / 1000, 1) + ' s' : v + ' ms'; }
+
+/* gráfico de barras simples (SVG), uma série por dia */
+function admBarras(serie, campo, rotulo){
+  const W = 640, H = 150, base = 124, n = serie.length || 1, larg = W / n;
+  const max = Math.max(1, ...serie.map(s => +s[campo] || 0));
+  const barras = serie.map((s, i) => { const v = +s[campo] || 0, h = v / max * (base - 12); return '<rect x="' + (i * larg + larg * 0.18).toFixed(1) + '" y="' + (base - h).toFixed(1) + '" width="' + (larg * 0.64).toFixed(1) + '" height="' + h.toFixed(1) + '" fill="currentColor"><title>' + esc(admData(s.dia + 'T12:00:00')) + ': ' + v + '</title></rect>'; }).join('');
+  const marcas = serie.map((s, i) => ((i % Math.ceil(n / 6) === 0 && n - 1 - i >= Math.ceil(n / 12)) || i === n - 1) ? '<text x="' + (i === 0 ? 0 : i === n - 1 ? W : i * larg + larg / 2).toFixed(1) + '" y="' + (H - 6) + '" text-anchor="' + (i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle') + '" font-size="11" fill="currentColor" opacity=".6">' + esc(new Date(s.dia + 'T12:00:00').toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})) + '</text>' : '').join('');
+  return '<svg class="adm-barras" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(rotulo) + ' por dia, máximo ' + max + '"><line x1="0" y1="' + base + '" x2="' + W + '" y2="' + base + '" stroke="currentColor" opacity=".25"/>' + barras + marcas + '</svg>';
+}
+const admKpi = (v, t, alerta) => '<div class="kpi' + (alerta ? ' alerta' : '') + '"><b>' + v + '</b><span>' + esc(t) + '</span></div>';
+
+function rAdmin(){
+  const el = $('#m-admin'); if (!el) return;
+  if (!ADM.dono){ el.innerHTML = '<p class="vazio-linha">Só o dono do sistema abre este módulo.</p>'; return; }
+  const topo = '<div class="topo-tela"><div><h1><span>Admin</span>' + I('Admin: painel do dono do sistema. Mostra quem usa, quanto usa e como o sistema está respondendo. Não mostra o conteúdo dos projetos de ninguém.') + '</h1><p class="lead">Usuários, cadastro, uso e desempenho do Sistema IT.IA.</p></div>' +
+    '<div class="acoes"><label class="adm-per">Período <select class="sel peq" data-adm-dias>' + [7, 30, 90].map(d => '<option value="' + d + '"' + (ADM.dias === d ? ' selected' : '') + '>Últimos ' + d + ' dias</option>').join('') + '</select></label><button class="btn sec" type="button" data-adm-atualizar' + (ADM.carregando ? ' disabled' : '') + '>' + (ADM.carregando ? 'Atualizando…' : 'Atualizar') + '</button></div></div>';
+  const abas = '<div class="adm-abas" role="tablist">' + [['visao','Visão geral'],['usuarios','Usuários' + (ADM.usuarios ? ' (' + ADM.usuarios.length + ')' : '')],['desempenho','Desempenho']].map(([k, n]) => '<button type="button" role="tab" aria-selected="' + (ADM.aba === k) + '" data-adm-aba="' + k + '">' + esc(n) + '</button>').join('') + '</div>';
+  if (!ADM.resumo){
+    el.innerHTML = topo + (ADM.erro ? '<p class="entrada-erro">Não foi possível ler os números: ' + esc(ADM.erro) + '</p>' : '<p class="vazio-linha">Lendo os números do banco…</p>');
+    if (!ADM.carregando && !ADM.erro) admCarregar();
+    return;
+  }
+  const R = ADM.resumo;
+  let corpo = '';
+  if (ADM.aba === 'visao'){
+    corpo = '<div class="kpis">' + admKpi(num(R.usuarios, 0), 'Usuários') + admKpi(num(R.novos_7d, 0), 'Novos em 7 dias') + admKpi(num(R.ativos_1d, 0), 'Ativos hoje') + admKpi(num(R.ativos_7d, 0), 'Ativos em 7 dias') + admKpi(num(R.ativos_30d, 0), 'Ativos em 30 dias') + admKpi(num(Math.round((R.minutos_ativos_7d || 0) / 60), 0) + 'h', 'Tempo de uso em 7 dias') + '</div>' +
+      '<div class="kpis">' + admKpi(num(R.clientes, 0), 'Clientes') + admKpi(num(R.projetos, 0), 'Projetos') + admKpi(num(R.aplicacoes, 0), 'Aplicações') + admKpi(num(R.itens, 0), 'Itens') + admKpi(num(R.compartilhamentos, 0), 'Compartilhamentos') + admKpi(num(R.convites_pendentes, 0), 'Convites pendentes') + '</div>' +
+      '<div class="graficos">' +
+        '<section class="grafico"><h3>Pessoas ativas por dia</h3>' + admBarras(ADM.diario, 'ativos', 'Pessoas ativas') + '</section>' +
+        '<section class="grafico"><h3>Cadastros por dia</h3>' + admBarras(ADM.diario, 'cadastros', 'Cadastros') + '</section>' +
+      '</div>' +
+      '<div class="graficos"><section class="grafico"><h3>Telas mais usadas</h3>' + (ADM.telas.length ? '<table class="tabela"><thead><tr><th>Tela</th><th>Aberturas</th><th>Pessoas</th></tr></thead><tbody>' + ADM.telas.map(t => '<tr><td>' + esc(nomeTela(t.tela)) + '</td><td>' + num(t.aberturas, 0) + '</td><td>' + num(t.pessoas, 0) + '</td></tr>').join('') + '</tbody></table>' : '<p class="vazio-linha">Ainda sem uso registrado no período.</p>') + '</section>' +
+      '<section class="grafico"><h3>Uso por finalidade</h3>' + admFinalidade() + '</section></div>';
+  } else if (ADM.aba === 'usuarios'){
+    corpo = admTabelaUsuarios();
+  } else {
+    corpo = '<div class="kpis">' + admKpi(admMs(R.carregar_ms_mediana), 'Carregar (tempo típico)') + admKpi(admMs(R.carregar_ms_p95), 'Carregar (95% abaixo de)', R.carregar_ms_p95 > 5000) + admKpi(admMs(R.salvar_ms_mediana), 'Salvar (tempo típico)') + admKpi(num(R.salvamentos_7d, 0), 'Salvamentos em 7 dias') + admKpi(num(R.erros_7d, 0), 'Erros em 7 dias', R.erros_7d > 0) + admKpi(num(R.banco_mb, 1) + ' MB', 'Tamanho do banco') + '</div>' +
+      '<div class="graficos"><section class="grafico"><h3>Erros por dia</h3>' + admBarras(ADM.diario, 'erros', 'Erros') + '</section><section class="grafico"><h3>Tempo típico para carregar, por dia (ms)</h3>' + admBarras(ADM.diario, 'carregar_ms', 'Tempo para carregar') + '</section></div>' +
+      '<div class="graficos"><section class="grafico"><h3>Maiores tabelas do banco</h3><table class="tabela"><thead><tr><th>Tabela</th><th>Linhas (aprox.)</th><th>Tamanho</th></tr></thead><tbody>' + ADM.banco.map(t => '<tr><td>' + esc(t.tabela) + '</td><td>' + num(t.linhas, 0) + '</td><td>' + (t.tamanho_kb >= 1024 ? num(t.tamanho_kb / 1024, 1) + ' MB' : num(t.tamanho_kb, 0) + ' KB') + '</td></tr>').join('') + '</tbody></table></section></div>';
+  }
+  el.innerHTML = topo + abas + (ADM.erro ? '<p class="entrada-erro">Não foi possível atualizar: ' + esc(ADM.erro) + '</p>' : '') + '<div class="adm-corpo">' + corpo + '</div><p class="adm-rodape">Atualizado em ' + esc(admHora(R.gerado_em)) + '. Os números de uso começam a contar a partir desta versão.</p>';
+}
+function admFinalidade(){
+  const us = ADM.usuarios || [], tot = us.length || 1;
+  const cont = {}; us.forEach(u => { const k = u.uso || 'sem'; cont[k] = (cont[k] || 0) + 1; });
+  const linhas = [...Object.keys(ADM_USO), 'sem'].filter(k => cont[k]).map(k => '<div class="adm-fin"><span>' + (ADM_USO[k] || 'Sem resposta') + '</span><div class="progresso grosso"><i style="width:' + (cont[k] / tot * 100).toFixed(1) + '%"></i></div><b>' + cont[k] + '</b></div>');
+  return linhas.length ? linhas.join('') : '<p class="vazio-linha">Sem usuários.</p>';
+}
+const ADM_COLS = [['nome','Usuário'],['criado_em','Cadastro'],['ultimo_acesso','Último acesso'],['uso','Uso'],['cargo','Cargo'],['cidade','Cidade'],['projetos','Projetos'],['itens','Itens'],['dias_ativos_30d','Dias ativos'],['minutos_ativos_30d','Tempo'],['indice_uso','Índice de uso']];
+function admFiltrados(){
+  const b = ADM.busca.trim().toLowerCase();
+  const lista = (ADM.usuarios || []).filter(u => !b || [u.nome, u.nome_completo, u.email, u.usuario, u.numero, u.cpf, u.cidade, u.cargo, u.empresa].some(v => v != null && String(v).toLowerCase().includes(b)));
+  const k = ADM.ordem, d = ADM.desc ? -1 : 1;
+  return lista.sort((a, c) => { const x = a[k], y = c[k]; if (x == null && y == null) return 0; if (x == null) return 1; if (y == null) return -1; return (typeof x === 'number' ? x - y : String(x).localeCompare(String(y), 'pt-BR')) * d; });
+}
+function admTabelaUsuarios(){
+  const lista = admFiltrados();
+  const seta = k => ADM.ordem === k ? (ADM.desc ? ' ↓' : ' ↑') : '';
+  return '<div class="adm-filtros"><input class="campo" type="search" data-adm-busca placeholder="Buscar por nome, e-mail, ID, CPF, cidade, cargo…" value="' + esc(ADM.busca) + '" aria-label="Buscar usuário"><button class="btn sec" type="button" data-adm-csv>Baixar planilha (CSV)</button></div>' +
+    '<div class="tabela-rolo"><table class="tabela adm-tab"><thead><tr>' + ADM_COLS.map(([k, n]) => '<th class="ord" data-adm-ordem="' + k + '" aria-sort="' + (ADM.ordem === k ? (ADM.desc ? 'descending' : 'ascending') : 'none') + '">' + esc(n) + seta(k) + '</th>').join('') + '</tr></thead><tbody>' +
+    (lista.length ? lista.map(u => '<tr data-adm-pessoa="' + esc(u.pessoa_id) + '" tabindex="0">' +
+      '<td><b>' + esc(u.nome_completo || u.nome) + '</b>' + (u.dono_sistema ? ' <span class="pill">Dono do sistema</span>' : '') + '<small class="adm-sub">ID ' + esc(u.numero) + ' · ' + esc(u.email || '') + '</small></td>' +
+      '<td>' + esc(admData(u.criado_em)) + (u.email_confirmado ? '' : '<small class="adm-sub">e-mail não confirmado</small>') + '</td>' +
+      '<td>' + (u.ultimo_acesso ? esc(admHora(u.ultimo_acesso)) : '<span class="sec">nunca</span>') + '</td>' +
+      '<td>' + esc(ADM_USO[u.uso] || '') + '</td><td>' + esc(u.cargo || '') + (u.empresa ? '<small class="adm-sub">' + esc(u.empresa) + '</small>' : '') + '</td>' +
+      '<td>' + esc(u.cidade ? u.cidade + (u.uf ? '/' + u.uf : '') : '') + '</td>' +
+      '<td>' + num(u.projetos, 0) + '</td><td>' + num(u.itens, 0) + '</td><td>' + num(u.dias_ativos_30d, 0) + '</td><td>' + (u.minutos_ativos_30d >= 60 ? num(u.minutos_ativos_30d / 60, 1) + 'h' : num(u.minutos_ativos_30d, 0) + 'min') + '</td>' +
+      '<td><div class="adm-indice"><div class="progresso"><i style="width:' + (u.indice_uso || 0) + '%"></i></div><b>' + (u.indice_uso || 0) + '</b></div></td></tr>').join('')
+      : '<tr><td colspan="' + ADM_COLS.length + '" class="vazio-linha">Nenhum usuário encontrado.</td></tr>') +
+    '</tbody></table></div><p class="adm-rodape">Dias ativos, tempo e índice contam os últimos 30 dias. Índice de uso (0 a 100): frequência 50%, tempo de uso 30%, volume de trabalho 20%.</p>';
+}
+function admCsv(){
+  const cols = ['numero','nome','nome_completo','email','usuario','criado_em','email_confirmado','ultimo_acesso','data_nascimento','cpf','cep','logradouro','numero_end','complemento','bairro','cidade','uf','uso','cargo','empresa','termos_aceitos_em','clientes','projetos','aplicacoes','itens','itens_concluidos','compartilhou','recebeu','entradas_30d','dias_ativos_30d','minutos_ativos_30d','erros_30d','indice_uso'];
+  const cel = v => { const s = v == null ? '' : String(v); return /[";\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+  const txt = '﻿' + cols.join(';') + '\n' + admFiltrados().map(u => cols.map(c => cel(u[c])).join(';')).join('\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([txt], {type:'text/csv;charset=utf-8'})); a.download = 'usuarios-itia-' + new Date().toISOString().slice(0, 10) + '.csv';
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+async function admFicha(id){
+  const u = (ADM.usuarios || []).find(x => x.pessoa_id === id); if (!u) return;
+  const lin = (r, v) => '<div class="adm-lin"><span>' + esc(r) + '</span><b>' + (v === '' || v == null ? '<i class="sec">não informado</i>' : esc(v)) + '</b></div>';
+  const end = [u.logradouro, u.numero_end, u.complemento].filter(Boolean).join(', ');
+  const corpo = '<div class="adm-ficha">' +
+    '<section><h4>Conta</h4>' + lin('Número de ID', u.numero) + lin('Nome no sistema', u.nome) + lin('@usuário', u.usuario ? '@' + u.usuario : '') + lin('E-mail', u.email) + lin('E-mail confirmado', u.email_confirmado ? 'Sim' : 'Não') + lin('Cadastro', admHora(u.criado_em)) + lin('Último acesso', admHora(u.ultimo_acesso)) + '</section>' +
+    '<section><h4>Dados do cadastro</h4>' + lin('Nome completo', u.nome_completo) + lin('Nascimento', u.data_nascimento ? admData(u.data_nascimento + 'T12:00:00') + ' (' + admIdade(u.data_nascimento) + ')' : '') + lin('CPF', admCpf(u.cpf)) + lin('Endereço', end) + lin('Bairro', u.bairro) + lin('Cidade', u.cidade ? u.cidade + (u.uf ? '/' + u.uf : '') : '') + lin('CEP', admCep(u.cep)) + lin('Uso', ADM_USO[u.uso] || '') + lin(u.uso === 'estudo' ? 'Curso' : 'Cargo', u.cargo) + lin(u.uso === 'estudo' ? 'Instituição' : 'Empresa', u.empresa) + lin('Aceite dos termos', admHora(u.termos_aceitos_em)) + '</section>' +
+    '<section><h4>O que tem no espaço</h4>' + lin('Clientes', num(u.clientes, 0)) + lin('Projetos', num(u.projetos, 0)) + lin('Aplicações', num(u.aplicacoes, 0)) + lin('Itens', num(u.itens, 0) + ' (' + num(u.itens_concluidos, 0) + ' concluídos)') + lin('Compartilhou com outros', num(u.compartilhou, 0)) + lin('Recebeu de outros', num(u.recebeu, 0)) + '</section>' +
+    '<section><h4>Uso nos últimos 30 dias</h4>' + lin('Entradas', num(u.entradas_30d, 0)) + lin('Dias ativos', num(u.dias_ativos_30d, 0)) + lin('Tempo de uso', num(u.minutos_ativos_30d, 0) + ' min') + lin('Erros', num(u.erros_30d, 0)) + lin('Índice de uso', (u.indice_uso || 0) + ' de 100') + '</section>' +
+    '</div><section class="adm-hist"><h4>Histórico de uso</h4><div data-adm-hist><p class="vazio-linha">Lendo…</p></div></section>';
+  const dlg = modal(esc(u.nome_completo || u.nome), corpo, [{txt:'Fechar', cls:'sec'}]);
+  dlg.classList.add('adm-modal');
+  const {data, error} = await window.itiaBanco.rpc('admin_historico', {p_pessoa:id, p_limite:200});
+  const alvo = dlg.querySelector('[data-adm-hist]'); if (!alvo) return;
+  if (error){ alvo.innerHTML = '<p class="entrada-erro">' + esc(error.message) + '</p>'; return; }
+  alvo.innerHTML = (data || []).length ? '<table class="tabela"><thead><tr><th>Quando</th><th>O quê</th><th>Detalhe</th></tr></thead><tbody>' + data.map(e => '<tr><td>' + esc(admHora(e.em)) + '</td><td>' + esc(ADM_EV[e.tipo] || e.tipo) + '</td><td>' + esc(e.tipo === 'tela' ? nomeTela(e.tela) : e.ms != null ? admMs(e.ms) : e.detalhe && e.detalhe.msg ? e.detalhe.msg : '') + '</td></tr>').join('') + '</tbody></table>' : '<p class="vazio-linha">Ainda sem uso registrado.</p>';
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('#m-admin')) return;
+  const a = e.target.closest('[data-adm-aba]'); if (a){ ADM.aba = a.dataset.admAba; return rAdmin(); }
+  if (e.target.closest('[data-adm-atualizar]')) return admCarregar(true);
+  if (e.target.closest('[data-adm-csv]')) return admCsv();
+  const o = e.target.closest('[data-adm-ordem]'); if (o){ const k = o.dataset.admOrdem; if (ADM.ordem === k) ADM.desc = !ADM.desc; else { ADM.ordem = k; ADM.desc = !['nome','uso','cargo','cidade'].includes(k); } return rAdmin(); }
+  const p = e.target.closest('[data-adm-pessoa]'); if (p) admFicha(p.dataset.admPessoa);
+});
+document.addEventListener('keydown', e => { const p = e.target.closest && e.target.closest('#m-admin [data-adm-pessoa]'); if (p && (e.key === 'Enter' || e.key === ' ')){ e.preventDefault(); admFicha(p.dataset.admPessoa); } });
+document.addEventListener('change', e => { const s = e.target.closest('#m-admin [data-adm-dias]'); if (s){ ADM.dias = +s.value; admCarregar(true); } });
+document.addEventListener('input', e => {
+  const b = e.target.closest('#m-admin [data-adm-busca]'); if (!b) return;
+  ADM.busca = b.value; const pos = b.selectionStart; rAdmin();
+  const n = $('#m-admin [data-adm-busca]'); if (n){ n.focus(); n.setSelectionRange(pos, pos); }
+});
+
 abrirModulo(UI.modulo);
 })();
 
@@ -6021,7 +6601,7 @@ function traduz(err){
   if (/Invalid login credentials/i.test(m)) return 'E-mail ou senha incorretos.';
   if (/Email not confirmed/i.test(m)) return 'Confirme o seu e-mail pelo link que enviamos antes de entrar.';
   if (/rate limit|too many/i.test(m)) return 'Muitas tentativas seguidas. Espere alguns minutos e tente de novo.';
-  if (/should be (at least|different)|weak/i.test(m)) return 'Escolha outra senha, com pelo menos 8 caracteres e diferente da anterior.';
+  if (/should be (at least|different)|weak/i.test(m)) return 'Escolha outra senha: com 8 ou mais caracteres, letra maiúscula, número e caractere especial, e diferente da anterior.';
   if (/fetch|network|Failed to/i.test(m)) return 'Não foi possível falar com o servidor. Confira a internet e tente de novo.';
   return 'Não deu certo: ' + m;
 }
@@ -6036,6 +6616,7 @@ if (!window.supabase || !window.supabase.createClient){
 const sb = window.supabase.createClient(URL_BANCO, CHAVE_PUBLICA, {auth:{persistSession:true, autoRefreshToken:true, detectSessionInUrl:true}});
 window.itiaBanco = sb;
 let trocandoSenha = tipoLink === 'recovery' || tipoLink === 'invite';
+if (tipoLink === 'signup' || tipoLink === 'email') history.replaceState(null, '', location.pathname);
 
 async function entrar(sessao){
   const {data, error} = await sb.rpc('vincular_meu_login');
@@ -6050,7 +6631,7 @@ function mostrarTrocar(){
   const f = raiz.querySelector('[data-etapa="trocar"]');
   const convite = tipoLink === 'invite';
   f.querySelector('h1').textContent = convite ? 'Bem-vindo ao Sistema IT.IA' : 'Criar a senha nova';
-  f.querySelector('.entrada-sub').textContent = convite ? 'Crie a sua senha para entrar. Use pelo menos 8 caracteres.' : 'Use pelo menos 8 caracteres.';
+  f.querySelector('.entrada-sub').textContent = convite ? 'Crie a sua senha para entrar. Ela precisa seguir as regras abaixo.' : 'A senha precisa seguir as regras abaixo.';
   mostrar('trocar');
 }
 async function sair(){ await sb.auth.signOut(); location.replace(location.pathname); }
@@ -6066,6 +6647,123 @@ raiz.querySelector('[data-etapa="login"]').addEventListener('submit', async ev =
   if (error) return aviso(f, 'erro', traduz(error));
   f.senha.value = ''; mostrar('carregando'); entrar(data.session);
 });
+/* ===== cadastro em 4 passos ===== */
+const soDigitos = v => String(v || '').replace(/\D/g, '');
+function cpfValido(v){
+  const d = soDigitos(v);
+  if (d.length !== 11 || /^(\d)\1{10}$/.test(d)) return false;
+  const dv = n => { let s = 0; for (let i = 0; i < n; i++) s += +d[i] * (n + 1 - i); const r = (s * 10) % 11; return r === 10 ? 0 : r; };
+  return dv(9) === +d[9] && dv(10) === +d[10];
+}
+// regra da senha: 8 ou mais caracteres, uma maiúscula, um número e um caractere especial
+const REGRAS_SENHA = {tam: s => s.length >= 8, mai: s => /[A-ZÀ-Ý]/.test(s), num: s => /\d/.test(s), esp: s => /[^A-Za-zÀ-ÿ0-9\s]/.test(s)};
+const senhaForte = s => Object.values(REGRAS_SENHA).every(t => t(s));
+function marcarRegras(form){
+  const s = form.senha.value, lista = form.querySelector('[data-regras]'); if (!lista) return;
+  lista.querySelectorAll('[data-r]').forEach(li => li.classList.toggle('ok', REGRAS_SENHA[li.dataset.r](s)));
+}
+function idade(iso){
+  const n = new Date(iso + 'T00:00:00'); if (isNaN(n)) return -1;
+  const h = new Date(); let a = h.getFullYear() - n.getFullYear();
+  if (h.getMonth() < n.getMonth() || (h.getMonth() === n.getMonth() && h.getDate() < n.getDate())) a--;
+  return a;
+}
+const cad = raiz.querySelector('[data-etapa="cadastro"]');
+let passo = 1;
+function irPasso(n){
+  passo = n;
+  cad.querySelectorAll('[data-passo]').forEach(fs => { fs.hidden = +fs.dataset.passo !== n; });
+  cad.querySelectorAll('.entrada-passos li').forEach(li => { const p = +li.dataset.p; li.classList.toggle('atual', p === n); li.classList.toggle('feito', p < n); });
+  cad.querySelector('[data-voltar]').hidden = n === 1;
+  cad.querySelector('.entrada-botao').textContent = n === 4 ? 'Criar minha conta' : 'Continuar';
+  aviso(cad);
+  const f = cad.querySelector('[data-passo="' + n + '"] input:not([type=radio]):not([type=checkbox])'); if (f) setTimeout(() => f.focus(), 0);
+}
+function erroCampo(campo, txt){ aviso(cad, 'erro', txt); if (campo && campo.focus) campo.focus(); return false; }
+function passoOk(n){
+  const f = cad;
+  if (n === 1){
+    const nome = f.nome.value.trim().replace(/\s+/g, ' ');
+    if (nome.length < 3 || nome.split(' ').length < 2) return erroCampo(f.nome, 'Escreva o seu nome completo (nome e sobrenome).');
+    const i = idade(f.nascimento.value);
+    if (!f.nascimento.value || i < 0 || i > 120) return erroCampo(f.nascimento, 'Digite uma data de nascimento válida.');
+    if (!cpfValido(f.cpf.value)) return erroCampo(f.cpf, 'Esse CPF não é válido. Confira os números.');
+    if (!emailOk(f.email.value.trim())) return erroCampo(f.email, 'Digite um e-mail válido.');
+  }
+  if (n === 2){
+    if (soDigitos(f.cep.value).length !== 8) return erroCampo(f.cep, 'Digite o CEP com 8 números.');
+    if (!f.logradouro.value.trim()) return erroCampo(f.logradouro, 'Digite a rua.');
+    if (!f.numero.value.trim()) return erroCampo(f.numero, 'Digite o número (se não tiver, escreva S/N).');
+    if (!f.bairro.value.trim()) return erroCampo(f.bairro, 'Digite o bairro.');
+    if (!f.cidade.value.trim()) return erroCampo(f.cidade, 'Digite a cidade.');
+    if (!f.uf.value) return erroCampo(f.uf, 'Escolha o estado (UF).');
+  }
+  if (n === 3){
+    if (!f.uso.value) return erroCampo(f.querySelector('input[name=uso]'), 'Escolha para que você vai usar o sistema.');
+    if (f.uso.value === 'trabalho' && !f.cargo.value.trim()) return erroCampo(f.cargo, 'Digite o seu cargo.');
+  }
+  if (n === 4){
+    if (!senhaForte(f.senha.value)) return erroCampo(f.senha, 'A senha ainda não segue todas as regras da lista.');
+    if (f.senha.value !== f.senha2.value) return erroCampo(f.senha2, 'As duas senhas não estão iguais.');
+    if (!f.termos.checked) return erroCampo(f.termos, 'Marque a caixa de concordância para criar a conta.');
+  }
+  return true;
+}
+// máscaras
+cad.cpf.addEventListener('input', () => { const d = soDigitos(cad.cpf.value).slice(0, 11); cad.cpf.value = d.replace(/^(\d{3})(\d)/, '$1.$2').replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3').replace(/\.(\d{3})(\d{1,2})$/, '.$1-$2'); });
+let cepBuscado = '';
+cad.cep.addEventListener('input', async () => {
+  const d = soDigitos(cad.cep.value).slice(0, 8); cad.cep.value = d.length > 5 ? d.slice(0, 5) + '-' + d.slice(5) : d;
+  const dica = cad.querySelector('[data-cep-aviso]');
+  if (d.length !== 8 || d === cepBuscado) return;
+  cepBuscado = d; dica.textContent = 'Procurando o endereço…';
+  try {
+    const r = await fetch('https://viacep.com.br/ws/' + d + '/json/'); const j = await r.json();
+    if (j.erro) { dica.textContent = 'Não achamos esse CEP. Preencha o endereço à mão.'; return; }
+    if (j.logradouro) cad.logradouro.value = j.logradouro;
+    if (j.bairro) cad.bairro.value = j.bairro;
+    if (j.localidade) cad.cidade.value = j.localidade;
+    if (j.uf) cad.uf.value = j.uf;
+    dica.textContent = 'Endereço encontrado. Confira e complete o número.';
+    (j.logradouro ? cad.numero : cad.logradouro).focus();
+  } catch (e) { dica.textContent = 'Não foi possível buscar o CEP agora. Preencha o endereço à mão.'; }
+});
+cad.addEventListener('change', ev => {
+  if (ev.target.name !== 'uso') return;
+  const u = ev.target.value;
+  cad.querySelector('[data-rotulo-cargo]').innerHTML = u === 'estudo' ? 'Curso <i>(opcional)</i>' : u === 'trabalho' ? 'Cargo' : 'Cargo <i>(opcional)</i>';
+  cad.querySelector('[data-rotulo-empresa]').innerHTML = (u === 'estudo' ? 'Instituição de ensino' : 'Empresa') + ' <i>(opcional)</i>';
+  cad.cargo.placeholder = u === 'estudo' ? 'Ex.: Engenharia de Software' : 'Ex.: Gerente de projetos';
+});
+raiz.querySelectorAll('input[name=senha]').forEach(i => { const f = i.form; if (f.querySelector('[data-regras]')) i.addEventListener('input', () => marcarRegras(f)); });
+cad.addEventListener('input', () => { const e = cad.querySelector('[data-erro]'); if (e && !e.hidden) aviso(cad); });
+cad.querySelector('[data-voltar]').addEventListener('click', () => irPasso(Math.max(1, passo - 1)));
+cad.querySelectorAll('.entrada-passos li').forEach(li => li.addEventListener('click', () => { const p = +li.dataset.p; if (p < passo) irPasso(p); }));
+cad.addEventListener('submit', async ev => {
+  ev.preventDefault(); const f = cad;
+  if (!passoOk(passo)) return;
+  if (passo < 4) return irPasso(passo + 1);
+  for (let n = 1; n <= 3; n++) if (!passoOk(n)) return irPasso(n), passoOk(n);
+  const email = f.email.value.trim(), senha = f.senha.value;
+  const dados = {
+    nome: f.nome.value.trim().replace(/\s+/g, ' '), nascimento: f.nascimento.value, cpf: soDigitos(f.cpf.value),
+    cep: soDigitos(f.cep.value), logradouro: f.logradouro.value.trim(), numero: f.numero.value.trim(), complemento: f.complemento.value.trim(),
+    bairro: f.bairro.value.trim(), cidade: f.cidade.value.trim(), uf: f.uf.value,
+    uso: f.uso.value, cargo: f.cargo.value.trim(), empresa: f.empresa.value.trim(), termos: 'sim'
+  };
+  aviso(f); ocupado(f, true);
+  const {data, error} = await sb.auth.signUp({email, password: senha, options: {data: dados, emailRedirectTo: location.origin + location.pathname}});
+  ocupado(f, false);
+  if (error){
+    if (/already|registered|exists/i.test(error.message)) { irPasso(1); return erroCampo(f.email, 'Já existe uma conta com esse e-mail. Entre ou use "Esqueci minha senha".'); }
+    if (/database error|saving new user/i.test(error.message)) { irPasso(1); return erroCampo(f.cpf, 'Não foi possível criar a conta com esse CPF. Ele pode já ter uma conta: tente entrar ou use "Esqueci minha senha".'); }
+    return aviso(f, 'erro', traduz(error));
+  }
+  f.senha.value = ''; f.senha2.value = ''; marcarRegras(f);
+  if (data.session){ mostrar('carregando'); return entrar(data.session); }
+  f.querySelectorAll('[data-passo], .entrada-passos, .entrada-navega').forEach(e => { e.hidden = true; });
+  aviso(f, 'ok', 'Conta criada. Enviamos um e-mail para ' + email + ': clique no link para confirmar e entrar.');
+});
 raiz.querySelector('[data-etapa="esqueci"]').addEventListener('submit', async ev => {
   ev.preventDefault(); const f = ev.currentTarget; const email = f.email.value.trim();
   if (!emailOk(email)) return aviso(f, 'erro', 'Digite um e-mail válido.');
@@ -6077,7 +6775,7 @@ raiz.querySelector('[data-etapa="esqueci"]').addEventListener('submit', async ev
 });
 raiz.querySelector('[data-etapa="trocar"]').addEventListener('submit', async ev => {
   ev.preventDefault(); const f = ev.currentTarget;
-  if (f.senha.value.length < 8) return aviso(f, 'erro', 'A senha precisa ter pelo menos 8 caracteres.');
+  if (!senhaForte(f.senha.value)) return aviso(f, 'erro', 'A senha ainda não segue todas as regras da lista.');
   if (f.senha.value !== f.senha2.value) return aviso(f, 'erro', 'As duas senhas não estão iguais.');
   aviso(f); ocupado(f, true);
   const {data, error} = await sb.auth.updateUser({password: f.senha.value});
@@ -6087,7 +6785,7 @@ raiz.querySelector('[data-etapa="trocar"]').addEventListener('submit', async ev 
   const s = (await sb.auth.getSession()).data.session; mostrar('carregando'); entrar(s || {user: data.user});
 });
 raiz.addEventListener('click', ev => {
-  const ir = ev.target.closest('[data-ir]'); if (ir){ mostrar(ir.dataset.ir); const de = raiz.querySelector('[data-etapa="login"] input[name=email]').value; const para = raiz.querySelector('[data-etapa="' + ir.dataset.ir + '"] input[name=email]'); if (para && de && !para.value) para.value = de; return; }
+  const ir = ev.target.closest('[data-ir]'); if (ir){ mostrar(ir.dataset.ir); if (ir.dataset.ir === 'cadastro') irPasso(1); const de = raiz.querySelector('[data-etapa="login"] input[name=email]').value; const para = raiz.querySelector('[data-etapa="' + ir.dataset.ir + '"] input[name=email]'); if (para && de && !para.value) para.value = de; return; }
   const v = ev.target.closest('[data-ver-senha]'); if (v){ const i = v.previousElementSibling; const ver = i.type === 'password'; i.type = ver ? 'text' : 'password'; v.textContent = ver ? 'Esconder' : 'Mostrar'; v.setAttribute('aria-label', ver ? 'Esconder a senha' : 'Mostrar a senha'); return; }
   if (ev.target.closest('[data-sair]')) sair();
 });

@@ -12,7 +12,7 @@
 
       <form class="entrada-form" data-etapa="login" hidden novalidate>
         <h1>Entrar</h1>
-        <p class="entrada-sub">Use o e-mail e a senha do seu acesso.</p>
+        <p class="entrada-sub">Use o e-mail e a senha da sua conta.</p>
         <label class="entrada-campo"><span>E-mail</span>
           <input type="email" name="email" autocomplete="username" inputmode="email" required></label>
         <label class="entrada-campo"><span>Senha</span>
@@ -21,6 +21,92 @@
         <p class="entrada-erro" data-erro hidden></p>
         <button class="entrada-botao" type="submit">Entrar</button>
         <button class="entrada-link" type="button" data-ir="esqueci">Esqueci minha senha</button>
+        <p class="entrada-troca">Ainda não tem conta? <button class="entrada-link" type="button" data-ir="cadastro">Criar conta grátis</button></p>
+      </form>
+
+      <form class="entrada-form entrada-cadastro" data-etapa="cadastro" hidden novalidate>
+        <h1>Criar conta</h1>
+        <p class="entrada-sub">Você ganha um espaço só seu, com o sistema inteiro. Depois pode compartilhar clientes, projetos e aplicações com quem quiser.</p>
+        <ol class="entrada-passos" aria-label="Etapas do cadastro">
+          <li data-p="1">Você</li><li data-p="2">Endereço</li><li data-p="3">Uso</li><li data-p="4">Senha</li>
+        </ol>
+
+        <fieldset class="entrada-passo" data-passo="1">
+          <legend>Seus dados</legend>
+          <label class="entrada-campo"><span>Nome completo</span>
+            <input type="text" name="nome" autocomplete="name" required maxlength="160"></label>
+          <div class="entrada-dupla">
+            <label class="entrada-campo"><span>Data de nascimento</span>
+              <input type="date" name="nascimento" autocomplete="bday" required></label>
+            <label class="entrada-campo"><span>CPF</span>
+              <input type="text" name="cpf" inputmode="numeric" autocomplete="off" placeholder="000.000.000-00" maxlength="14" required></label>
+          </div>
+          <label class="entrada-campo"><span>E-mail</span>
+            <input type="email" name="email" autocomplete="username" inputmode="email" required></label>
+        </fieldset>
+
+        <fieldset class="entrada-passo" data-passo="2" hidden>
+          <legend>Endereço residencial</legend>
+          <div class="entrada-dupla">
+            <label class="entrada-campo"><span>CEP</span>
+              <input type="text" name="cep" inputmode="numeric" autocomplete="postal-code" placeholder="00000-000" maxlength="9" required></label>
+            <p class="entrada-dica" data-cep-aviso>Digite o CEP que o endereço se preenche sozinho.</p>
+          </div>
+          <label class="entrada-campo"><span>Rua</span>
+            <input type="text" name="logradouro" autocomplete="address-line1" required maxlength="160"></label>
+          <div class="entrada-dupla">
+            <label class="entrada-campo"><span>Número</span>
+              <input type="text" name="numero" autocomplete="off" required maxlength="20"></label>
+            <label class="entrada-campo"><span>Complemento <i>(opcional)</i></span>
+              <input type="text" name="complemento" autocomplete="address-line2" maxlength="80"></label>
+          </div>
+          <label class="entrada-campo"><span>Bairro</span>
+            <input type="text" name="bairro" required maxlength="80"></label>
+          <div class="entrada-dupla entrada-cidade">
+            <label class="entrada-campo"><span>Cidade</span>
+              <input type="text" name="cidade" autocomplete="address-level2" required maxlength="80"></label>
+            <label class="entrada-campo"><span>UF</span>
+              <select name="uf" autocomplete="address-level1" required><option value="">--</option><option>AC</option><option>AL</option><option>AP</option><option>AM</option><option>BA</option><option>CE</option><option>DF</option><option>ES</option><option>GO</option><option>MA</option><option>MT</option><option>MS</option><option>MG</option><option>PA</option><option>PB</option><option>PR</option><option>PE</option><option>PI</option><option>RJ</option><option>RN</option><option>RS</option><option>RO</option><option>RR</option><option>SC</option><option>SP</option><option>SE</option><option>TO</option></select></label>
+          </div>
+        </fieldset>
+
+        <fieldset class="entrada-passo" data-passo="3" hidden>
+          <legend>Como você vai usar</legend>
+          <div class="entrada-opcoes" role="radiogroup" aria-label="Para que vai usar o sistema">
+            <label><input type="radio" name="uso" value="trabalho"><span>Trabalho</span></label>
+            <label><input type="radio" name="uso" value="estudo"><span>Estudo</span></label>
+            <label><input type="radio" name="uso" value="pessoal"><span>Uso pessoal</span></label>
+            <label><input type="radio" name="uso" value="outro"><span>Outro</span></label>
+          </div>
+          <label class="entrada-campo"><span data-rotulo-cargo>Cargo</span>
+            <input type="text" name="cargo" autocomplete="organization-title" maxlength="80" placeholder="Ex.: Gerente de projetos"></label>
+          <label class="entrada-campo"><span data-rotulo-empresa>Empresa <i>(opcional)</i></span>
+            <input type="text" name="empresa" autocomplete="organization" maxlength="120"></label>
+        </fieldset>
+
+        <fieldset class="entrada-passo" data-passo="4" hidden>
+          <legend>Escolha uma senha</legend>
+          <label class="entrada-campo"><span>Senha</span>
+            <span class="entrada-senha"><input type="password" name="senha" autocomplete="new-password" required>
+            <button type="button" class="entrada-ver" data-ver-senha aria-label="Mostrar a senha">Mostrar</button></span></label>
+          <ul class="entrada-regras" data-regras aria-live="polite">
+          <li data-r="tam">Pelo menos 8 caracteres</li>
+          <li data-r="mai">Uma letra maiúscula</li>
+          <li data-r="num">Um número</li>
+          <li data-r="esp">Um caractere especial (ex.: ! @ # $ %)</li>
+        </ul>
+          <label class="entrada-campo"><span>Repita a senha</span>
+            <input type="password" name="senha2" autocomplete="new-password" required></label>
+          <label class="entrada-aceite"><input type="checkbox" name="termos"><span>Concordo em guardar os meus dados para criar a conta. Eles ficam visíveis só para mim e para a administração do Sistema IT.IA, nunca para quem compartilha projetos comigo.</span></label>
+        </fieldset>
+
+        <p class="entrada-erro" data-erro hidden></p>
+        <p class="entrada-ok" data-ok hidden></p>
+        <div class="entrada-navega">
+          <button class="entrada-voltar" type="button" data-voltar hidden>Voltar</button>
+          <button class="entrada-botao" type="submit">Continuar</button>
+        </div>
+        <p class="entrada-troca">Já tem conta? <button class="entrada-link" type="button" data-ir="login">Entrar</button></p>
       </form>
 
       <form class="entrada-form" data-etapa="esqueci" hidden novalidate>
@@ -36,18 +122,25 @@
 
       <form class="entrada-form" data-etapa="trocar" hidden novalidate>
         <h1>Criar a senha nova</h1>
-        <p class="entrada-sub">Use pelo menos 8 caracteres.</p>
+        <p class="entrada-sub">A senha precisa seguir as regras abaixo.</p>
         <label class="entrada-campo"><span>Senha nova</span>
-          <input type="password" name="senha" autocomplete="new-password" minlength="8" required></label>
+          <span class="entrada-senha"><input type="password" name="senha" autocomplete="new-password" required>
+          <button type="button" class="entrada-ver" data-ver-senha aria-label="Mostrar a senha">Mostrar</button></span></label>
+        <ul class="entrada-regras" data-regras aria-live="polite">
+          <li data-r="tam">Pelo menos 8 caracteres</li>
+          <li data-r="mai">Uma letra maiúscula</li>
+          <li data-r="num">Um número</li>
+          <li data-r="esp">Um caractere especial (ex.: ! @ # $ %)</li>
+        </ul>
         <label class="entrada-campo"><span>Repita a senha</span>
-          <input type="password" name="senha2" autocomplete="new-password" minlength="8" required></label>
+          <input type="password" name="senha2" autocomplete="new-password" required></label>
         <p class="entrada-erro" data-erro hidden></p>
         <button class="entrada-botao" type="submit">Salvar e entrar</button>
       </form>
 
       <div class="entrada-form" data-etapa="sem-acesso" hidden>
-        <h1>Acesso ainda não liberado</h1>
-        <p class="entrada-sub">Você entrou como <b data-email></b>, mas esse e-mail ainda não está ligado a ninguém do time. Peça para o Master liberar o seu acesso.</p>
+        <h1>Não foi possível abrir o seu espaço</h1>
+        <p class="entrada-sub">Você entrou como <b data-email></b>, mas não foi possível preparar o seu espaço agora. Tente entrar de novo em alguns instantes.</p>
         <button class="entrada-botao" type="button" data-sair>Sair</button>
       </div>
     </div>

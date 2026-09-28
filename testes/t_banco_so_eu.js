@@ -9,6 +9,7 @@ B.itens.forEach(i => { if (!tem(i.responsavel_id)) i.responsavel_id = null; if (
 
 const wil = B.pessoas.find(p => p.nome === 'William');
 B.nos.find(n => n.tipo === 'aplicacao').nome = 'App Só No Banco';
+['convites','espacos'].forEach(t => { if (!B[t]) B[t] = []; });   // tabelas da parte 15 (muitos usuários)
 const FALSO = `const BANCO = ${JSON.stringify(B)};
 function q(t){ const st = {de:0, ate:1e9}; const px = new Proxy(function(){}, { get(_, k){
   if (k === 'then') return (res, rej) => { const l = BANCO[t]; return Promise.resolve(l ? {data:l.slice(st.de, st.ate+1), error:null} : {data:null, error:{message:'permission denied for table '+t}}).then(res, rej); };
@@ -53,7 +54,8 @@ window.supabase = { createClient(){ let sess = JSON.parse(localStorage.getItem('
     const bt = p.locator('[data-view=' + v + ']').first(); if (await bt.count()) { await bt.click(); await p.waitForTimeout(200); }
   }
   await p.screenshot({path:'b_ops.png'});
-  for (const papel of ['dev','stakeholder','master']){ await p.selectOption('#ver-como', papel); await p.waitForTimeout(300); for (const m of ['overview','servicedesk','operacoes']){ const it = p.locator('.item[data-tela=' + m + ']'); if (await it.isVisible()) { await it.click(); await p.waitForTimeout(200); } } }
+  // um nível só de usuário (parte 15): não existe mais o "Ver como"
+  ok(await p.evaluate(() => document.querySelector('#ver-como').hidden), 'sem o "Ver como" (um nível só de usuário)');
   await p.click('.item[data-tela=custos]'); await p.waitForTimeout(200);
   const aba = p.locator('[data-aba-custo=dominios], [data-ct-aba=dominios], button:has-text("Domínios")').first(); if (await aba.count()) { await aba.click(); await p.waitForTimeout(500); }
   ok((await p.evaluate(() => document.querySelector('.principal').innerText)).includes('it-ia.tec.br'), 'Domínios vem do banco');

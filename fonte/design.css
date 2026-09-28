@@ -647,3 +647,59 @@ dialog.modal.modal-larga{max-width:min(960px,calc(100% - 32px))}
 .bj-eq-lista{display:flex;flex-direction:column;gap:4px;max-height:260px;overflow:auto;border:1px solid var(--nevoa);padding:8px}
 .bj-eq-lin{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .pr-lowest{color:#1E40AF}
+
+/* =================== muitos usuários: meu ID, compartilhar, recebidos =================== */
+.mu-meu-id{display:flex;flex-direction:column;align-items:flex-start;gap:1px;width:100%;margin:0 0 8px;padding:6px 8px;border:1px solid var(--grafite);background:transparent;color:var(--branco);font:inherit;font-size:12px;cursor:pointer;text-align:left}
+.mu-meu-id b{font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;color:var(--nevoa)}
+.mu-meu-id:hover{border-color:var(--nevoa)}
+.app.recolhido .mu-meu-id{display:none}
+.mu-comp-box{display:flex;align-items:center;gap:8px;margin-left:auto}
+.mu-compartilhar{display:inline-flex;align-items:center;gap:6px}
+.mu-compartilhar svg{width:14px;height:14px}
+.mu-recebido-txt{font-size:12px;color:var(--nevoa);font-family:var(--font-mono);letter-spacing:.04em}
+.mu-selo{display:inline-flex;align-items:center;margin-left:4px;color:#3355E0}
+.mu-selo svg{width:12px;height:12px}
+.no-arv.mu-caminho .nome{color:#8993A4;font-style:italic}
+.mu-modal .modal-corpo{display:block}
+.mu-add{display:flex;gap:8px;margin:12px 0 6px}
+.mu-add .campo{flex:1;min-width:0}
+.mu-msg{margin:0 0 8px;font-size:13px}
+.mu-msg.erro{color:var(--vermelho)}
+.mu-tit{margin:14px 0 6px;font-size:13px;letter-spacing:.1em;text-transform:uppercase}
+.mu-lista{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.mu-pessoa{display:flex;align-items:center;gap:10px;padding:8px;border:1px solid #DFE1E6;background:#fff}
+.mu-p-nome{display:flex;flex-direction:column;flex:1;min-width:0}
+.mu-p-nome small{color:#5E6C84;font-size:12px}
+.mu-papel{font-size:12px;color:#5E6C84;white-space:nowrap}
+.mu-meu{margin:12px 0 0;font-size:13px}
+.mu-conta{margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--nevoa)}
+
+/* ===== Admin (dono do sistema) ===== */
+.adm-per{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600}
+.adm-abas{display:flex;gap:0;border-bottom:1px solid var(--linha);margin:8px 0 24px;overflow-x:auto}
+.adm-abas button{border:0;background:none;padding:12px 18px;font:inherit;font-size:14px;font-weight:600;color:var(--tinta-2);border-bottom:2px solid transparent;margin-bottom:-1px;cursor:pointer;white-space:nowrap}
+.adm-abas button[aria-selected="true"]{color:var(--preto);border-bottom-color:var(--preto)}
+.adm-corpo .kpis{margin-top:0;margin-bottom:16px}
+.adm-barras{width:100%;height:auto;color:var(--preto);display:block}
+.adm-fin{display:grid;grid-template-columns:110px 1fr 32px;align-items:center;gap:12px;font-size:13px}
+.adm-fin b{text-align:right;font-variant-numeric:tabular-nums}
+.adm-filtros{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.adm-filtros .campo{flex:1 1 280px;min-width:0}
+.adm-tab tbody tr{cursor:pointer}
+.adm-tab tbody tr:hover > *,.adm-tab tbody tr:focus-visible > *{background:var(--preto-04)}
+.adm-tab tbody tr:focus-visible{outline:2px solid var(--preto);outline-offset:-2px}
+.adm-tab td{vertical-align:top}
+.adm-sub{display:block;font-size:12px;color:var(--tinta-2);margin-top:2px}
+.adm-indice{display:grid;grid-template-columns:1fr 28px;align-items:center;gap:8px;min-width:90px}
+.adm-indice b{text-align:right;font-variant-numeric:tabular-nums}
+.adm-rodape{font-size:12px;color:var(--tinta-2);margin:16px 0 0}
+.adm-modal{width:min(920px,calc(100vw - 32px))}
+.adm-ficha{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:24px}
+.adm-ficha h4,.adm-hist h4{font-size:13px;letter-spacing:.08em;text-transform:uppercase;margin:0 0 10px}
+.adm-lin{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--linha);font-size:13px}
+.adm-lin span{color:var(--tinta-2)}
+.adm-lin b{font-weight:600;text-align:right;overflow-wrap:anywhere}
+.adm-hist{margin-top:24px}
+.adm-hist .tabela{font-size:13px}
+.adm-tab th:first-child,.adm-tab td:first-child{min-width:220px}
+.adm-tab td:first-child small{overflow-wrap:anywhere}

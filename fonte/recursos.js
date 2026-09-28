@@ -1385,6 +1385,7 @@ const garantirId = o => o._id || (o._id = novoUuid());
 
 function linhasDaTela(d){
   const L = Object.fromEntries(GRAVAR.map(([t]) => [t, []]));
+  if (!L.participacoes) L.participacoes = [];   // com muitos usuários, compartilhar grava direto (a lista fica fora do GRAVAR)
   const eu = idEu('master') || null;
   d.people.forEach(p => {
     L.pessoas.push({id:p.id, nome:p.nome, funcao:semVazio(p.funcao), habilidades:p.skills || [], capacidade_h:Math.max(0, Math.min(80, +p.cap || 0)), papel:p.acesso === 'owner' ? 'master' : p.acesso, ativo:p.ativo !== false});
