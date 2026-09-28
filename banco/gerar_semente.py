@@ -44,7 +44,7 @@ w("alter table public.nos disable trigger nos_auditoria;")
 w("alter table public.itens disable trigger itens_auditoria;")
 w("alter table public.itens disable trigger itens_automacoes;")
 w("alter table public.comentarios disable trigger comentarios_auditoria;")
-for t in ['pedidos', 'custos_tecnicos', 'receitas', 'regras_calculo', 'pessoas_custos', 'servicos', 'agentes', 'marcos', 'sprints', 'automacoes']:
+for t in ['pedidos', 'custos_tecnicos', 'receitas', 'regras_calculo', 'pessoas_custos', 'servicos', 'marcos', 'sprints', 'automacoes']:
     w("alter table public.%s disable trigger %s_auditoria;" % (t, t))
 w('')
 
@@ -271,20 +271,12 @@ for chave, itens_st in D['stages'].items():
 ins('public.etapas_nos', en, '(no_id, item_modelo_id) do nothing')
 ins('public.provas', pv, '(id) do nothing')
 
-# ---------- agentes ----------
-PERM = {'Livre': 'livre', 'Automática': 'automatica', 'Com confirmação': 'confirmacao', 'Bloqueada': 'bloqueada'}
-ins('public.agentes', [dict(id=U(a['id']), codigo=a['id'], nome=a['nome'], papel=a.get('papel'), instrucoes=a.get('instr', ''), regras_passagem=a.get('passa')) for a in D['agents']], '(id) do nothing')
-ins('public.agentes_fontes', [dict(id=U(a['id'] + ':f:' + f), agente_id=U(a['id']), nome=f) for a in D['agents'] for f in a.get('fontes', [])], '(id) do nothing')
-ins('public.agentes_ferramentas', [dict(agente_id=U(a['id']), ferramenta=f, permissao=PERM[p]) for a in D['agents'] for f, p in a.get('ferramentas', [])],
-    '(agente_id, ferramenta) do nothing')
-
 # ---------- service desk ----------
 PT = {'Bug report': 'bug', 'Fix request': 'correcao', 'Change request': 'mudanca', 'Feature request': 'funcionalidade', 'Question': 'duvida'}
 GR = {'Sistema parado': 'parado', 'Função quebrada': 'quebrada', 'Incômodo': 'incomodo', 'Cosmético': 'cosmetico'}
 PS = {'Em triagem': 'novo', 'IA conversando': 'ia_conversando', 'Aguardando você': 'aguardando_voce', 'Virou item': 'virou_item',
       'Resolvido pela IA': 'resolvido', 'Resolvido': 'resolvido', 'Recusado': 'recusado'}
 ped, msg = [], []
-agente_at = next((a['id'] for a in D['agents'] if 'atendimento' in a['nome'].lower()), D['agents'][0]['id'])
 for r in D['requests']:
     stt = PS.get(r['status'], 'novo')
     quando = r['quando'] + 'T09:00:00-03:00'
@@ -295,7 +287,7 @@ for r in D['requests']:
         de = {'cliente': 'cliente', 'ia': 'ia', 'voce': 'equipe'}.get(m['de'], 'equipe')
         msg.append(dict(id=U(r['id'] + ':m:' + str(k)), pedido_id=U(r['id']), autor_tipo=de,
                         pessoa_id=U(r['autor']) if de == 'cliente' and r.get('autor') else (U('pe_w') if de == 'equipe' else None),
-                        agente_id=U(agente_at) if de == 'ia' else None, texto=m['txt'],
+                        texto=m['txt'],
                         criado_em=(datetime.datetime.fromisoformat(r['quando'] + 'T09:00:00-03:00') + datetime.timedelta(minutes=3 * k + 1)).isoformat()))
     for k, a in enumerate(r.get('anexos', [])):
         tipo = {'imagem': 'imagem', 'áudio': 'audio', 'vídeo': 'video'}.get(a.get('tipo'), 'documento')
@@ -326,7 +318,7 @@ w("alter table public.nos enable trigger nos_auditoria;")
 w("alter table public.itens enable trigger itens_auditoria;")
 w("alter table public.itens enable trigger itens_automacoes;")
 w("alter table public.comentarios enable trigger comentarios_auditoria;")
-for t in ['pedidos', 'custos_tecnicos', 'receitas', 'regras_calculo', 'pessoas_custos', 'servicos', 'agentes', 'marcos', 'sprints', 'automacoes']:
+for t in ['pedidos', 'custos_tecnicos', 'receitas', 'regras_calculo', 'pessoas_custos', 'servicos', 'marcos', 'sprints', 'automacoes']:
     w("alter table public.%s enable trigger %s_auditoria;" % (t, t))
 w('commit;')
 w('')

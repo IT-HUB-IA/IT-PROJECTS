@@ -36,7 +36,7 @@ const { chromium } = require('/opt/node22/lib/node_modules/playwright');
   await p.click('[data-no="project:pj_bl"]'); await p.click('[data-view=stages]');
   await p.click('[data-cumprir]'); await shot('cumprir'); await p.click('dialog [data-b="1"]');
   // modules
-  for (const m of ['clientes','servicedesk','time','agentes','playbook','configuracoes']){ await p.click('[data-tela='+m+']'); await shot('mod_'+m); }
+  for (const m of ['clientes','servicedesk','time','playbook','configuracoes']){ await p.click('[data-tela='+m+']'); await shot('mod_'+m); }
   await p.click('[data-tela=clientes]'); await p.click('[data-acao=cli-tags]'); await p.click('[data-acao=nova-tag]'); await p.fill('#ft-nome','Tag teste'); await p.click('dialog [data-b="1"]');
   await p.click('[data-tela=servicedesk]'); await p.click('[data-acao=virar-issue]'); await p.click('dialog [data-b="1"]'); await shot('sd_issue');
   // stakeholder
@@ -45,7 +45,7 @@ const { chromium } = require('/opt/node22/lib/node_modules/playwright');
   await p.selectOption('#ver-como','master');
   // mobile
   await p.setViewportSize({width:400,height:800});
-  for (const m of ['overview','operacoes','clientes','servicedesk','time','agentes','configuracoes']){ await p.click('[data-tela='+m+']'); const r = await p.evaluate(()=>{const m=document.querySelector('.principal');return [m.scrollWidth,m.clientWidth]}); console.log('mobile',m,r); }
+  for (const m of ['overview','operacoes','clientes','servicedesk','time','configuracoes']){ await p.click('[data-tela='+m+']'); const r = await p.evaluate(()=>{const m=document.querySelector('.principal');return [m.scrollWidth,m.clientWidth]}); console.log('mobile',m,r); }
   console.log('ERROS', erros.slice(0,20));
   await b.close();
 })();

@@ -79,7 +79,7 @@ create or replace function interno.espaco_do_william() returns uuid language sql
   select e.id from public.espacos e where e.pessoal and not e.modelo order by e.criado_em limit 1
 $$;
 do $$ declare t text; esp uuid := interno.espaco_do_william(); begin
-  foreach t in array array['nos','servicos','requisitos','regras_calculo','etapas_modelo','agentes','custos_operacao','dominios','etiquetas','equipes','integracoes','pessoas_custos'] loop
+  foreach t in array array['nos','servicos','requisitos','regras_calculo','etapas_modelo','custos_operacao','dominios','etiquetas','equipes','integracoes','pessoas_custos'] loop
     execute format('alter table public.%I add column if not exists espaco_id uuid references public.espacos(id) on delete cascade', t);
     if esp is not null then execute format('update public.%I set espaco_id = %L where espaco_id is null', t, esp); end if;
     execute format('alter table public.%I alter column espaco_id set default interno.meu_espaco()', t);
@@ -96,14 +96,13 @@ update public.pessoas set espaco_id = interno.espaco_do_william() where auth_use
 -- nomes e códigos passam a ser únicos por espaço (dois usuários podem ter uma etiqueta "Urgente")
 do $$ declare c record; begin
   for c in select conrelid::regclass as t, conname from pg_constraint
-            where contype = 'u' and conrelid in ('public.etiquetas'::regclass,'public.requisitos'::regclass,'public.servicos'::regclass,'public.agentes'::regclass,'public.etapas_modelo'::regclass,'public.equipes'::regclass,'public.dominios'::regclass)
+            where contype = 'u' and conrelid in ('public.etiquetas'::regclass,'public.requisitos'::regclass,'public.servicos'::regclass,'public.etapas_modelo'::regclass,'public.equipes'::regclass,'public.dominios'::regclass)
               and not (conkey @> array[(select attnum from pg_attribute where attrelid = conrelid and attname = 'espaco_id')])
   loop execute format('alter table %s drop constraint %I', c.t, c.conname); end loop;
 end $$;
 create unique index if not exists etiquetas_espaco_nome_uq on public.etiquetas (espaco_id, nome);
 create unique index if not exists requisitos_espaco_nome_uq on public.requisitos (espaco_id, nome);
 create unique index if not exists servicos_espaco_codigo_uq on public.servicos (espaco_id, codigo);
-create unique index if not exists agentes_espaco_codigo_uq on public.agentes (espaco_id, codigo);
 create unique index if not exists etapas_modelo_espaco_chave_uq on public.etapas_modelo (espaco_id, chave);
 create unique index if not exists etapas_modelo_espaco_ordem_uq on public.etapas_modelo (espaco_id, ordem);
 create unique index if not exists equipes_espaco_nome_uq on public.equipes (espaco_id, nome);
@@ -410,7 +409,7 @@ do $$ declare r record; begin
     'nos','clientes','projetos','aplicacoes','frentes','participacoes','pessoas','pessoas_custos','espacos','espaco_membros','convites',
     'etiquetas','etiquetas_nos','status_fluxo','requisitos','servicos','servicos_cobranca','servicos_requisitos','regras_calculo',
     'custos_operacao','custos_tecnicos','custos_uso','receitas','slas','automacoes','automacoes_execucoes','campos_personalizados',
-    'etapas_modelo','etapas_modelo_itens','etapas_nos','provas','agentes','agentes_fontes','agentes_ferramentas','agentes_avaliacoes','agentes_execucoes',
+    'etapas_modelo','etapas_modelo_itens','etapas_nos','provas',
     'dominios','dominios_registros','segredos_catalogo','cambio','equipes','equipes_membros','equipes_nos','integracoes','vinculos_externos','integracoes_log',
     'boards_config','boards_colunas','boards_colunas_status','comentarios_reacoes')
   loop execute format('drop policy %I on public.%I', r.policyname, r.tablename); end loop;
@@ -492,7 +491,7 @@ create policy apaga on public.comentarios_reacoes for delete to authenticated us
 
 -- o que é do sistema da pessoa (Catalog, Costs, Settings, Agent Studio, domínios, etiquetas, equipes, integrações)
 do $$ declare t text; begin
-  foreach t in array array['servicos','requisitos','regras_calculo','etapas_modelo','agentes','custos_operacao','dominios','etiquetas','equipes','integracoes','pessoas_custos'] loop
+  foreach t in array array['servicos','requisitos','regras_calculo','etapas_modelo','custos_operacao','dominios','etiquetas','equipes','integracoes','pessoas_custos'] loop
     execute format('create policy ver on public.%I for select to authenticated using (espaco_id in (select interno.meus_espacos()))', t);
     execute format('create policy cria on public.%I for insert to authenticated with check (espaco_id in (select interno.meus_espacos()))', t);
     execute format('create policy muda on public.%I for update to authenticated using (espaco_id in (select interno.meus_espacos())) with check (espaco_id in (select interno.meus_espacos()))', t);
@@ -515,13 +514,6 @@ create policy muda on public.servicos_requisitos for all to authenticated using 
 create policy ver on public.etapas_modelo_itens for select to authenticated using (exists (select 1 from public.etapas_modelo e where e.id = etapa_id));
 create policy muda on public.etapas_modelo_itens for all to authenticated using (exists (select 1 from public.etapas_modelo e where e.id = etapa_id and e.espaco_id in (select interno.meus_espacos())))
   with check (exists (select 1 from public.etapas_modelo e where e.id = etapa_id and e.espaco_id in (select interno.meus_espacos())));
-do $$ declare t text; begin
-  foreach t in array array['agentes_fontes','agentes_ferramentas','agentes_avaliacoes'] loop
-    execute format('create policy ver on public.%I for select to authenticated using (exists (select 1 from public.agentes a where a.id = agente_id))', t);
-    execute format('create policy muda on public.%I for all to authenticated using (exists (select 1 from public.agentes a where a.id = agente_id and a.espaco_id in (select interno.meus_espacos()))) with check (exists (select 1 from public.agentes a where a.id = agente_id and a.espaco_id in (select interno.meus_espacos())))', t);
-  end loop;
-end $$;
-create policy ver on public.agentes_execucoes for select to authenticated using (exists (select 1 from public.agentes a where a.id = agente_id));
 create policy ver on public.dominios_registros for select to authenticated using (exists (select 1 from public.dominios d where d.id = dominio_id));
 create policy muda on public.dominios_registros for all to authenticated using (exists (select 1 from public.dominios d where d.id = dominio_id and d.espaco_id in (select interno.meus_espacos())))
   with check (exists (select 1 from public.dominios d where d.id = dominio_id and d.espaco_id in (select interno.meus_espacos())));

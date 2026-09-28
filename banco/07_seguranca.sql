@@ -189,15 +189,6 @@ create policy cria on public.pedidos_mensagens for insert to authenticated with 
   and autor_tipo = case when (select interno.eh_stakeholder()) then 'cliente' else 'equipe' end
   and exists (select 1 from public.pedidos p where p.id = pedido_id));
 
--- ---------- agentes ----------
-create policy ver on public.agentes for select to authenticated using (not (select interno.eh_stakeholder()));
-create policy master_muda on public.agentes for all to authenticated using ((select interno.eh_master())) with check ((select interno.eh_master()));
-create policy ver on public.agentes_fontes for select to authenticated using (not (select interno.eh_stakeholder()));
-create policy master_muda on public.agentes_fontes for all to authenticated using ((select interno.eh_master())) with check ((select interno.eh_master()));
-create policy ver on public.agentes_ferramentas for select to authenticated using (not (select interno.eh_stakeholder()));
-create policy master_muda on public.agentes_ferramentas for all to authenticated using ((select interno.eh_master())) with check ((select interno.eh_master()));
-create policy master on public.agentes_execucoes for select to authenticated using ((select interno.eh_master()));
-create policy master on public.agentes_avaliacoes for all to authenticated using ((select interno.eh_master())) with check ((select interno.eh_master()));
 
 -- ---------- anexos: vale a visibilidade de onde o anexo está ----------
 create or replace function interno.anexo_visivel(a public.anexos) returns boolean

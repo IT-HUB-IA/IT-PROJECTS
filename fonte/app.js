@@ -105,7 +105,7 @@ const ETAPAS_MODELO = [
 
 /* ================= dados de exemplo ================= */
 function semente(){
-  const D = {v:2, clients:[], tags:[], tagLinks:[], projects:[], products:[], apps:[], ws:[], people:[], issues:[], sheets:{}, template:[], stages:{}, requests:[], agents:[], focus:null, statusCfg:{}, baseline:{}};
+  const D = {v:2, clients:[], tags:[], tagLinks:[], projects:[], products:[], apps:[], ws:[], people:[], issues:[], sheets:{}, template:[], stages:{}, requests:[], focus:null, statusCfg:{}, baseline:{}};
   D.people = [
     {id:'pe_w', nome:'William', funcao:'Master · Owner', skills:['Produto','Arquitetura','Java'], cap:40, acesso:'owner'},
     {id:'pe_a', nome:'Ana (exemplo)', funcao:'Dev', skills:['Java','JavaFX','Supabase'], cap:40, acesso:'dev'},
@@ -215,11 +215,6 @@ function semente(){
       msgs:[{de:'cliente', txt:'(áudio transcrito) Mandei o documento errado, como faço para mandar de novo?'},{de:'ia', txt:'É só abrir o documento com a etiqueta Rejeitado e tocar em Reenviar. O arquivo antigo fica guardado no histórico.'},{de:'cliente', txt:'Deu certo, obrigado.'}]},
     {id:'rq_3', cliente:'cl_bl', app:'ap_ceo', tipo:'Feature request', grav:'Cosmético', status:'Em triagem', titulo:'Ver o faturamento consolidado das empresas no celular', quando:dIso(0), autor:'pe_w', anexos:[], contexto:'Tela: Resumo diário · App iOS', issue:null,
       msgs:[{de:'cliente', txt:'Queria ver o faturamento de todas as empresas juntas, na primeira tela.'},{de:'ia', txt:'Anotado como pedido de funcionalidade nova. Quer ver o total do mês ou comparar com o mês anterior também?'}]}
-  ];
-  D.agents = [
-    {id:'ag_po', nome:'AI PO', papel:'Product Owner: planos de execução, capacidade do time, previsão e replanejamento', instr:'Organize as demandas em epics, stories e tasks. Use a capacidade de cada pessoa. Nunca mude prazo, pessoa ou cliente sem a aprovação do Master.', fontes:['Banco do projeto','Canvas do projeto','Ficha técnica','Histórico de entregas'], ferramentas:[['Criar tarefa','Com confirmação'],['Mudar status','Automática'],['Mudar prazo','Com confirmação'],['Atribuir pessoa','Com confirmação'],['Gerar relatório','Livre'],['Apagar item','Bloqueada']], passa:'Qualquer decisão de prazo, custo ou cliente'},
-    {id:'ag_at', nome:'Agente de atendimento', papel:'Primeira resposta no Service Desk: entende, classifica e resolve dúvidas', instr:'Converse primeiro, faça perguntas objetivas e tente reproduzir. Dúvida de uso: explique com base no manual. Falha real: resuma com passos e provas e passe para a equipe.', fontes:['Manual de cada aplicação','Base de conhecimento','Histórico de pedidos'], ferramentas:[['Responder o cliente','Automática'],['Classificar pedido','Automática'],['Juntar pedidos repetidos','Com confirmação'],['Criar item no board','Com confirmação'],['Fechar pedido','Com confirmação']], passa:'Cliente pede uma pessoa, sistema parado, ou duas tentativas sem resolver'},
-    {id:'ag_billy', nome:'Billy', papel:'Assistente do grupo: ouvinte, operacional e voz', instr:'Siga os níveis de permissão. Toda function call é validada pelo Java antes de executar.', fontes:['Banco BL','Reuniões','Tarefas'], ferramentas:[['Consultar dados','Livre'],['Criar tarefa','Com confirmação'],['Enviar mensagem','Com confirmação'],['Mexer em financeiro','Bloqueada']], passa:'Qualquer ação fora do nível Livre'}
   ];
   D.baseline = {'Painel do cliente':true,'Botão de feedback':true,'Login e níveis de acesso':true,'Registro de quem fez o quê':true,'Changelog':true,'Backup e LGPD':true,'Sinal de funcionamento':true};
   gerarEventos(D);
@@ -454,7 +449,7 @@ function abrirModulo(id){
 }
 itens.forEach(el => el.addEventListener('click', () => { if (el.dataset.tela === 'operacoes' && UI.modulo !== 'operacoes') UI.view = 'dashboard'; abrirModulo(el.dataset.tela); }));
 function render(){
-  const f = {overview:rOverview, operacoes:rOperacoes, clientes:rClientes, catalog:rCatalog, custos:rCustos, servicedesk:rServiceDesk, time:rTime, agentes:rAgentes, configuracoes:rConfig}[UI.modulo];
+  const f = {overview:rOverview, operacoes:rOperacoes, clientes:rClientes, catalog:rCatalog, custos:rCustos, servicedesk:rServiceDesk, time:rTime, configuracoes:rConfig}[UI.modulo];
   if (f) f();
 }
 function aplicarVerComo(){
@@ -1192,28 +1187,6 @@ function formPessoa(p){
     '<label class="lb">Skills' + I('Skills (habilidades: o que a pessoa sabe fazer)') + '<input class="campo" id="fpe-sk" value="' + esc(p.skills.join(', ')) + '" placeholder="Separadas por vírgula: Java, JavaFX, Supabase"></label>';
 }
 
-/* ================= AGENT STUDIO ================= */
-const NIVEL_COR = {'Livre':'livre','Automática':'auto','Com confirmação':'conf','Bloqueada':'bloq'};
-function rAgentes(){
-  const el = $('#m-agentes');
-  const a = byId('agents', UI.agSel) || D.agents[0];
-  const m = souMaster(), dis = m ? '' : ' disabled';
-  el.innerHTML = '<div class="topo-tela"><div><h1><span>Agent Studio</span>' + I('Agent Studio (oficina de agentes): onde os agentes de IA são criados, ajustados e testados') + '</h1><p class="lead">Cada agente tem instruções, fontes de conhecimento, ferramentas e o nível de permissão de cada ferramenta. Você é o Master de todos.</p></div><div class="acoes"><button class="btn so-master" type="button" data-acao="novo-agente">' + ICO.mais + 'Novo agente</button></div></div>' +
-    (!a ? '<p class="vazio-linha">Nenhum agente. Crie o primeiro.</p>' :
-    '<div class="ag"><div class="ag-lista">' + D.agents.map(x => '<button type="button" class="ag-item' + (x.id === a.id ? ' escolhido' : '') + '" data-agente="' + x.id + '"><span class="avatar av-ia grande">' + esc(ini(x.nome)) + '</span><span class="ag-meio"><b>' + esc(x.nome) + '</b><small>' + esc(x.papel) + '</small><span class="ag-cont">' + x.ferramentas.length + ' ferramentas · ' + x.fontes.length + ' fontes</span></span></button>').join('') + '</div>' +
-    '<div class="ag-det"><div class="ag-cab"><span class="avatar av-ia grande">' + esc(ini(a.nome)) + '</span><div style="flex:1;min-width:0"><input class="g-titulo" data-ag="nome" value="' + esc(a.nome) + '"' + dis + ' aria-label="Nome do agente"><input class="campo d-sel" data-ag="papel" value="' + esc(a.papel) + '"' + dis + ' aria-label="Papel" style="width:100%"></div>' + (m ? '<button class="btn sec perigo" type="button" data-excluir-agente="' + a.id + '">Excluir agente</button>' : '') + '</div>' +
-      '<section class="g-cartao"><h4>Instructions' + I('Instructions ou System prompt (as instruções fixas de como o agente se comporta)') + '</h4><textarea class="campo" rows="4" data-ag="instr"' + dis + '>' + esc(a.instr) + '</textarea></section>' +
-      '<section class="g-cartao"><h4>Knowledge sources' + I('Knowledge sources (fontes de conhecimento: de onde o agente tira as respostas, via RAG)') + '</h4><div class="tags">' + a.fontes.map((f, ix) => '<span class="tag">' + SV('<path d="M4 4h12l4 4v12H4z"/>') + esc(f) + (m ? '<button type="button" data-tirar-fonte="' + ix + '" aria-label="Tirar fonte">×</button>' : '') + '</span>').join('') + '</div>' + (m ? '<form class="g-add" data-form="fonte"><input class="campo" name="t" placeholder="Nova fonte de conhecimento"><button class="btn sec peq" type="submit">Adicionar</button></form>' : '') + '</section>' +
-      '<section class="g-cartao"><h4>Tools e Permissions' + I('Tools (o que o agente pode fazer no sistema) e Permissions (até onde ele pode ir sozinho)') + '</h4>' +
-        '<div class="ferr">' + a.ferramentas.map(([f, n], ix) => '<div class="ferr-lin"><b>' + esc(f) + '</b><div class="niveis" role="radiogroup" aria-label="Nível de ' + esc(f) + '">' + NIVEIS.map(nv => '<button type="button" class="nv nv-' + NIVEL_COR[nv] + (n === nv ? ' ativo' : '') + '" role="radio" aria-checked="' + (n === nv) + '" data-nivel-f="' + ix + '" data-nivel-v="' + esc(nv) + '"' + dis + '>' + esc(nv) + '</button>').join('') + '</div>' + (m ? '<button class="ico-btn" type="button" data-tirar-ferr="' + ix + '" aria-label="Tirar ferramenta">' + ICO.fechar + '</button>' : '') + '</div>').join('') + '</div>' +
-        (m ? '<form class="g-add" data-form="ferr"><input class="campo" name="t" placeholder="Nova ferramenta, ex.: Enviar e-mail"><button class="btn sec peq" type="submit">Adicionar</button></form>' : '') +
-        '<div class="legenda"><span><i class="nv-livre"></i><b>Livre</b> faz sem avisar</span><span><i class="nv-auto"></i><b>Automática</b> faz e registra</span><span><i class="nv-conf"></i><b>Com confirmação</b> espera o seu ok</span><span><i class="nv-bloq"></i><b>Bloqueada</b> nunca faz</span></div></section>' +
-      '<section class="g-cartao"><h4>Handoff rules' + I('Handoff rules (quando o agente passa a conversa para uma pessoa)') + '</h4><input class="campo" data-ag="passa" value="' + esc(a.passa) + '"' + dis + ' placeholder="Quando passar para uma pessoa"></section>' +
-      '<section class="g-cartao"><h4>Playground' + I('Playground (área de teste para conversar com o agente antes de soltar para os clientes)') + '</h4><div class="aviso-faixa" style="margin:0"><b>Sem provedor</b><span>O teste de conversa liga quando o provedor de IA for conectado a este sistema.</span></div><div class="g-add"><input class="campo" placeholder="Escreva uma pergunta de teste" disabled><button class="btn" type="button" disabled>Testar</button></div></section>' +
-      '<section class="g-cartao"><h4>Logs e Evals' + I('Logs (registro de tudo que o agente respondeu e fez) e Evals (testes que medem se ele está respondendo certo)') + '</h4><p class="sec" style="margin:0;font-size:13px">Nenhum registro ainda.</p></section>' +
-    '</div></div>');
-}
-
 /* ================= SETTINGS ================= */
 function rConfig(){
   const el = $('#m-configuracoes');
@@ -1639,8 +1612,6 @@ document.addEventListener('click', e => {
   if ((x = q('[data-apagar-tag]'))) { const tg = byId('tags', x.dataset.apagarTag); const n = D.tagLinks.filter(l => l.tag === tg.id).length; modal('Excluir a tag ' + esc(tg.nome) + '?', '<p style="margin:0">' + (n ? 'Ela sai de ' + n + (n === 1 ? ' registro' : ' registros') + '. ' : '') + 'As ligações e as etiquetas automáticas não mudam.</p>', [{txt:'Cancelar', cls:'sec'},{txt:'Excluir', cls:'acento', acao:() => { D.tags = D.tags.filter(z => z.id !== tg.id); D.tagLinks = D.tagLinks.filter(l => l.tag !== tg.id); salvar(); render(); toast('Tag excluída'); }}]); return; }
   if ((x = q('[data-ped]'))) { UI.pedSel = x.dataset.ped; salvarUI(); rServiceDesk(); return; }
   if ((x = q('[data-filtro-ped]'))) { UI.filtroPed = x.dataset.filtroPed; salvarUI(); rServiceDesk(); return; }
-  if ((x = q('[data-agente]'))) { UI.agSel = x.dataset.agente; salvarUI(); rAgentes(); return; }
-  if ((x = q('[data-tirar-fonte]'))) { (byId('agents', UI.agSel) || D.agents[0]).fontes.splice(+x.dataset.tirarFonte, 1); salvar(); rAgentes(); return; }
   if ((x = q('[data-servico]'))) { UI.svSel = x.dataset.servico; UI.svAba = 'comercial'; UI.svCtx = null; salvarUI(); rCatalog(); return; }
   if ((x = q('[data-sv-aba]'))) { UI.svAba = x.dataset.svAba; salvarUI(); rCatalog(); return; }
   if ((x = q('[data-tirar-comp]'))) { byId('catalog', UI.svSel).preco.splice(+x.dataset.tirarComp, 1); salvar(); rCatalog(); return; }
@@ -1659,9 +1630,6 @@ document.addEventListener('click', e => {
   if ((x = q('[data-tirar-ref]'))) { const [al, ix] = x.dataset.tirarRef.split('|'); const l = refsDe(al); if (l){ l.splice(+ix, 1); salvar(); reRenderRefs(al); } return; }
   if ((x = q('[data-ver-ref]'))) { const [al, ix] = x.dataset.verRef.split('|'); const r = (refsDe(al) || [])[+ix]; if (r) modal(esc(r.nome), '<img src="' + r.url + '" alt="' + esc(r.nome) + '" style="max-width:100%;display:block;margin:0 auto">', [{txt:'Fechar', cls:'sec'}]); return; }
   if ((x = q('[data-excluir-pessoa]'))) { const p = pessoa(x.dataset.excluirPessoa); const n = D.issues.filter(i => i.resp === p.id && i.status !== 'done' && !i.arquivado).length; modal('Excluir ' + esc(p.nome) + '?', '<p style="margin:0">' + (n ? n + (n === 1 ? ' item em aberto fica' : ' itens em aberto ficam') + ' sem responsável. ' : '') + 'O histórico do que a pessoa fez continua guardado.</p>', [{txt:'Cancelar', cls:'sec'},{txt:'Excluir', cls:'acento', acao:() => { D.issues.forEach(i => { if (i.resp === p.id && i.status !== 'done') i.resp = null; }); D.people = D.people.filter(z => z.id !== p.id); salvar(); rTime(); toast(p.nome + ' excluído do time'); }}]); return; }
-  if ((x = q('[data-excluir-agente]'))) { const ag = byId('agents', x.dataset.excluirAgente); modal('Excluir o agente ' + esc(ag.nome) + '?', '<p style="margin:0">As instruções, as fontes e as permissões dele saem do sistema.</p>', [{txt:'Cancelar', cls:'sec'},{txt:'Excluir', cls:'acento', acao:() => { D.agents = D.agents.filter(z => z.id !== ag.id); UI.agSel = D.agents[0] ? D.agents[0].id : null; salvar(); salvarUI(); rAgentes(); toast('Agente excluído'); }}]); return; }
-  if ((x = q('[data-nivel-f]'))) { const ag = byId('agents', UI.agSel) || D.agents[0]; ag.ferramentas[+x.dataset.nivelF][1] = x.dataset.nivelV; salvar(); rAgentes(); return; }
-  if ((x = q('[data-tirar-ferr]'))) { const ag = byId('agents', UI.agSel) || D.agents[0]; ag.ferramentas.splice(+x.dataset.tirarFerr, 1); salvar(); rAgentes(); return; }
   if ((x = q('[data-editar-pessoa]'))) { const p = pessoa(x.dataset.editarPessoa); modal('Editar pessoa', formPessoa(p), [{txt:'Cancelar', cls:'sec'},{txt:'Salvar', acao:d => salvarPessoa(d, p)}]); return; }
   if ((x = q('[data-acao]'))) acao(x.dataset.acao, x);
 });
@@ -1688,7 +1656,6 @@ function acao(a, x){
   else if (a === 'novo-pedido') novoPedido();
   else if (a === 'virar-issue') virarIssue(x.dataset.id);
   else if (a === 'nova-pessoa') modal('Nova pessoa', formPessoa(), [{txt:'Cancelar', cls:'sec'},{txt:'Criar', acao:d => salvarPessoa(d, null)}]);
-  else if (a === 'novo-agente') modal('Novo agente', '<div class="grade-form"><label class="lb largo">Nome<input class="campo" id="na-n" placeholder="Ex.: Agente de cobrança"></label><label class="lb largo">Papel<input class="campo" id="na-p" placeholder="O que ele faz, em uma frase"></label></div>', [{txt:'Cancelar', cls:'sec'},{txt:'Criar agente', acao:d => { const n = $('#na-n', d).value.trim(); if (!n){ toast('Escreva o nome do agente'); return false; } const ag = {id:uid('ag'), nome:n, papel:$('#na-p', d).value.trim() || 'Sem papel definido', instr:'', fontes:[], ferramentas:[['Consultar dados','Livre']], passa:''}; D.agents.push(ag); UI.agSel = ag.id; salvar(); salvarUI(); rAgentes(); toast('Agente criado'); }}]);
   else if (a === 'add-custom'){ const n = $('#cf-nome').value.trim(); if (!n){ toast('Escreva o nome do campo'); return; } D.sheets[UI.sel].custom.push({nome:n, tipo:$('#cf-tipo').value, valor:$('#cf-valor').value}); salvar(); rView(); }
   else if (a === 'cron'){ const i = byId('issues', itemAberto); const r = i.tempo.find(t => !t.fim); if (r) r.fim = Date.now(); else i.tempo.push({ini:Date.now(), fim:null, quem:idEu(UI.verComo), origem:'Timer'}); salvar(); abrirItem(i.id); }
   else if (a === 'arquivar-item'){ const i = byId('issues', itemAberto); i.arquivado = true; registrar('arquivou', i); salvar(); fecharItem(); toast('Item arquivado. Continua guardado no banco.'); }
@@ -1726,8 +1693,6 @@ document.addEventListener('change', e => {
   if (t.dataset.tpl){ const it = D.template.flatMap(et => et.itens).find(z => z.id === t.dataset.tpl); it[t.dataset.campo] = t.dataset.campo === 'obrig' ? t.value === '1' : t.value; salvar(); toast('Modelo padrão atualizado'); return; }
   if (t.dataset.base){ D.baseline[t.dataset.base] = t.checked; salvar(); rConfig(); return; }
   if (t.dataset.pedCampo){ const r = byId('requests', UI.pedSel) || D.requests[0]; r[t.dataset.pedCampo] = t.value; salvar(); rServiceDesk(); return; }
-  if (t.dataset.ag){ const a = byId('agents', UI.agSel) || D.agents[0]; a[t.dataset.ag] = t.value; salvar(); if (t.dataset.ag === 'papel' || t.dataset.ag === 'nome') rAgentes(); return; }
-  if (t.dataset.nivel){ const a = byId('agents', UI.agSel); a.ferramentas[+t.dataset.nivel][1] = t.value; salvar(); return; }
 });
 let timerBusca;
 document.addEventListener('input', e => {
@@ -1745,8 +1710,6 @@ document.addEventListener('submit', e => {
   else if (f.dataset.form === 'resp-ped' && txt){ const r = byId('requests', UI.pedSel) || D.requests[0]; r.msgs.push({de: UI.verComo === 'stakeholder' ? 'cliente' : 'voce', txt}); salvar(); rServiceDesk(); }
   else if (f.dataset.form === 'sv-lista' && txt){ byId('catalog', UI.svSel)[f.dataset.campo].push(txt); salvar(); rCatalog(); }
   else if (f.dataset.form === 'ref-link' && txt){ const l = refsDe(f.dataset.alvo); if (l){ l.push({nome:txt, tipo:'link', url:/^https?:\/\//.test(txt) ? txt : 'https://' + txt}); salvar(); reRenderRefs(f.dataset.alvo); toast('Link adicionado'); } }
-  else if (f.dataset.form === 'fonte' && txt){ (byId('agents', UI.agSel) || D.agents[0]).fontes.push(txt); salvar(); rAgentes(); }
-  else if (f.dataset.form === 'ferr' && txt){ (byId('agents', UI.agSel) || D.agents[0]).ferramentas.push([txt, 'Com confirmação']); salvar(); rAgentes(); }
 });
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && itemAberto && !document.querySelector('dialog[open]')) fecharItem();

@@ -145,14 +145,13 @@ window.supabase = { createClient(){ let sess = {user:{id:'u1', email:'admin@it-i
     const sh = Object.values(D.sheets)[0]; if (sh){ sh.campos['Stack|Frameworks'] = 'React'; sh.custom.push({nome:'Novo campo', tipo:'Texto', valor:'v'}); }
     const et = um(D.template); et.expl = 'mudou'; et.itens[0].modo = 'Trava';
     const k = Object.keys(D.stages)[0]; if (k){ const s2 = D.stages[k]; const mid = D.template[1].itens[0].id; s2[mid] = {feito:true, quem:D.people[0].id, quando:'2026-09-28', prova:{tipo:'Texto', valor:'ok'}}; }
-    const ag = um(D.agents); ag.instr = 'mudou'; ag.fontes.push('Fonte nova'); ag.ferramentas[0][1] = 'Livre';
     const r = um(D.requests); if (r){ r.status = 'Resolvido'; r.msgs.push({de:'voce', txt:'Resolvido, obrigado'}); }
     window.ciclodevGravarAgora(); });
   await espera(); await semErro('alterar um registro de cada tabela sem erro');
   const tabs = [...new Set(ops.filter(o => /^(update|insert|upsert|delete) /.test(o)).map(o => o.split(' ')[1]))].sort();
   console.log('     tabelas gravadas:', tabs.join(', '));
   ok(tabs.length >= 25, 'gravou em ' + tabs.length + ' tabelas diferentes');
-  const snap = () => p.evaluate(() => { const D = window.ciclodevDados(); return JSON.stringify([D.clients[0].nome, D.clients[0].sla, D.apps[0].plataforma, D.ws[0].wip, D.regras.margem, D.opCustos[0].valor, D.receitas[0] && D.receitas[0].valor, D.sprints[0] && D.sprints[0].meta, D.agents[0].instr, D.agents[0].fontes.length, D.template[0].expl, D.requests[0] && D.requests[0].status, D.catalog[0].horas]); });
+  const snap = () => p.evaluate(() => { const D = window.ciclodevDados(); return JSON.stringify([D.clients[0].nome, D.clients[0].sla, D.apps[0].plataforma, D.ws[0].wip, D.regras.margem, D.opCustos[0].valor, D.receitas[0] && D.receitas[0].valor, D.sprints[0] && D.sprints[0].meta, D.template[0].expl, D.requests[0] && D.requests[0].status, D.catalog[0].horas]); });
   const a1 = await snap(); await p.reload(); await p.waitForTimeout(2500); const a2 = await snap();
   if (a1 !== a2) console.log('ANTES ', a1, '\nDEPOIS', a2);
   ok(a1 === a2, 'depois de recarregar, tudo o que mudou voltou do banco');

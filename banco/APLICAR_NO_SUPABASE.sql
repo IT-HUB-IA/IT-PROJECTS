@@ -1,8 +1,8 @@
 -- =====================================================================
 -- CicloDev · banco completo para o Supabase tfcvoszeewmpghgxztuy
--- Rodar UMA VEZ, inteiro, num banco sem estas tabelas (SQL Editor ou migration). Ordem: 01 a 16.
+-- Rodar UMA VEZ, inteiro, num banco sem estas tabelas (SQL Editor ou migration). Ordem: 01 a 17.
 -- Depois disso, 05, 06, 07, 08, 09 e 10 podem ser rodados de novo sozinhos (recriam funções e regras; a semente não duplica).
--- Gerado em 2026-09-28. Os arquivos 00, 90 a 94 são só de teste local e NÃO entram aqui.
+-- Gerado em 2026-09-28. Os arquivos 00, 90 a 95 são só de teste local e NÃO entram aqui.
 -- =====================================================================
 
 -- >>>>>>>>>> 01_base_estrutura.sql
@@ -950,12 +950,10 @@ create table public.pedidos_mensagens (
   pedido_id    uuid not null references public.pedidos(id) on delete cascade,
   autor_tipo   text not null check (autor_tipo in ('cliente','ia','equipe')),
   pessoa_id    uuid references public.pessoas(id) on delete set null,
-  agente_id    uuid,
   texto        text,
   transcricao  text,   -- quando a mensagem é um áudio
   criado_em    timestamptz not null default now(),
-  check (num_nonnulls(texto, transcricao) >= 1 or autor_tipo = 'cliente'),
-  check ((autor_tipo = 'ia') = (agente_id is not null))
+  check (num_nonnulls(texto, transcricao) >= 1 or autor_tipo = 'cliente')
 );
 create index pedidos_mensagens_idx on public.pedidos_mensagens (pedido_id, criado_em);
 
@@ -972,65 +970,8 @@ end $$;
 create trigger pedidos_mensagens_resposta after insert on public.pedidos_mensagens
   for each row execute function interno.carimbar_resposta();
 
--- AGENTES (Agent Studio)
-create table public.agentes (
-  id               uuid primary key default gen_random_uuid(),
-  codigo           text not null unique check (codigo ~ '^[a-z0-9_]{2,40}$'),
-  nome             text not null,
-  papel            text,
-  instrucoes       text not null default '',
-  regras_passagem  text,          -- Handoff rules
-  modelo_ia        text,          -- qual modelo de IA ele usa, quando houver provedor ligado
-  ativo            boolean not null default true,
-  criado_em        timestamptz not null default now()
-);
-
-alter table public.pedidos_mensagens
-  add constraint pedidos_mensagens_agente_fk foreign key (agente_id) references public.agentes(id) on delete set null;
-
-create table public.agentes_fontes (
-  id         uuid primary key default gen_random_uuid(),
-  agente_id  uuid not null references public.agentes(id) on delete cascade,
-  nome       text not null,
-  tipo       text not null default 'documento' check (tipo in ('documento','banco','ficha','historico','canvas','link')),
-  ref        text,
-  unique (agente_id, nome)
-);
-
-create table public.agentes_ferramentas (
-  agente_id   uuid not null references public.agentes(id) on delete cascade,
-  ferramenta  text not null,
-  permissao   text not null check (permissao in ('livre','automatica','confirmacao','bloqueada')),
-  primary key (agente_id, ferramenta)
-);
-
-create table public.agentes_execucoes (
-  id          bigint generated always as identity primary key,
-  agente_id   uuid not null references public.agentes(id) on delete cascade,
-  pedido_id   uuid references public.pedidos(id) on delete set null,
-  item_id     uuid references public.itens(id) on delete set null,
-  ferramenta  text,
-  entrada     text,
-  saida       text,
-  resultado   text not null check (resultado in ('ok','erro','aguardando_aprovacao','recusado')),
-  tokens      integer check (tokens is null or tokens >= 0),
-  custo_usd   numeric(10,4),
-  em          timestamptz not null default now()
-);
-create index agentes_execucoes_idx on public.agentes_execucoes (agente_id, em desc);
-create index agentes_execucoes_pedido_idx on public.agentes_execucoes (pedido_id) where pedido_id is not null;
-create index agentes_execucoes_item_idx on public.agentes_execucoes (item_id) where item_id is not null;
-
-create table public.agentes_avaliacoes (
-  id                 uuid primary key default gen_random_uuid(),
-  agente_id          uuid not null references public.agentes(id) on delete cascade,
-  pergunta           text not null,
-  resposta_esperada  text not null,
-  ultima_resposta    text,
-  nota               numeric(4,1) check (nota is null or nota between 0 and 10),
-  avaliado_em        timestamptz
-);
-create index agentes_avaliacoes_agente_idx on public.agentes_avaliacoes (agente_id);
+-- Os agentes antigos (agentes, agentes_fontes, agentes_ferramentas, agentes_execucoes, agentes_avaliacoes)
+-- saíram em 28/09/2026. O Agent Studio novo, só do dono do sistema, está na parte 17.
 
 -- ANEXOS E REFERÊNCIAS: cada um pertence a exatamente um lugar; é arquivo no storage ou link
 create table public.anexos (
@@ -1111,7 +1052,7 @@ do $$
 declare t text;
 begin
   foreach t in array array['nos','itens','comentarios','pedidos','custos_tecnicos','receitas','regras_calculo',
-                           'pessoas_custos','servicos','automacoes','marcos','sprints','decisoes','agentes'] loop
+                           'pessoas_custos','servicos','automacoes','marcos','sprints','decisoes'] loop
     execute format('create trigger %I after insert or update or delete on public.%I for each row execute function auditoria.registrar()',
                    t || '_auditoria', t);
   end loop;
@@ -2106,15 +2047,6 @@ create policy cria on public.pedidos_mensagens for insert to authenticated with 
   and autor_tipo = case when (select interno.eh_stakeholder()) then 'cliente' else 'equipe' end
   and exists (select 1 from public.pedidos p where p.id = pedido_id));
 
--- ---------- agentes ----------
-create policy ver on public.agentes for select to authenticated using (not (select interno.eh_stakeholder()));
-create policy master_muda on public.agentes for all to authenticated using ((select interno.eh_master())) with check ((select interno.eh_master()));
-create policy ver on public.agentes_fontes for select to authenticated using (not (select interno.eh_stakeholder()));
-create policy master_muda on public.agentes_fontes for all to authenticated using ((select interno.eh_master())) with check ((select interno.eh_master()));
-create policy ver on public.agentes_ferramentas for select to authenticated using (not (select interno.eh_stakeholder()));
-create policy master_muda on public.agentes_ferramentas for all to authenticated using ((select interno.eh_master())) with check ((select interno.eh_master()));
-create policy master on public.agentes_execucoes for select to authenticated using ((select interno.eh_master()));
-create policy master on public.agentes_avaliacoes for all to authenticated using ((select interno.eh_master())) with check ((select interno.eh_master()));
 
 -- ---------- anexos: vale a visibilidade de onde o anexo está ----------
 create or replace function interno.anexo_visivel(a public.anexos) returns boolean
@@ -2201,7 +2133,7 @@ alter default privileges in schema public revoke execute on functions from anon,
 -- >>>>>>>>>> 08_semente.sql
 -- =====================================================================
 -- CicloDev · 08 · Semente: os dados de exemplo que o sistema já mostra (gerado por gerar_semente.py)
--- Pode rodar de novo: nada duplica. As datas relativas foram calculadas em 2026-09-26.
+-- Pode rodar de novo: nada duplica. As datas relativas foram calculadas em 2026-09-28.
 -- =====================================================================
 begin;
 -- a semente não entra no registro de auditoria (o histórico de exemplo é carregado no fim)
@@ -2215,7 +2147,6 @@ alter table public.receitas disable trigger receitas_auditoria;
 alter table public.regras_calculo disable trigger regras_calculo_auditoria;
 alter table public.pessoas_custos disable trigger pessoas_custos_auditoria;
 alter table public.servicos disable trigger servicos_auditoria;
-alter table public.agentes disable trigger agentes_auditoria;
 alter table public.marcos disable trigger marcos_auditoria;
 alter table public.sprints disable trigger sprints_auditoria;
 alter table public.automacoes disable trigger automacoes_auditoria;
@@ -2738,59 +2669,22 @@ insert into public.provas (id, no_id, item_modelo_id, tipo, valor, enviado_por) 
   ('fbdcd999-b027-5cf9-80b7-db220922a969', 'cea3db88-841f-5511-98d1-3bedcc411131', '35a8cf39-daf2-5c4d-98ed-6d6ba5b9fb21', 'link', 'Canvas de estruturação do BL', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28')
 on conflict (id) do nothing;
 
-insert into public.agentes (id, codigo, nome, papel, instrucoes, regras_passagem) values
-  ('e9104d90-ba48-5020-9888-c995298bb0d0', 'ag_po', 'AI PO', 'Product Owner: planos de execução, capacidade do time, previsão e replanejamento', 'Organize as demandas em epics, stories e tasks. Use a capacidade de cada pessoa. Nunca mude prazo, pessoa ou cliente sem a aprovação do Master.', 'Qualquer decisão de prazo, custo ou cliente'),
-  ('41e3b626-1c1d-5011-9dfe-8551b88390eb', 'ag_at', 'Agente de atendimento', 'Primeira resposta no Service Desk: entende, classifica e resolve dúvidas', 'Converse primeiro, faça perguntas objetivas e tente reproduzir. Dúvida de uso: explique com base no manual. Falha real: resuma com passos e provas e passe para a equipe.', 'Cliente pede uma pessoa, sistema parado, ou duas tentativas sem resolver'),
-  ('6b674e96-56c2-5bbe-aaab-95ae0d2ac587', 'ag_billy', 'Billy', 'Assistente do grupo: ouvinte, operacional e voz', 'Siga os níveis de permissão. Toda function call é validada pelo Java antes de executar.', 'Qualquer ação fora do nível Livre')
-on conflict (id) do nothing;
-
-insert into public.agentes_fontes (id, agente_id, nome) values
-  ('95887200-b2a4-53ad-a251-6f96f63ef1ba', 'e9104d90-ba48-5020-9888-c995298bb0d0', 'Banco do projeto'),
-  ('2a9e92f4-f3d7-51b0-8094-caca54dd1717', 'e9104d90-ba48-5020-9888-c995298bb0d0', 'Canvas do projeto'),
-  ('188e982c-1cef-5224-a311-a43df3ae0545', 'e9104d90-ba48-5020-9888-c995298bb0d0', 'Ficha técnica'),
-  ('a8689980-10a7-5c2b-9665-086e662fe213', 'e9104d90-ba48-5020-9888-c995298bb0d0', 'Histórico de entregas'),
-  ('a2bdfe2c-4ab4-5309-ad03-f3c387594e51', '41e3b626-1c1d-5011-9dfe-8551b88390eb', 'Manual de cada aplicação'),
-  ('a795acfe-5e87-5d30-a38f-2581a427798a', '41e3b626-1c1d-5011-9dfe-8551b88390eb', 'Base de conhecimento'),
-  ('a5788818-3257-52ea-b19d-7d7457b8378e', '41e3b626-1c1d-5011-9dfe-8551b88390eb', 'Histórico de pedidos'),
-  ('bf5ccc1e-a7c8-5d43-9f45-3dd368d317fc', '6b674e96-56c2-5bbe-aaab-95ae0d2ac587', 'Banco BL'),
-  ('3719dfe0-27ab-5bb2-bbda-c938c8827390', '6b674e96-56c2-5bbe-aaab-95ae0d2ac587', 'Reuniões'),
-  ('31063adb-ea7b-5860-8a2a-1cde9a9fe027', '6b674e96-56c2-5bbe-aaab-95ae0d2ac587', 'Tarefas')
-on conflict (id) do nothing;
-
-insert into public.agentes_ferramentas (agente_id, ferramenta, permissao) values
-  ('e9104d90-ba48-5020-9888-c995298bb0d0', 'Criar tarefa', 'confirmacao'),
-  ('e9104d90-ba48-5020-9888-c995298bb0d0', 'Mudar status', 'automatica'),
-  ('e9104d90-ba48-5020-9888-c995298bb0d0', 'Mudar prazo', 'confirmacao'),
-  ('e9104d90-ba48-5020-9888-c995298bb0d0', 'Atribuir pessoa', 'confirmacao'),
-  ('e9104d90-ba48-5020-9888-c995298bb0d0', 'Gerar relatório', 'livre'),
-  ('e9104d90-ba48-5020-9888-c995298bb0d0', 'Apagar item', 'bloqueada'),
-  ('41e3b626-1c1d-5011-9dfe-8551b88390eb', 'Responder o cliente', 'automatica'),
-  ('41e3b626-1c1d-5011-9dfe-8551b88390eb', 'Classificar pedido', 'automatica'),
-  ('41e3b626-1c1d-5011-9dfe-8551b88390eb', 'Juntar pedidos repetidos', 'confirmacao'),
-  ('41e3b626-1c1d-5011-9dfe-8551b88390eb', 'Criar item no board', 'confirmacao'),
-  ('41e3b626-1c1d-5011-9dfe-8551b88390eb', 'Fechar pedido', 'confirmacao'),
-  ('6b674e96-56c2-5bbe-aaab-95ae0d2ac587', 'Consultar dados', 'livre'),
-  ('6b674e96-56c2-5bbe-aaab-95ae0d2ac587', 'Criar tarefa', 'confirmacao'),
-  ('6b674e96-56c2-5bbe-aaab-95ae0d2ac587', 'Enviar mensagem', 'confirmacao'),
-  ('6b674e96-56c2-5bbe-aaab-95ae0d2ac587', 'Mexer em financeiro', 'bloqueada')
-on conflict (agente_id, ferramenta) do nothing;
-
 insert into public.pedidos (id, no_id, autor_id, tipo, gravidade, status, titulo, contexto, item_id, criado_em, resolvido_em) values
   ('a7b735ee-a6a3-543c-8b82-31c4b8687986', 'd23ede90-b2b5-56e0-b294-cc0ff4f9c41a', '2246aac4-fcc9-5564-af95-054b9cc42889', 'bug', 'quebrada', 'aguardando_voce', 'Guias do mês anterior aparecendo no filtro de setembro', '{"resumo": "Tela: Guias e vencimentos · Versão 0.4.2 · Chrome 128 · Erro: nenhum"}'::jsonb, null, '2026-09-25T09:00:00-03:00', null),
   ('92e61f72-37c7-5606-9391-2850c2c953ef', 'c37cc0c0-2eec-59e2-bebf-989417c684ee', '2246aac4-fcc9-5564-af95-054b9cc42889', 'duvida', 'incomodo', 'resolvido', 'Como reenviar um documento rejeitado', '{"resumo": "Tela: Documentos · Versão 0.2.0 · App Android"}'::jsonb, null, '2026-09-23T09:00:00-03:00', '2026-09-23T09:00:00-03:00'),
   ('4b6ff104-2e8d-5ae1-961d-aeccc76f2977', '38ff5917-3d08-5887-ba5f-57a82861493f', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 'funcionalidade', 'cosmetico', 'novo', 'Ver o faturamento consolidado das empresas no celular', '{"resumo": "Tela: Resumo diário · App iOS"}'::jsonb, null, '2026-09-26T09:00:00-03:00', null)
 on conflict (id) do nothing;
 
-insert into public.pedidos_mensagens (id, pedido_id, autor_tipo, pessoa_id, agente_id, texto, criado_em) values
-  ('cbbbb4fe-b0ee-5b65-850d-0348829ee774', 'a7b735ee-a6a3-543c-8b82-31c4b8687986', 'cliente', '2246aac4-fcc9-5564-af95-054b9cc42889', null, 'Quando filtro setembro aparecem guias de agosto também.', '2026-09-25T09:01:00-03:00'),
-  ('bc532fc8-57cc-5770-9487-7fc446d6ecda', 'a7b735ee-a6a3-543c-8b82-31c4b8687986', 'ia', null, '41e3b626-1c1d-5011-9dfe-8551b88390eb', 'Entendi. Consegue me dizer se isso acontece com todos os clientes ou só com algum específico?', '2026-09-25T09:04:00-03:00'),
-  ('0a90a70f-5822-5f35-a056-332b51b4bc49', 'a7b735ee-a6a3-543c-8b82-31c4b8687986', 'cliente', '2246aac4-fcc9-5564-af95-054b9cc42889', null, 'Com todos. Mandei o print.', '2026-09-25T09:07:00-03:00'),
-  ('3995aaa1-42c5-5ca4-9e31-71d3236350bf', 'a7b735ee-a6a3-543c-8b82-31c4b8687986', 'ia', null, '41e3b626-1c1d-5011-9dfe-8551b88390eb', 'Obrigado. Reproduzi o comportamento com os dados do print: o filtro está usando a data de vencimento em vez da competência. Classifiquei como falha real e passei para a equipe.', '2026-09-25T09:10:00-03:00'),
-  ('d784db51-d765-5626-b4b7-d25435f6b1cd', '92e61f72-37c7-5606-9391-2850c2c953ef', 'cliente', '2246aac4-fcc9-5564-af95-054b9cc42889', null, '(áudio transcrito) Mandei o documento errado, como faço para mandar de novo?', '2026-09-23T09:01:00-03:00'),
-  ('47bbe6b2-64c1-59ef-ae85-21e4ff247125', '92e61f72-37c7-5606-9391-2850c2c953ef', 'ia', null, '41e3b626-1c1d-5011-9dfe-8551b88390eb', 'É só abrir o documento com a etiqueta Rejeitado e tocar em Reenviar. O arquivo antigo fica guardado no histórico.', '2026-09-23T09:04:00-03:00'),
-  ('af77e683-b8ca-5d4e-a70a-fdca09cc704e', '92e61f72-37c7-5606-9391-2850c2c953ef', 'cliente', '2246aac4-fcc9-5564-af95-054b9cc42889', null, 'Deu certo, obrigado.', '2026-09-23T09:07:00-03:00'),
-  ('dfd08714-19c8-5d47-8d68-57dbaa6d776e', '4b6ff104-2e8d-5ae1-961d-aeccc76f2977', 'cliente', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', null, 'Queria ver o faturamento de todas as empresas juntas, na primeira tela.', '2026-09-26T09:01:00-03:00'),
-  ('bd38e37d-964d-5eb7-89aa-1215942eb4ac', '4b6ff104-2e8d-5ae1-961d-aeccc76f2977', 'ia', null, '41e3b626-1c1d-5011-9dfe-8551b88390eb', 'Anotado como pedido de funcionalidade nova. Quer ver o total do mês ou comparar com o mês anterior também?', '2026-09-26T09:04:00-03:00')
+insert into public.pedidos_mensagens (id, pedido_id, autor_tipo, pessoa_id, texto, criado_em) values
+  ('cbbbb4fe-b0ee-5b65-850d-0348829ee774', 'a7b735ee-a6a3-543c-8b82-31c4b8687986', 'cliente', '2246aac4-fcc9-5564-af95-054b9cc42889', 'Quando filtro setembro aparecem guias de agosto também.', '2026-09-25T09:01:00-03:00'),
+  ('bc532fc8-57cc-5770-9487-7fc446d6ecda', 'a7b735ee-a6a3-543c-8b82-31c4b8687986', 'ia', null, 'Entendi. Consegue me dizer se isso acontece com todos os clientes ou só com algum específico?', '2026-09-25T09:04:00-03:00'),
+  ('0a90a70f-5822-5f35-a056-332b51b4bc49', 'a7b735ee-a6a3-543c-8b82-31c4b8687986', 'cliente', '2246aac4-fcc9-5564-af95-054b9cc42889', 'Com todos. Mandei o print.', '2026-09-25T09:07:00-03:00'),
+  ('3995aaa1-42c5-5ca4-9e31-71d3236350bf', 'a7b735ee-a6a3-543c-8b82-31c4b8687986', 'ia', null, 'Obrigado. Reproduzi o comportamento com os dados do print: o filtro está usando a data de vencimento em vez da competência. Classifiquei como falha real e passei para a equipe.', '2026-09-25T09:10:00-03:00'),
+  ('d784db51-d765-5626-b4b7-d25435f6b1cd', '92e61f72-37c7-5606-9391-2850c2c953ef', 'cliente', '2246aac4-fcc9-5564-af95-054b9cc42889', '(áudio transcrito) Mandei o documento errado, como faço para mandar de novo?', '2026-09-23T09:01:00-03:00'),
+  ('47bbe6b2-64c1-59ef-ae85-21e4ff247125', '92e61f72-37c7-5606-9391-2850c2c953ef', 'ia', null, 'É só abrir o documento com a etiqueta Rejeitado e tocar em Reenviar. O arquivo antigo fica guardado no histórico.', '2026-09-23T09:04:00-03:00'),
+  ('af77e683-b8ca-5d4e-a70a-fdca09cc704e', '92e61f72-37c7-5606-9391-2850c2c953ef', 'cliente', '2246aac4-fcc9-5564-af95-054b9cc42889', 'Deu certo, obrigado.', '2026-09-23T09:07:00-03:00'),
+  ('dfd08714-19c8-5d47-8d68-57dbaa6d776e', '4b6ff104-2e8d-5ae1-961d-aeccc76f2977', 'cliente', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 'Queria ver o faturamento de todas as empresas juntas, na primeira tela.', '2026-09-26T09:01:00-03:00'),
+  ('bd38e37d-964d-5eb7-89aa-1215942eb4ac', '4b6ff104-2e8d-5ae1-961d-aeccc76f2977', 'ia', null, 'Anotado como pedido de funcionalidade nova. Quer ver o total do mês ou comparar com o mês anterior também?', '2026-09-26T09:04:00-03:00')
 on conflict (id) do nothing;
 
 insert into public.anexos (id, nome, tipo, tamanho_bytes, storage_path, url, item_id, enviado_por, pedido_id) values
@@ -2843,7 +2737,6 @@ alter table public.receitas enable trigger receitas_auditoria;
 alter table public.regras_calculo enable trigger regras_calculo_auditoria;
 alter table public.pessoas_custos enable trigger pessoas_custos_auditoria;
 alter table public.servicos enable trigger servicos_auditoria;
-alter table public.agentes enable trigger agentes_auditoria;
 alter table public.marcos enable trigger marcos_auditoria;
 alter table public.sprints enable trigger sprints_auditoria;
 alter table public.automacoes enable trigger automacoes_auditoria;
@@ -3481,7 +3374,7 @@ create or replace function interno.espaco_do_william() returns uuid language sql
   select e.id from public.espacos e where e.pessoal and not e.modelo order by e.criado_em limit 1
 $$;
 do $$ declare t text; esp uuid := interno.espaco_do_william(); begin
-  foreach t in array array['nos','servicos','requisitos','regras_calculo','etapas_modelo','agentes','custos_operacao','dominios','etiquetas','equipes','integracoes','pessoas_custos'] loop
+  foreach t in array array['nos','servicos','requisitos','regras_calculo','etapas_modelo','custos_operacao','dominios','etiquetas','equipes','integracoes','pessoas_custos'] loop
     execute format('alter table public.%I add column if not exists espaco_id uuid references public.espacos(id) on delete cascade', t);
     if esp is not null then execute format('update public.%I set espaco_id = %L where espaco_id is null', t, esp); end if;
     execute format('alter table public.%I alter column espaco_id set default interno.meu_espaco()', t);
@@ -3498,14 +3391,13 @@ update public.pessoas set espaco_id = interno.espaco_do_william() where auth_use
 -- nomes e códigos passam a ser únicos por espaço (dois usuários podem ter uma etiqueta "Urgente")
 do $$ declare c record; begin
   for c in select conrelid::regclass as t, conname from pg_constraint
-            where contype = 'u' and conrelid in ('public.etiquetas'::regclass,'public.requisitos'::regclass,'public.servicos'::regclass,'public.agentes'::regclass,'public.etapas_modelo'::regclass,'public.equipes'::regclass,'public.dominios'::regclass)
+            where contype = 'u' and conrelid in ('public.etiquetas'::regclass,'public.requisitos'::regclass,'public.servicos'::regclass,'public.etapas_modelo'::regclass,'public.equipes'::regclass,'public.dominios'::regclass)
               and not (conkey @> array[(select attnum from pg_attribute where attrelid = conrelid and attname = 'espaco_id')])
   loop execute format('alter table %s drop constraint %I', c.t, c.conname); end loop;
 end $$;
 create unique index if not exists etiquetas_espaco_nome_uq on public.etiquetas (espaco_id, nome);
 create unique index if not exists requisitos_espaco_nome_uq on public.requisitos (espaco_id, nome);
 create unique index if not exists servicos_espaco_codigo_uq on public.servicos (espaco_id, codigo);
-create unique index if not exists agentes_espaco_codigo_uq on public.agentes (espaco_id, codigo);
 create unique index if not exists etapas_modelo_espaco_chave_uq on public.etapas_modelo (espaco_id, chave);
 create unique index if not exists etapas_modelo_espaco_ordem_uq on public.etapas_modelo (espaco_id, ordem);
 create unique index if not exists equipes_espaco_nome_uq on public.equipes (espaco_id, nome);
@@ -3812,7 +3704,7 @@ do $$ declare r record; begin
     'nos','clientes','projetos','aplicacoes','frentes','participacoes','pessoas','pessoas_custos','espacos','espaco_membros','convites',
     'etiquetas','etiquetas_nos','status_fluxo','requisitos','servicos','servicos_cobranca','servicos_requisitos','regras_calculo',
     'custos_operacao','custos_tecnicos','custos_uso','receitas','slas','automacoes','automacoes_execucoes','campos_personalizados',
-    'etapas_modelo','etapas_modelo_itens','etapas_nos','provas','agentes','agentes_fontes','agentes_ferramentas','agentes_avaliacoes','agentes_execucoes',
+    'etapas_modelo','etapas_modelo_itens','etapas_nos','provas',
     'dominios','dominios_registros','segredos_catalogo','cambio','equipes','equipes_membros','equipes_nos','integracoes','vinculos_externos','integracoes_log',
     'boards_config','boards_colunas','boards_colunas_status','comentarios_reacoes')
   loop execute format('drop policy %I on public.%I', r.policyname, r.tablename); end loop;
@@ -3894,7 +3786,7 @@ create policy apaga on public.comentarios_reacoes for delete to authenticated us
 
 -- o que é do sistema da pessoa (Catalog, Costs, Settings, Agent Studio, domínios, etiquetas, equipes, integrações)
 do $$ declare t text; begin
-  foreach t in array array['servicos','requisitos','regras_calculo','etapas_modelo','agentes','custos_operacao','dominios','etiquetas','equipes','integracoes','pessoas_custos'] loop
+  foreach t in array array['servicos','requisitos','regras_calculo','etapas_modelo','custos_operacao','dominios','etiquetas','equipes','integracoes','pessoas_custos'] loop
     execute format('create policy ver on public.%I for select to authenticated using (espaco_id in (select interno.meus_espacos()))', t);
     execute format('create policy cria on public.%I for insert to authenticated with check (espaco_id in (select interno.meus_espacos()))', t);
     execute format('create policy muda on public.%I for update to authenticated using (espaco_id in (select interno.meus_espacos())) with check (espaco_id in (select interno.meus_espacos()))', t);
@@ -3917,13 +3809,6 @@ create policy muda on public.servicos_requisitos for all to authenticated using 
 create policy ver on public.etapas_modelo_itens for select to authenticated using (exists (select 1 from public.etapas_modelo e where e.id = etapa_id));
 create policy muda on public.etapas_modelo_itens for all to authenticated using (exists (select 1 from public.etapas_modelo e where e.id = etapa_id and e.espaco_id in (select interno.meus_espacos())))
   with check (exists (select 1 from public.etapas_modelo e where e.id = etapa_id and e.espaco_id in (select interno.meus_espacos())));
-do $$ declare t text; begin
-  foreach t in array array['agentes_fontes','agentes_ferramentas','agentes_avaliacoes'] loop
-    execute format('create policy ver on public.%I for select to authenticated using (exists (select 1 from public.agentes a where a.id = agente_id))', t);
-    execute format('create policy muda on public.%I for all to authenticated using (exists (select 1 from public.agentes a where a.id = agente_id and a.espaco_id in (select interno.meus_espacos()))) with check (exists (select 1 from public.agentes a where a.id = agente_id and a.espaco_id in (select interno.meus_espacos())))', t);
-  end loop;
-end $$;
-create policy ver on public.agentes_execucoes for select to authenticated using (exists (select 1 from public.agentes a where a.id = agente_id));
 create policy ver on public.dominios_registros for select to authenticated using (exists (select 1 from public.dominios d where d.id = dominio_id));
 create policy muda on public.dominios_registros for all to authenticated using (exists (select 1 from public.dominios d where d.id = dominio_id and d.espaco_id in (select interno.meus_espacos())))
   with check (exists (select 1 from public.dominios d where d.id = dominio_id and d.espaco_id in (select interno.meus_espacos())));
@@ -4285,3 +4170,240 @@ end $$;
 revoke execute on function interno.uso_guardar_acesso() from public, anon, authenticated;
 drop trigger if exists uso_eventos_acesso on public.uso_eventos;
 create trigger uso_eventos_acesso before insert on public.uso_eventos for each row execute function interno.uso_guardar_acesso();
+
+-- >>>>>>>>>> 17_agent_studio.sql
+-- =====================================================================
+-- Parte 17: Agent Studio novo (só o dono do sistema)
+-- Depende da parte 16 (interno.eh_dono_sistema).
+--
+-- 1. Tira os agentes antigos (AI PO, Agente de atendimento, Billy) e as 5 tabelas deles.
+-- 2. Cria a oficina do assistente de IA do CicloDev. O agente nasce "em branco":
+--    sem instruções, sem conhecimento e sem funções. Tudo o que ele sabe e faz é o
+--    dono do sistema quem coloca, pela tela Agent Studio.
+--
+-- Peças:
+--   studio_agentes             o agente (nome, instruções, modelo, ligado ou não)
+--   studio_instrucoes_versoes  cada versão anterior das instruções (dá para voltar)
+--   studio_conhecimento        os documentos (.md) que ele estuda: livros, manuais, regras
+--   studio_trechos             cada documento cortado em pedaços pequenos, com busca em português
+--   studio_funcoes             o que ele poderá fazer no sistema (vazio até o dono cadastrar)
+--
+-- Regra de acesso: só o dono do sistema lê e muda qualquer uma dessas tabelas.
+-- Ninguém mais, nem para ler. Quando o assistente for ligado para os usuários, ele
+-- lê o conhecimento pelo servidor, e o usuário nunca vê os documentos crus.
+-- =====================================================================
+
+-- ---------- 1. saem os agentes antigos ----------
+alter table if exists public.pedidos_mensagens drop column if exists agente_id;
+drop table if exists public.agentes_avaliacoes;
+drop table if exists public.agentes_execucoes;
+drop table if exists public.agentes_ferramentas;
+drop table if exists public.agentes_fontes;
+drop table if exists public.agentes;
+
+-- ---------- 2. o agente ----------
+create table if not exists public.studio_agentes (
+  id             uuid primary key default gen_random_uuid(),
+  nome           text not null check (length(btrim(nome)) between 1 and 80),
+  descricao      text check (descricao is null or length(descricao) <= 500),
+  instrucoes     text not null default '' check (length(instrucoes) <= 200000),
+  modelo         text not null default 'claude-opus-5-5' check (modelo ~ '^[a-z0-9.-]{3,60}$'),
+  ativo          boolean not null default false,
+  criado_em      timestamptz not null default now(),
+  atualizado_em  timestamptz not null default now()
+);
+comment on table public.studio_agentes is 'Agent Studio: o assistente de IA do CicloDev. Nasce em branco; só o dono do sistema configura. ativo = false até o dono ligar.';
+
+create table if not exists public.studio_instrucoes_versoes (
+  id          bigint generated always as identity primary key,
+  agente_id   uuid not null references public.studio_agentes(id) on delete cascade,
+  instrucoes  text not null,
+  salvo_em    timestamptz not null default now()
+);
+create index if not exists studio_instrucoes_versoes_idx on public.studio_instrucoes_versoes (agente_id, salvo_em desc);
+comment on table public.studio_instrucoes_versoes is 'Cada vez que as instruções mudam, a versão anterior fica guardada aqui.';
+
+-- ---------- 3. o conhecimento ----------
+create table if not exists public.studio_conhecimento (
+  id                uuid primary key default gen_random_uuid(),
+  agente_id         uuid not null references public.studio_agentes(id) on delete cascade,
+  titulo            text not null check (length(btrim(titulo)) between 1 and 200),
+  tipo              text not null default 'livro' check (tipo in ('livro','manual','regra','exemplo','outro')),
+  peso              text not null default 'fundamental' check (peso in ('fundamental','apoio')),
+  descricao         text check (descricao is null or length(descricao) <= 1000),
+  arquivo_nome      text check (arquivo_nome is null or length(arquivo_nome) <= 200),
+  conteudo          text not null check (length(conteudo) between 1 and 8000000),
+  caracteres        integer generated always as (length(conteudo)) stored,
+  tokens_estimados  integer generated always as ((length(conteudo) + 3) / 4) stored,
+  versao            integer not null default 1,
+  ativo             boolean not null default true,
+  criado_em         timestamptz not null default now(),
+  atualizado_em     timestamptz not null default now()
+);
+create index if not exists studio_conhecimento_agente_idx on public.studio_conhecimento (agente_id);
+comment on table public.studio_conhecimento is 'Documentos que o assistente estuda (livros em .md, manuais, regras). peso: fundamental = base principal; apoio = consulta. ativo = false tira o documento das respostas sem apagar.';
+
+create table if not exists public.studio_trechos (
+  id            bigint generated always as identity primary key,
+  documento_id  uuid not null references public.studio_conhecimento(id) on delete cascade,
+  ordem         integer not null,
+  secao         text,
+  texto         text not null,
+  busca         tsvector generated always as (to_tsvector('portuguese', coalesce(secao, '') || ' ' || texto)) stored,
+  unique (documento_id, ordem)
+);
+create index if not exists studio_trechos_busca_idx on public.studio_trechos using gin (busca);
+comment on table public.studio_trechos is 'Cada documento cortado em pedaços de até uns 2.000 caracteres, com o capítulo de onde veio. É o que o assistente busca antes de responder. Refeito sozinho quando o documento muda.';
+
+-- ---------- 4. as funções (o que ele poderá fazer) ----------
+create table if not exists public.studio_funcoes (
+  id                 uuid primary key default gen_random_uuid(),
+  agente_id          uuid not null references public.studio_agentes(id) on delete cascade,
+  nome               text not null check (length(btrim(nome)) between 1 and 80),
+  descricao          text not null default '' check (length(descricao) <= 4000),
+  acao               text not null default 'ler' check (acao in ('ler','criar','editar','apagar','outra')),
+  pede_confirmacao   boolean not null default true,
+  ativo              boolean not null default false,
+  ordem              integer not null default 0,
+  criado_em          timestamptz not null default now(),
+  unique (agente_id, nome),
+  check (acao = 'ler' or pede_confirmacao)   -- criar, editar e apagar sempre esperam o "confirmar" do usuário
+);
+comment on table public.studio_funcoes is 'O que o assistente pode fazer no sistema. Nasce vazio. Criar, editar e apagar sempre pedem confirmação do usuário, e sempre rodam com as permissões dele.';
+
+-- ---------- 5. cortar o documento em trechos ----------
+-- corta por parágrafo, respeitando os títulos (#, ##, ###) do markdown; um parágrafo
+-- gigante é quebrado no último espaço antes do limite
+create or replace function interno.studio_cortar(p_texto text, p_limite integer default 2000)
+returns table (ordem integer, secao text, texto text)
+language plpgsql immutable set search_path = public, pg_temp as $$
+declare
+  par text; tit text[] := array[null, null, null]::text[]; nivel integer;
+  buf text := ''; sec_buf text; n integer := 0; corte integer; sec_atual text;
+begin
+  for par in select btrim(x, E' \t\r\n') from regexp_split_to_table(replace(coalesce(p_texto, ''), E'\r\n', E'\n'), E'\n[ \t]*\n') x loop
+    continue when par = '';
+    if par ~ '^#{1,6}[ \t]' then
+      nivel := length(substring(par from '^(#+)'));
+      if nivel <= 3 then
+        if buf <> '' then n := n + 1; ordem := n; secao := sec_buf; texto := buf; return next; buf := ''; end if;
+        tit[nivel] := btrim(regexp_replace(split_part(par, E'\n', 1), '^#+[ \t]*', ''));
+        for k in nivel + 1 .. 3 loop tit[k] := null; end loop;
+        -- o título vai para a seção do trecho; só o texto que vier logo abaixo dele entra no trecho
+        par := btrim(substr(par, length(split_part(par, E'\n', 1)) + 2), E' \t\r\n');
+        continue when par = '';
+      end if;
+    end if;
+    sec_atual := nullif(array_to_string(array_remove(tit, null), ' › '), '');
+    if buf <> '' and length(buf) + length(par) + 2 > p_limite then
+      n := n + 1; ordem := n; secao := sec_buf; texto := buf; return next; buf := '';
+    end if;
+    while length(par) > p_limite loop
+      corte := p_limite - position(' ' in reverse(left(par, p_limite)));
+      if corte < p_limite / 2 then corte := p_limite; end if;
+      n := n + 1; ordem := n; secao := sec_atual; texto := btrim(left(par, corte)); return next;
+      par := btrim(substr(par, corte + 1));
+    end loop;
+    if buf = '' then sec_buf := sec_atual; buf := par; else buf := buf || E'\n\n' || par; end if;
+  end loop;
+  if buf <> '' then n := n + 1; ordem := n; secao := sec_buf; texto := buf; return next; end if;
+end $$;
+
+create or replace function interno.studio_refazer_trechos() returns trigger
+language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  if tg_op = 'UPDATE' and new.conteudo is not distinct from old.conteudo then return null; end if;
+  delete from public.studio_trechos where documento_id = new.id;
+  insert into public.studio_trechos (documento_id, ordem, secao, texto)
+    select new.id, c.ordem, c.secao, c.texto from interno.studio_cortar(new.conteudo) c;
+  return null;
+end $$;
+drop trigger if exists studio_conhecimento_trechos on public.studio_conhecimento;
+create trigger studio_conhecimento_trechos after insert or update of conteudo on public.studio_conhecimento
+  for each row execute function interno.studio_refazer_trechos();
+
+create or replace function interno.studio_antes_mudar_documento() returns trigger
+language plpgsql set search_path = public, pg_temp as $$
+begin
+  new.atualizado_em := now();
+  if new.conteudo is distinct from old.conteudo then new.versao := old.versao + 1; end if;
+  return new;
+end $$;
+drop trigger if exists studio_conhecimento_versao on public.studio_conhecimento;
+create trigger studio_conhecimento_versao before update on public.studio_conhecimento
+  for each row execute function interno.studio_antes_mudar_documento();
+
+-- guarda a versão anterior das instruções
+create or replace function interno.studio_antes_mudar_agente() returns trigger
+language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  new.atualizado_em := now();
+  if new.instrucoes is distinct from old.instrucoes and btrim(old.instrucoes) <> '' then
+    insert into public.studio_instrucoes_versoes (agente_id, instrucoes) values (old.id, old.instrucoes);
+  end if;
+  return new;
+end $$;
+drop trigger if exists studio_agentes_versao on public.studio_agentes;
+create trigger studio_agentes_versao before update on public.studio_agentes
+  for each row execute function interno.studio_antes_mudar_agente();
+
+-- ---------- 6. busca no conhecimento (para testar agora e para o assistente depois) ----------
+create or replace function public.studio_buscar(p_agente uuid, p_pergunta text, p_limite integer default 8)
+returns table (documento_id uuid, titulo text, peso text, secao text, texto text, relevancia real)
+language plpgsql stable security definer set search_path = public, pg_temp as $$
+declare q tsquery;
+begin
+  perform interno.exigir_dono();
+  q := websearch_to_tsquery('portuguese', coalesce(p_pergunta, ''));
+  if q is null or q::text = '' then return; end if;
+  -- várias palavras: primeiro tenta achar trechos com todas; se não houver, qualquer uma delas
+  if not exists (select 1 from public.studio_trechos t join public.studio_conhecimento c on c.id = t.documento_id
+                  where c.agente_id = p_agente and c.ativo and t.busca @@ q) then
+    q := replace(q::text, ' & ', ' | ')::tsquery;
+  end if;
+  return query
+    select c.id, c.titulo, c.peso, t.secao, t.texto,
+           (ts_rank_cd(t.busca, q) * case when c.peso = 'fundamental' then 1.5 else 1 end)::real
+      from public.studio_trechos t join public.studio_conhecimento c on c.id = t.documento_id
+     where c.agente_id = p_agente and c.ativo and t.busca @@ q
+     order by 6 desc, c.titulo, t.ordem
+     limit greatest(1, least(coalesce(p_limite, 8), 30));
+end $$;
+
+-- lista dos documentos para a tela, sem o texto inteiro (que pode ter megabytes)
+create or replace function public.studio_documentos(p_agente uuid)
+returns table (id uuid, titulo text, tipo text, peso text, descricao text, arquivo_nome text, caracteres integer, tokens_estimados integer,
+               versao integer, ativo boolean, criado_em timestamptz, atualizado_em timestamptz, trechos bigint)
+language plpgsql stable security definer set search_path = public, pg_temp as $$
+begin
+  perform interno.exigir_dono();
+  return query
+    select c.id, c.titulo, c.tipo, c.peso, c.descricao, c.arquivo_nome, c.caracteres, c.tokens_estimados, c.versao, c.ativo, c.criado_em, c.atualizado_em,
+           (select count(*) from public.studio_trechos t where t.documento_id = c.id)
+      from public.studio_conhecimento c where c.agente_id = p_agente
+     order by (c.peso = 'fundamental') desc, c.titulo;
+end $$;
+
+-- ---------- 7. regras de acesso: só o dono do sistema ----------
+do $$ declare t text; begin
+  foreach t in array array['studio_agentes','studio_instrucoes_versoes','studio_conhecimento','studio_trechos','studio_funcoes'] loop
+    execute format('alter table public.%I enable row level security', t);
+    execute format('drop policy if exists dono on public.%I', t);
+    execute format('create policy dono on public.%I for all to authenticated using ((select interno.eh_dono_sistema())) with check ((select interno.eh_dono_sistema()))', t);
+    execute format('revoke all on public.%I from public, anon, authenticated', t);
+    execute format('grant all on public.%I to service_role', t);
+  end loop;
+end $$;
+grant select, insert, update, delete on public.studio_agentes, public.studio_conhecimento, public.studio_funcoes to authenticated;
+grant select, delete on public.studio_instrucoes_versoes to authenticated;   -- versões são gravadas só pelo gatilho
+grant select on public.studio_trechos to authenticated;                        -- trechos são gravados só pelo gatilho
+revoke all on function public.studio_buscar(uuid, text, integer) from public, anon;
+grant execute on function public.studio_buscar(uuid, text, integer) to authenticated;
+revoke all on function public.studio_documentos(uuid) from public, anon;
+grant execute on function public.studio_documentos(uuid) to authenticated;
+revoke all on function interno.studio_cortar(text, integer) from public, anon, authenticated;
+
+-- ---------- 8. o agente em branco ----------
+insert into public.studio_agentes (id, nome, descricao)
+  values ('5f0c1d2e-0000-4000-8000-00000000c1c0', 'Assistente CicloDev', 'O assistente de IA de cada usuário. Em branco: o dono do sistema define o que ele sabe e o que faz.')
+  on conflict (id) do nothing;

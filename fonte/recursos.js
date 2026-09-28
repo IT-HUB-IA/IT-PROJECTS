@@ -9,7 +9,7 @@ const eu = () => idEu(UI.verComo);
 const COM_BANCO = document.body.classList.contains('com-login');
 function regrasVazias(){ return {regime:'simples', impostos:{simples:0, presumido:0, real:0}, encargos:{inss:0, rat:0, terceiros:0, fgts:0, ferias:0, terco:0, decimo:0, multaFgts:0}, horasMes:168, faturavel:100, margem:0, risco:0, cambio:0, complexidade:{'Média':1}, urgencia:{Normal:1}, manutencaoAnual:0, reservaOverhead:0}; }
 function dadosVazios(){
-  return {v:2, clients:[], tags:[], tagLinks:[], projects:[], products:[], apps:[], ws:[], people:[], issues:[], sheets:{}, template:[], stages:{}, requests:[], agents:[], focus:null, statusCfg:{}, baseline:{},
+  return {v:2, clients:[], tags:[], tagLinks:[], projects:[], products:[], apps:[], ws:[], people:[], issues:[], sheets:{}, template:[], stages:{}, requests:[], focus:null, statusCfg:{}, baseline:{},
     eventos:[], regras:regrasVazias(), opCustos:[], custos:[], receitas:[], catalog:[], sprints:[], marcos:[], automacoes:[], autoLog:[], notifs:[], vistas:[], statusCustom:[], camposItem:[], quadros:{}, recursosV:1, autoPrazoDia:iso(HOJE)};
 }
 if (COM_BANCO){
@@ -1090,7 +1090,6 @@ const DE_FORMA = {mensal:'Mensal', unica:'Único', parcelada:'Parcelado'};
 const DE_MODO = {aviso:'Aviso', trava:'Trava', desligado:'Desligado'};
 const DE_PROVA = {nenhuma:'Nenhuma', captura:'Captura de tela', arquivo:'Arquivo', link:'Link', texto:'Texto', aprovacao:'Aprovação de alguém'};
 const DE_QUEM = {responsavel_etapa:'Responsável da etapa', qualquer_um:'Qualquer pessoa do time'};
-const DE_PERM = {livre:'Livre', automatica:'Automática', confirmacao:'Com confirmação', bloqueada:'Bloqueada'};
 const DE_PT = {bug:'Bug report', correcao:'Fix request', mudanca:'Change request', funcionalidade:'Feature request', duvida:'Question'};
 const DE_GR = {parado:'Sistema parado', quebrada:'Função quebrada', incomodo:'Incômodo', cosmetico:'Cosmético'};
 const DE_PS = {novo:'Em triagem', ia_conversando:'IA conversando', aguardando_voce:'Aguardando você', virou_item:'Virou item', resolvido:'Resolvido', recusado:'Recusado'};
@@ -1098,7 +1097,7 @@ const DE_ANEXO = {audio:'áudio', video:'vídeo'};
 const TABELAS_BANCO = ['pessoas','nos','clientes','projetos','aplicacoes','frentes','participacoes','etiquetas','etiquetas_nos','status_fluxo','requisitos','servicos','servicos_cobranca',
   'servicos_requisitos','regras_calculo','pessoas_custos','custos_operacao','custos_tecnicos','custos_uso','receitas','slas','sprints','marcos','automacoes','campos_personalizados',
   'itens','itens_campos','itens_checklist','itens_ligacoes','comentarios','blocos_agenda','tempo_registros','anexos','ficha_campos','etapas_modelo','etapas_modelo_itens',
-  'etapas_nos','provas','agentes','agentes_fontes','agentes_ferramentas','pedidos','pedidos_mensagens','notificacoes'];
+  'etapas_nos','provas','pedidos','pedidos_mensagens','notificacoes'];
 
 async function lerTabela(sb, t){
   const todas = []; const passo = 1000;
@@ -1148,7 +1147,6 @@ function montarDados(T, eu){
   d.statusCustom = T.status_fluxo.filter(s => s.no_id).sort(porOrdem).map(s => ({id:s.id, no:chave(s.no_id), nome:s.nome, cor:s.cor, grupo:s.grupo, _chave:s.chave}));
   BANCO.stPadrao = Object.fromEntries(T.status_fluxo.filter(s => !s.no_id).map(s => [s.chave, s.id]));
   BANCO.reqIds = Object.fromEntries(T.requisitos.map(q => [q.nome, q.id]));
-  BANCO.fonteIds = Object.fromEntries(T.agentes_fontes.map(f => [f.agente_id + '|' + f.nome, f.id]));
   const stPorId = um(T.status_fluxo, 'id');
   T.requisitos.slice().sort(porOrdem).forEach(q => { d.baseline[q.nome] = !!q.padrao; });
 
@@ -1210,8 +1208,6 @@ function montarDados(T, eu){
     if (e.situacao === 'dispensado') s[e.item_modelo_id] = {dispensa:e.motivo_dispensa || 'Dispensado', quem:e.cumprido_por, quando:diaDe(e.cumprido_em)};
     else if (e.situacao === 'cumprido'){ const p = provas.get(e.no_id + '|' + e.item_modelo_id); s[e.item_modelo_id] = {feito:true, quem:e.cumprido_por, quando:diaDe(e.cumprido_em), prova: p ? {tipo:DE_PROVA[p.tipo] || p.tipo, valor:p.valor, _id:p.id} : undefined}; } });
 
-  const fontes = agrupar(T.agentes_fontes, 'agente_id'), ferr = agrupar(T.agentes_ferramentas, 'agente_id');
-  d.agents = T.agentes.map(a => ({id:a.id, _codigo:a.codigo, nome:a.nome, papel:a.papel || '', instr:a.instrucoes || '', fontes:(fontes.get(a.id) || []).map(f => f.nome), ferramentas:(ferr.get(a.id) || []).map(f => [f.ferramenta, DE_PERM[f.permissao] || f.permissao]), passa:a.regras_passagem || ''}));
 
   const msgs = agrupar(T.pedidos_mensagens.slice().sort((a, b) => String(a.criado_em).localeCompare(String(b.criado_em))), 'pedido_id'), anxPed = agrupar(T.anexos.filter(x => x.pedido_id), 'pedido_id');
   d.requests = T.pedidos.slice().sort((a, b) => String(b.criado_em).localeCompare(String(a.criado_em))).map(r => ({id:r.id, cliente:acima(r.no_id, 'cliente'), app:r.no_id, tipo:DE_PT[r.tipo] || r.tipo,
@@ -1250,7 +1246,7 @@ window.ciclodevBancoInfo = () => BANCO;
 function painelBanco(){
   const b = BANCO, cont = [['Pessoas', D.people.length], ['Clientes', D.clients.length], ['Projetos', D.projects.length], ['Produtos', D.products.length], ['Aplicações', D.apps.length],
     ['Frentes', D.ws.length], ['Itens', D.issues.length], ['Pedidos', D.requests.length], ['Serviços', D.catalog.length], ['Custos técnicos', D.custos.length],
-    ['Custos da operação', D.opCustos.length], ['Receitas', D.receitas.length], ['Agentes', D.agents.length]];
+    ['Custos da operação', D.opCustos.length], ['Receitas', D.receitas.length]];
   return '<h2 class="sub">Dados do banco</h2>' +
     '<p class="sec" style="font-size:13px;margin:0 0 10px">Tudo o que aparece no sistema vem do banco (Supabase)' + (b.quando ? ', lido em ' + esc(b.quando.toLocaleString('pt-BR')) : '') + '. Nada de exemplo e nada guardado no navegador.</p>' +
     '<div class="tabela-rolo"><table class="tabela"><thead><tr><th>O quê</th><th>No banco</th></tr></thead><tbody>' + cont.map(([n, q]) => '<tr><td>' + n + '</td><td>' + q + '</td></tr>').join('') + '</tbody></table></div>' +
@@ -1360,7 +1356,7 @@ document.addEventListener('change', ev => { if (FC.dlg && ev.target.matches('[da
    versão gravada e mandamos só a diferença: linha nova vira insert, linha mudada vira update só das colunas que
    mudaram, linha que sumiu vira delete. O banco continua cuidando de automações, datas de início e conclusão e das regras. */
 const PARA_ST_NO = inverter(ST_NO), PARA_MOD = inverter(DE_MOD), PARA_VINC = inverter(DE_VINC), PARA_REC = inverter(DE_REC), PARA_FORMA = inverter(DE_FORMA);
-const PARA_MODO = inverter(DE_MODO), PARA_PROVA = inverter(DE_PROVA), PARA_QUEM = inverter(DE_QUEM), PARA_PERM = inverter(DE_PERM), PARA_PT = inverter(DE_PT), PARA_GR = inverter(DE_GR);
+const PARA_MODO = inverter(DE_MODO), PARA_PROVA = inverter(DE_PROVA), PARA_QUEM = inverter(DE_QUEM), PARA_PT = inverter(DE_PT), PARA_GR = inverter(DE_GR);
 const PARA_PS = Object.assign(inverter(DE_PS), {'Resolvido pela IA':'resolvido'});
 const PARA_ANEXO = {'áudio':'audio', 'vídeo':'video', imagem:'imagem', audio:'audio', video:'video', link:'link'};
 // ordem de gravação: quem é pai vem antes; a exclusão segue a ordem contrária
@@ -1373,7 +1369,7 @@ const GRAVAR = [
   ['itens',['id']], ['itens_campos',['item_id','campo_id'],1], ['itens_checklist',['id']], ['itens_ligacoes',['origem_id','destino_id','tipo'],1], ['comentarios',['id']],
   ['blocos_agenda',['id']], ['tempo_registros',['id']], ['anexos',['id']], ['ficha_campos',['no_id','secao','campo'],1],
   ['etapas_modelo',['id']], ['etapas_modelo_itens',['id']], ['etapas_nos',['no_id','item_modelo_id'],1], ['provas',['id']],
-  ['agentes',['id']], ['agentes_fontes',['id']], ['agentes_ferramentas',['agente_id','ferramenta'],1], ['pedidos',['id']], ['pedidos_mensagens',['id']], ['notificacoes',['id']]
+  ['pedidos',['id']], ['pedidos_mensagens',['id']], ['notificacoes',['id']]
 ];
 const hex8 = id => String(id).replace(/[^a-f0-9]/g, '').slice(0, 8) || Math.random().toString(16).slice(2, 10);
 const semVazio = v => (v === undefined || v === '' ? null : v);
@@ -1465,16 +1461,11 @@ function linhasDaTela(d){
     Object.entries(itens || {}).forEach(([mid, s]) => { if (!s || !(s.feito || s.dispensa)) return;
       L.etapas_nos.push({no_id:nid, item_modelo_id:mid, situacao:s.dispensa ? 'dispensado' : 'cumprido', cumprido_por:s.quem || eu, cumprido_em:quando(s.quando || iso(HOJE)), motivo_dispensa:s.dispensa || null});
       const p = s.prova, tp = p && PARA_PROVA[p.tipo]; if (p && p.valor && tp && tp !== 'nenhuma') L.provas.push({id:garantirId(p), no_id:nid, item_modelo_id:mid, tipo:tp, valor:String(p.valor), enviado_por:s.quem || eu}); }); });
-  const fIds = BANCO.fonteIds || (BANCO.fonteIds = {});
-  d.agents.forEach(a => { L.agentes.push({id:a.id, codigo:a._codigo || (a._codigo = 'ag_' + hex8(a.id)), nome:a.nome, papel:semVazio(a.papel), instrucoes:a.instr || '', regras_passagem:semVazio(a.passa)});
-    [...new Set(a.fontes || [])].forEach(n => { const k = a.id + '|' + n; L.agentes_fontes.push({id:fIds[k] || (fIds[k] = novoUuid()), agente_id:a.id, nome:n}); });
-    (a.ferramentas || []).forEach(([f, p]) => L.agentes_ferramentas.push({agente_id:a.id, ferramenta:f, permissao:PARA_PERM[p] || 'confirmacao'})); });
-  const agIA = (d.agents.find(a => /atendimento/i.test(a.nome)) || d.agents[0] || {}).id;
   d.requests.forEach(r => { const st = PARA_PS[r.status] || 'novo', fechado = st === 'resolvido' || st === 'recusado';
     L.pedidos.push({id:r.id, no_id:r.app, autor_id:r.autor || null, tipo:PARA_PT[r.tipo] || 'duvida', gravidade:PARA_GR[r.grav] || 'incomodo', status:st, titulo:r.titulo, contexto:{resumo:r.contexto || ''}, item_id:r.issue || null,
       resolvido_em:fechado ? (r._resolvido || (r._resolvido = new Date().toISOString())) : null});
-    (r.msgs || []).forEach(m => { const tipo = m.de === 'voce' ? 'equipe' : m.de; if (tipo === 'ia' && !agIA) return;
-      L.pedidos_mensagens.push({id:garantirId(m), pedido_id:r.id, autor_tipo:tipo, pessoa_id:tipo === 'cliente' ? (r.autor || null) : tipo === 'equipe' ? eu : null, agente_id:tipo === 'ia' ? agIA : null, texto:m.txt || null}); }); });
+    (r.msgs || []).forEach(m => { const tipo = m.de === 'voce' ? 'equipe' : m.de;
+      L.pedidos_mensagens.push({id:garantirId(m), pedido_id:r.id, autor_tipo:tipo, pessoa_id:tipo === 'cliente' ? (r.autor || null) : tipo === 'equipe' ? eu : null, texto:m.txt || null}); }); });
   (d.notifs || []).forEach(n => { if (n._banco) L.notificacoes.push({id:n.id, lida_em:n.lida ? (n._lidaEm || (n._lidaEm = new Date().toISOString())) : null}); });
   // pai antes do filho, dentro das tabelas que se referem a si mesmas
   const prof = {cliente:0, projeto:1, produto:2, aplicacao:3, frente:4}; L.nos.sort((a, b) => prof[a.tipo] - prof[b.tipo]);

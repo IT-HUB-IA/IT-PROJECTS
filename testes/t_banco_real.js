@@ -38,7 +38,7 @@ window.supabase = { createClient(){ let sess = JSON.parse(localStorage.getItem('
   ok(dados.people.map(x => x.nome).sort().join('|') === B.pessoas.map(x => x.nome).sort().join('|'), 'pessoas = só as do banco: ' + dados.people.map(x => x.nome).join(', '));
   ok(dados.issues.length === B.itens.length && dados.ws.length === B.frentes.length && dados.apps.length === B.aplicacoes.length && dados.requests.length === B.pedidos.length && dados.catalog.length === B.servicos.length && dados.custos.length === B.custos_tecnicos.length, 'contagens batem com o banco (itens ' + dados.issues.length + ', frentes ' + dados.ws.length + ', apps ' + dados.apps.length + ', pedidos ' + dados.requests.length + ')');
   ok(await p.evaluate(() => localStorage.getItem('ciclodev-dados-v1') === null), 'nada de dados guardado no navegador');
-  const mods = ['overview','operacoes','clientes','catalog','custos','servicedesk','time','agentes','playbook','configuracoes'];
+  const mods = ['overview','operacoes','clientes','catalog','custos','servicedesk','time','playbook','configuracoes'];
   for (const m of mods){
     await p.click('.item[data-tela=' + m + ']'); await p.waitForTimeout(250);
     const txt = await p.evaluate(() => document.querySelector('.principal').innerText);

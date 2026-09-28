@@ -4,7 +4,7 @@ pb=open('parte_playbook.html',encoding='utf-8').read().replace('class="conteudo"
 js=open('app.js',encoding='utf-8').read()
 _fim='\nabrirModulo(UI.modulo);\n})();'
 assert js.rstrip().endswith(_fim.strip()), 'final do app.js mudou'
-js=js.rstrip()[:-len(_fim.strip())]+'\n'+open('recursos.js',encoding='utf-8').read()+'\n'+open('board.js',encoding='utf-8').read()+'\n'+open('multiusuario.js',encoding='utf-8').read()+'\n'+open('admin.js',encoding='utf-8').read()+'\n'+_fim.strip()+'\n'
+js=js.rstrip()[:-len(_fim.strip())]+'\n'+open('recursos.js',encoding='utf-8').read()+'\n'+open('board.js',encoding='utf-8').read()+'\n'+open('multiusuario.js',encoding='utf-8').read()+'\n'+open('admin.js',encoding='utf-8').read()+'\n'+open('studio.js',encoding='utf-8').read()+'\n'+_fim.strip()+'\n'
 import json, html as _h
 from explicacoes import EXPL
 js='window.EXPL = '+json.dumps(EXPL, ensure_ascii=False)+';\n'+js
@@ -27,6 +27,7 @@ MODS=[
 ]
 menu='\n'.join('        <li><button class="item" type="button" data-nome="%s" data-tela="%s"><span class="item-ico">%s</span><span class="item-nome">%s</span></button></li>'%(n,k,ic,n) for k,n,ic in MODS)
 menu=menu.replace('<li><button class="item" type="button" data-nome="Admin"','<li hidden><button class="item" type="button" data-nome="Admin"')
+menu=menu.replace('<li><button class="item" type="button" data-nome="Agent Studio"','<li hidden><button class="item" type="button" data-nome="Agent Studio"')
 secoes=''.join('    <section class="conteudo %s" id="tela-%s" hidden><div id="m-%s"></div></section>\n'%('sem-pad' if k=='operacoes' else 'cheio',k,k) for k,n,ic in MODS if k!='playbook')
 base_js=r'''
 (function(){

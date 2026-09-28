@@ -16,7 +16,7 @@ select numero as numero_maria from pessoas where email = 'maria@teste.com' \gset
 select pg_temp.como('00000000-0000-0000-0000-0000000000b1', 'maria@teste.com');
 set role authenticated;
 select pg_temp.ok((select count(*) from nos) = 0, 'Maria não vê nada do William');
-select pg_temp.ok((select count(*) from servicos) = 0 and (select count(*) from custos_operacao) = 0 and (select count(*) from agentes) = 0, 'Maria não vê o Catalog, os Costs nem os agentes do William');
+select pg_temp.ok((select count(*) from servicos) = 0 and (select count(*) from custos_operacao) = 0, 'Maria não vê o Catalog nem os Costs do William');
 select pg_temp.ok((select count(*) from requisitos) = 7, 'Maria vê os requisitos do próprio espaço (copiados do modelo)');
 insert into nos (tipo, nome) values ('cliente', 'Cliente da Maria');
 insert into clientes (no_id, tipo_cliente) select id, 'empresa' from nos where nome = 'Cliente da Maria';

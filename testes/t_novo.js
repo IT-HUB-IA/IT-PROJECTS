@@ -25,11 +25,6 @@ const { chromium } = require('/opt/node22/lib/node_modules/playwright');
   await p.click('[data-tela=time]'); await shot('team');
   await p.click('[data-excluir-pessoa="pe_b"]'); await p.click('dialog [data-b="1"]'); d = await dados(); console.log('pessoas', d.people.length, 'itens sem resp', d.issues.filter(i=>i.resp==='pe_b').length);
   await p.click('[data-acao=nova-pessoa]'); await shot('nova_pessoa'); await p.fill('#fpe-nome','Carla'); await p.click('dialog [data-b="1"]');
-  // agentes
-  await p.click('[data-tela=agentes]'); await shot('agentes');
-  await p.click('[data-nivel-f="0"][data-nivel-v="Livre"]'); d = await dados(); console.log('nivel', d.agents[0].ferramentas[0][1]);
-  await p.click('[data-acao=novo-agente]'); await p.fill('#na-n','Agente de cobrança'); await p.click('dialog [data-b="1"]'); d = await dados(); console.log('agentes', d.agents.map(a=>a.nome).join(','));
-  await p.click('[data-excluir-agente]'); await p.click('dialog [data-b="1"]'); d = await dados(); console.log('depois excluir', d.agents.length);
   // clients / tags
   await p.click('[data-tela=clientes]'); await shot('clients'); await p.click('[data-acao=cli-tags]'); await shot('tags'); await p.click('.nav-niveis .btn');
   console.log('clients volta', await p.evaluate(()=>document.querySelector('#m-clientes h1').textContent));

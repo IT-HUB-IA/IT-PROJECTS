@@ -38,12 +38,10 @@ create table public.pedidos_mensagens (
   pedido_id    uuid not null references public.pedidos(id) on delete cascade,
   autor_tipo   text not null check (autor_tipo in ('cliente','ia','equipe')),
   pessoa_id    uuid references public.pessoas(id) on delete set null,
-  agente_id    uuid,
   texto        text,
   transcricao  text,   -- quando a mensagem é um áudio
   criado_em    timestamptz not null default now(),
-  check (num_nonnulls(texto, transcricao) >= 1 or autor_tipo = 'cliente'),
-  check ((autor_tipo = 'ia') = (agente_id is not null))
+  check (num_nonnulls(texto, transcricao) >= 1 or autor_tipo = 'cliente')
 );
 create index pedidos_mensagens_idx on public.pedidos_mensagens (pedido_id, criado_em);
 
@@ -60,65 +58,8 @@ end $$;
 create trigger pedidos_mensagens_resposta after insert on public.pedidos_mensagens
   for each row execute function interno.carimbar_resposta();
 
--- AGENTES (Agent Studio)
-create table public.agentes (
-  id               uuid primary key default gen_random_uuid(),
-  codigo           text not null unique check (codigo ~ '^[a-z0-9_]{2,40}$'),
-  nome             text not null,
-  papel            text,
-  instrucoes       text not null default '',
-  regras_passagem  text,          -- Handoff rules
-  modelo_ia        text,          -- qual modelo de IA ele usa, quando houver provedor ligado
-  ativo            boolean not null default true,
-  criado_em        timestamptz not null default now()
-);
-
-alter table public.pedidos_mensagens
-  add constraint pedidos_mensagens_agente_fk foreign key (agente_id) references public.agentes(id) on delete set null;
-
-create table public.agentes_fontes (
-  id         uuid primary key default gen_random_uuid(),
-  agente_id  uuid not null references public.agentes(id) on delete cascade,
-  nome       text not null,
-  tipo       text not null default 'documento' check (tipo in ('documento','banco','ficha','historico','canvas','link')),
-  ref        text,
-  unique (agente_id, nome)
-);
-
-create table public.agentes_ferramentas (
-  agente_id   uuid not null references public.agentes(id) on delete cascade,
-  ferramenta  text not null,
-  permissao   text not null check (permissao in ('livre','automatica','confirmacao','bloqueada')),
-  primary key (agente_id, ferramenta)
-);
-
-create table public.agentes_execucoes (
-  id          bigint generated always as identity primary key,
-  agente_id   uuid not null references public.agentes(id) on delete cascade,
-  pedido_id   uuid references public.pedidos(id) on delete set null,
-  item_id     uuid references public.itens(id) on delete set null,
-  ferramenta  text,
-  entrada     text,
-  saida       text,
-  resultado   text not null check (resultado in ('ok','erro','aguardando_aprovacao','recusado')),
-  tokens      integer check (tokens is null or tokens >= 0),
-  custo_usd   numeric(10,4),
-  em          timestamptz not null default now()
-);
-create index agentes_execucoes_idx on public.agentes_execucoes (agente_id, em desc);
-create index agentes_execucoes_pedido_idx on public.agentes_execucoes (pedido_id) where pedido_id is not null;
-create index agentes_execucoes_item_idx on public.agentes_execucoes (item_id) where item_id is not null;
-
-create table public.agentes_avaliacoes (
-  id                 uuid primary key default gen_random_uuid(),
-  agente_id          uuid not null references public.agentes(id) on delete cascade,
-  pergunta           text not null,
-  resposta_esperada  text not null,
-  ultima_resposta    text,
-  nota               numeric(4,1) check (nota is null or nota between 0 and 10),
-  avaliado_em        timestamptz
-);
-create index agentes_avaliacoes_agente_idx on public.agentes_avaliacoes (agente_id);
+-- Os agentes antigos (agentes, agentes_fontes, agentes_ferramentas, agentes_execucoes, agentes_avaliacoes)
+-- saíram em 28/09/2026. O Agent Studio novo, só do dono do sistema, está na parte 17.
 
 -- ANEXOS E REFERÊNCIAS: cada um pertence a exatamente um lugar; é arquivo no storage ou link
 create table public.anexos (
@@ -199,7 +140,7 @@ do $$
 declare t text;
 begin
   foreach t in array array['nos','itens','comentarios','pedidos','custos_tecnicos','receitas','regras_calculo',
-                           'pessoas_custos','servicos','automacoes','marcos','sprints','decisoes','agentes'] loop
+                           'pessoas_custos','servicos','automacoes','marcos','sprints','decisoes'] loop
     execute format('create trigger %I after insert or update or delete on public.%I for each row execute function auditoria.registrar()',
                    t || '_auditoria', t);
   end loop;

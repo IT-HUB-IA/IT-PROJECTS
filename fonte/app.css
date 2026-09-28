@@ -702,3 +702,37 @@
   .pc-vazio{margin:0;font-size:13px;color:#6B6B72}
   @media (max-width: 1280px){ .pc-kpis{grid-template-columns:repeat(3,minmax(0,1fr))} .pc-l3{grid-template-columns:repeat(2,minmax(0,1fr))} .pc-l3 > :first-child{grid-column:1/-1} .pc-l4{grid-template-columns:repeat(2,minmax(0,1fr))} }
   @media (max-width: 720px){ .pc-kpis{grid-template-columns:repeat(2,minmax(0,1fr))} .pc-l3,.pc-l4{grid-template-columns:minmax(0,1fr)} .pc-k b{font-size:26px} }
+  /* ---------- Agent Studio (só o dono do sistema) ---------- */
+  .st-kpis{margin:0 0 20px}
+  .st-kpis .kpi b small{font-size:14px;font-weight:500;color:var(--text-secondary)}
+  .st-grade{display:grid;grid-template-columns:minmax(260px,1fr) minmax(0,2fr);gap:16px;margin-bottom:16px}
+  .st-cartao{gap:10px;margin-bottom:16px;min-width:0;grid-template-columns:minmax(0,1fr)}
+  .st-grade .st-cartao{margin-bottom:0}
+  .st-cartao .lb{display:grid;gap:6px}
+  .st-instr{width:100%;min-height:220px;resize:vertical;font-family:var(--font-mono);font-size:13px;line-height:1.55}
+  .st-linha{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+  .st-dica{font-size:12px}
+  .st-rot{display:flex;align-items:center;gap:6px}
+  .st-aviso{margin:4px 0 0}
+  .st-soltar{border:1px dashed var(--nevoa);padding:18px;text-align:center;display:grid;gap:6px;background:var(--branco)}
+  .st-soltar p{margin:0}
+  .st-soltar.sobre{border-color:var(--vermelho);background:#FFF6F6}
+  .st-enviando{font-size:13px;font-weight:600}
+  .st-docs th[scope=row]{display:table-cell}
+  .st-arq-nome{display:block;font-size:12px;font-weight:400;margin-top:2px}
+  .st-docs .num,.st-cartao .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .st-desligado{opacity:.55}
+  .st-fund{background:#1C1C22;color:#fff}
+  .st-chave{display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:13px}
+  .st-cartao .tabela-rolo{position:relative}
+  .st-acoes{white-space:nowrap}
+  .st-acoes .btn{margin-right:6px}
+  .st-achados{margin:4px 0 0;padding-left:20px;display:grid;gap:12px}
+  .st-achados p{margin:4px 0 0;font-size:13px;line-height:1.5;white-space:pre-wrap}
+  .st-achado-cab{font-size:13px}
+  .st-fn-form{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr) auto auto;gap:8px;margin-top:6px}
+  .st-texto{white-space:pre-wrap;word-break:break-word;font-family:var(--font-mono);font-size:12.5px;line-height:1.55;max-height:60vh;overflow:auto;margin:0;padding:12px;border:1px solid var(--nevoa);background:#FAFAFB}
+  .st-versao{display:grid;gap:8px;margin-bottom:16px}
+  .modal.st-modal-ler{width:min(900px,calc(100vw - 32px))}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  @media (max-width:900px){ .st-grade{grid-template-columns:1fr} .st-fn-form{grid-template-columns:1fr} }

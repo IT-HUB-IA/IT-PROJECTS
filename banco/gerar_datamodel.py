@@ -67,15 +67,15 @@ GRUPOS = [
   ('custos_uso', 'O uso de cada custo, mês a mês', M),
   ('receitas', 'O que cada cliente paga, ligado ao projeto ou à aplicação', M),
  ]),
- ('Service Desk e agentes', [
+ ('Service Desk e Agent Studio', [
   ('slas', 'O prazo combinado por gravidade, em qualquer nível', 'Quem vê o nível'),
   ('pedidos', 'Os pedidos dos stakeholders, com o contexto capturado e o item gerado', 'O time e quem pediu'),
   ('pedidos_mensagens', 'A conversa de cada pedido: cliente, IA e equipe', S),
-  ('agentes', 'Os agentes do Agent Studio', 'Master e time'),
-  ('agentes_fontes', 'As fontes de conhecimento de cada agente', 'Master e time'),
-  ('agentes_ferramentas', 'As ferramentas de cada agente e o nível de permissão', 'Master e time'),
-  ('agentes_execucoes', 'O registro do que cada agente fez', M),
-  ('agentes_avaliacoes', 'Os testes que medem se o agente responde certo', M),
+  ('studio_agentes', 'O assistente de IA do Agent Studio (nasce em branco)', 'Só o dono do sistema'),
+  ('studio_instrucoes_versoes', 'As versões anteriores das instruções do assistente', 'Só o dono do sistema'),
+  ('studio_conhecimento', 'Os documentos que o assistente estuda (livros .md, manuais, regras)', 'Só o dono do sistema'),
+  ('studio_trechos', 'Cada documento cortado em trechos, com busca em português', 'Só o dono do sistema'),
+  ('studio_funcoes', 'O que o assistente poderá fazer no sistema', 'Só o dono do sistema'),
   ('anexos', 'Arquivos e links, cada um preso a exatamente um lugar', S),
  ]),
 ]

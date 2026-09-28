@@ -886,6 +886,40 @@
   .pc-vazio{margin:0;font-size:13px;color:#6B6B72}
   @media (max-width: 1280px){ .pc-kpis{grid-template-columns:repeat(3,minmax(0,1fr))} .pc-l3{grid-template-columns:repeat(2,minmax(0,1fr))} .pc-l3 > :first-child{grid-column:1/-1} .pc-l4{grid-template-columns:repeat(2,minmax(0,1fr))} }
   @media (max-width: 720px){ .pc-kpis{grid-template-columns:repeat(2,minmax(0,1fr))} .pc-l3,.pc-l4{grid-template-columns:minmax(0,1fr)} .pc-k b{font-size:26px} }
+  /* ---------- Agent Studio (só o dono do sistema) ---------- */
+  .st-kpis{margin:0 0 20px}
+  .st-kpis .kpi b small{font-size:14px;font-weight:500;color:var(--text-secondary)}
+  .st-grade{display:grid;grid-template-columns:minmax(260px,1fr) minmax(0,2fr);gap:16px;margin-bottom:16px}
+  .st-cartao{gap:10px;margin-bottom:16px;min-width:0;grid-template-columns:minmax(0,1fr)}
+  .st-grade .st-cartao{margin-bottom:0}
+  .st-cartao .lb{display:grid;gap:6px}
+  .st-instr{width:100%;min-height:220px;resize:vertical;font-family:var(--font-mono);font-size:13px;line-height:1.55}
+  .st-linha{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+  .st-dica{font-size:12px}
+  .st-rot{display:flex;align-items:center;gap:6px}
+  .st-aviso{margin:4px 0 0}
+  .st-soltar{border:1px dashed var(--nevoa);padding:18px;text-align:center;display:grid;gap:6px;background:var(--branco)}
+  .st-soltar p{margin:0}
+  .st-soltar.sobre{border-color:var(--vermelho);background:#FFF6F6}
+  .st-enviando{font-size:13px;font-weight:600}
+  .st-docs th[scope=row]{display:table-cell}
+  .st-arq-nome{display:block;font-size:12px;font-weight:400;margin-top:2px}
+  .st-docs .num,.st-cartao .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .st-desligado{opacity:.55}
+  .st-fund{background:#1C1C22;color:#fff}
+  .st-chave{display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:13px}
+  .st-cartao .tabela-rolo{position:relative}
+  .st-acoes{white-space:nowrap}
+  .st-acoes .btn{margin-right:6px}
+  .st-achados{margin:4px 0 0;padding-left:20px;display:grid;gap:12px}
+  .st-achados p{margin:4px 0 0;font-size:13px;line-height:1.5;white-space:pre-wrap}
+  .st-achado-cab{font-size:13px}
+  .st-fn-form{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr) auto auto;gap:8px;margin-top:6px}
+  .st-texto{white-space:pre-wrap;word-break:break-word;font-family:var(--font-mono);font-size:12.5px;line-height:1.55;max-height:60vh;overflow:auto;margin:0;padding:12px;border:1px solid var(--nevoa);background:#FAFAFB}
+  .st-versao{display:grid;gap:8px;margin-bottom:16px}
+  .modal.st-modal-ler{width:min(900px,calc(100vw - 32px))}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  @media (max-width:900px){ .st-grade{grid-template-columns:1fr} .st-fn-form{grid-template-columns:1fr} }
 
   /* =================================================================
      Camada de design: instrumento técnico CicloDev
@@ -1775,7 +1809,7 @@ body.com-login.logado #entrada{display:none}
         <li><button class="item" type="button" data-nome="Costs" data-tela="custos"><span class="item-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M14.5 9.5c-.5-1-1.5-1.5-2.5-1.5-1.4 0-2.5.8-2.5 2s1.1 1.7 2.5 2 2.5.8 2.5 2-1.1 2-2.5 2c-1 0-2-.5-2.5-1.5M12 6.5V8M12 16v1.5"></path></svg></span><span class="item-nome">Costs</span></button></li>
         <li><button class="item" type="button" data-nome="Service Desk" data-tela="servicedesk"><span class="item-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true"><path d="M4 4h16v12H8l-4 4z"></path><path d="M8 9h8M8 12h5"></path></svg></span><span class="item-nome">Service Desk</span></button></li>
         <li><button class="item" type="button" data-nome="Team" data-tela="time"><span class="item-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20c.8-3.5 3.3-5.5 6.5-5.5s5.7 2 6.5 5.5"></path><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.8c1.8.7 3 2.5 3.5 5.2"></path></svg></span><span class="item-nome">Team</span></button></li>
-        <li><button class="item" type="button" data-nome="Agent Studio" data-tela="agentes"><span class="item-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true"><rect x="4" y="7" width="16" height="12"></rect><path d="M12 3v4M9 12v2M15 12v2M2 12v3M22 12v3"></path></svg></span><span class="item-nome">Agent Studio</span></button></li>
+        <li hidden><button class="item" type="button" data-nome="Agent Studio" data-tela="agentes"><span class="item-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true"><rect x="4" y="7" width="16" height="12"></rect><path d="M12 3v4M9 12v2M15 12v2M2 12v3M22 12v3"></path></svg></span><span class="item-nome">Agent Studio</span></button></li>
         <li><button class="item" type="button" data-nome="Playbook" data-tela="playbook"><span class="item-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true"><path d="M4 4h6a2 2 0 0 1 2 2v14a2 2 0 0 0-2-2H4z"></path><path d="M20 4h-6a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h6z"></path></svg></span><span class="item-nome">Playbook</span></button></li>
         <li><button class="item" type="button" data-nome="Settings" data-tela="configuracoes"><span class="item-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"></path></svg></span><span class="item-nome">Settings</span></button></li>
         <li hidden><button class="item" type="button" data-nome="Admin" data-tela="admin"><span class="item-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"></path><path d="M9 12l2 2 4-4"></path></svg></span><span class="item-nome">Admin</span></button></li>
@@ -1973,15 +2007,15 @@ body.com-login.logado #entrada{display:none}
             <tr><th scope="row"><code>custos_tecnicos</code></th><td>Os custos técnicos, ligados ao nível da estrutura (o cliente vem da árvore)</td><td class="sec">no id, fornecedor, categoria, descricao, recorrencia, moeda, valor, unidade, limite, plano, proximo plano, proximo valor, extra por unidade, repasse, taxa repasse pct, inicio, fim</td><td>Só o Master</td></tr>
             <tr><th scope="row"><code>custos_uso</code></th><td>O uso de cada custo, mês a mês</td><td class="sec">custo id, mes, quantidade, valor pago</td><td>Só o Master</td></tr>
             <tr><th scope="row"><code>receitas</code></th><td>O que cada cliente paga, ligado ao projeto ou à aplicação</td><td class="sec">no id, servico id, descricao, modelo, valor, moeda, forma, parcelas, inicio, fim</td><td>Só o Master</td></tr>
-            <tr class="grupo"><th scope="rowgroup" colspan="4">Service Desk e agentes</th></tr>
+            <tr class="grupo"><th scope="rowgroup" colspan="4">Service Desk e Agent Studio</th></tr>
             <tr><th scope="row"><code>slas</code></th><td>O prazo combinado por gravidade, em qualquer nível</td><td class="sec">no id, gravidade, horas resposta, horas solucao</td><td>Quem vê o nível</td></tr>
             <tr><th scope="row"><code>pedidos</code></th><td>Os pedidos dos stakeholders, com o contexto capturado e o item gerado</td><td class="sec">no id, autor id, gravidade, status, titulo, contexto, item id, duplicado de, respondido em, resolvido em</td><td>O time e quem pediu</td></tr>
-            <tr><th scope="row"><code>pedidos_mensagens</code></th><td>A conversa de cada pedido: cliente, IA e equipe</td><td class="sec">pedido id, autor tipo, pessoa id, agente id, texto, transcricao</td><td>Quem vê o registro de origem</td></tr>
-            <tr><th scope="row"><code>agentes</code></th><td>Os agentes do Agent Studio</td><td class="sec">codigo, nome, papel, instrucoes, regras passagem, modelo ia, ativo</td><td>Master e time</td></tr>
-            <tr><th scope="row"><code>agentes_fontes</code></th><td>As fontes de conhecimento de cada agente</td><td class="sec">agente id, nome, ref</td><td>Master e time</td></tr>
-            <tr><th scope="row"><code>agentes_ferramentas</code></th><td>As ferramentas de cada agente e o nível de permissão</td><td class="sec">agente id, ferramenta, permissao</td><td>Master e time</td></tr>
-            <tr><th scope="row"><code>agentes_execucoes</code></th><td>O registro do que cada agente fez</td><td class="sec">agente id, pedido id, item id, ferramenta, entrada, saida, resultado, tokens, custo usd, em</td><td>Só o Master</td></tr>
-            <tr><th scope="row"><code>agentes_avaliacoes</code></th><td>Os testes que medem se o agente responde certo</td><td class="sec">agente id, pergunta, resposta esperada, ultima resposta, nota, avaliado em</td><td>Só o Master</td></tr>
+            <tr><th scope="row"><code>pedidos_mensagens</code></th><td>A conversa de cada pedido: cliente, IA e equipe</td><td class="sec">pedido id, autor tipo, pessoa id, texto, transcricao</td><td>Quem vê o registro de origem</td></tr>
+            <tr><th scope="row"><code>studio_agentes</code></th><td>O assistente de IA do Agent Studio (nasce em branco)</td><td class="sec">nome, descricao, instrucoes, modelo, ativo</td><td>Só o dono do sistema</td></tr>
+            <tr><th scope="row"><code>studio_instrucoes_versoes</code></th><td>As versões anteriores das instruções do assistente</td><td class="sec">agente id, instrucoes, salvo em</td><td>Só o dono do sistema</td></tr>
+            <tr><th scope="row"><code>studio_conhecimento</code></th><td>Os documentos que o assistente estuda (livros .md, manuais, regras)</td><td class="sec">agente id, titulo, tipo, peso, descricao, arquivo nome, conteudo, caracteres, tokens estimados, versao, ativo</td><td>Só o dono do sistema</td></tr>
+            <tr><th scope="row"><code>studio_trechos</code></th><td>Cada documento cortado em trechos, com busca em português</td><td class="sec">documento id, ordem, secao, texto, busca</td><td>Só o dono do sistema</td></tr>
+            <tr><th scope="row"><code>studio_funcoes</code></th><td>O que o assistente poderá fazer no sistema</td><td class="sec">agente id, nome, descricao, acao, pede confirmacao, ativo, ordem</td><td>Só o dono do sistema</td></tr>
             <tr><th scope="row"><code>anexos</code></th><td>Arquivos e links, cada um preso a exatamente um lugar</td><td class="sec">nome, mime, tamanho bytes, storage path, url, no id, item id, comentario id, pedido id, mensagem id, prova id, decisao id, enviado por</td><td>Quem vê o registro de origem</td></tr>
             <tr class="grupo"><th scope="rowgroup" colspan="4">Contas (BI) e registro</th></tr>
             <tr><th scope="row"><code>bi.painel</code></th><td colspan="2">O painel de qualquer nível: indicadores, progresso por parte, status, 14 dias, avisos, concluídos, mudanças e ritmo</td><td>Pela tela, conforme o papel</td></tr>
@@ -2025,7 +2059,7 @@ body.com-login.logado #entrada{display:none}
       </div>
       <div class="painel-aba" role="tabpanel" id="pn-blueprint" aria-labelledby="aba-blueprint" hidden>
         <p class="intro">O Blueprint<button class="info" type="button" data-info="Blueprint (planta do sistema: o desenho de como as partes se ligam, para validar tudo junto antes de construir)" aria-label="O que é: Blueprint (planta do sistema: o desenho de como as partes se ligam, para validar tudo junto antes de construir)">i</button> do CicloDev. Tracejado é o que já está desenhado mas depende de algo de fora para funcionar.</p>
-        <figure class="bp-fig"><svg class="bp-svg" viewBox="0 0 1260 490" role="img" aria-label="A tela chama rotinas e lê o banco através das regras de acesso; as contas ficam no schema bi, o registro de quem fez o quê na auditoria, e agentes de IA e o Kit CicloDev dependem de ligação externa."><defs><marker id="bp-ponta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker><marker id="bp-ponta-v" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#FF0000"/></marker></defs><g class="bp-cx "><rect x="20" y="40" width="170" height="60"/><text x="34" y="64" class="bp-tt">Master</text><text x="34" y="86" class="bp-tx">vê e muda tudo</text></g><g class="bp-cx "><rect x="20" y="130" width="170" height="60"/><text x="34" y="154" class="bp-tt">Dev</text><text x="34" y="176" class="bp-tx">onde participa</text></g><g class="bp-cx "><rect x="20" y="220" width="170" height="60"/><text x="34" y="244" class="bp-tt">Stakeholder</text><text x="34" y="266" class="bp-tx">só o visível</text></g><g class="bp-cx "><rect x="270" y="40" width="250" height="240"/><text x="284" y="64" class="bp-tt">CicloDev (a tela)</text><text x="284" y="86" class="bp-tx">Overview · Operações</text><text x="284" y="104" class="bp-tx">Clients · Catalog · Costs</text><text x="284" y="122" class="bp-tx">Service Desk · Team</text><text x="284" y="140" class="bp-tx">Agent Studio · Playbook</text><text x="284" y="158" class="bp-tx">Settings</text><text x="284" y="176" class="bp-tx"></text><text x="284" y="194" class="bp-tx">Board, Table, Calendar...</text><text x="284" y="212" class="bp-tx">leem o mesmo registro</text></g><g class="bp-cx "><rect x="600" y="40" width="230" height="110"/><text x="614" y="64" class="bp-tt">Rotinas (RPC)</text><text x="614" y="86" class="bp-tx">mover na estrutura</text><text x="614" y="104" class="bp-tx">foco e cronômetro</text><text x="614" y="122" class="bp-tx">converter pedido</text><text x="614" y="140" class="bp-tx">cumprir etapa</text></g><g class="bp-cx "><rect x="600" y="170" width="230" height="110"/><text x="614" y="194" class="bp-tt">Regras de acesso (RLS)</text><text x="614" y="216" class="bp-tx">quem vê cada linha</text><text x="614" y="234" class="bp-tx">Master · Dev · Stakeholder</text><text x="614" y="252" class="bp-tx">anon não vê nada</text></g><g class="bp-banco"><rect x="900" y="20" width="280" height="440"/><text x="914" y="44" class="bp-tt">Banco tfcvoszeewmpghgxztuy</text></g><g class="bp-cx forte"><rect x="916" y="60" width="248" height="96"/><text x="930" y="84" class="bp-tt">public</text><text x="930" y="106" class="bp-tx">54 tabelas do produto</text><text x="930" y="124" class="bp-tx">árvore + ancestrais</text><text x="930" y="142" class="bp-tx">itens, custos, pedidos...</text></g><g class="bp-cx "><rect x="916" y="170" width="248" height="82"/><text x="930" y="194" class="bp-tt">bi</text><text x="930" y="216" class="bp-tx">todas as contas</text><text x="930" y="234" class="bp-tx">painel, financeiro, carga</text></g><g class="bp-cx "><rect x="916" y="266" width="248" height="66"/><text x="930" y="290" class="bp-tt">auditoria</text><text x="930" y="312" class="bp-tx">quem fez o quê</text></g><g class="bp-cx "><rect x="916" y="346" width="248" height="50"/><text x="930" y="370" class="bp-tt">storage: anexos</text></g><g class="bp-cx "><rect x="916" y="406" width="248" height="44"/><text x="930" y="430" class="bp-tt">pg_cron: a cada 10 min</text></g><g class="bp-cx pendente"><rect x="270" y="360" width="250" height="90"/><text x="284" y="384" class="bp-tt">Agentes de IA</text><text x="284" y="406" class="bp-tx">AI PO · atendimento · Billy</text><text x="284" y="424" class="bp-tx">provedor ainda não ligado</text></g><g class="bp-cx pendente"><rect x="600" y="360" width="230" height="90"/><text x="614" y="384" class="bp-tt">Kit CicloDev</text><text x="614" y="406" class="bp-tx">nos sistemas dos clientes</text><text x="614" y="424" class="bp-tx">painel · feedback · status</text></g><path d="M190 70 L268 70" class="bp-seta " marker-end="url(#bp-ponta)"/><text x="229" y="62" class="bp-rot " text-anchor="middle">usa</text><path d="M190 160 L268 160" class="bp-seta " marker-end="url(#bp-ponta)"/><text x="229" y="152" class="bp-rot " text-anchor="middle">usa</text><path d="M190 250 L268 250" class="bp-seta " marker-end="url(#bp-ponta)"/><text x="229" y="242" class="bp-rot " text-anchor="middle">vê o painel</text><path d="M520 95 L598 95" class="bp-seta " marker-end="url(#bp-ponta)"/><text x="559" y="87" class="bp-rot " text-anchor="middle">chama</text><path d="M520 225 L598 225" class="bp-seta " marker-end="url(#bp-ponta)"/><text x="559" y="217" class="bp-rot " text-anchor="middle">lê e grava</text><path d="M830 95 L914 95" class="bp-seta vermelha" marker-end="url(#bp-ponta-v)"/><text x="872" y="87" class="bp-rot vermelha" text-anchor="middle">grava</text><path d="M830 225 L914 120" class="bp-seta " marker-end="url(#bp-ponta)"/><text x="838" y="250" class="bp-rot " text-anchor="start">filtra</text><path d="M1040 156 L1040 168" class="bp-seta " marker-end="url(#bp-ponta)"/><text x="0" y="0" class="bp-rot " text-anchor="middle"></text><text x="1052" y="166" class="bp-rot" text-anchor="start">lê</text><path d="M1172 108 L1190 108 L1190 299 L1166 299" class="bp-seta " marker-end="url(#bp-ponta)"/><text x="1196" y="210" class="bp-rot " text-anchor="start">triggers</text><path d="M1164 428 L1176 428 L1176 211 L1166 211" class="bp-seta " marker-end="url(#bp-ponta)"/><text x="0" y="0" class="bp-rot " text-anchor="middle"></text><path d="M520 405 L560 405 L560 250 L598 250" class="bp-seta pendente" marker-end="url(#bp-ponta)"/><text x="548" y="396" class="bp-rot pendente" text-anchor="end">permissões</text><path d="M830 405 L870 405 L870 140 L914 140" class="bp-seta pendente" marker-end="url(#bp-ponta)"/><text x="874" y="482" class="bp-rot pendente" text-anchor="middle">pedidos e leitura</text></svg><figcaption>Quem fala com quem. A tela nunca escreve direto nas contas: ela chama as rotinas, grava no <code>public</code> passando pelas regras de acesso, e as contas saem do <code>bi</code>. Os gatilhos do banco escrevem a auditoria sozinhos, e a rotina agendada atualiza o ritmo a cada 10 minutos. O traço vermelho é a escrita de dados.</figcaption></figure>
+        <figure class="bp-fig"><svg class="bp-svg" viewBox="0 0 1260 490" role="img" aria-label="A tela chama rotinas e lê o banco através das regras de acesso; as contas ficam no schema bi, o registro de quem fez o quê na auditoria, e agentes de IA e o Kit CicloDev dependem de ligação externa."><defs><marker id="bp-ponta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker><marker id="bp-ponta-v" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#FF0000"/></marker></defs><g class="bp-cx "><rect x="20" y="40" width="170" height="60"/><text x="34" y="64" class="bp-tt">Master</text><text x="34" y="86" class="bp-tx">vê e muda tudo</text></g><g class="bp-cx "><rect x="20" y="130" width="170" height="60"/><text x="34" y="154" class="bp-tt">Dev</text><text x="34" y="176" class="bp-tx">onde participa</text></g><g class="bp-cx "><rect x="20" y="220" width="170" height="60"/><text x="34" y="244" class="bp-tt">Stakeholder</text><text x="34" y="266" class="bp-tx">só o visível</text></g><g class="bp-cx "><rect x="270" y="40" width="250" height="240"/><text x="284" y="64" class="bp-tt">CicloDev (a tela)</text><text x="284" y="86" class="bp-tx">Overview · Operações</text><text x="284" y="104" class="bp-tx">Clients · Catalog · Costs</text><text x="284" y="122" class="bp-tx">Service Desk · Team</text><text x="284" y="140" class="bp-tx">Agent Studio · Playbook</text><text x="284" y="158" class="bp-tx">Settings</text><text x="284" y="176" class="bp-tx"></text><text x="284" y="194" class="bp-tx">Board, Table, Calendar...</text><text x="284" y="212" class="bp-tx">leem o mesmo registro</text></g><g class="bp-cx "><rect x="600" y="40" width="230" height="110"/><text x="614" y="64" class="bp-tt">Rotinas (RPC)</text><text x="614" y="86" class="bp-tx">mover na estrutura</text><text x="614" y="104" class="bp-tx">foco e cronômetro</text><text x="614" y="122" class="bp-tx">converter pedido</text><text x="614" y="140" class="bp-tx">cumprir etapa</text></g><g class="bp-cx "><rect x="600" y="170" width="230" height="110"/><text x="614" y="194" class="bp-tt">Regras de acesso (RLS)</text><text x="614" y="216" class="bp-tx">quem vê cada linha</text><text x="614" y="234" class="bp-tx">Master · Dev · Stakeholder</text><text x="614" y="252" class="bp-tx">anon não vê nada</text></g><g class="bp-banco"><rect x="900" y="20" width="280" height="440"/><text x="914" y="44" class="bp-tt">Banco tfcvoszeewmpghgxztuy</text></g><g class="bp-cx forte"><rect x="916" y="60" width="248" height="96"/><text x="930" y="84" class="bp-tt">public</text><text x="930" y="106" class="bp-tx">54 tabelas do produto</text><text x="930" y="124" class="bp-tx">árvore + ancestrais</text><text x="930" y="142" class="bp-tx">itens, custos, pedidos...</text></g><g class="bp-cx "><rect x="916" y="170" width="248" height="82"/><text x="930" y="194" class="bp-tt">bi</text><text x="930" y="216" class="bp-tx">todas as contas</text><text x="930" y="234" class="bp-tx">painel, financeiro, carga</text></g><g class="bp-cx "><rect x="916" y="266" width="248" height="66"/><text x="930" y="290" class="bp-tt">auditoria</text><text x="930" y="312" class="bp-tx">quem fez o quê</text></g><g class="bp-cx "><rect x="916" y="346" width="248" height="50"/><text x="930" y="370" class="bp-tt">storage: anexos</text></g><g class="bp-cx "><rect x="916" y="406" width="248" height="44"/><text x="930" y="430" class="bp-tt">pg_cron: a cada 10 min</text></g><g class="bp-cx pendente"><rect x="270" y="360" width="250" height="90"/><text x="284" y="384" class="bp-tt">Agentes de IA</text><text x="284" y="406" class="bp-tx">Assistente CicloDev (em branco)</text><text x="284" y="424" class="bp-tx">provedor ainda não ligado</text></g><g class="bp-cx pendente"><rect x="600" y="360" width="230" height="90"/><text x="614" y="384" class="bp-tt">Kit CicloDev</text><text x="614" y="406" class="bp-tx">nos sistemas dos clientes</text><text x="614" y="424" class="bp-tx">painel · feedback · status</text></g><path d="M190 70 L268 70" class="bp-seta " marker-end="url(#bp-ponta)"/><text x="229" y="62" class="bp-rot " text-anchor="middle">usa</text><path d="M190 160 L268 160" class="bp-seta " marker-end="url(#bp-ponta)"/><text x="229" y="152" class="bp-rot " text-anchor="middle">usa</text><path d="M190 250 L268 250" class="bp-seta " marker-end="url(#bp-ponta)"/><text x="229" y="242" class="bp-rot " text-anchor="middle">vê o painel</text><path d="M520 95 L598 95" class="bp-seta " marker-end="url(#bp-ponta)"/><text x="559" y="87" class="bp-rot " text-anchor="middle">chama</text><path d="M520 225 L598 225" class="bp-seta " marker-end="url(#bp-ponta)"/><text x="559" y="217" class="bp-rot " text-anchor="middle">lê e grava</text><path d="M830 95 L914 95" class="bp-seta vermelha" marker-end="url(#bp-ponta-v)"/><text x="872" y="87" class="bp-rot vermelha" text-anchor="middle">grava</text><path d="M830 225 L914 120" class="bp-seta " marker-end="url(#bp-ponta)"/><text x="838" y="250" class="bp-rot " text-anchor="start">filtra</text><path d="M1040 156 L1040 168" class="bp-seta " marker-end="url(#bp-ponta)"/><text x="0" y="0" class="bp-rot " text-anchor="middle"></text><text x="1052" y="166" class="bp-rot" text-anchor="start">lê</text><path d="M1172 108 L1190 108 L1190 299 L1166 299" class="bp-seta " marker-end="url(#bp-ponta)"/><text x="1196" y="210" class="bp-rot " text-anchor="start">triggers</text><path d="M1164 428 L1176 428 L1176 211 L1166 211" class="bp-seta " marker-end="url(#bp-ponta)"/><text x="0" y="0" class="bp-rot " text-anchor="middle"></text><path d="M520 405 L560 405 L560 250 L598 250" class="bp-seta pendente" marker-end="url(#bp-ponta)"/><text x="548" y="396" class="bp-rot pendente" text-anchor="end">permissões</text><path d="M830 405 L870 405 L870 140 L914 140" class="bp-seta pendente" marker-end="url(#bp-ponta)"/><text x="874" y="482" class="bp-rot pendente" text-anchor="middle">pedidos e leitura</text></svg><figcaption>Quem fala com quem. A tela nunca escreve direto nas contas: ela chama as rotinas, grava no <code>public</code> passando pelas regras de acesso, e as contas saem do <code>bi</code>. Os gatilhos do banco escrevem a auditoria sozinhos, e a rotina agendada atualiza o ritmo a cada 10 minutos. O traço vermelho é a escrita de dados.</figcaption></figure>
         <figure class="bp-fig"><svg class="bp-svg" viewBox="0 0 1210 165" role="img" aria-label="O pedido do cliente passa pela IA de atendimento, pela equipe que responde e carimba o SLA, vira item pelo converter_pedido, anda no board e uma automação avisa quem abriu."><defs><marker id="bp-ponta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker><marker id="bp-ponta-v" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#FF0000"/></marker></defs><g class="bp-cx "><rect x="20" y="30" width="175" height="88"/><text x="34" y="54" class="bp-tt">Cliente</text><text x="34" y="76" class="bp-tx">abre o pedido</text><text x="34" y="94" class="bp-tx">Kit CicloDev ou Service Desk</text></g><g class="bp-cx pendente"><rect x="221" y="30" width="175" height="88"/><text x="235" y="54" class="bp-tt">IA de atendimento</text><text x="235" y="76" class="bp-tx">responde primeiro</text><text x="235" y="94" class="bp-tx">dúvida resolve sozinha</text></g><path d="M195 74 L219 74" class="bp-seta " marker-end="url(#bp-ponta)"/><g class="bp-cx "><rect x="422" y="30" width="175" height="88"/><text x="436" y="54" class="bp-tt">Equipe</text><text x="436" y="76" class="bp-tx">responde</text><text x="436" y="94" class="bp-tx">carimba o SLA</text></g><path d="M396 74 L420 74" class="bp-seta " marker-end="url(#bp-ponta)"/><g class="bp-cx forte"><rect x="623" y="30" width="175" height="88"/><text x="637" y="54" class="bp-tt">converter_pedido</text><text x="637" y="76" class="bp-tx">vira item</text><text x="637" y="94" class="bp-tx">Bug ou Story no board</text></g><path d="M597 74 L621 74" class="bp-seta vermelha" marker-end="url(#bp-ponta-v)"/><g class="bp-cx "><rect x="824" y="30" width="175" height="88"/><text x="838" y="54" class="bp-tt">Board</text><text x="838" y="76" class="bp-tx">item anda</text><text x="838" y="94" class="bp-tx">status muda</text></g><path d="M798 74 L822 74" class="bp-seta " marker-end="url(#bp-ponta)"/><g class="bp-cx forte"><rect x="1025" y="30" width="175" height="88"/><text x="1039" y="54" class="bp-tt">Automação</text><text x="1039" y="76" class="bp-tx">dispara</text><text x="1039" y="94" class="bp-tx">avisa quem abriu</text></g><path d="M999 74 L1023 74" class="bp-seta " marker-end="url(#bp-ponta)"/><text x="610" y="150" class="bp-rot" text-anchor="middle">pedidos · pedidos_mensagens · itens · notificacoes · automacoes_execucoes · auditoria.registros</text></svg><figcaption>O caminho de um pedido do cliente até avisar quem pediu. A conversão em item é o ponto em que o pedido entra no trabalho do time (em vermelho); a resposta da IA depende do provedor de IA ser ligado.</figcaption></figure>
       </div>
     </section>
@@ -2399,7 +2433,7 @@ const ETAPAS_MODELO = [
 
 /* ================= dados de exemplo ================= */
 function semente(){
-  const D = {v:2, clients:[], tags:[], tagLinks:[], projects:[], products:[], apps:[], ws:[], people:[], issues:[], sheets:{}, template:[], stages:{}, requests:[], agents:[], focus:null, statusCfg:{}, baseline:{}};
+  const D = {v:2, clients:[], tags:[], tagLinks:[], projects:[], products:[], apps:[], ws:[], people:[], issues:[], sheets:{}, template:[], stages:{}, requests:[], focus:null, statusCfg:{}, baseline:{}};
   D.people = [
     {id:'pe_w', nome:'William', funcao:'Master · Owner', skills:['Produto','Arquitetura','Java'], cap:40, acesso:'owner'},
     {id:'pe_a', nome:'Ana (exemplo)', funcao:'Dev', skills:['Java','JavaFX','Supabase'], cap:40, acesso:'dev'},
@@ -2509,11 +2543,6 @@ function semente(){
       msgs:[{de:'cliente', txt:'(áudio transcrito) Mandei o documento errado, como faço para mandar de novo?'},{de:'ia', txt:'É só abrir o documento com a etiqueta Rejeitado e tocar em Reenviar. O arquivo antigo fica guardado no histórico.'},{de:'cliente', txt:'Deu certo, obrigado.'}]},
     {id:'rq_3', cliente:'cl_bl', app:'ap_ceo', tipo:'Feature request', grav:'Cosmético', status:'Em triagem', titulo:'Ver o faturamento consolidado das empresas no celular', quando:dIso(0), autor:'pe_w', anexos:[], contexto:'Tela: Resumo diário · App iOS', issue:null,
       msgs:[{de:'cliente', txt:'Queria ver o faturamento de todas as empresas juntas, na primeira tela.'},{de:'ia', txt:'Anotado como pedido de funcionalidade nova. Quer ver o total do mês ou comparar com o mês anterior também?'}]}
-  ];
-  D.agents = [
-    {id:'ag_po', nome:'AI PO', papel:'Product Owner: planos de execução, capacidade do time, previsão e replanejamento', instr:'Organize as demandas em epics, stories e tasks. Use a capacidade de cada pessoa. Nunca mude prazo, pessoa ou cliente sem a aprovação do Master.', fontes:['Banco do projeto','Canvas do projeto','Ficha técnica','Histórico de entregas'], ferramentas:[['Criar tarefa','Com confirmação'],['Mudar status','Automática'],['Mudar prazo','Com confirmação'],['Atribuir pessoa','Com confirmação'],['Gerar relatório','Livre'],['Apagar item','Bloqueada']], passa:'Qualquer decisão de prazo, custo ou cliente'},
-    {id:'ag_at', nome:'Agente de atendimento', papel:'Primeira resposta no Service Desk: entende, classifica e resolve dúvidas', instr:'Converse primeiro, faça perguntas objetivas e tente reproduzir. Dúvida de uso: explique com base no manual. Falha real: resuma com passos e provas e passe para a equipe.', fontes:['Manual de cada aplicação','Base de conhecimento','Histórico de pedidos'], ferramentas:[['Responder o cliente','Automática'],['Classificar pedido','Automática'],['Juntar pedidos repetidos','Com confirmação'],['Criar item no board','Com confirmação'],['Fechar pedido','Com confirmação']], passa:'Cliente pede uma pessoa, sistema parado, ou duas tentativas sem resolver'},
-    {id:'ag_billy', nome:'Billy', papel:'Assistente do grupo: ouvinte, operacional e voz', instr:'Siga os níveis de permissão. Toda function call é validada pelo Java antes de executar.', fontes:['Banco BL','Reuniões','Tarefas'], ferramentas:[['Consultar dados','Livre'],['Criar tarefa','Com confirmação'],['Enviar mensagem','Com confirmação'],['Mexer em financeiro','Bloqueada']], passa:'Qualquer ação fora do nível Livre'}
   ];
   D.baseline = {'Painel do cliente':true,'Botão de feedback':true,'Login e níveis de acesso':true,'Registro de quem fez o quê':true,'Changelog':true,'Backup e LGPD':true,'Sinal de funcionamento':true};
   gerarEventos(D);
@@ -2748,7 +2777,7 @@ function abrirModulo(id){
 }
 itens.forEach(el => el.addEventListener('click', () => { if (el.dataset.tela === 'operacoes' && UI.modulo !== 'operacoes') UI.view = 'dashboard'; abrirModulo(el.dataset.tela); }));
 function render(){
-  const f = {overview:rOverview, operacoes:rOperacoes, clientes:rClientes, catalog:rCatalog, custos:rCustos, servicedesk:rServiceDesk, time:rTime, agentes:rAgentes, configuracoes:rConfig}[UI.modulo];
+  const f = {overview:rOverview, operacoes:rOperacoes, clientes:rClientes, catalog:rCatalog, custos:rCustos, servicedesk:rServiceDesk, time:rTime, configuracoes:rConfig}[UI.modulo];
   if (f) f();
 }
 function aplicarVerComo(){
@@ -3486,28 +3515,6 @@ function formPessoa(p){
     '<label class="lb">Skills' + I('Skills (habilidades: o que a pessoa sabe fazer)') + '<input class="campo" id="fpe-sk" value="' + esc(p.skills.join(', ')) + '" placeholder="Separadas por vírgula: Java, JavaFX, Supabase"></label>';
 }
 
-/* ================= AGENT STUDIO ================= */
-const NIVEL_COR = {'Livre':'livre','Automática':'auto','Com confirmação':'conf','Bloqueada':'bloq'};
-function rAgentes(){
-  const el = $('#m-agentes');
-  const a = byId('agents', UI.agSel) || D.agents[0];
-  const m = souMaster(), dis = m ? '' : ' disabled';
-  el.innerHTML = '<div class="topo-tela"><div><h1><span>Agent Studio</span>' + I('Agent Studio (oficina de agentes): onde os agentes de IA são criados, ajustados e testados') + '</h1><p class="lead">Cada agente tem instruções, fontes de conhecimento, ferramentas e o nível de permissão de cada ferramenta. Você é o Master de todos.</p></div><div class="acoes"><button class="btn so-master" type="button" data-acao="novo-agente">' + ICO.mais + 'Novo agente</button></div></div>' +
-    (!a ? '<p class="vazio-linha">Nenhum agente. Crie o primeiro.</p>' :
-    '<div class="ag"><div class="ag-lista">' + D.agents.map(x => '<button type="button" class="ag-item' + (x.id === a.id ? ' escolhido' : '') + '" data-agente="' + x.id + '"><span class="avatar av-ia grande">' + esc(ini(x.nome)) + '</span><span class="ag-meio"><b>' + esc(x.nome) + '</b><small>' + esc(x.papel) + '</small><span class="ag-cont">' + x.ferramentas.length + ' ferramentas · ' + x.fontes.length + ' fontes</span></span></button>').join('') + '</div>' +
-    '<div class="ag-det"><div class="ag-cab"><span class="avatar av-ia grande">' + esc(ini(a.nome)) + '</span><div style="flex:1;min-width:0"><input class="g-titulo" data-ag="nome" value="' + esc(a.nome) + '"' + dis + ' aria-label="Nome do agente"><input class="campo d-sel" data-ag="papel" value="' + esc(a.papel) + '"' + dis + ' aria-label="Papel" style="width:100%"></div>' + (m ? '<button class="btn sec perigo" type="button" data-excluir-agente="' + a.id + '">Excluir agente</button>' : '') + '</div>' +
-      '<section class="g-cartao"><h4>Instructions' + I('Instructions ou System prompt (as instruções fixas de como o agente se comporta)') + '</h4><textarea class="campo" rows="4" data-ag="instr"' + dis + '>' + esc(a.instr) + '</textarea></section>' +
-      '<section class="g-cartao"><h4>Knowledge sources' + I('Knowledge sources (fontes de conhecimento: de onde o agente tira as respostas, via RAG)') + '</h4><div class="tags">' + a.fontes.map((f, ix) => '<span class="tag">' + SV('<path d="M4 4h12l4 4v12H4z"/>') + esc(f) + (m ? '<button type="button" data-tirar-fonte="' + ix + '" aria-label="Tirar fonte">×</button>' : '') + '</span>').join('') + '</div>' + (m ? '<form class="g-add" data-form="fonte"><input class="campo" name="t" placeholder="Nova fonte de conhecimento"><button class="btn sec peq" type="submit">Adicionar</button></form>' : '') + '</section>' +
-      '<section class="g-cartao"><h4>Tools e Permissions' + I('Tools (o que o agente pode fazer no sistema) e Permissions (até onde ele pode ir sozinho)') + '</h4>' +
-        '<div class="ferr">' + a.ferramentas.map(([f, n], ix) => '<div class="ferr-lin"><b>' + esc(f) + '</b><div class="niveis" role="radiogroup" aria-label="Nível de ' + esc(f) + '">' + NIVEIS.map(nv => '<button type="button" class="nv nv-' + NIVEL_COR[nv] + (n === nv ? ' ativo' : '') + '" role="radio" aria-checked="' + (n === nv) + '" data-nivel-f="' + ix + '" data-nivel-v="' + esc(nv) + '"' + dis + '>' + esc(nv) + '</button>').join('') + '</div>' + (m ? '<button class="ico-btn" type="button" data-tirar-ferr="' + ix + '" aria-label="Tirar ferramenta">' + ICO.fechar + '</button>' : '') + '</div>').join('') + '</div>' +
-        (m ? '<form class="g-add" data-form="ferr"><input class="campo" name="t" placeholder="Nova ferramenta, ex.: Enviar e-mail"><button class="btn sec peq" type="submit">Adicionar</button></form>' : '') +
-        '<div class="legenda"><span><i class="nv-livre"></i><b>Livre</b> faz sem avisar</span><span><i class="nv-auto"></i><b>Automática</b> faz e registra</span><span><i class="nv-conf"></i><b>Com confirmação</b> espera o seu ok</span><span><i class="nv-bloq"></i><b>Bloqueada</b> nunca faz</span></div></section>' +
-      '<section class="g-cartao"><h4>Handoff rules' + I('Handoff rules (quando o agente passa a conversa para uma pessoa)') + '</h4><input class="campo" data-ag="passa" value="' + esc(a.passa) + '"' + dis + ' placeholder="Quando passar para uma pessoa"></section>' +
-      '<section class="g-cartao"><h4>Playground' + I('Playground (área de teste para conversar com o agente antes de soltar para os clientes)') + '</h4><div class="aviso-faixa" style="margin:0"><b>Sem provedor</b><span>O teste de conversa liga quando o provedor de IA for conectado a este sistema.</span></div><div class="g-add"><input class="campo" placeholder="Escreva uma pergunta de teste" disabled><button class="btn" type="button" disabled>Testar</button></div></section>' +
-      '<section class="g-cartao"><h4>Logs e Evals' + I('Logs (registro de tudo que o agente respondeu e fez) e Evals (testes que medem se ele está respondendo certo)') + '</h4><p class="sec" style="margin:0;font-size:13px">Nenhum registro ainda.</p></section>' +
-    '</div></div>');
-}
-
 /* ================= SETTINGS ================= */
 function rConfig(){
   const el = $('#m-configuracoes');
@@ -3933,8 +3940,6 @@ document.addEventListener('click', e => {
   if ((x = q('[data-apagar-tag]'))) { const tg = byId('tags', x.dataset.apagarTag); const n = D.tagLinks.filter(l => l.tag === tg.id).length; modal('Excluir a tag ' + esc(tg.nome) + '?', '<p style="margin:0">' + (n ? 'Ela sai de ' + n + (n === 1 ? ' registro' : ' registros') + '. ' : '') + 'As ligações e as etiquetas automáticas não mudam.</p>', [{txt:'Cancelar', cls:'sec'},{txt:'Excluir', cls:'acento', acao:() => { D.tags = D.tags.filter(z => z.id !== tg.id); D.tagLinks = D.tagLinks.filter(l => l.tag !== tg.id); salvar(); render(); toast('Tag excluída'); }}]); return; }
   if ((x = q('[data-ped]'))) { UI.pedSel = x.dataset.ped; salvarUI(); rServiceDesk(); return; }
   if ((x = q('[data-filtro-ped]'))) { UI.filtroPed = x.dataset.filtroPed; salvarUI(); rServiceDesk(); return; }
-  if ((x = q('[data-agente]'))) { UI.agSel = x.dataset.agente; salvarUI(); rAgentes(); return; }
-  if ((x = q('[data-tirar-fonte]'))) { (byId('agents', UI.agSel) || D.agents[0]).fontes.splice(+x.dataset.tirarFonte, 1); salvar(); rAgentes(); return; }
   if ((x = q('[data-servico]'))) { UI.svSel = x.dataset.servico; UI.svAba = 'comercial'; UI.svCtx = null; salvarUI(); rCatalog(); return; }
   if ((x = q('[data-sv-aba]'))) { UI.svAba = x.dataset.svAba; salvarUI(); rCatalog(); return; }
   if ((x = q('[data-tirar-comp]'))) { byId('catalog', UI.svSel).preco.splice(+x.dataset.tirarComp, 1); salvar(); rCatalog(); return; }
@@ -3953,9 +3958,6 @@ document.addEventListener('click', e => {
   if ((x = q('[data-tirar-ref]'))) { const [al, ix] = x.dataset.tirarRef.split('|'); const l = refsDe(al); if (l){ l.splice(+ix, 1); salvar(); reRenderRefs(al); } return; }
   if ((x = q('[data-ver-ref]'))) { const [al, ix] = x.dataset.verRef.split('|'); const r = (refsDe(al) || [])[+ix]; if (r) modal(esc(r.nome), '<img src="' + r.url + '" alt="' + esc(r.nome) + '" style="max-width:100%;display:block;margin:0 auto">', [{txt:'Fechar', cls:'sec'}]); return; }
   if ((x = q('[data-excluir-pessoa]'))) { const p = pessoa(x.dataset.excluirPessoa); const n = D.issues.filter(i => i.resp === p.id && i.status !== 'done' && !i.arquivado).length; modal('Excluir ' + esc(p.nome) + '?', '<p style="margin:0">' + (n ? n + (n === 1 ? ' item em aberto fica' : ' itens em aberto ficam') + ' sem responsável. ' : '') + 'O histórico do que a pessoa fez continua guardado.</p>', [{txt:'Cancelar', cls:'sec'},{txt:'Excluir', cls:'acento', acao:() => { D.issues.forEach(i => { if (i.resp === p.id && i.status !== 'done') i.resp = null; }); D.people = D.people.filter(z => z.id !== p.id); salvar(); rTime(); toast(p.nome + ' excluído do time'); }}]); return; }
-  if ((x = q('[data-excluir-agente]'))) { const ag = byId('agents', x.dataset.excluirAgente); modal('Excluir o agente ' + esc(ag.nome) + '?', '<p style="margin:0">As instruções, as fontes e as permissões dele saem do sistema.</p>', [{txt:'Cancelar', cls:'sec'},{txt:'Excluir', cls:'acento', acao:() => { D.agents = D.agents.filter(z => z.id !== ag.id); UI.agSel = D.agents[0] ? D.agents[0].id : null; salvar(); salvarUI(); rAgentes(); toast('Agente excluído'); }}]); return; }
-  if ((x = q('[data-nivel-f]'))) { const ag = byId('agents', UI.agSel) || D.agents[0]; ag.ferramentas[+x.dataset.nivelF][1] = x.dataset.nivelV; salvar(); rAgentes(); return; }
-  if ((x = q('[data-tirar-ferr]'))) { const ag = byId('agents', UI.agSel) || D.agents[0]; ag.ferramentas.splice(+x.dataset.tirarFerr, 1); salvar(); rAgentes(); return; }
   if ((x = q('[data-editar-pessoa]'))) { const p = pessoa(x.dataset.editarPessoa); modal('Editar pessoa', formPessoa(p), [{txt:'Cancelar', cls:'sec'},{txt:'Salvar', acao:d => salvarPessoa(d, p)}]); return; }
   if ((x = q('[data-acao]'))) acao(x.dataset.acao, x);
 });
@@ -3982,7 +3984,6 @@ function acao(a, x){
   else if (a === 'novo-pedido') novoPedido();
   else if (a === 'virar-issue') virarIssue(x.dataset.id);
   else if (a === 'nova-pessoa') modal('Nova pessoa', formPessoa(), [{txt:'Cancelar', cls:'sec'},{txt:'Criar', acao:d => salvarPessoa(d, null)}]);
-  else if (a === 'novo-agente') modal('Novo agente', '<div class="grade-form"><label class="lb largo">Nome<input class="campo" id="na-n" placeholder="Ex.: Agente de cobrança"></label><label class="lb largo">Papel<input class="campo" id="na-p" placeholder="O que ele faz, em uma frase"></label></div>', [{txt:'Cancelar', cls:'sec'},{txt:'Criar agente', acao:d => { const n = $('#na-n', d).value.trim(); if (!n){ toast('Escreva o nome do agente'); return false; } const ag = {id:uid('ag'), nome:n, papel:$('#na-p', d).value.trim() || 'Sem papel definido', instr:'', fontes:[], ferramentas:[['Consultar dados','Livre']], passa:''}; D.agents.push(ag); UI.agSel = ag.id; salvar(); salvarUI(); rAgentes(); toast('Agente criado'); }}]);
   else if (a === 'add-custom'){ const n = $('#cf-nome').value.trim(); if (!n){ toast('Escreva o nome do campo'); return; } D.sheets[UI.sel].custom.push({nome:n, tipo:$('#cf-tipo').value, valor:$('#cf-valor').value}); salvar(); rView(); }
   else if (a === 'cron'){ const i = byId('issues', itemAberto); const r = i.tempo.find(t => !t.fim); if (r) r.fim = Date.now(); else i.tempo.push({ini:Date.now(), fim:null, quem:idEu(UI.verComo), origem:'Timer'}); salvar(); abrirItem(i.id); }
   else if (a === 'arquivar-item'){ const i = byId('issues', itemAberto); i.arquivado = true; registrar('arquivou', i); salvar(); fecharItem(); toast('Item arquivado. Continua guardado no banco.'); }
@@ -4020,8 +4021,6 @@ document.addEventListener('change', e => {
   if (t.dataset.tpl){ const it = D.template.flatMap(et => et.itens).find(z => z.id === t.dataset.tpl); it[t.dataset.campo] = t.dataset.campo === 'obrig' ? t.value === '1' : t.value; salvar(); toast('Modelo padrão atualizado'); return; }
   if (t.dataset.base){ D.baseline[t.dataset.base] = t.checked; salvar(); rConfig(); return; }
   if (t.dataset.pedCampo){ const r = byId('requests', UI.pedSel) || D.requests[0]; r[t.dataset.pedCampo] = t.value; salvar(); rServiceDesk(); return; }
-  if (t.dataset.ag){ const a = byId('agents', UI.agSel) || D.agents[0]; a[t.dataset.ag] = t.value; salvar(); if (t.dataset.ag === 'papel' || t.dataset.ag === 'nome') rAgentes(); return; }
-  if (t.dataset.nivel){ const a = byId('agents', UI.agSel); a.ferramentas[+t.dataset.nivel][1] = t.value; salvar(); return; }
 });
 let timerBusca;
 document.addEventListener('input', e => {
@@ -4039,8 +4038,6 @@ document.addEventListener('submit', e => {
   else if (f.dataset.form === 'resp-ped' && txt){ const r = byId('requests', UI.pedSel) || D.requests[0]; r.msgs.push({de: UI.verComo === 'stakeholder' ? 'cliente' : 'voce', txt}); salvar(); rServiceDesk(); }
   else if (f.dataset.form === 'sv-lista' && txt){ byId('catalog', UI.svSel)[f.dataset.campo].push(txt); salvar(); rCatalog(); }
   else if (f.dataset.form === 'ref-link' && txt){ const l = refsDe(f.dataset.alvo); if (l){ l.push({nome:txt, tipo:'link', url:/^https?:\/\//.test(txt) ? txt : 'https://' + txt}); salvar(); reRenderRefs(f.dataset.alvo); toast('Link adicionado'); } }
-  else if (f.dataset.form === 'fonte' && txt){ (byId('agents', UI.agSel) || D.agents[0]).fontes.push(txt); salvar(); rAgentes(); }
-  else if (f.dataset.form === 'ferr' && txt){ (byId('agents', UI.agSel) || D.agents[0]).ferramentas.push([txt, 'Com confirmação']); salvar(); rAgentes(); }
 });
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && itemAberto && !document.querySelector('dialog[open]')) fecharItem();
@@ -4185,7 +4182,7 @@ const eu = () => idEu(UI.verComo);
 const COM_BANCO = document.body.classList.contains('com-login');
 function regrasVazias(){ return {regime:'simples', impostos:{simples:0, presumido:0, real:0}, encargos:{inss:0, rat:0, terceiros:0, fgts:0, ferias:0, terco:0, decimo:0, multaFgts:0}, horasMes:168, faturavel:100, margem:0, risco:0, cambio:0, complexidade:{'Média':1}, urgencia:{Normal:1}, manutencaoAnual:0, reservaOverhead:0}; }
 function dadosVazios(){
-  return {v:2, clients:[], tags:[], tagLinks:[], projects:[], products:[], apps:[], ws:[], people:[], issues:[], sheets:{}, template:[], stages:{}, requests:[], agents:[], focus:null, statusCfg:{}, baseline:{},
+  return {v:2, clients:[], tags:[], tagLinks:[], projects:[], products:[], apps:[], ws:[], people:[], issues:[], sheets:{}, template:[], stages:{}, requests:[], focus:null, statusCfg:{}, baseline:{},
     eventos:[], regras:regrasVazias(), opCustos:[], custos:[], receitas:[], catalog:[], sprints:[], marcos:[], automacoes:[], autoLog:[], notifs:[], vistas:[], statusCustom:[], camposItem:[], quadros:{}, recursosV:1, autoPrazoDia:iso(HOJE)};
 }
 if (COM_BANCO){
@@ -5266,7 +5263,6 @@ const DE_FORMA = {mensal:'Mensal', unica:'Único', parcelada:'Parcelado'};
 const DE_MODO = {aviso:'Aviso', trava:'Trava', desligado:'Desligado'};
 const DE_PROVA = {nenhuma:'Nenhuma', captura:'Captura de tela', arquivo:'Arquivo', link:'Link', texto:'Texto', aprovacao:'Aprovação de alguém'};
 const DE_QUEM = {responsavel_etapa:'Responsável da etapa', qualquer_um:'Qualquer pessoa do time'};
-const DE_PERM = {livre:'Livre', automatica:'Automática', confirmacao:'Com confirmação', bloqueada:'Bloqueada'};
 const DE_PT = {bug:'Bug report', correcao:'Fix request', mudanca:'Change request', funcionalidade:'Feature request', duvida:'Question'};
 const DE_GR = {parado:'Sistema parado', quebrada:'Função quebrada', incomodo:'Incômodo', cosmetico:'Cosmético'};
 const DE_PS = {novo:'Em triagem', ia_conversando:'IA conversando', aguardando_voce:'Aguardando você', virou_item:'Virou item', resolvido:'Resolvido', recusado:'Recusado'};
@@ -5274,7 +5270,7 @@ const DE_ANEXO = {audio:'áudio', video:'vídeo'};
 const TABELAS_BANCO = ['pessoas','nos','clientes','projetos','aplicacoes','frentes','participacoes','etiquetas','etiquetas_nos','status_fluxo','requisitos','servicos','servicos_cobranca',
   'servicos_requisitos','regras_calculo','pessoas_custos','custos_operacao','custos_tecnicos','custos_uso','receitas','slas','sprints','marcos','automacoes','campos_personalizados',
   'itens','itens_campos','itens_checklist','itens_ligacoes','comentarios','blocos_agenda','tempo_registros','anexos','ficha_campos','etapas_modelo','etapas_modelo_itens',
-  'etapas_nos','provas','agentes','agentes_fontes','agentes_ferramentas','pedidos','pedidos_mensagens','notificacoes'];
+  'etapas_nos','provas','pedidos','pedidos_mensagens','notificacoes'];
 
 async function lerTabela(sb, t){
   const todas = []; const passo = 1000;
@@ -5324,7 +5320,6 @@ function montarDados(T, eu){
   d.statusCustom = T.status_fluxo.filter(s => s.no_id).sort(porOrdem).map(s => ({id:s.id, no:chave(s.no_id), nome:s.nome, cor:s.cor, grupo:s.grupo, _chave:s.chave}));
   BANCO.stPadrao = Object.fromEntries(T.status_fluxo.filter(s => !s.no_id).map(s => [s.chave, s.id]));
   BANCO.reqIds = Object.fromEntries(T.requisitos.map(q => [q.nome, q.id]));
-  BANCO.fonteIds = Object.fromEntries(T.agentes_fontes.map(f => [f.agente_id + '|' + f.nome, f.id]));
   const stPorId = um(T.status_fluxo, 'id');
   T.requisitos.slice().sort(porOrdem).forEach(q => { d.baseline[q.nome] = !!q.padrao; });
 
@@ -5386,8 +5381,6 @@ function montarDados(T, eu){
     if (e.situacao === 'dispensado') s[e.item_modelo_id] = {dispensa:e.motivo_dispensa || 'Dispensado', quem:e.cumprido_por, quando:diaDe(e.cumprido_em)};
     else if (e.situacao === 'cumprido'){ const p = provas.get(e.no_id + '|' + e.item_modelo_id); s[e.item_modelo_id] = {feito:true, quem:e.cumprido_por, quando:diaDe(e.cumprido_em), prova: p ? {tipo:DE_PROVA[p.tipo] || p.tipo, valor:p.valor, _id:p.id} : undefined}; } });
 
-  const fontes = agrupar(T.agentes_fontes, 'agente_id'), ferr = agrupar(T.agentes_ferramentas, 'agente_id');
-  d.agents = T.agentes.map(a => ({id:a.id, _codigo:a.codigo, nome:a.nome, papel:a.papel || '', instr:a.instrucoes || '', fontes:(fontes.get(a.id) || []).map(f => f.nome), ferramentas:(ferr.get(a.id) || []).map(f => [f.ferramenta, DE_PERM[f.permissao] || f.permissao]), passa:a.regras_passagem || ''}));
 
   const msgs = agrupar(T.pedidos_mensagens.slice().sort((a, b) => String(a.criado_em).localeCompare(String(b.criado_em))), 'pedido_id'), anxPed = agrupar(T.anexos.filter(x => x.pedido_id), 'pedido_id');
   d.requests = T.pedidos.slice().sort((a, b) => String(b.criado_em).localeCompare(String(a.criado_em))).map(r => ({id:r.id, cliente:acima(r.no_id, 'cliente'), app:r.no_id, tipo:DE_PT[r.tipo] || r.tipo,
@@ -5426,7 +5419,7 @@ window.ciclodevBancoInfo = () => BANCO;
 function painelBanco(){
   const b = BANCO, cont = [['Pessoas', D.people.length], ['Clientes', D.clients.length], ['Projetos', D.projects.length], ['Produtos', D.products.length], ['Aplicações', D.apps.length],
     ['Frentes', D.ws.length], ['Itens', D.issues.length], ['Pedidos', D.requests.length], ['Serviços', D.catalog.length], ['Custos técnicos', D.custos.length],
-    ['Custos da operação', D.opCustos.length], ['Receitas', D.receitas.length], ['Agentes', D.agents.length]];
+    ['Custos da operação', D.opCustos.length], ['Receitas', D.receitas.length]];
   return '<h2 class="sub">Dados do banco</h2>' +
     '<p class="sec" style="font-size:13px;margin:0 0 10px">Tudo o que aparece no sistema vem do banco (Supabase)' + (b.quando ? ', lido em ' + esc(b.quando.toLocaleString('pt-BR')) : '') + '. Nada de exemplo e nada guardado no navegador.</p>' +
     '<div class="tabela-rolo"><table class="tabela"><thead><tr><th>O quê</th><th>No banco</th></tr></thead><tbody>' + cont.map(([n, q]) => '<tr><td>' + n + '</td><td>' + q + '</td></tr>').join('') + '</tbody></table></div>' +
@@ -5536,7 +5529,7 @@ document.addEventListener('change', ev => { if (FC.dlg && ev.target.matches('[da
    versão gravada e mandamos só a diferença: linha nova vira insert, linha mudada vira update só das colunas que
    mudaram, linha que sumiu vira delete. O banco continua cuidando de automações, datas de início e conclusão e das regras. */
 const PARA_ST_NO = inverter(ST_NO), PARA_MOD = inverter(DE_MOD), PARA_VINC = inverter(DE_VINC), PARA_REC = inverter(DE_REC), PARA_FORMA = inverter(DE_FORMA);
-const PARA_MODO = inverter(DE_MODO), PARA_PROVA = inverter(DE_PROVA), PARA_QUEM = inverter(DE_QUEM), PARA_PERM = inverter(DE_PERM), PARA_PT = inverter(DE_PT), PARA_GR = inverter(DE_GR);
+const PARA_MODO = inverter(DE_MODO), PARA_PROVA = inverter(DE_PROVA), PARA_QUEM = inverter(DE_QUEM), PARA_PT = inverter(DE_PT), PARA_GR = inverter(DE_GR);
 const PARA_PS = Object.assign(inverter(DE_PS), {'Resolvido pela IA':'resolvido'});
 const PARA_ANEXO = {'áudio':'audio', 'vídeo':'video', imagem:'imagem', audio:'audio', video:'video', link:'link'};
 // ordem de gravação: quem é pai vem antes; a exclusão segue a ordem contrária
@@ -5549,7 +5542,7 @@ const GRAVAR = [
   ['itens',['id']], ['itens_campos',['item_id','campo_id'],1], ['itens_checklist',['id']], ['itens_ligacoes',['origem_id','destino_id','tipo'],1], ['comentarios',['id']],
   ['blocos_agenda',['id']], ['tempo_registros',['id']], ['anexos',['id']], ['ficha_campos',['no_id','secao','campo'],1],
   ['etapas_modelo',['id']], ['etapas_modelo_itens',['id']], ['etapas_nos',['no_id','item_modelo_id'],1], ['provas',['id']],
-  ['agentes',['id']], ['agentes_fontes',['id']], ['agentes_ferramentas',['agente_id','ferramenta'],1], ['pedidos',['id']], ['pedidos_mensagens',['id']], ['notificacoes',['id']]
+  ['pedidos',['id']], ['pedidos_mensagens',['id']], ['notificacoes',['id']]
 ];
 const hex8 = id => String(id).replace(/[^a-f0-9]/g, '').slice(0, 8) || Math.random().toString(16).slice(2, 10);
 const semVazio = v => (v === undefined || v === '' ? null : v);
@@ -5641,16 +5634,11 @@ function linhasDaTela(d){
     Object.entries(itens || {}).forEach(([mid, s]) => { if (!s || !(s.feito || s.dispensa)) return;
       L.etapas_nos.push({no_id:nid, item_modelo_id:mid, situacao:s.dispensa ? 'dispensado' : 'cumprido', cumprido_por:s.quem || eu, cumprido_em:quando(s.quando || iso(HOJE)), motivo_dispensa:s.dispensa || null});
       const p = s.prova, tp = p && PARA_PROVA[p.tipo]; if (p && p.valor && tp && tp !== 'nenhuma') L.provas.push({id:garantirId(p), no_id:nid, item_modelo_id:mid, tipo:tp, valor:String(p.valor), enviado_por:s.quem || eu}); }); });
-  const fIds = BANCO.fonteIds || (BANCO.fonteIds = {});
-  d.agents.forEach(a => { L.agentes.push({id:a.id, codigo:a._codigo || (a._codigo = 'ag_' + hex8(a.id)), nome:a.nome, papel:semVazio(a.papel), instrucoes:a.instr || '', regras_passagem:semVazio(a.passa)});
-    [...new Set(a.fontes || [])].forEach(n => { const k = a.id + '|' + n; L.agentes_fontes.push({id:fIds[k] || (fIds[k] = novoUuid()), agente_id:a.id, nome:n}); });
-    (a.ferramentas || []).forEach(([f, p]) => L.agentes_ferramentas.push({agente_id:a.id, ferramenta:f, permissao:PARA_PERM[p] || 'confirmacao'})); });
-  const agIA = (d.agents.find(a => /atendimento/i.test(a.nome)) || d.agents[0] || {}).id;
   d.requests.forEach(r => { const st = PARA_PS[r.status] || 'novo', fechado = st === 'resolvido' || st === 'recusado';
     L.pedidos.push({id:r.id, no_id:r.app, autor_id:r.autor || null, tipo:PARA_PT[r.tipo] || 'duvida', gravidade:PARA_GR[r.grav] || 'incomodo', status:st, titulo:r.titulo, contexto:{resumo:r.contexto || ''}, item_id:r.issue || null,
       resolvido_em:fechado ? (r._resolvido || (r._resolvido = new Date().toISOString())) : null});
-    (r.msgs || []).forEach(m => { const tipo = m.de === 'voce' ? 'equipe' : m.de; if (tipo === 'ia' && !agIA) return;
-      L.pedidos_mensagens.push({id:garantirId(m), pedido_id:r.id, autor_tipo:tipo, pessoa_id:tipo === 'cliente' ? (r.autor || null) : tipo === 'equipe' ? eu : null, agente_id:tipo === 'ia' ? agIA : null, texto:m.txt || null}); }); });
+    (r.msgs || []).forEach(m => { const tipo = m.de === 'voce' ? 'equipe' : m.de;
+      L.pedidos_mensagens.push({id:garantirId(m), pedido_id:r.id, autor_tipo:tipo, pessoa_id:tipo === 'cliente' ? (r.autor || null) : tipo === 'equipe' ? eu : null, texto:m.txt || null}); }); });
   (d.notifs || []).forEach(n => { if (n._banco) L.notificacoes.push({id:n.id, lida_em:n.lida ? (n._lidaEm || (n._lidaEm = new Date().toISOString())) : null}); });
   // pai antes do filho, dentro das tabelas que se referem a si mesmas
   const prof = {cliente:0, projeto:1, produto:2, aplicacao:3, frente:4}; L.nos.sort((a, b) => prof[a.tipo] - prof[b.tipo]);
@@ -6677,6 +6665,223 @@ document.addEventListener('input', e => {
   ADM.busca = b.value; const pos = b.selectionStart; rAdmin();
   const n = $('#m-admin [data-adm-busca]'); if (n){ n.focus(); n.setSelectionRange(pos, pos); }
 });
+
+/* =====================================================================
+   AGENT STUDIO (só o dono do sistema)
+   A oficina do assistente de IA do CicloDev. O agente nasce em branco: sabe só o que o dono
+   coloca aqui (instruções, documentos .md, funções). Tudo vem das tabelas studio_* do banco
+   (banco/17_agent_studio.sql), que só o dono do sistema lê e muda.
+   ===================================================================== */
+const ST = {lido:false, ag:null, docs:null, versoes:null, funcoes:null, busca:null, buscando:false, carregando:false, erro:null, enviando:null};
+const ST_MODELOS = [['claude-opus-5-5','Claude Opus 5.5 (o mais preciso)'],['claude-sonnet-5-5','Claude Sonnet 5.5 (mais barato)'],['claude-haiku-4-5','Claude Haiku 4.5 (o mais rápido)']];
+const ST_TIPO = {livro:'Livro', manual:'Manual', regra:'Regra', exemplo:'Exemplo', outro:'Outro'};
+const ST_PESO = {fundamental:'Fundamental', apoio:'Apoio'};
+const ST_ACAO = {ler:'Consultar', criar:'Criar', editar:'Editar', apagar:'Apagar', outra:'Outra'};
+const stBanco = () => (COM_BANCO && window.ciclodevBanco && ADM.dono) ? window.ciclodevBanco : null;
+const stMil = v => num(+v || 0, 0);
+const stPaginas = c => Math.max(1, Math.round((+c || 0) / 1800));   // página de livro: uns 1.800 caracteres
+
+/* ---------- menu e rota: só o dono do sistema ---------- */
+{ const li = document.querySelector('.item[data-tela="agentes"]'); if (li) li.parentElement.hidden = true; }
+if (COM_BANCO){
+  const _entrouSt = window.ciclodevEntrouComo;
+  window.ciclodevEntrouComo = function(p){
+    const r = _entrouSt(p);
+    // o admin.js confere o dono logo depois de entrar; aqui só espera essa resposta
+    const conferir = (n) => { if (ADM.dono){ const li = document.querySelector('.item[data-tela="agentes"]'); if (li) li.parentElement.hidden = false; if (UI.modulo === 'agentes') render(); } else if (n < 40) setTimeout(() => conferir(n + 1), 150); };
+    Promise.resolve(r).then(() => conferir(0));
+    return r;
+  };
+}
+const _abrirModuloSt = abrirModulo;
+abrirModulo = function(id){ if (id === 'agentes' && !ADM.dono) id = 'overview'; return _abrirModuloSt(id); };
+const _renderSt = render;
+render = function(){ if (UI.modulo === 'agentes') return rStudio(); return _renderSt(); };
+
+/* ---------- leitura ---------- */
+async function stCarregar(){
+  const sb = stBanco(); if (!sb || ST.carregando) return;
+  ST.carregando = true; ST.erro = null;
+  const a = await sb.from('studio_agentes').select('*');
+  if (a.error){ ST.erro = a.error.message; ST.carregando = false; ST.lido = true; return rStudio(); }
+  ST.ag = (a.data || [])[0] || null;
+  if (ST.ag){
+    const [d, v, f] = await Promise.all([sb.rpc('studio_documentos', {p_agente:ST.ag.id}), sb.from('studio_instrucoes_versoes').select('*'), sb.from('studio_funcoes').select('*')]);
+    const e = [d, v, f].find(x => x.error);
+    if (e) ST.erro = e.error.message;
+    else {
+      ST.docs = (d.data || []).sort((x, y) => (x.peso === y.peso ? 0 : x.peso === 'fundamental' ? -1 : 1) || String(x.titulo).localeCompare(y.titulo, 'pt-BR'));
+      ST.versoes = (v.data || []).filter(x => x.agente_id === ST.ag.id).sort((x, y) => String(y.salvo_em).localeCompare(x.salvo_em));
+      ST.funcoes = (f.data || []).filter(x => x.agente_id === ST.ag.id).sort((x, y) => (x.ordem - y.ordem) || String(x.nome).localeCompare(y.nome, 'pt-BR'));
+    }
+  }
+  ST.carregando = false; ST.lido = true;
+  if (UI.modulo === 'agentes') rStudio();
+}
+
+/* ---------- tela ---------- */
+function rStudio(){
+  const el = $('#m-agentes'); if (!el) return;
+  if (!ADM.dono){ el.innerHTML = '<p class="vazio-linha">Só o dono do sistema abre este módulo.</p>'; return; }
+  const topo = '<div class="topo-tela"><div><h1><span>Agent Studio</span>' + I('Agent Studio: a oficina do assistente de IA do CicloDev. Só o dono do sistema vê esta tela.') + '</h1><p class="lead">O assistente nasce em branco: ele sabe só o que você colocar aqui. Instruções, documentos e funções são seus para definir, melhorar ou tirar.</p></div></div>';
+  if (!ST.ag){
+    el.innerHTML = topo + (ST.erro ? '<p class="entrada-erro">Não foi possível ler o Agent Studio: ' + esc(ST.erro) + '</p>' : !ST.lido ? '<p class="vazio-linha">Lendo o Agent Studio…</p>' : '<p class="vazio-linha">Nenhum agente no banco.</p>');
+    if (!ST.lido && !ST.carregando && !ST.erro) stCarregar();
+    return;
+  }
+  const a = ST.ag, docs = ST.docs || [], ligados = docs.filter(d => d.ativo);
+  const tokens = ligados.reduce((s, d) => s + (+d.tokens_estimados || 0), 0), trechos = ligados.reduce((s, d) => s + (+d.trechos || 0), 0);
+  el.innerHTML = topo + (ST.erro ? '<p class="entrada-erro">' + esc(ST.erro) + '</p>' : '') +
+    '<div class="kpis st-kpis">' + admKpi(ligados.length + (docs.length > ligados.length ? '<small> de ' + docs.length + '</small>' : ''), 'Documentos ligados') + admKpi(stMil(trechos), 'Trechos para consulta') + admKpi(stMil(ligados.reduce((s, d) => s + stPaginas(d.caracteres), 0)), 'Páginas, mais ou menos') + admKpi(stMil(tokens), 'Tokens estimados') + '</div>' +
+    '<div class="st-grade">' +
+    '<section class="g-cartao st-cartao"><h4>O agente</h4>' +
+      '<label class="lb">Nome<input class="campo" data-st-ag="nome" value="' + esc(a.nome) + '" maxlength="80"></label>' +
+      '<label class="lb">Para que serve<textarea class="campo" rows="2" data-st-ag="descricao" maxlength="500">' + esc(a.descricao || '') + '</textarea></label>' +
+      '<label class="lb"><span class="st-rot">Modelo de IA' + I('Modelo de IA: qual versão do Claude responde. O Opus é o mais preciso; o Sonnet custa metade.') + '</span><select class="sel" data-st-ag="modelo">' + ST_MODELOS.map(([k, n]) => '<option value="' + k + '"' + (a.modelo === k ? ' selected' : '') + '>' + esc(n) + '</option>').join('') + (ST_MODELOS.some(m => m[0] === a.modelo) ? '' : '<option selected>' + esc(a.modelo) + '</option>') + '</select></label>' +
+      '<div class="aviso-faixa st-aviso"><b>Desligado</b><span>O assistente ainda não conversa com ninguém. Ele liga quando o provedor de IA for conectado e você decidir soltar.</span></div>' +
+    '</section>' +
+    '<section class="g-cartao st-cartao st-largo"><h4>Instruções' + I('Instruções (system prompt): o texto fixo que diz ao assistente quem ele é, como falar e o que pode ou não fazer. Vale para todas as conversas.') + '</h4>' +
+      '<textarea class="campo st-instr" rows="10" data-st-instr placeholder="Em branco. Escreva aqui quem o assistente é, como ele fala e o que ele nunca faz.">' + esc(a.instrucoes || '') + '</textarea>' +
+      '<div class="st-linha"><button class="btn" type="button" data-st-salvar-instr>Salvar instruções</button><span class="sec st-dica" data-st-instr-info>' + stMil((a.instrucoes || '').length) + ' caracteres' + (a.atualizado_em ? ' · salvo em ' + esc(admHora(a.atualizado_em)) : '') + '</span>' +
+      (ST.versoes && ST.versoes.length ? '<button class="btn sec peq" type="button" data-st-versoes>Versões anteriores (' + ST.versoes.length + ')</button>' : '') + '</div>' +
+    '</section></div>' +
+    '<section class="g-cartao st-cartao"><h4>Base de conhecimento' + I('Base de conhecimento: os documentos que o assistente estuda antes de responder. Fundamental = base principal; Apoio = consulta extra. Cada documento é cortado em trechos pequenos para a busca achar a parte certa.') + '</h4>' +
+      '<div class="st-soltar" data-st-soltar><input type="file" id="st-arq" accept=".md,.markdown,.txt,text/markdown,text/plain" multiple hidden><p><b>Arraste os arquivos .md aqui</b> ou <button class="btn sec peq" type="button" data-st-escolher>Escolher arquivos</button></p><small class="sec">Livros, manuais e regras em Markdown ou texto. Até 8 MB por arquivo.</small>' + (ST.enviando ? '<p class="st-enviando" role="status">' + esc(ST.enviando) + '</p>' : '') + '</div>' +
+      (docs.length ? '<div class="tabela-rolo"><table class="tabela st-docs"><thead><tr><th>Documento</th><th>Tipo</th><th>Peso</th><th class="num">Páginas</th><th class="num">Trechos</th><th class="num">Versão</th><th>Ligado</th><th><span class="sr">Ações</span></th></tr></thead><tbody>' +
+        docs.map(d => '<tr class="' + (d.ativo ? '' : 'st-desligado') + '"><th scope="row"><b>' + esc(d.titulo) + '</b>' + (d.arquivo_nome ? '<small class="sec st-arq-nome">' + esc(d.arquivo_nome) + '</small>' : '') + '</th>' +
+          '<td>' + esc(ST_TIPO[d.tipo] || d.tipo) + '</td><td><span class="pill' + (d.peso === 'fundamental' ? ' st-fund' : '') + '">' + esc(ST_PESO[d.peso] || d.peso) + '</span></td>' +
+          '<td class="num">' + stMil(stPaginas(d.caracteres)) + '</td><td class="num">' + stMil(d.trechos) + '</td><td class="num">' + d.versao + '</td>' +
+          '<td><label class="st-chave"><input type="checkbox" data-st-ligar="' + d.id + '"' + (d.ativo ? ' checked' : '') + '><span>' + (d.ativo ? 'Sim' : 'Não') + '</span></label></td>' +
+          '<td class="st-acoes"><button class="btn sec peq" type="button" data-st-ver="' + d.id + '">Ver</button><button class="btn sec peq" type="button" data-st-editar="' + d.id + '">Editar</button><button class="btn sec peq" type="button" data-st-trocar="' + d.id + '">Trocar arquivo</button><button class="btn sec peq perigo" type="button" data-st-apagar="' + d.id + '">Apagar</button></td></tr>').join('') +
+        '</tbody></table></div>' : '<p class="vazio-linha">Nenhum documento ainda. Coloque aqui os seus livros em .md.</p>') +
+    '</section>' +
+    '<section class="g-cartao st-cartao"><h4>Testar a busca' + I('Testar a busca: escreva uma pergunta e veja quais trechos dos documentos o assistente usaria para responder.') + '</h4>' +
+      '<form class="g-add" data-st-buscar><input class="campo" name="q" placeholder="Ex.: como priorizar o que entregar primeiro" value="' + esc((ST.busca && ST.busca.q) || '') + '"' + (ligados.length ? '' : ' disabled') + '><button class="btn sec" type="submit"' + (ligados.length ? '' : ' disabled') + '>Buscar</button></form>' +
+      (ST.buscando ? '<p class="vazio-linha">Buscando…</p>' : ST.busca ? (ST.busca.erro ? '<p class="entrada-erro">' + esc(ST.busca.erro) + '</p>' : ST.busca.r.length ? '<ol class="st-achados">' + ST.busca.r.map(t => '<li><div class="st-achado-cab"><b>' + esc(t.titulo) + '</b>' + (t.secao ? '<span class="sec"> › ' + esc(t.secao) + '</span>' : '') + '</div><p>' + esc(String(t.texto).slice(0, 420)) + (String(t.texto).length > 420 ? '…' : '') + '</p></li>').join('') + '</ol>' : '<p class="vazio-linha">Nada encontrado para essa pergunta nos documentos ligados.</p>') : '') +
+    '</section>' +
+    '<section class="g-cartao st-cartao"><h4>Funções' + I('Funções: o que o assistente poderá fazer no sistema, como criar ou editar tarefas. Criar, editar e apagar sempre pedem o "confirmar" do usuário e só valem onde ele tem permissão.') + '</h4>' +
+      ((ST.funcoes || []).length ? '<div class="tabela-rolo"><table class="tabela"><thead><tr><th>Função</th><th>O que faz</th><th>Tipo</th><th>Confirmação</th><th>Ligada</th><th><span class="sr">Ações</span></th></tr></thead><tbody>' +
+        ST.funcoes.map(f => '<tr><th scope="row">' + esc(f.nome) + '</th><td>' + esc(f.descricao || '') + '</td><td>' + esc(ST_ACAO[f.acao] || f.acao) + '</td><td>' + (f.pede_confirmacao ? 'Pede confirmação' : 'Faz direto') + '</td>' +
+          '<td><label class="st-chave"><input type="checkbox" data-st-fn-ligar="' + f.id + '"' + (f.ativo ? ' checked' : '') + '><span>' + (f.ativo ? 'Sim' : 'Não') + '</span></label></td>' +
+          '<td class="st-acoes"><button class="btn sec peq perigo" type="button" data-st-fn-apagar="' + f.id + '">Apagar</button></td></tr>').join('') + '</tbody></table></div>'
+        : '<p class="vazio-linha">Nenhuma função ainda. O assistente não faz nada no sistema até você cadastrar e ligar uma.</p>') +
+      '<form class="st-fn-form" data-st-fn-nova><input class="campo" name="nome" placeholder="Nome da função, ex.: Criar tarefa" maxlength="80" required><input class="campo" name="descricao" placeholder="O que ela faz, em uma frase" maxlength="4000"><select class="sel" name="acao">' + Object.entries(ST_ACAO).map(([k, n]) => '<option value="' + k + '">' + n + '</option>').join('') + '</select><button class="btn sec" type="submit">Adicionar</button></form>' +
+    '</section>';
+}
+
+/* ---------- gravar ---------- */
+async function stMudarAgente(campos){
+  const sb = stBanco(); if (!sb || !ST.ag) return false;
+  const {data, error} = await sb.from('studio_agentes').update(campos).eq('id', ST.ag.id).select();
+  if (error || !(data || []).length){ toast('Não salvou: ' + (error ? error.message : 'sem permissão')); return false; }
+  ST.ag = data[0]; return true;
+}
+function stTitulo(texto, arquivo){
+  const m = /^#[ \t]+(.+)$/m.exec(texto || '');
+  return (m ? m[1] : String(arquivo || 'Documento').replace(/\.(md|markdown|txt)$/i, '').replace(/[_-]+/g, ' ')).trim().slice(0, 200) || 'Documento';
+}
+const stLer = f => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result || '')); r.onerror = () => rej(r.error); r.readAsText(f, 'utf-8'); });
+async function stEnviar(arquivos, trocarId){
+  const sb = stBanco(); if (!sb || !ST.ag) return;
+  const lista = Array.from(arquivos || []).filter(f => /\.(md|markdown|txt)$/i.test(f.name) || /^text\//.test(f.type));
+  if (!lista.length){ toast('Escolha arquivos .md ou .txt'); return; }
+  let ok = 0; const erros = [];
+  for (const [i, f] of lista.entries()){
+    ST.enviando = 'Enviando ' + (i + 1) + ' de ' + lista.length + ': ' + f.name + '…'; rStudio();
+    if (f.size > 8000000){ erros.push(f.name + ' passa de 8 MB'); continue; }
+    let texto; try { texto = (await stLer(f)).replace(/^﻿/, ''); } catch(e){ erros.push(f.name + ': não deu para ler'); continue; }
+    if (!texto.trim()){ erros.push(f.name + ' está vazio'); continue; }
+    const r = trocarId
+      ? await sb.from('studio_conhecimento').update({conteudo:texto, arquivo_nome:f.name}).eq('id', trocarId).select()
+      : await sb.from('studio_conhecimento').insert({agente_id:ST.ag.id, titulo:stTitulo(texto, f.name), arquivo_nome:f.name, conteudo:texto}).select();
+    if (r.error || !(r.data || []).length) erros.push(f.name + ': ' + (r.error ? r.error.message : 'sem permissão')); else ok++;
+  }
+  ST.enviando = null;
+  toast(erros.length ? (ok ? ok + ' enviado(s). ' : '') + 'Não entrou: ' + erros.join('; ') : ok === 1 ? (trocarId ? 'Arquivo trocado. Os trechos foram refeitos.' : 'Documento guardado e cortado em trechos.') : ok + ' documentos guardados.');
+  ST.busca = null; await stCarregar();
+}
+function stFormDoc(d){
+  return '<div class="grade-form"><label class="lb largo">Título<input class="campo" id="st-d-t" maxlength="200" value="' + esc(d.titulo) + '"></label>' +
+    '<label class="lb">Tipo<select class="sel" id="st-d-tp">' + Object.entries(ST_TIPO).map(([k, n]) => '<option value="' + k + '"' + (d.tipo === k ? ' selected' : '') + '>' + n + '</option>').join('') + '</select></label>' +
+    '<label class="lb">Peso<select class="sel" id="st-d-p">' + Object.entries(ST_PESO).map(([k, n]) => '<option value="' + k + '"' + (d.peso === k ? ' selected' : '') + '>' + n + '</option>').join('') + '</select></label>' +
+    '<label class="lb largo">Descrição<textarea class="campo" id="st-d-ds" rows="3" maxlength="1000" placeholder="Do que o documento trata e quando o assistente deve usá-lo">' + esc(d.descricao || '') + '</textarea></label></div>';
+}
+async function stSalvarDoc(dlg, d){
+  const sb = stBanco(); if (!sb) return false;
+  const t = $('#st-d-t', dlg).value.trim(); if (!t){ toast('Escreva o título'); return false; }
+  const {data, error} = await sb.from('studio_conhecimento').update({titulo:t, tipo:$('#st-d-tp', dlg).value, peso:$('#st-d-p', dlg).value, descricao:$('#st-d-ds', dlg).value.trim() || null}).eq('id', d.id).select();
+  if (error || !(data || []).length){ toast('Não salvou: ' + (error ? error.message : 'sem permissão')); return; }
+  toast('Documento salvo'); stCarregar();
+}
+async function stVer(d){
+  const sb = stBanco(); if (!sb) return;
+  const dlg = modal(esc(d.titulo), '<p class="vazio-linha">Abrindo…</p>', [{txt:'Fechar', cls:'sec'}]); dlg.classList.add('st-modal-ler');
+  const {data, error} = await sb.from('studio_conhecimento').select('id,conteudo').eq('id', d.id);
+  const linha = (data || []).find(x => x.id === d.id), corpo = dlg.querySelector('.modal-corpo'); if (!corpo) return;
+  corpo.innerHTML = error || !linha ? '<p class="entrada-erro">Não abriu: ' + esc(error ? error.message : 'não encontrado') + '</p>' : '<p class="sec st-dica">' + stMil(d.caracteres) + ' caracteres · ' + stMil(d.trechos) + ' trechos · versão ' + d.versao + '</p><pre class="st-texto">' + esc(linha.conteudo) + '</pre>';
+}
+function stVersoes(){
+  const v = ST.versoes || [];
+  const dlg = modal('Versões anteriores das instruções', v.map((x, i) => '<div class="st-versao"><div class="st-linha"><b>' + esc(admHora(x.salvo_em)) + '</b><button class="btn sec peq" type="button" data-st-voltar="' + i + '">Usar esta versão</button></div><pre class="st-texto">' + esc(x.instrucoes) + '</pre></div>').join(''), [{txt:'Fechar', cls:'sec'}]);
+  dlg.classList.add('st-modal-ler');
+  dlg.addEventListener('click', async e => {
+    const b = e.target.closest('[data-st-voltar]'); if (!b) return;
+    const x = v[+b.dataset.stVoltar]; if (!x) return;
+    if (await stMudarAgente({instrucoes:x.instrucoes})){ dlg.close(); dlg.remove(); toast('Instruções voltaram para a versão de ' + admHora(x.salvo_em) + '. A de agora ficou guardada.'); stCarregar(); }
+  });
+}
+
+/* ---------- eventos ---------- */
+document.addEventListener('click', async e => {
+  if (!e.target.closest('#m-agentes')) return;
+  const q = s => e.target.closest(s); let x;
+  if (q('[data-st-escolher]')){ const i = $('#st-arq'); i.dataset.trocar = ''; i.click(); return; }
+  if ((x = q('[data-st-trocar]'))){ const i = $('#st-arq'); i.dataset.trocar = x.dataset.stTrocar; i.removeAttribute('multiple'); i.click(); return; }
+  if (q('[data-st-salvar-instr]')){ const t = $('#m-agentes [data-st-instr]').value; if (await stMudarAgente({instrucoes:t})){ toast('Instruções salvas'); stCarregar(); } return; }
+  if (q('[data-st-versoes]')) return stVersoes();
+  if ((x = q('[data-st-ver]'))){ const d = (ST.docs || []).find(y => y.id === x.dataset.stVer); if (d) stVer(d); return; }
+  if ((x = q('[data-st-editar]'))){ const d = (ST.docs || []).find(y => y.id === x.dataset.stEditar); if (d) modal('Editar documento', stFormDoc(d), [{txt:'Cancelar', cls:'sec'},{txt:'Salvar', acao:dlg => { stSalvarDoc(dlg, d); }}]); return; }
+  if ((x = q('[data-st-apagar]'))){ const d = (ST.docs || []).find(y => y.id === x.dataset.stApagar); if (!d) return;
+    modal('Apagar ' + esc(d.titulo) + '?', '<p style="margin:0">O documento e os ' + stMil(d.trechos) + ' trechos dele saem da base do assistente. Não dá para desfazer; para só tirar das respostas, desligue em vez de apagar.</p>',
+      [{txt:'Cancelar', cls:'sec'},{txt:'Apagar', cls:'perigo', acao:async () => { const {error} = await stBanco().from('studio_conhecimento').delete().eq('id', d.id); toast(error ? 'Não apagou: ' + error.message : 'Documento apagado'); stCarregar(); }}]); return; }
+  if ((x = q('[data-st-fn-apagar]'))){ const f = (ST.funcoes || []).find(y => y.id === x.dataset.stFnApagar); if (!f) return;
+    modal('Apagar a função ' + esc(f.nome) + '?', '<p style="margin:0">O assistente deixa de poder fazer isso.</p>', [{txt:'Cancelar', cls:'sec'},{txt:'Apagar', cls:'perigo', acao:async () => { const {error} = await stBanco().from('studio_funcoes').delete().eq('id', f.id); toast(error ? 'Não apagou: ' + error.message : 'Função apagada'); stCarregar(); }}]); return; }
+});
+document.addEventListener('change', async e => {
+  if (!e.target.closest('#m-agentes')) return;
+  const t = e.target, sb = stBanco(); if (!sb) return;
+  if (t.id === 'st-arq'){ const trocar = t.dataset.trocar || null; t.setAttribute('multiple', ''); const fs = Array.from(t.files || []); t.value = ''; if (fs.length) stEnviar(trocar ? fs.slice(0, 1) : fs, trocar); return; }
+  if (t.dataset.stAg){ const v = t.value.trim(); if (t.dataset.stAg === 'nome' && !v){ toast('O nome não pode ficar vazio'); t.value = ST.ag.nome; return; }
+    if (await stMudarAgente({[t.dataset.stAg]: v || (t.dataset.stAg === 'descricao' ? null : v)})) toast('Salvo'); return; }
+  if (t.dataset.stLigar){ const {data, error} = await sb.from('studio_conhecimento').update({ativo:t.checked}).eq('id', t.dataset.stLigar).select();
+    if (error || !(data || []).length) toast('Não mudou: ' + (error ? error.message : 'sem permissão')); else toast(t.checked ? 'Documento ligado: entra nas respostas' : 'Documento desligado: fica guardado, mas sai das respostas');
+    ST.busca = null; stCarregar(); return; }
+  if (t.dataset.stFnLigar){ const {data, error} = await sb.from('studio_funcoes').update({ativo:t.checked}).eq('id', t.dataset.stFnLigar).select();
+    if (error || !(data || []).length) toast('Não mudou: ' + (error ? error.message : 'sem permissão')); stCarregar(); return; }
+});
+document.addEventListener('input', e => {
+  const t = e.target.closest && e.target.closest('#m-agentes [data-st-instr]'); if (!t) return;
+  const i = $('#m-agentes [data-st-instr-info]'); if (i) i.textContent = stMil(t.value.length) + ' caracteres · não salvo';
+});
+document.addEventListener('submit', async e => {
+  const f = e.target; if (!f.closest || !f.closest('#m-agentes')) return;
+  const sb = stBanco();
+  if (f.matches('[data-st-buscar]')){ e.preventDefault(); if (!sb) return; const q = f.q.value.trim(); if (!q) return;
+    ST.buscando = true; ST.busca = {q, r:[]}; rStudio();
+    const {data, error} = await sb.rpc('studio_buscar', {p_agente:ST.ag.id, p_pergunta:q, p_limite:8});
+    ST.buscando = false; ST.busca = {q, r:data || [], erro:error ? error.message : null}; rStudio(); return; }
+  if (f.matches('[data-st-fn-nova]')){ e.preventDefault(); if (!sb) return; const nome = f.nome.value.trim(); if (!nome) return; const acao = f.acao.value;
+    const {data, error} = await sb.from('studio_funcoes').insert({agente_id:ST.ag.id, nome, descricao:f.descricao.value.trim(), acao, pede_confirmacao:true, ordem:(ST.funcoes || []).length}).select();
+    if (error || !(data || []).length){ toast('Não adicionou: ' + (error ? (/unique|duplicate/i.test(error.message) ? 'já existe uma função com esse nome' : error.message) : 'sem permissão')); return; }
+    toast('Função adicionada, desligada. Ligue quando quiser que o assistente use.'); stCarregar(); return; }
+});
+['dragover','drop'].forEach(ev => document.addEventListener(ev, e => {
+  const z = e.target.closest && e.target.closest('#m-agentes [data-st-soltar]'); if (!z) return;
+  e.preventDefault();
+  if (ev === 'dragover'){ z.classList.add('sobre'); return; }
+  z.classList.remove('sobre'); stEnviar(e.dataTransfer && e.dataTransfer.files, null);
+}));
+document.addEventListener('dragleave', e => { const z = e.target.closest && e.target.closest('#m-agentes [data-st-soltar]'); if (z && !z.contains(e.relatedTarget)) z.classList.remove('sobre'); });
 
 abrirModulo(UI.modulo);
 })();

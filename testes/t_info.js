@@ -25,7 +25,7 @@ const fs = require('fs');
     }
     await p.mouse.move(1, 999);
   }
-  const MODS = ['overview','operacoes','clientes','catalog','custos','servicedesk','time','agentes','playbook','configuracoes'];
+  const MODS = ['overview','operacoes','clientes','catalog','custos','servicedesk','time','playbook','configuracoes'];
   await base();
   for (const m of MODS){ await vai('[data-tela='+m+']'); await coletar(m); }
   // operações: todas as visões
@@ -49,7 +49,7 @@ const fs = require('fs');
   await vai('[data-view=board]'); if (await vai('.cartao')) { await coletar('gaveta item'); await p.keyboard.press('Escape'); await p.waitForTimeout(200); }
   await p.evaluate(() => { const b = document.createElement('button'); b.dataset.abrirItem = 'is_1'; document.body.appendChild(b); b.click(); b.remove(); }); await p.waitForTimeout(250); await coletar('gaveta epic'); await p.keyboard.press('Escape'); await p.waitForTimeout(200);
   // formulários
-  for (const [mod, ac] of [['operacoes','novo-item'],['operacoes','novo-cliente-proj'],['clientes','novo-cliente'],['clientes','nova-tag'],['catalog','novo-servico'],['custos','novo-custo'],['servicedesk','novo-pedido'],['time','nova-pessoa'],['agentes','novo-agente'],['configuracoes','cs-novo'],['configuracoes','cf-novo'],['configuracoes','auto-nova']]){
+  for (const [mod, ac] of [['operacoes','novo-item'],['operacoes','novo-cliente-proj'],['clientes','novo-cliente'],['clientes','nova-tag'],['catalog','novo-servico'],['custos','novo-custo'],['servicedesk','novo-pedido'],['time','nova-pessoa'],['configuracoes','cs-novo'],['configuracoes','cf-novo'],['configuracoes','auto-nova']]){
     await base(); await vai('[data-tela='+mod+']'); if (mod==='operacoes') await vai('[data-view=board]'); if (ac==='nova-tag') await vai('[data-acao=cli-tags]'); if (ac==='novo-custo') await vai('[data-ct-aba=clientes]'); if (await vai('[data-acao='+ac+']') || await vai('[data-rc-acao='+ac+']')) { formsAbertos.push(ac); await coletar('form '+ac); } else falhas.push(['form', ac, 'não abriu o formulário']);
   }
   // abas de custos e catálogo

@@ -1,6 +1,6 @@
 -- =====================================================================
 -- CicloDev · 08 · Semente: os dados de exemplo que o sistema já mostra (gerado por gerar_semente.py)
--- Pode rodar de novo: nada duplica. As datas relativas foram calculadas em 2026-09-26.
+-- Pode rodar de novo: nada duplica. As datas relativas foram calculadas em 2026-09-28.
 -- =====================================================================
 begin;
 -- a semente não entra no registro de auditoria (o histórico de exemplo é carregado no fim)
@@ -14,7 +14,6 @@ alter table public.receitas disable trigger receitas_auditoria;
 alter table public.regras_calculo disable trigger regras_calculo_auditoria;
 alter table public.pessoas_custos disable trigger pessoas_custos_auditoria;
 alter table public.servicos disable trigger servicos_auditoria;
-alter table public.agentes disable trigger agentes_auditoria;
 alter table public.marcos disable trigger marcos_auditoria;
 alter table public.sprints disable trigger sprints_auditoria;
 alter table public.automacoes disable trigger automacoes_auditoria;
@@ -537,59 +536,22 @@ insert into public.provas (id, no_id, item_modelo_id, tipo, valor, enviado_por) 
   ('fbdcd999-b027-5cf9-80b7-db220922a969', 'cea3db88-841f-5511-98d1-3bedcc411131', '35a8cf39-daf2-5c4d-98ed-6d6ba5b9fb21', 'link', 'Canvas de estruturação do BL', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28')
 on conflict (id) do nothing;
 
-insert into public.agentes (id, codigo, nome, papel, instrucoes, regras_passagem) values
-  ('e9104d90-ba48-5020-9888-c995298bb0d0', 'ag_po', 'AI PO', 'Product Owner: planos de execução, capacidade do time, previsão e replanejamento', 'Organize as demandas em epics, stories e tasks. Use a capacidade de cada pessoa. Nunca mude prazo, pessoa ou cliente sem a aprovação do Master.', 'Qualquer decisão de prazo, custo ou cliente'),
-  ('41e3b626-1c1d-5011-9dfe-8551b88390eb', 'ag_at', 'Agente de atendimento', 'Primeira resposta no Service Desk: entende, classifica e resolve dúvidas', 'Converse primeiro, faça perguntas objetivas e tente reproduzir. Dúvida de uso: explique com base no manual. Falha real: resuma com passos e provas e passe para a equipe.', 'Cliente pede uma pessoa, sistema parado, ou duas tentativas sem resolver'),
-  ('6b674e96-56c2-5bbe-aaab-95ae0d2ac587', 'ag_billy', 'Billy', 'Assistente do grupo: ouvinte, operacional e voz', 'Siga os níveis de permissão. Toda function call é validada pelo Java antes de executar.', 'Qualquer ação fora do nível Livre')
-on conflict (id) do nothing;
-
-insert into public.agentes_fontes (id, agente_id, nome) values
-  ('95887200-b2a4-53ad-a251-6f96f63ef1ba', 'e9104d90-ba48-5020-9888-c995298bb0d0', 'Banco do projeto'),
-  ('2a9e92f4-f3d7-51b0-8094-caca54dd1717', 'e9104d90-ba48-5020-9888-c995298bb0d0', 'Canvas do projeto'),
-  ('188e982c-1cef-5224-a311-a43df3ae0545', 'e9104d90-ba48-5020-9888-c995298bb0d0', 'Ficha técnica'),
-  ('a8689980-10a7-5c2b-9665-086e662fe213', 'e9104d90-ba48-5020-9888-c995298bb0d0', 'Histórico de entregas'),
-  ('a2bdfe2c-4ab4-5309-ad03-f3c387594e51', '41e3b626-1c1d-5011-9dfe-8551b88390eb', 'Manual de cada aplicação'),
-  ('a795acfe-5e87-5d30-a38f-2581a427798a', '41e3b626-1c1d-5011-9dfe-8551b88390eb', 'Base de conhecimento'),
-  ('a5788818-3257-52ea-b19d-7d7457b8378e', '41e3b626-1c1d-5011-9dfe-8551b88390eb', 'Histórico de pedidos'),
-  ('bf5ccc1e-a7c8-5d43-9f45-3dd368d317fc', '6b674e96-56c2-5bbe-aaab-95ae0d2ac587', 'Banco BL'),
-  ('3719dfe0-27ab-5bb2-bbda-c938c8827390', '6b674e96-56c2-5bbe-aaab-95ae0d2ac587', 'Reuniões'),
-  ('31063adb-ea7b-5860-8a2a-1cde9a9fe027', '6b674e96-56c2-5bbe-aaab-95ae0d2ac587', 'Tarefas')
-on conflict (id) do nothing;
-
-insert into public.agentes_ferramentas (agente_id, ferramenta, permissao) values
-  ('e9104d90-ba48-5020-9888-c995298bb0d0', 'Criar tarefa', 'confirmacao'),
-  ('e9104d90-ba48-5020-9888-c995298bb0d0', 'Mudar status', 'automatica'),
-  ('e9104d90-ba48-5020-9888-c995298bb0d0', 'Mudar prazo', 'confirmacao'),
-  ('e9104d90-ba48-5020-9888-c995298bb0d0', 'Atribuir pessoa', 'confirmacao'),
-  ('e9104d90-ba48-5020-9888-c995298bb0d0', 'Gerar relatório', 'livre'),
-  ('e9104d90-ba48-5020-9888-c995298bb0d0', 'Apagar item', 'bloqueada'),
-  ('41e3b626-1c1d-5011-9dfe-8551b88390eb', 'Responder o cliente', 'automatica'),
-  ('41e3b626-1c1d-5011-9dfe-8551b88390eb', 'Classificar pedido', 'automatica'),
-  ('41e3b626-1c1d-5011-9dfe-8551b88390eb', 'Juntar pedidos repetidos', 'confirmacao'),
-  ('41e3b626-1c1d-5011-9dfe-8551b88390eb', 'Criar item no board', 'confirmacao'),
-  ('41e3b626-1c1d-5011-9dfe-8551b88390eb', 'Fechar pedido', 'confirmacao'),
-  ('6b674e96-56c2-5bbe-aaab-95ae0d2ac587', 'Consultar dados', 'livre'),
-  ('6b674e96-56c2-5bbe-aaab-95ae0d2ac587', 'Criar tarefa', 'confirmacao'),
-  ('6b674e96-56c2-5bbe-aaab-95ae0d2ac587', 'Enviar mensagem', 'confirmacao'),
-  ('6b674e96-56c2-5bbe-aaab-95ae0d2ac587', 'Mexer em financeiro', 'bloqueada')
-on conflict (agente_id, ferramenta) do nothing;
-
 insert into public.pedidos (id, no_id, autor_id, tipo, gravidade, status, titulo, contexto, item_id, criado_em, resolvido_em) values
   ('a7b735ee-a6a3-543c-8b82-31c4b8687986', 'd23ede90-b2b5-56e0-b294-cc0ff4f9c41a', '2246aac4-fcc9-5564-af95-054b9cc42889', 'bug', 'quebrada', 'aguardando_voce', 'Guias do mês anterior aparecendo no filtro de setembro', '{"resumo": "Tela: Guias e vencimentos · Versão 0.4.2 · Chrome 128 · Erro: nenhum"}'::jsonb, null, '2026-09-25T09:00:00-03:00', null),
   ('92e61f72-37c7-5606-9391-2850c2c953ef', 'c37cc0c0-2eec-59e2-bebf-989417c684ee', '2246aac4-fcc9-5564-af95-054b9cc42889', 'duvida', 'incomodo', 'resolvido', 'Como reenviar um documento rejeitado', '{"resumo": "Tela: Documentos · Versão 0.2.0 · App Android"}'::jsonb, null, '2026-09-23T09:00:00-03:00', '2026-09-23T09:00:00-03:00'),
   ('4b6ff104-2e8d-5ae1-961d-aeccc76f2977', '38ff5917-3d08-5887-ba5f-57a82861493f', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 'funcionalidade', 'cosmetico', 'novo', 'Ver o faturamento consolidado das empresas no celular', '{"resumo": "Tela: Resumo diário · App iOS"}'::jsonb, null, '2026-09-26T09:00:00-03:00', null)
 on conflict (id) do nothing;
 
-insert into public.pedidos_mensagens (id, pedido_id, autor_tipo, pessoa_id, agente_id, texto, criado_em) values
-  ('cbbbb4fe-b0ee-5b65-850d-0348829ee774', 'a7b735ee-a6a3-543c-8b82-31c4b8687986', 'cliente', '2246aac4-fcc9-5564-af95-054b9cc42889', null, 'Quando filtro setembro aparecem guias de agosto também.', '2026-09-25T09:01:00-03:00'),
-  ('bc532fc8-57cc-5770-9487-7fc446d6ecda', 'a7b735ee-a6a3-543c-8b82-31c4b8687986', 'ia', null, '41e3b626-1c1d-5011-9dfe-8551b88390eb', 'Entendi. Consegue me dizer se isso acontece com todos os clientes ou só com algum específico?', '2026-09-25T09:04:00-03:00'),
-  ('0a90a70f-5822-5f35-a056-332b51b4bc49', 'a7b735ee-a6a3-543c-8b82-31c4b8687986', 'cliente', '2246aac4-fcc9-5564-af95-054b9cc42889', null, 'Com todos. Mandei o print.', '2026-09-25T09:07:00-03:00'),
-  ('3995aaa1-42c5-5ca4-9e31-71d3236350bf', 'a7b735ee-a6a3-543c-8b82-31c4b8687986', 'ia', null, '41e3b626-1c1d-5011-9dfe-8551b88390eb', 'Obrigado. Reproduzi o comportamento com os dados do print: o filtro está usando a data de vencimento em vez da competência. Classifiquei como falha real e passei para a equipe.', '2026-09-25T09:10:00-03:00'),
-  ('d784db51-d765-5626-b4b7-d25435f6b1cd', '92e61f72-37c7-5606-9391-2850c2c953ef', 'cliente', '2246aac4-fcc9-5564-af95-054b9cc42889', null, '(áudio transcrito) Mandei o documento errado, como faço para mandar de novo?', '2026-09-23T09:01:00-03:00'),
-  ('47bbe6b2-64c1-59ef-ae85-21e4ff247125', '92e61f72-37c7-5606-9391-2850c2c953ef', 'ia', null, '41e3b626-1c1d-5011-9dfe-8551b88390eb', 'É só abrir o documento com a etiqueta Rejeitado e tocar em Reenviar. O arquivo antigo fica guardado no histórico.', '2026-09-23T09:04:00-03:00'),
-  ('af77e683-b8ca-5d4e-a70a-fdca09cc704e', '92e61f72-37c7-5606-9391-2850c2c953ef', 'cliente', '2246aac4-fcc9-5564-af95-054b9cc42889', null, 'Deu certo, obrigado.', '2026-09-23T09:07:00-03:00'),
-  ('dfd08714-19c8-5d47-8d68-57dbaa6d776e', '4b6ff104-2e8d-5ae1-961d-aeccc76f2977', 'cliente', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', null, 'Queria ver o faturamento de todas as empresas juntas, na primeira tela.', '2026-09-26T09:01:00-03:00'),
-  ('bd38e37d-964d-5eb7-89aa-1215942eb4ac', '4b6ff104-2e8d-5ae1-961d-aeccc76f2977', 'ia', null, '41e3b626-1c1d-5011-9dfe-8551b88390eb', 'Anotado como pedido de funcionalidade nova. Quer ver o total do mês ou comparar com o mês anterior também?', '2026-09-26T09:04:00-03:00')
+insert into public.pedidos_mensagens (id, pedido_id, autor_tipo, pessoa_id, texto, criado_em) values
+  ('cbbbb4fe-b0ee-5b65-850d-0348829ee774', 'a7b735ee-a6a3-543c-8b82-31c4b8687986', 'cliente', '2246aac4-fcc9-5564-af95-054b9cc42889', 'Quando filtro setembro aparecem guias de agosto também.', '2026-09-25T09:01:00-03:00'),
+  ('bc532fc8-57cc-5770-9487-7fc446d6ecda', 'a7b735ee-a6a3-543c-8b82-31c4b8687986', 'ia', null, 'Entendi. Consegue me dizer se isso acontece com todos os clientes ou só com algum específico?', '2026-09-25T09:04:00-03:00'),
+  ('0a90a70f-5822-5f35-a056-332b51b4bc49', 'a7b735ee-a6a3-543c-8b82-31c4b8687986', 'cliente', '2246aac4-fcc9-5564-af95-054b9cc42889', 'Com todos. Mandei o print.', '2026-09-25T09:07:00-03:00'),
+  ('3995aaa1-42c5-5ca4-9e31-71d3236350bf', 'a7b735ee-a6a3-543c-8b82-31c4b8687986', 'ia', null, 'Obrigado. Reproduzi o comportamento com os dados do print: o filtro está usando a data de vencimento em vez da competência. Classifiquei como falha real e passei para a equipe.', '2026-09-25T09:10:00-03:00'),
+  ('d784db51-d765-5626-b4b7-d25435f6b1cd', '92e61f72-37c7-5606-9391-2850c2c953ef', 'cliente', '2246aac4-fcc9-5564-af95-054b9cc42889', '(áudio transcrito) Mandei o documento errado, como faço para mandar de novo?', '2026-09-23T09:01:00-03:00'),
+  ('47bbe6b2-64c1-59ef-ae85-21e4ff247125', '92e61f72-37c7-5606-9391-2850c2c953ef', 'ia', null, 'É só abrir o documento com a etiqueta Rejeitado e tocar em Reenviar. O arquivo antigo fica guardado no histórico.', '2026-09-23T09:04:00-03:00'),
+  ('af77e683-b8ca-5d4e-a70a-fdca09cc704e', '92e61f72-37c7-5606-9391-2850c2c953ef', 'cliente', '2246aac4-fcc9-5564-af95-054b9cc42889', 'Deu certo, obrigado.', '2026-09-23T09:07:00-03:00'),
+  ('dfd08714-19c8-5d47-8d68-57dbaa6d776e', '4b6ff104-2e8d-5ae1-961d-aeccc76f2977', 'cliente', 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 'Queria ver o faturamento de todas as empresas juntas, na primeira tela.', '2026-09-26T09:01:00-03:00'),
+  ('bd38e37d-964d-5eb7-89aa-1215942eb4ac', '4b6ff104-2e8d-5ae1-961d-aeccc76f2977', 'ia', null, 'Anotado como pedido de funcionalidade nova. Quer ver o total do mês ou comparar com o mês anterior também?', '2026-09-26T09:04:00-03:00')
 on conflict (id) do nothing;
 
 insert into public.anexos (id, nome, tipo, tamanho_bytes, storage_path, url, item_id, enviado_por, pedido_id) values
@@ -642,7 +604,6 @@ alter table public.receitas enable trigger receitas_auditoria;
 alter table public.regras_calculo enable trigger regras_calculo_auditoria;
 alter table public.pessoas_custos enable trigger pessoas_custos_auditoria;
 alter table public.servicos enable trigger servicos_auditoria;
-alter table public.agentes enable trigger agentes_auditoria;
 alter table public.marcos enable trigger marcos_auditoria;
 alter table public.sprints enable trigger sprints_auditoria;
 alter table public.automacoes enable trigger automacoes_auditoria;

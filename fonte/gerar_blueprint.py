@@ -32,7 +32,7 @@ f1.append(caixa(916, 170, 248, 82, 'bi', ['todas as contas', 'painel, financeiro
 f1.append(caixa(916, 266, 248, 66, 'auditoria', ['quem fez o quê']))
 f1.append(caixa(916, 346, 248, 50, 'storage: anexos', []))
 f1.append(caixa(916, 406, 248, 44, 'pg_cron: a cada 10 min', []))
-f1.append(caixa(270, 360, 250, 90, 'Agentes de IA', ['AI PO · atendimento · Billy', 'provedor ainda não ligado'], 'pendente'))
+f1.append(caixa(270, 360, 250, 90, 'Agentes de IA', ['Assistente CicloDev (em branco)', 'provedor ainda não ligado'], 'pendente'))
 f1.append(caixa(600, 360, 230, 90, 'Kit CicloDev', ['nos sistemas dos clientes', 'painel · feedback · status'], 'pendente'))
 # setas
 f1.append(seta([(190, 70), (268, 70)], 'usa', 229, 62))
