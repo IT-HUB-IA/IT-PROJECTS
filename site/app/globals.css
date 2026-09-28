@@ -117,7 +117,7 @@ a { color: inherit; }
 .ab-ctas { display: flex; flex-wrap: wrap; gap: 10px; }
 .ab-peca { position: relative; aspect-ratio: 1; width: 100%; max-width: 440px; justify-self: end; }
 .ab-listras { position: absolute; inset: 0; }
-.ab-bloco { position: absolute; inset: 22%; background: var(--preto); display: grid; place-items: center; }
+.ab-bloco { position: absolute; inset: 22%; background: var(--vermelho); display: grid; place-items: center; }
 .ab-logo { width: 46%; height: auto; }
 
 /* ---------- seções sobre o papel ---------- */
@@ -214,9 +214,8 @@ a { color: inherit; }
   .ab-in { grid-template-columns: 1fr; position: relative; }
   .ab-texto { position: relative; z-index: 2; }
   .ab-titulo { font-size: clamp(56px, 18vw, 96px); }
-  .ab-peca { position: absolute; right: -36%; bottom: -14%; width: 76%; opacity: .5; z-index: 1; }
+  .ab-peca { max-width: 320px; justify-self: start; margin-top: 8px; }
   .ab-bloco { inset: 30%; transform: none; }
-  .ab-logo { opacity: .35; }
   .secao, .sm { padding: 72px 0; }
   .fr-grade { grid-template-columns: 1fr; }
   .fr-c:not(.fr-destaque), .fr-destaque { grid-column: auto; }

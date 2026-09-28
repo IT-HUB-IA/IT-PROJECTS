@@ -25,7 +25,7 @@ export function Abertura() {
         </div>
         <motion.div className="ab-peca" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.7, delay: 0.1 }} aria-hidden="true">
           <div className="ab-listras listras listras-movendo" />
-          <div className="ab-bloco"><Logo className="ab-logo" titulo="" /></div>
+          <div className="ab-bloco"><Logo className="ab-logo" titulo="" cor="#050506" ponto="#FFFFFF" /></div>
         </motion.div>
       </div>
     </section>
