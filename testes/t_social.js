@@ -96,7 +96,7 @@ window.supabase = { createClient(){ const sess = window.__sessao; return { auth:
 
   // CPF que já é de outra conta
   psqlRaw("delete from public.pessoas_privado where pessoa_id = (select id from public.pessoas where email = 'maria@teste.com')");
-  p = await abrir(M, {user:{id:M.uid, email:M.email, app_metadata:{provider:'github'}}});
+  p = await abrir(M, {user:{id:M.uid, email:M.email, app_metadata:{provider:'google'}}});
   await p.fill(cad + ' [name=nome]', 'Maria Souza'); await p.fill(cad + ' [name=nascimento]', '1992-07-01'); await p.type(cad + ' [name=cpf]', '52998224725');
   await p.click(cad + ' .entrada-botao'); await p.type(cad + ' [name=cep]', '01310100'); await p.waitForTimeout(400); await p.fill(cad + ' [name=numero]', '10');
   await p.click(cad + ' .entrada-botao'); await p.click(cad + ' .entrada-opcoes input[value=pessoal]'); await p.click(cad + ' .entrada-botao');
@@ -112,15 +112,11 @@ window.supabase = { createClient(){ const sess = window.__sessao; return { auth:
 
   // botões de login com as outras contas
   p = await abrir(W, null);
-  ok(await p.$$eval('[data-etapa="login"] [data-provedor]', b => b.map(x => x.innerText).join(',')) === 'Google,GitHub,Apple,Microsoft', 'tela de entrar tem Google, GitHub, Apple e Microsoft');
+  ok(await p.$$eval('[data-etapa="login"] [data-provedor]', b => b.map(x => x.innerText).join(',')) === 'Google', 'tela de entrar tem só o botão do Google');
   await p.screenshot({ path: 'soc_login.png' });
   await p.click('[data-etapa="login"] [data-provedor=google]'); await p.waitForTimeout(200);
   const oa = await p.evaluate(() => window.__oauth);
   ok(oa && oa.provider === 'google' && /index\.html$/.test(oa.options.redirectTo), 'Google chama o login do Supabase e volta para o sistema');
-  await p.click('[data-etapa="login"] [data-provedor=azure]'); await p.waitForTimeout(200);
-  ok((await p.evaluate(() => window.__oauth)).provider === 'azure' && (await p.evaluate(() => window.__oauth.options.scopes)) === 'email', 'Microsoft pede o e-mail');
-  await p.click('[data-etapa="login"] [data-provedor=apple]'); await p.waitForTimeout(200);
-  ok(/Apple ainda não foi ativado/.test(await p.innerText('[data-etapa="login"] [data-erro]')), 'provedor desligado no Supabase avisa em vez de dar erro');
   await p.click('text=Criar conta grátis'); await p.waitForTimeout(200);
   ok(await p.isVisible('[data-etapa="cadastro"] [data-sociais]'), 'cadastro também oferece as contas no primeiro passo');
   await p.screenshot({ path: 'soc_cadastro.png' });

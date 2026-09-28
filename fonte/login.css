@@ -132,7 +132,7 @@ body.com-login.logado #entrada{display:none}
 
 /* entrar com Google, GitHub, Apple ou Microsoft */
 .entrada-sociais{display:flex;flex-direction:column;gap:14px}
-.entrada-sociais-botoes{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.entrada-sociais-botoes{display:grid;grid-template-columns:1fr;gap:8px}
 .entrada-social{display:flex;align-items:center;justify-content:center;gap:10px;height:44px;border:1px solid var(--nevoa);background:var(--branco);color:var(--preto);font:inherit;font-size:14px;font-weight:600;cursor:pointer}
 .entrada-social:hover{border-color:var(--preto);background:var(--preto-04)}
 .entrada-social:focus-visible{outline:2px solid var(--preto);outline-offset:2px}

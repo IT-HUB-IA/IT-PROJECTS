@@ -76,7 +76,7 @@ P = [
 ('Dados que tratamos', '''<ul>
 <li><b>Conta:</b> nome, e-mail, número de ID, nome de usuário (opcional) e senha, que é guardada protegida e nunca em texto aberto.</li>
 <li><b>Cadastro:</b> nome completo, data de nascimento, CPF, endereço, finalidade de uso, cargo ou curso e empresa ou instituição.</li>
-<li><b>Login com outras contas:</b> se você entrar com Google, GitHub, Apple ou Microsoft, recebemos o nome, o e-mail, a foto e o identificador da conta. Não recebemos a sua senha dessas contas.</li>
+<li><b>Login com Google:</b> se você entrar com a sua conta Google, recebemos o nome, o e-mail, a foto e o identificador da conta. Não recebemos a sua senha do Google.</li>
 <li><b>Conteúdo:</b> o que você e as pessoas com quem você trabalha colocam no Sistema, como clientes, projetos, tarefas, comentários, links, equipes, custos e demais registros.</li>
 <li><b>Uso e acesso:</b> data e hora das entradas, telas abertas, tempo de uso, desempenho e erros da tela, endereço IP e tipo de navegador.</li>
 </ul>
@@ -94,7 +94,7 @@ P = [
 <li><b>Quem trabalha com você</b> (pessoas com quem você compartilha algo, ou da mesma equipe) vê o seu nome, e-mail, número de ID, nome de usuário e perfil no Team, além do conteúdo compartilhado. Essas pessoas <b>não</b> veem os seus dados de cadastro (como CPF, nascimento e endereço) nem os seus dados de uso.</li>
 <li><b>A IT.IA</b> acessa os dados de conta, de cadastro e de uso para dar suporte, prevenir fraudes e manter o Sistema funcionando. A IT.IA não acessa o conteúdo dos seus projetos, salvo quando você pedir suporte ou quando a lei exigir.</li>
 </ul>'''),
-('Com quem compartilhamos', '''<p>Usamos fornecedores para hospedar o Sistema, guardar os dados, enviar e-mails e oferecer o login com outras contas. Eles recebem só o necessário para a sua parte do serviço. A lista atualizada está na página <a href="/fornecedores">Fornecedores</a>.</p>
+('Com quem compartilhamos', '''<p>Usamos fornecedores para hospedar o Sistema, guardar os dados, enviar e-mails e oferecer o login com Google. Eles recebem só o necessário para a sua parte do serviço. A lista atualizada está na página <a href="/fornecedores">Fornecedores</a>.</p>
 <p>Fora isso, a IT.IA só compartilha dados quando a lei ou uma ordem judicial exigir, ou para defender direitos em processo judicial, administrativo ou arbitral.</p>'''),
 ('Transferência internacional', '''<p>Alguns fornecedores ficam fora do Brasil. Nesses casos, a transferência segue o art. 33 da LGPD, e a IT.IA escolhe fornecedores que oferecem garantias de proteção de dados.</p>'''),
 ('Por quanto tempo guardamos', '''<ul>
@@ -122,7 +122,7 @@ T = [
 <li>É preciso ter 18 anos ou mais e informar dados verdadeiros e atualizados.</li>
 <li>A conta é pessoal: uma por pessoa. Não compartilhe a sua senha.</li>
 <li>Você é responsável pelo que for feito com a sua conta. Se perceber uso indevido, troque a senha e avise {SUPORTE}.</li>
-<li>Se você entrar com Google, GitHub, Apple ou Microsoft, o uso dessas contas também segue as regras de cada serviço.</li>
+<li>Se você entrar com a sua conta Google, o uso dela também segue as regras do Google.</li>
 </ul>'''),
 ('Uso proibido', '''<p>Não é permitido usar o Sistema para:</p>
 <ul>
@@ -144,7 +144,7 @@ T = [
 <li>O conteúdo continua sendo de quem compartilhou. Se essa pessoa retirar o acesso ou encerrar a conta, você deixa de ver esse conteúdo.</li>
 </ul>'''),
 ('Sugestões', '''<p>Se você enviar sugestões ou ideias sobre o Sistema, a IT.IA pode usá-las livremente para melhorar o Sistema, sem precisar dar crédito.</p>'''),
-('Propriedade intelectual', '''<p>O Sistema, a marca CicloDev, o design e o código pertencem à IT.IA. Estes Termos dão a você só o direito de usar o Sistema, de forma pessoal e intransferível, enquanto a sua conta estiver ativa. Marcas de terceiros citadas (como Google, GitHub, Apple e Microsoft) pertencem aos seus donos.</p>'''),
+('Propriedade intelectual', '''<p>O Sistema, a marca CicloDev, o design e o código pertencem à IT.IA. Estes Termos dão a você só o direito de usar o Sistema, de forma pessoal e intransferível, enquanto a sua conta estiver ativa. Marcas de terceiros citadas, como Google, pertencem aos seus donos.</p>'''),
 ('Disponibilidade', '''<p>A IT.IA trabalha para manter o Sistema funcionando, mas podem ocorrer interrupções para manutenção, atualizações ou por falhas de serviços de terceiros. Quando possível, avisaremos manutenções programadas.</p>'''),
 ('Responsabilidades', '''<ul>
 <li>A IT.IA responde pelos danos que causar, nos termos da lei, inclusive do Código de Defesa do Consumidor quando ele se aplicar.</li>
@@ -169,7 +169,7 @@ F = [
 <tr><td>Supabase</td><td>Banco de dados e login</td><td>Dados guardados no Brasil; empresa nos Estados Unidos</td></tr>
 <tr><td>Vercel</td><td>Hospedagem das páginas</td><td>Estados Unidos</td></tr>
 <tr><td>Resend</td><td>Envio de e-mails da conta</td><td>Estados Unidos</td></tr>
-<tr><td>Google, GitHub, Apple e Microsoft</td><td>Login, só se você escolher entrar com uma dessas contas</td><td>Estados Unidos</td></tr>
+<tr><td>Google</td><td>Login, só se você escolher entrar com a sua conta Google</td><td>Estados Unidos</td></tr>
 <tr><td>ViaCEP</td><td>Preencher o endereço a partir do CEP (recebe só o CEP)</td><td>Brasil</td></tr>
 <tr><td>Google Fonts e jsDelivr</td><td>Entrega de fontes e bibliotecas da tela (recebem só dados técnicos do navegador)</td><td>Estados Unidos</td></tr>
 </tbody></table></div>
