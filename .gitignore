@@ -3,3 +3,6 @@ node_modules/
 .DS_Store
 fonte/vercel/
 fonte/sistema.html
+
+# ícones do site (o *.png acima é para prints de teste)
+!publico/*.png

@@ -159,7 +159,7 @@ _os.makedirs('vercel', exist_ok=True)
 _v = html.replace('</style>', _login_css + '\n</style>', 1)
 _v = _v.replace('<div class="dica" id="dica" hidden></div>', _login_html + '<div class="dica" id="dica" hidden></div>', 1)
 _v = _v + '<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>\n<script>\n' + _login_js + '\n</script>\n'
-_v = '<!doctype html>\n<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex"><style>[hidden]{display:none!important}html,body{height:100%}</style></head><body>\n<script>document.body.classList.add("com-login")</script>\n' + _v + '\n</body></html>\n'
+_v = '<!doctype html>\n<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png"><link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest"><meta name="theme-color" content="#0B0B0C"><style>[hidden]{display:none!important}html,body{height:100%}</style></head><body>\n<script>document.body.classList.add("com-login")</script>\n' + _v + '\n</body></html>\n'
 assert _login_html[:20] in _v and 'com-login' in _v
 open('vercel/index.html', 'w', encoding='utf-8').write(_v)
 print('vercel/index.html', len(_v))
