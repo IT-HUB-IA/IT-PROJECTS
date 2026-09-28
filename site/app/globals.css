@@ -117,7 +117,7 @@ a { color: inherit; }
 .ab-ctas { display: flex; flex-wrap: wrap; gap: 10px; }
 .ab-peca { position: relative; aspect-ratio: 1; width: 100%; max-width: 440px; justify-self: end; }
 .ab-listras { position: absolute; inset: 0; }
-.ab-bloco { position: absolute; inset: 22%; background: var(--preto); display: grid; place-items: center; transform: translate(-8%, 6%); }
+.ab-bloco { position: absolute; inset: 22%; background: var(--preto); display: grid; place-items: center; }
 .ab-logo { width: 46%; height: auto; }
 
 /* ---------- seções sobre o papel ---------- */
