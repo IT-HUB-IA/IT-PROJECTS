@@ -452,3 +452,10 @@
 
 /* Board: coluna até o fim da tela (a altura vem de esticarColunas) */
 .board > .coluna{min-height:var(--col-min,420px)}
+
+/* As empresas do projeto (produtos) também ganham a camada vermelha leve com a borda; a setinha fica no vermelho da borda */
+.no-arv[data-no^="product:"]::before{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--vermelho)}
+.no-arv[data-no^="product:"]:not(.escolhido){background:rgba(255,0,0,.07)}
+.no-arv[data-no^="product:"]:not(.escolhido):hover{background:rgba(255,0,0,.13)}
+.no-arv[data-no^="product:"]{margin-bottom:1px}
+.no-arv[data-no^="project:"] .seta,.no-arv[data-no^="product:"] .seta,.no-arv[data-no^="app:"] .seta{color:var(--vermelho)}
