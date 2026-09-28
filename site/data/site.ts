@@ -31,11 +31,21 @@ export const produtos: Produto[] = [
 
 
 // o que a IT.IA faz
-export const frentes = [
-  { rot: "Sob medida", nome: "Sistemas para a sua operação", texto: "Entendemos como o trabalho acontece e entregamos o sistema feito para ele: web, app, integração ou robô.", itens: ["Processos que hoje vivem em planilha", "Sistemas antigos que travam a operação", "Integração entre ferramentas que não conversam"] },
-  { rot: "Produtos", nome: "Sistemas prontos da IT.IA", texto: "Cada problema que resolvemos bem vira produto, com número de série no catálogo.", itens: ["CicloDev, gestão do desenvolvimento de software", "Novos sistemas na linha de produção"] },
-  { rot: "IA aplicada", nome: "Agentes dentro dos sistemas", texto: "Inteligência artificial que trabalha com os dados do sistema, respeita as permissões de cada pessoa e só age com confirmação.", itens: ["Planejamento e análise", "Segurança e revisão", "Atendimento e rotinas"] },
-  { rot: "Laboratório", nome: "Pesquisa aplicada em IA", texto: "Testamos cada avanço de inteligência artificial antes de levar para os sistemas. As análises ficam abertas no Instagram.", itens: ["Análise dos novos modelos e ferramentas", "Aplicações validadas em sistemas reais"] },
+export type Frente = { rot: string; nome: string; texto: string; itens: string[]; link?: { href: string; txt: string; externo?: boolean } };
+
+export const sobMedida = {
+  rot: "Sob medida",
+  nome: "Sistemas feitos para a sua operação",
+  texto: "Entendemos como o trabalho acontece e construímos o sistema em volta dele, não o contrário.",
+  formatos: ["Sistema web", "Aplicativo", "Integração", "Automação"],
+  hoje: ["Dados espalhados em planilhas", "Processo que depende de uma pessoa", "Ferramentas que não conversam", "Retrabalho para achar uma informação"],
+  depois: ["Cada informação em um lugar só", "Processo com regras e etapas claras", "Tudo integrado, sem copiar e colar", "Histórico de quem fez o quê"],
+};
+
+export const frentes: Frente[] = [
+  { rot: "Produtos", nome: "Produtos próprios, prontos para usar", texto: "Quando resolvemos bem um problema que muitas empresas têm, ele vira produto no catálogo.", itens: ["CicloDev: gestão do desenvolvimento de software", "Novos produtos em desenvolvimento"], link: { href: "#catalogo", txt: "Ver o catálogo" } },
+  { rot: "IA aplicada", nome: "Inteligência artificial dentro do sistema", texto: "Agentes que trabalham com os dados do próprio sistema, respeitam a permissão de cada pessoa e só agem com confirmação.", itens: ["Planejamento e priorização de projetos", "Revisão de segurança de código e banco de dados", "Atendimento e rotinas automatizadas"], link: { href: "#regras", txt: "Ver as regras da casa" } },
+  { rot: "Laboratório", nome: "Pesquisa aplicada em IA", texto: "Testamos cada avanço de inteligência artificial antes de levar para os sistemas. As análises ficam abertas no Instagram.", itens: ["Análise dos novos modelos e ferramentas", "Aplicações validadas em sistemas reais"], link: { href: "https://www.instagram.com/it.ia_official/", txt: "Seguir @it.ia_official", externo: true } },
 ];
 
 // o CicloDev no catálogo: só o essencial, o resto fica no site dele
