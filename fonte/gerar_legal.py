@@ -10,6 +10,7 @@ a{color:inherit}
 .barra{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
 .logo{font-family:var(--display);font-weight:700;font-size:24px;display:flex;align-items:center;gap:10px;text-decoration:none}
 .logo i{width:10px;height:10px;background:var(--vermelho);display:inline-block}
+.logo .marca-icone{width:36px;height:36px;flex:0 0 36px;display:block}
 .nav{display:flex;gap:6px;flex-wrap:wrap}
 .nav a{font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;color:var(--nevoa);padding:8px 12px;border:1px solid var(--grafite)}
 .nav a:hover,.nav a[aria-current]{color:var(--branco);border-color:var(--nevoa)}
@@ -52,7 +53,7 @@ def pagina(arq, titulo, olho, resumo, secoes, ativo):
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
 <style>{CSS}</style></head><body>
-<header class="topo"><div class="topo-in"><div class="barra"><a class="logo" href="/"><i aria-hidden="true"></i>CicloDev</a><nav class="nav" aria-label="Documentos">{nav}</nav></div>
+<header class="topo"><div class="topo-in"><div class="barra"><a class="logo" href="/"><svg class="marca-icone" viewBox="0 0 256 256" aria-hidden="true" focusable="false"> <rect width="256" height="256" rx="56" fill="#0B0B0C"/> <rect x="28" y="46" width="200" height="168" rx="10" fill="#F7F7F8"/> <path d="M38 46h180a10 10 0 0 1 10 10v24H28V56a10 10 0 0 1 10-10z" fill="#DCDCDF"/> <circle cx="50" cy="63" r="6.5" fill="#FF1F1F"/> <circle cx="70" cy="63" r="6.5" fill="#B4B4BA"/> <circle cx="90" cy="63" r="6.5" fill="#B4B4BA"/> <path d="M98 116l-32 32 32 32" fill="none" stroke="#0B0B0C" stroke-width="17" stroke-linecap="square" stroke-linejoin="miter"/> <path d="M158 116l32 32-32 32" fill="none" stroke="#0B0B0C" stroke-width="17" stroke-linecap="square" stroke-linejoin="miter"/> <path d="M146 104l-36 88" fill="none" stroke="#FF1F1F" stroke-width="15" stroke-linecap="square"/> </svg><i aria-hidden="true"></i>CicloDev</a><nav class="nav" aria-label="Documentos">{nav}</nav></div>
 <p class="olho">{html.escape(olho)}</p><h1>{html.escape(titulo)}</h1><p class="atual">Última atualização: {ATUAL}</p></div></header>
 <div class="corpo"><aside class="indice" aria-label="Índice"><b>Nesta página</b><ol>{ind}</ol></aside>
 <main><div class="resumo">{resumo}</div>{sec}</main></div>
