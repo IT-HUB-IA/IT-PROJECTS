@@ -50,9 +50,9 @@ function cmEscolher(inp, id){
   const f = inp.closest('form'); f._mencoes = (f._mencoes || []).filter(x => x.id !== p.id).concat({id:p.id, nome:p.nome});
   cmFecharLista(); inp.focus();
 }
-document.addEventListener('input', e => { if (e.target.matches && e.target.matches('form[data-form="coment"] input[name="t"]')) cmMostrarLista(e.target); });
+document.addEventListener('input', e => { if (e.target.matches && e.target.matches('form[data-form="coment"] [name="t"]')) cmMostrarLista(e.target); });
 document.addEventListener('keydown', e => {
-  const inp = e.target.closest && e.target.closest('form[data-form="coment"] input[name="t"]');
+  const inp = e.target.closest && e.target.closest('form[data-form="coment"] [name="t"]');
   const l = $('#cm-lista'); if (!inp || !l) return;
   const ops = $$('[data-cm-pessoa]', l); let ix = +(l.dataset.ix || 0);
   if (e.key === 'ArrowDown' || e.key === 'ArrowUp'){ e.preventDefault(); ix = (ix + (e.key === 'ArrowDown' ? 1 : ops.length - 1)) % ops.length; l.dataset.ix = ix; cmMostrarLista(inp); }
@@ -64,7 +64,7 @@ document.addEventListener('mousedown', e => { const o = e.target.closest('[data-
 document.addEventListener('submit', e => {
   const f = e.target; if (!f.matches || !f.matches('form[data-form="coment"]')) return;
   cmFecharLista();
-  const inp = f.querySelector('input[name="t"]'); if (!inp) return;
+  const inp = f.querySelector('[name="t"]'); if (!inp) return;
   let v = inp.value;
   (f._mencoes || []).forEach(m => { v = v.split('@' + m.nome).join('@[' + m.nome + '](' + m.id + ')'); });
   inp.value = v; f._mencoes = [];
@@ -80,7 +80,7 @@ const _abrirItemCm = abrirItem;
 abrirItem = function(id){
   const r = _abrirItemCm.apply(this, arguments);
   $$('#gaveta-wrap .g-com > div > div:last-child').forEach(d => { if (CM_TOKEN.test(d.textContent)){ CM_TOKEN.lastIndex = 0; d.innerHTML = cmHtml(d.textContent); } CM_TOKEN.lastIndex = 0; });
-  const inp = $('#gaveta-wrap form[data-form="coment"] input[name="t"]'); if (inp){ inp.placeholder = 'Escrever um comentário. Use @ para chamar alguém'; inp.setAttribute('autocomplete', 'off'); }
+  const inp = $('#gaveta-wrap form[data-form="coment"] [name="t"]'); if (inp){ inp.placeholder = 'Escrever um comentário. Use @ para chamar alguém'; inp.setAttribute('autocomplete', 'off'); }
   return r;
 };
 

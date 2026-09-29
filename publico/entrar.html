@@ -2244,6 +2244,62 @@ dialog.modal.modal-larga{max-width:min(960px,calc(100% - 32px))}
   .jn-item .sm-dobra{padding:0!important}
   .jn-item .sm-dobra > summary{padding:14px 16px}
 
+  /* cada bloco com a sua cara */
+  .jn-item .g-principal > *{max-width:760px;width:100%}
+  .jn-item .g-principal .g-add .btn,.jn-item .g-principal .g-add button[type="submit"]{min-width:104px;height:40px;justify-content:center}
+  .jn-item .g-principal .g-add .campo,.jn-item .g-principal .g-add .sel{height:40px}
+  .jn-item .g-lateral{min-width:0}
+  .jn-item .g-lateral > *{max-width:100%;min-width:0;box-sizing:border-box}
+  .jn-item .g-lateral .g-add{display:flex;gap:6px}
+  .jn-item .g-lateral .g-add .campo{flex:1;min-width:0}
+  /* descrição: uma folha de texto */
+  .jn-item .tf-desc .tf-ver{display:block;padding:14px 16px;background:var(--branco);border:1px solid var(--linha);min-height:72px;line-height:1.6}
+  .jn-item .tf-desc .tf-ver:hover{border-color:var(--linha-f)}
+  /* listas: caixa única, linhas e a linha de acrescentar embaixo */
+  .jn-caixa{border:1px solid var(--linha);background:var(--branco)}
+  .jn-caixa > .progresso{margin:0!important;height:3px;border:0}
+  .jn-caixa > .g-lista{margin:0;padding:0}
+  .jn-caixa > .g-lista > li{padding:10px 14px;border-bottom:1px solid var(--preto-04);min-height:44px;display:flex;align-items:center;gap:10px}
+  .jn-caixa > .jn-vazio,.jn-caixa > p.sec{margin:0;padding:12px 14px;font-size:13px;color:var(--tinta-3);border-bottom:1px solid var(--preto-04)}
+  .jn-caixa > .jn-add-linha{display:flex;gap:0;margin:0;background:var(--papel)}
+  .jn-caixa > .jn-add-linha .campo,.jn-caixa > .jn-add-linha .sel{border:0;background:transparent;height:44px;padding:0 14px}
+  .jn-caixa > .jn-add-linha .campo:focus{outline:0;background:var(--branco);box-shadow:inset 3px 0 0 var(--preto)}
+  .jn-caixa > .jn-add-linha .btn{height:44px;border:0;border-left:1px solid var(--linha)}
+  .jn-caixa > .jn-ligar{flex-wrap:nowrap;align-items:center;padding-left:14px}
+  .jn-caixa > .jn-ligar .sel{border-left:1px solid var(--linha)!important}
+  /* ligações: o tipo como etiqueta */
+  .jn-item .g-lk-tipo{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;background:var(--papel);border:1px solid var(--linha);white-space:nowrap}
+  /* campos do projeto: ficha nome | valor */
+  .jn-ficha{display:grid;border:1px solid var(--linha);background:var(--branco)}
+  .jn-ficha-lin{display:grid;grid-template-columns:180px minmax(0,1fr);align-items:center;gap:12px;padding:6px 14px;border-bottom:1px solid var(--preto-04);font-size:13px;color:var(--tinta-2)}
+  .jn-ficha-lin:last-child{border-bottom:0}
+  .jn-ficha-lin > .campo,.jn-ficha-lin > .sel{border:1px solid transparent;background:transparent;height:36px;width:100%;color:var(--preto);font-size:14px}
+  .jn-ficha-lin > .campo:hover,.jn-ficha-lin > .sel:hover{border-color:var(--linha)}
+  .jn-ficha-lin > .campo:focus,.jn-ficha-lin > .sel:focus{border-color:var(--preto);outline:0;background:var(--branco)}
+  /* comentários: conversa */
+  .jn-item .g-sec.jn-conversa{background:var(--papel);border:1px solid var(--linha);padding:18px}
+  .jn-msgs{display:grid;gap:12px}
+  .jn-msgs > p.sec{margin:0;font-size:13px;color:var(--tinta-3)}
+  .jn-item .jn-msgs .g-com{background:none;padding:0;gap:10px}
+  .jn-item .jn-msgs .g-com > div:last-child{background:var(--branco);border:1px solid var(--linha);padding:10px 14px;flex:1;min-width:0;line-height:1.5}
+  .jn-item .jn-msgs .g-com.cliente > div:last-child{border-color:#F2C4C4;background:#FFF7F7}
+  .jn-item .jn-msgs .g-com .quem{font-size:12px;font-weight:600;color:var(--preto)}
+  .jn-compositor{display:grid!important;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:start;margin-top:4px}
+  .jn-compositor .jn-escrever{min-height:64px;resize:none;padding:10px 12px;line-height:1.5;border-color:var(--linha-f);background:var(--branco)}
+  .jn-compositor .jn-escrever:focus{outline:0;border-color:var(--preto)}
+  .jn-compositor .btn{align-self:end}
+  @media (max-width:640px){ .jn-ficha-lin{grid-template-columns:1fr;gap:2px} .jn-compositor{grid-template-columns:minmax(0,1fr)} .jn-compositor > .avatar{display:none} .jn-caixa > .jn-ligar{flex-wrap:wrap} }
+  .jn-item .jn-msgs .g-com > div:last-child > div:last-child{white-space:pre-wrap;overflow-wrap:anywhere}
+  /* anexos: a mesma caixa das listas, com a área de soltar arquivo e a linha do link */
+  .jn-item [data-sm-sec="References"] .refs{border:1px solid var(--linha);background:var(--branco);display:grid;gap:0}
+  .jn-item [data-sm-sec="References"] .refs-grade{padding:12px 14px;border-bottom:1px solid var(--preto-04)}
+  .jn-item [data-sm-sec="References"] .solta{border:0;border-bottom:1px solid var(--preto-04);background:var(--branco);margin:0}
+  .jn-item [data-sm-sec="References"] .solta:hover{background:var(--papel)}
+  .jn-item [data-sm-sec="References"] .refs form{display:flex;gap:0;margin:0;background:var(--papel)}
+  .jn-item [data-sm-sec="References"] .refs form .campo{border:0;background:transparent;height:44px;padding:0 14px;flex:1;min-width:0}
+  .jn-item [data-sm-sec="References"] .refs form .campo:focus{outline:0;background:var(--branco);box-shadow:inset 3px 0 0 var(--preto)}
+  .jn-item [data-sm-sec="References"] .refs form .btn{height:44px;border:0;border-left:1px solid var(--linha);min-width:104px}
+
   .conteudo.sem-pad{padding:0;display:flex;flex-direction:column;flex:1}
   .conteudo.sem-pad > div{flex:1;display:flex;flex-direction:column}
 /* ===== Tela de login (só na versão publicada na Vercel) ===== */
@@ -9234,9 +9290,9 @@ function cmEscolher(inp, id){
   const f = inp.closest('form'); f._mencoes = (f._mencoes || []).filter(x => x.id !== p.id).concat({id:p.id, nome:p.nome});
   cmFecharLista(); inp.focus();
 }
-document.addEventListener('input', e => { if (e.target.matches && e.target.matches('form[data-form="coment"] input[name="t"]')) cmMostrarLista(e.target); });
+document.addEventListener('input', e => { if (e.target.matches && e.target.matches('form[data-form="coment"] [name="t"]')) cmMostrarLista(e.target); });
 document.addEventListener('keydown', e => {
-  const inp = e.target.closest && e.target.closest('form[data-form="coment"] input[name="t"]');
+  const inp = e.target.closest && e.target.closest('form[data-form="coment"] [name="t"]');
   const l = $('#cm-lista'); if (!inp || !l) return;
   const ops = $$('[data-cm-pessoa]', l); let ix = +(l.dataset.ix || 0);
   if (e.key === 'ArrowDown' || e.key === 'ArrowUp'){ e.preventDefault(); ix = (ix + (e.key === 'ArrowDown' ? 1 : ops.length - 1)) % ops.length; l.dataset.ix = ix; cmMostrarLista(inp); }
@@ -9248,7 +9304,7 @@ document.addEventListener('mousedown', e => { const o = e.target.closest('[data-
 document.addEventListener('submit', e => {
   const f = e.target; if (!f.matches || !f.matches('form[data-form="coment"]')) return;
   cmFecharLista();
-  const inp = f.querySelector('input[name="t"]'); if (!inp) return;
+  const inp = f.querySelector('[name="t"]'); if (!inp) return;
   let v = inp.value;
   (f._mencoes || []).forEach(m => { v = v.split('@' + m.nome).join('@[' + m.nome + '](' + m.id + ')'); });
   inp.value = v; f._mencoes = [];
@@ -9264,7 +9320,7 @@ const _abrirItemCm = abrirItem;
 abrirItem = function(id){
   const r = _abrirItemCm.apply(this, arguments);
   $$('#gaveta-wrap .g-com > div > div:last-child').forEach(d => { if (CM_TOKEN.test(d.textContent)){ CM_TOKEN.lastIndex = 0; d.innerHTML = cmHtml(d.textContent); } CM_TOKEN.lastIndex = 0; });
-  const inp = $('#gaveta-wrap form[data-form="coment"] input[name="t"]'); if (inp){ inp.placeholder = 'Escrever um comentário. Use @ para chamar alguém'; inp.setAttribute('autocomplete', 'off'); }
+  const inp = $('#gaveta-wrap form[data-form="coment"] [name="t"]'); if (inp){ inp.placeholder = 'Escrever um comentário. Use @ para chamar alguém'; inp.setAttribute('autocomplete', 'off'); }
   return r;
 };
 
@@ -9892,6 +9948,45 @@ function jnGaveta(i){
       const f = $('form[data-form="link"]', s); if (f){ f.classList.add('jn-ligar'); f.insertAdjacentHTML('afterbegin', '<span class="jn-este">Este item</span>'); }
     }
   });
+  // 4b. cada bloco com a cara do que ele é
+  const secao = k => $$(':scope > .g-sec', pri).find(x => x.dataset.smSec === k);
+  // listas (checklist, subitens, ligações): uma caixa só, com as linhas e a linha de acrescentar embaixo
+  const caixa = (s, formSel, dica) => {
+    if (!s) return;
+    const box = document.createElement('div'); box.className = 'jn-caixa';
+    const conteudo = $$(':scope > .progresso, :scope > .g-lista, :scope > .jn-vazio, :scope > p.sec', s);
+    conteudo.forEach(x => box.appendChild(x));
+    const f = $(formSel, s); if (f){ f.classList.add('jn-add-linha'); const c = $('input.campo[name="t"]', f); if (c && dica) c.placeholder = dica; box.appendChild(f); }
+    s.appendChild(box);
+  };
+  caixa(secao('Checklist'), 'form[data-form="check"]', '+ Escreva um passo e aperte Enter');
+  caixa(secao('Child issues'), 'form[data-rc-form="filho"]', '+ Escreva o título do subitem e aperte Enter');
+  caixa(secao('Links'), 'form[data-form="link"]');
+  // campos do projeto: nome à esquerda e valor à direita, como uma ficha
+  const cps = secao('Custom fields');
+  if (cps){ const gf = $('.grade-form', cps); if (gf){ gf.className = 'jn-ficha'; $$('label.lb', gf).forEach(l => { l.className = 'jn-ficha-lin'; }); } }
+  // comentários: conversa, com a caixa de escrever embaixo
+  const com = secao('Comments');
+  if (com){
+    com.classList.add('jn-conversa');
+    const lista = document.createElement('div'); lista.className = 'jn-msgs';
+    $$(':scope > .g-com, :scope > p.sec', com).forEach(x => lista.appendChild(x));
+    const f = $('form[data-form="coment"]', com);
+    com.insertBefore(lista, f || null);
+    if (f){
+      const inp = $('input[name="t"]', f);
+      if (inp){
+        const ta = document.createElement('textarea'); ta.name = 't'; ta.className = 'campo jn-escrever'; ta.rows = 2;
+        ta.placeholder = 'Escreva um comentário. Use @ para chamar alguém'; ta.setAttribute('aria-label', 'Escrever um comentário'); ta.autocomplete = 'off';
+        inp.replaceWith(ta);
+        ta.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)){ e.preventDefault(); f.requestSubmit(); } });
+        ta.addEventListener('input', () => { ta.style.height = 'auto'; ta.style.height = Math.min(220, Math.max(64, ta.scrollHeight + 2)) + 'px'; });
+      }
+      f.classList.add('jn-compositor');
+      f.insertAdjacentHTML('afterbegin', avatar(eu()));
+      const bt = $('button[type="submit"]', f); if (bt){ bt.classList.remove('sec'); bt.textContent = 'Comentar'; bt.title = 'Ctrl + Enter também envia'; }
+    }
+  }
   // 5. Arquivar e Excluir: numa barra de rodapé da janela, no lugar certo
   const rod = $('.tf-rodape-item', lat);
   if (rod){

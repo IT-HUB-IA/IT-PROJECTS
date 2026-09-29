@@ -108,6 +108,45 @@ function jnGaveta(i){
       const f = $('form[data-form="link"]', s); if (f){ f.classList.add('jn-ligar'); f.insertAdjacentHTML('afterbegin', '<span class="jn-este">Este item</span>'); }
     }
   });
+  // 4b. cada bloco com a cara do que ele é
+  const secao = k => $$(':scope > .g-sec', pri).find(x => x.dataset.smSec === k);
+  // listas (checklist, subitens, ligações): uma caixa só, com as linhas e a linha de acrescentar embaixo
+  const caixa = (s, formSel, dica) => {
+    if (!s) return;
+    const box = document.createElement('div'); box.className = 'jn-caixa';
+    const conteudo = $$(':scope > .progresso, :scope > .g-lista, :scope > .jn-vazio, :scope > p.sec', s);
+    conteudo.forEach(x => box.appendChild(x));
+    const f = $(formSel, s); if (f){ f.classList.add('jn-add-linha'); const c = $('input.campo[name="t"]', f); if (c && dica) c.placeholder = dica; box.appendChild(f); }
+    s.appendChild(box);
+  };
+  caixa(secao('Checklist'), 'form[data-form="check"]', '+ Escreva um passo e aperte Enter');
+  caixa(secao('Child issues'), 'form[data-rc-form="filho"]', '+ Escreva o título do subitem e aperte Enter');
+  caixa(secao('Links'), 'form[data-form="link"]');
+  // campos do projeto: nome à esquerda e valor à direita, como uma ficha
+  const cps = secao('Custom fields');
+  if (cps){ const gf = $('.grade-form', cps); if (gf){ gf.className = 'jn-ficha'; $$('label.lb', gf).forEach(l => { l.className = 'jn-ficha-lin'; }); } }
+  // comentários: conversa, com a caixa de escrever embaixo
+  const com = secao('Comments');
+  if (com){
+    com.classList.add('jn-conversa');
+    const lista = document.createElement('div'); lista.className = 'jn-msgs';
+    $$(':scope > .g-com, :scope > p.sec', com).forEach(x => lista.appendChild(x));
+    const f = $('form[data-form="coment"]', com);
+    com.insertBefore(lista, f || null);
+    if (f){
+      const inp = $('input[name="t"]', f);
+      if (inp){
+        const ta = document.createElement('textarea'); ta.name = 't'; ta.className = 'campo jn-escrever'; ta.rows = 2;
+        ta.placeholder = 'Escreva um comentário. Use @ para chamar alguém'; ta.setAttribute('aria-label', 'Escrever um comentário'); ta.autocomplete = 'off';
+        inp.replaceWith(ta);
+        ta.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)){ e.preventDefault(); f.requestSubmit(); } });
+        ta.addEventListener('input', () => { ta.style.height = 'auto'; ta.style.height = Math.min(220, Math.max(64, ta.scrollHeight + 2)) + 'px'; });
+      }
+      f.classList.add('jn-compositor');
+      f.insertAdjacentHTML('afterbegin', avatar(eu()));
+      const bt = $('button[type="submit"]', f); if (bt){ bt.classList.remove('sec'); bt.textContent = 'Comentar'; bt.title = 'Ctrl + Enter também envia'; }
+    }
+  }
   // 5. Arquivar e Excluir: numa barra de rodapé da janela, no lugar certo
   const rod = $('.tf-rodape-item', lat);
   if (rod){
