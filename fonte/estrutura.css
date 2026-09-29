@@ -1,0 +1,4 @@
+/* Estrutura: arrastar e soltar (estrutura.js) */
+.ops-arvore .no-arv.es-arrastando{opacity:.4}
+.ops-arvore .no-arv.es-antes{box-shadow:inset 0 2px 0 var(--vermelho)}
+.ops-arvore .no-arv.es-depois{box-shadow:inset 0 -2px 0 var(--vermelho)}

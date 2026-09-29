@@ -679,6 +679,7 @@ function tfAcoesNo(chave, ancora){
   const novoTxt = (TF_NIVEIS_DENTRO[tipo] || []).map(n => NOVO[n]).join(' ou ');
   const novoCap = novoTxt.charAt(0).toUpperCase() + novoTxt.slice(1);
   tfMenu(ancora, [
+    {txt:'Editar', sub:tipo === 'app' ? 'Nome e plataforma' : tipo === 'project' ? 'Nome e origem' : 'Mudar o nome', ico:TF_ICO.editar, acao:() => esEditar(chave)},
     tipo !== 'ws' && {txt:'Criar dentro', sub:novoCap, ico:TF_ICO.criar, acao:() => criarDentro(chave)},
     {txt:'Novo a partir de modelo', sub:novoCap + ', usando um modelo salvo', ico:TF_ICO.modelo, acao:() => tfUsarModelo(chave)},
     tipo !== 'client' && {txt:'Duplicar', sub:'Com tudo o que tem dentro', ico:TF_ICO.copia, acao:() => tfDuplicarNo(chave)},

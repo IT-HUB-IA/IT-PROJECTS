@@ -1121,7 +1121,7 @@ function montarDados(T, eu){
   const um = (lista, campo) => new Map(lista.map(x => [x[campo], x]));
   const cli = um(T.clientes, 'no_id'), prj = um(T.projetos, 'no_id'), apl = um(T.aplicacoes, 'no_id'), fre = um(T.frentes, 'no_id');
   const slas = agrupar(T.slas, 'no_id');
-  const base = n => ({id:n.id, nome:n.nome, status:ST_NO[n.status] || 'active', motivo:n.motivo_pausa || ''});
+  const base = n => ({id:n.id, nome:n.nome, status:ST_NO[n.status] || 'active', motivo:n.motivo_pausa || '', ordem:+n.ordem || 0});
   const ord = T.nos.slice().sort((a, b) => porOrdem(a, b) || String(a.nome).localeCompare(String(b.nome)));
   ord.forEach(n => {
     if (n.tipo === 'cliente'){ const c = cli.get(n.id) || {}; const s = slas.get(n.id);
@@ -1388,7 +1388,11 @@ function linhasDaTela(d){
     if (p.acesso === 'stakeholder' && p.escopo && p.escopo !== 'all' && idNo(p.escopo)) L.participacoes.push({pessoa_id:p.id, no_id:idNo(p.escopo), papel:'stakeholder'});
     if (p.custo){ const c = p.custo; L.pessoas_custos.push({id:garantirId(c), pessoa_id:p.id, vinculo:PARA_VINC[c.vinculo] || 'pj', salario:+c.salario || 0, prolabore:+c.prolabore || 0, valor_pj:+c.valorPJ || 0, beneficios:+c.beneficios || 0, vigente_desde:c._desde || (c._desde = iso(HOJE))}); }
   });
-  const no = (x, tipo, pai) => ({id:x.id, tipo, pai_id:pai || null, nome:x.nome, status:PARA_ST_NO[x.status] || 'ativo', motivo_pausa:x.status === 'on_hold' ? (x.motivo || 'Sem motivo informado') : semVazio(x.motivo)});
+  // a posição na Estrutura: quem ainda não tem (criado agora) vai para o fim, depois dos irmãos
+  const ordemDe = (lista, x, paiDe) => { if (x.ordem == null){ const irm = lista.filter(y => y !== x && y.ordem != null && (paiDe(y) || '') === (paiDe(x) || '')); x.ordem = irm.length ? Math.max(...irm.map(y => +y.ordem || 0)) + 1 : 0; } return +x.ordem || 0; };
+  const PAI_DE = {cliente:() => '', projeto:x => x.client, produto:x => x.project, aplicacao:x => x.product || x.project, frente:x => x.app};
+  const LISTA_DE = {cliente:d.clients, projeto:d.projects, produto:d.products, aplicacao:d.apps, frente:d.ws};
+  const no = (x, tipo, pai) => ({id:x.id, tipo, pai_id:pai || null, nome:x.nome, status:PARA_ST_NO[x.status] || 'ativo', motivo_pausa:x.status === 'on_hold' ? (x.motivo || 'Sem motivo informado') : semVazio(x.motivo), ordem:ordemDe(LISTA_DE[tipo], x, PAI_DE[tipo])});
   d.clients.forEach(c => { L.nos.push(no(c, 'cliente', null));
     L.clientes.push(Object.assign({no_id:c.id, tipo_cliente:c.tipo || 'empresa', documento:semVazio(c.doc), holding_id:c.holding || null}, Object.fromEntries(CAMPOS_FICHA_CLI.map(k => [k, semVazio(c.ficha && c.ficha[k])]))));
     Object.entries(c.sla || {}).forEach(([g, v]) => { if (v && +v[0] > 0) L.slas.push({no_id:c.id, gravidade:g, horas_resposta:+v[0], horas_solucao:Math.max(+v[1] || 0, +v[0])}); }); });
