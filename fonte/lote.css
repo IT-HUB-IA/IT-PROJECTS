@@ -1,0 +1,22 @@
+/* Fila: criar em lote (lote.js) */
+dialog.modal.lt-modal{width:min(1040px, calc(100vw - 32px));max-width:none}
+.lt-grade{display:grid;grid-template-columns:minmax(0, 1fr) minmax(0, 1fr);gap:20px;align-items:start}
+.lt-esq, .lt-dir{display:grid;gap:8px;min-width:0}
+.lt-texto{width:100%;min-height:320px;font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;font-size:13px;line-height:1.5;resize:vertical}
+.lt-regras{display:grid;gap:4px;font-size:13px;color:var(--tinta-2)}
+.lt-regras p{margin:0}
+.lt-regras .btn{justify-self:start;margin-top:4px}
+.lt-frentes{color:var(--tinta-3)}
+.lt-previa{border:1px solid var(--linha);padding:12px 14px;max-height:460px;overflow:auto;min-height:320px}
+.lt-vazio{margin:0;color:var(--tinta-3);font-size:13px}
+.lt-conta{margin:0 0 10px;font-size:14px}
+.lt-avisos{margin:0 0 10px;padding:8px 10px 8px 26px;background:var(--preto-04);border-left:3px solid var(--vermelho);font-size:13px}
+.lt-lista{margin:0;padding-left:20px;display:grid;gap:10px}
+.lt-ep{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}
+.lt-ep small{font-size:12px;color:var(--tinta-3)}
+.lt-sem{color:var(--tinta-2)}
+.lt-fr{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--tinta-3);border:1px solid var(--linha);padding:1px 6px}
+.lt-lista ul{margin:6px 0 0;padding-left:16px;display:grid;gap:3px;font-size:13px}
+.lt-lista ul li{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline}
+.lt-lista ul li > span:first-child{min-width:0;overflow-wrap:anywhere}
+@media (max-width:760px){ .lt-grade{grid-template-columns:1fr} .lt-texto, .lt-previa{min-height:200px} }
