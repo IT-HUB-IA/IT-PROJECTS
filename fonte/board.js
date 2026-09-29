@@ -234,13 +234,13 @@ function abrirConfigBoard(){
   const desenhar = dl => {
     const usados = new Map(); cfg.colunas.forEach(c => c.status.forEach(s => usados.set(s, c.id)));
     $('.modal-corpo', dl).innerHTML =
-      '<p class="sec" style="margin:0">Vale para ' + esc(nomeDe(alvoK)) + ' e tudo o que está dentro. Igual ao Board de um projeto no Jira.</p>' +
-      '<div class="grade-form"><label class="lb">Tipo do Board' + I('Scrum: trabalha em sprints; o Board mostra só o sprint ativo e o Backlog guarda o resto. Kanban: fluxo contínuo; o Board mostra tudo. Simples: como o Trello, só colunas.') +
-        '<select class="sel" data-bjc="tipo">' + [['kanban','Kanban'],['scrum','Scrum'],['simples','Simples (como o Trello)']].map(([v, n]) => '<option value="' + v + '"' + (cfg.tipo === v ? ' selected' : '') + '>' + n + '</option>').join('') + '</select></label>' +
-      '<label class="lb">Estimativa' + I('O que o Board soma em cada coluna e no sprint (Jira: estimation)') + '<select class="sel" data-bjc="estimativa">' + [['pontos','Story points'],['horas','Horas'],['contagem','Quantidade de itens'],['nenhuma','Nenhuma']].map(([v, n]) => '<option value="' + v + '"' + (cfg.estimativa === v ? ' selected' : '') + '>' + n + '</option>').join('') + '</select></label>' +
-      '<label class="lb"><span>Backlog separado</span><select class="sel" data-bjc="backlog"><option value="1"' + (cfg.backlog ? ' selected' : '') + '>Sim, o Backlog fica fora do Board</option><option value="0"' + (!cfg.backlog ? ' selected' : '') + '>Não</option></select></label>' +
-      '<label class="lb"><span>Subtarefas contam no limite</span><select class="sel" data-bjc="subtarefas"><option value="1"' + (cfg.subtarefas !== false ? ' selected' : '') + '>Sim</option><option value="0"' + (cfg.subtarefas === false ? ' selected' : '') + '>Não</option></select></label></div>' +
-      '<h3 class="bj-cfg-tit">Colunas</h3><p class="sec" style="margin:0 0 8px;font-size:13px">Cada coluna junta um ou mais status. A última coluna é a de concluído. Mínimo e máximo deixam a coluna amarela ou vermelha quando saem do limite.</p>' +
+      '<p class="sec" style="margin:0">Vale para ' + esc(nomeDe(alvoK)) + ' e tudo o que está dentro.</p>' +
+      '<div class="grade-form"><label class="lb">Forma de trabalhar' + I('Contínuo: o Quadro mostra tudo o que começou. Com sprints: o Quadro mostra só o sprint em andamento e a Fila guarda o resto. Só colunas: o mais simples, sem fila') +
+        '<select class="sel" data-bjc="tipo">' + [['kanban','Contínuo (sem sprints)'],['scrum','Com sprints de 1 ou 2 semanas'],['simples','Só colunas']].map(([v, n]) => '<option value="' + v + '"' + (cfg.tipo === v ? ' selected' : '') + '>' + n + '</option>').join('') + '</select></label>' +
+      '<label class="lb">O que somar em cada coluna' + I('O total que aparece no topo de cada coluna e do sprint') + '<select class="sel" data-bjc="estimativa">' + [['pontos','Pontos de esforço'],['horas','Horas estimadas'],['contagem','Quantidade de itens'],['nenhuma','Nada']].map(([v, n]) => '<option value="' + v + '"' + (cfg.estimativa === v ? ' selected' : '') + '>' + n + '</option>').join('') + '</select></label>' +
+      '<label class="lb"><span>Fila fora do Quadro</span><select class="sel" data-bjc="backlog"><option value="1"' + (cfg.backlog ? ' selected' : '') + '>Sim, o que está na fila não aparece no Quadro</option><option value="0"' + (!cfg.backlog ? ' selected' : '') + '>Não</option></select></label>' +
+      '<label class="lb"><span>Subtarefas contam no máximo da coluna</span><select class="sel" data-bjc="subtarefas"><option value="1"' + (cfg.subtarefas !== false ? ' selected' : '') + '>Sim</option><option value="0"' + (cfg.subtarefas === false ? ' selected' : '') + '>Não</option></select></label></div>' +
+      '<h3 class="bj-cfg-tit">Colunas do Quadro</h3><p class="sec" style="margin:0 0 8px;font-size:13px">Cada coluna junta uma ou mais situações. A última é a de concluído. Se passar do mínimo ou do máximo, a coluna fica amarela ou vermelha.</p>' +
       '<div class="bj-cfg-cols">' + cfg.colunas.map((c, k) => '<div class="bj-cfg-col" data-k="' + k + '">' +
         '<div class="bj-cfg-l1"><input class="campo" data-bjcol="nome" value="' + esc(c.nome) + '" aria-label="Nome da coluna">' +
         '<label class="bj-mini">Mín.<input class="campo" type="number" min="0" data-bjcol="min" value="' + (c.min ?? '') + '"></label><label class="bj-mini">Máx.<input class="campo" type="number" min="1" data-bjcol="max" value="' + (c.max ?? '') + '"></label>' +
@@ -249,11 +249,11 @@ function abrirConfigBoard(){
         '<div class="bj-cfg-sts">' + sts.map(s => { const dono = usados.get(s.id); const aqui = c.status.includes(s.id);
           return '<label class="bj-chk' + (dono && !aqui ? ' outra' : '') + '"><input type="checkbox" data-bjcol-st="' + esc(s.id) + '"' + (aqui ? ' checked' : '') + '>' + esc(s.nome) + (dono && !aqui ? ' <small>(em outra coluna)</small>' : '') + '</label>'; }).join('') + '</div></div>').join('') + '</div>' +
       '<button type="button" class="btn sec peq" data-bjcol-nova>' + ICO.mais + 'Adicionar outra coluna</button>' +
-      (sts.filter(s => !usados.has(s.id)).length ? '<p class="bj-sem-col">Status sem coluna (os itens neles não aparecem no Board): ' + sts.filter(s => !usados.has(s.id)).map(s => esc(s.nome)).join(', ') + '</p>' : '');
+      (sts.filter(s => !usados.has(s.id)).length ? '<p class="bj-sem-col">Situações sem coluna (os itens nelas não aparecem no Quadro): ' + sts.filter(s => !usados.has(s.id)).map(s => esc(s.nome)).join(', ') + '</p>' : '');
   };
-  const dl = modal('Configurar o Board', '', [{txt:'Cancelar', cls:'sec'}, {txt:'Salvar', acao:() => {
+  const dl = modal('Configurar o quadro', '', [{txt:'Cancelar', cls:'sec'}, {txt:'Salvar', acao:() => {
     cfg.colunas = cfg.colunas.filter(c => c.nome.trim()).map((c, k) => Object.assign(c, {ordem:k, nome:c.nome.trim()}));
-    if (!cfg.colunas.length){ toast('O Board precisa de pelo menos uma coluna'); return false; }
+    if (!cfg.colunas.length){ toast('O quadro precisa de pelo menos uma coluna'); return false; }
     if (cfg.colunas.some(c => c.min != null && c.max != null && c.max < c.min)){ toast('O máximo não pode ser menor que o mínimo'); return false; }
     cfg.colunas.forEach(c => c.status.sort((x, y) => ordemToken(x) - ordemToken(y)));
     D.boards[alvoK] = cfg; salvar(); rView(); toast('Board configurado');

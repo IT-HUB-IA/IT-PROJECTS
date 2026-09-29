@@ -2174,6 +2174,75 @@ dialog.modal.modal-larga{max-width:min(960px,calc(100% - 32px))}
   .pn-vazio,.pn-nota,.pn-mais{margin:0;font-size:13px;color:var(--grafite)}
   .pn-w > .btn{justify-self:start}
   @media (max-width:760px){ .mt-lista,.pn-grade{grid-template-columns:1fr} }
+/* ---------- Janelas: um padrão só para todas ---------- */
+  dialog.modal{border:1px solid var(--linha);border-top:3px solid var(--vermelho);box-shadow:0 24px 64px rgba(0,0,0,.22)}
+  .modal-cab{padding:18px 24px;border-bottom:1px solid var(--linha)}
+  .modal-cab h2{font-size:19px;line-height:1.25;text-wrap:balance}
+  .modal-corpo{padding:20px 24px 24px;gap:18px;font-size:14px;line-height:1.5}
+  .modal-rod{padding:14px 24px;border-top:1px solid var(--linha);background:var(--papel);flex-wrap:wrap;align-items:center}
+  .modal-rod .jn-esq{order:0}
+  .modal-rod .jn-ultimo-esq{margin-right:auto}
+  .modal-rod .btn.jn-perigo{background:var(--vermelho);border-color:var(--vermelho);color:#fff}
+  .modal-rod .btn.jn-perigo.jn-esq{background:var(--branco);color:var(--vermelho);border-color:#F2B8B8}
+
+  /* campos: rótulo em cima, legível; explicação escrita embaixo */
+  .modal-corpo .grade-form{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 18px}
+  .modal-corpo .grade-form > :only-child{grid-column:1/-1}
+  .modal-corpo label.lb.jn-campo{display:flex;flex-direction:column;align-items:stretch;gap:6px;font-size:13px;font-weight:600;letter-spacing:0;text-transform:none;color:var(--preto)}
+  .modal-corpo label.lb.jn-campo > .campo,.modal-corpo label.lb.jn-campo > .sel,.modal-corpo label.lb.jn-campo > textarea,.modal-corpo label.lb.jn-campo > input,.modal-corpo label.lb.jn-campo > select,.modal-corpo label.lb.jn-campo > .com-suf{flex:none;width:100%;font-weight:400}
+  .modal-corpo .campo,.modal-corpo .sel{height:40px;font-size:14px;border-color:var(--linha-f)}
+  .modal-corpo textarea.campo{height:auto;padding:10px 12px}
+  .modal-corpo .campo:focus,.modal-corpo .sel:focus{outline:2px solid var(--preto);outline-offset:-1px}
+  .jn-rot{display:block}
+  .jn-ajuda{display:block;font-size:12px;font-weight:400;line-height:1.4;color:var(--tinta-3);letter-spacing:0;text-transform:none}
+  .modal-corpo .jn-grupo{margin:6px 0 0;padding-top:14px;border-top:1px solid var(--linha);font-family:var(--font-body);font-size:15px;font-weight:700;letter-spacing:0;text-transform:none;color:var(--preto)}
+  .modal-corpo > .jn-grupo:first-child,.modal-corpo > .bloco-g:first-child > .jn-grupo{border-top:0;padding-top:0;margin-top:0}
+  .jn-grupo-ajuda{margin:-6px 0 0;font-size:12px;color:var(--tinta-3)}
+  .modal-corpo .rotulo-mini{font-family:var(--font-body);font-size:13px;font-weight:600;letter-spacing:0;text-transform:none;color:var(--preto)}
+  @media (max-width:640px){
+    .modal-corpo .grade-form{grid-template-columns:1fr}
+    .modal-cab,.modal-corpo,.modal-rod{padding-left:16px;padding-right:16px}
+    .modal-rod .jn-ultimo-esq{margin-right:0}
+    .modal-rod .btn{flex:1 1 auto}
+  }
+
+  /* ---------- janela do item ---------- */
+  .gaveta.jn-item{width:min(1080px,100%)}
+  .jn-item .gaveta-cab{padding:14px 24px}
+  .jn-item .g-titulo{font-size:26px}
+  .jn-item .g-principal{padding:24px 28px;gap:28px}
+  .jn-item .g-lateral{padding:24px 24px 24px 0;gap:14px}
+  .jn-item .g-sec.jn-sec{gap:8px}
+  .jn-item .g-sec > h4{font-family:var(--font-body);font-size:16px;font-weight:700;letter-spacing:0;text-transform:none;color:var(--preto);display:flex;align-items:center;gap:8px}
+  .jn-item .g-sec > h4 .g-cont{font-family:var(--font-mono);font-size:11px;font-weight:500;color:var(--tinta-2);background:var(--papel);padding:2px 7px}
+  .jn-sec-ajuda{margin:-6px 0 2px;font-size:13px;color:var(--tinta-3)}
+  .jn-vazio{margin:0;font-size:13px;color:var(--tinta-3)}
+  .jn-item .g-add{display:flex;gap:8px}
+  .jn-item .g-add .campo{flex:1;min-width:0}
+  .jn-ligar{align-items:center;flex-wrap:wrap}
+  .jn-ligar .jn-este{font-size:13px;color:var(--tinta-2);white-space:nowrap}
+  .jn-ligar select[name="tipo"]{flex:0 0 190px}
+  .jn-ligar select[name="alvo"]{flex:1 1 220px}
+  .jn-item .g-cartao{padding:16px}
+  .jn-item .g-cartao > h4,.jn-item .sm-dobra > summary h4{font-family:var(--font-body);font-size:14px;font-weight:700;letter-spacing:0;text-transform:none}
+  .jn-item .g-cartao > h4::before,.jn-item .sm-dobra > summary h4::before{display:none}
+  .jn-item .d-lin{grid-template-columns:104px minmax(0,1fr);min-height:38px;border-top:1px solid var(--preto-04)}
+  .jn-item .g-cartao > h4 + .d-lin{border-top:0}
+  .jn-item .d-rot{font-size:13px;color:var(--tinta-2);cursor:default}
+  .jn-item .d-rot[title]{text-decoration:underline dotted var(--linha-f);text-underline-offset:3px;cursor:help}
+  .jn-item .jn-chip{border:0!important;background:none!important;padding:0!important;font-size:13px;color:var(--preto);display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+  .jn-item .jn-chip:not(.ativo){color:var(--tinta-3)}
+  .jn-item .jn-chip:hover{text-decoration:underline}
+  .jn-item .sm-grupo > .rotulo-mini{font-family:var(--font-body);font-size:12px;font-weight:700;letter-spacing:.02em;text-transform:none;color:var(--tinta-2)}
+  .jn-rodape{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 24px;border-top:1px solid var(--linha);background:var(--papel)}
+  .jn-rodape .tf-rodape-item{display:flex;gap:8px;margin:0}
+  .jn-criado{font-size:12px;color:var(--tinta-3)}
+  @media (max-width:900px){ .jn-item .g-lateral{padding:0 24px 24px} }
+  @media (max-width:640px){ .jn-item .g-principal{padding:18px 16px} .jn-item .g-lateral{padding:0 16px 16px} .jn-rodape{padding:10px 16px} .jn-ligar select[name="tipo"]{flex:1 1 100%} }
+  .jn-item label.lb.jn-campo{display:flex;flex-direction:column;align-items:stretch;gap:6px;font-size:13px;font-weight:600;letter-spacing:0;text-transform:none;color:var(--preto)}
+  .jn-item label.lb.jn-campo > .campo,.jn-item label.lb.jn-campo > .sel{width:100%;font-weight:400}
+  .jn-item .sm-dobra{padding:0!important}
+  .jn-item .sm-dobra > summary{padding:14px 16px}
 
   .conteudo.sem-pad{padding:0;display:flex;flex-direction:column;flex:1}
   .conteudo.sem-pad > div{flex:1;display:flex;flex-direction:column}
@@ -4590,7 +4659,7 @@ function novoIssue(o){ return Object.assign({id:uid('is'), tipo:'task', titulo:'
 function novoItem(){
   const [tipo, id] = UI.sel.split(':');
   const wsList = D.ws.filter(w => { const a = byId('apps', w.app); if (tipo === 'ws') return w.id === id; if (tipo === 'app') return w.app === id; if (tipo === 'product') return a.product === id; if (tipo === 'project') return a.project === id; return true; });
-  modal('Novo item', '<div class="grade-form"><label class="lb largo">Título<input class="campo" id="ni-t"></label><label class="lb">Tipo' + I('Tipo do item: Epic é uma grande entrega, Story é uma funcionalidade que o usuário vê, Task é uma tarefa, Sub-task é um pedaço dela e Bug é um defeito') + '<select class="sel" id="ni-tipo">' + TIPOS.map(t => '<option value="' + t.id + '"' + (t.id === 'task' ? ' selected' : '') + '>' + t.nome + ' · ' + t.expl + '</option>').join('') + '</select></label><label class="lb">Onde' + I('Onde: a frente de trabalho em que o item fica, como Frontend ou Backend. Decide em qual parte da estrutura ele aparece') + '<select class="sel" id="ni-ws">' + wsList.map(w => '<option value="' + w.id + '">' + esc(byId('apps', w.app).nome + ' › ' + w.nome) + '</option>').join('') + '</select></label><label class="lb">Prioridade' + I('Priority (prioridade)') + '<select class="sel" id="ni-p">' + PRIOS.map(p => '<option value="' + p.id + '"' + (p.id === 'medium' ? ' selected' : '') + '>' + p.nome + ' · ' + p.expl + '</option>').join('') + '</select></label><label class="lb">Responsável<select class="sel" id="ni-r"><option value="">Sem responsável</option>' + D.people.filter(p => p.acesso !== 'stakeholder').map(p => '<option value="' + p.id + '">' + esc(p.nome) + '</option>').join('') + '</select></label><label class="lb">Início<input class="campo" type="date" id="ni-i" value="' + iso(HOJE) + '"></label><label class="lb">Prazo<input class="campo" type="date" id="ni-f" value="' + iso(dAdd(HOJE, 7)) + '"></label><label class="lb">Estimativa em horas' + I('Estimate (estimativa de esforço, em horas)') + '<input class="campo" type="number" min="0" id="ni-e" value="4"></label><label class="lb largo">Descrição<textarea class="campo" id="ni-d" rows="3"></textarea></label></div>' +
+  modal('Novo item', '<div class="grade-form"><label class="lb largo">Título<input class="campo" id="ni-t"></label><label class="lb">Tipo' + I('Tipo: épico é uma entrega grande, história é algo que o usuário vê, tarefa é trabalho a fazer, subtarefa é parte de uma tarefa e defeito é algo que não funciona') + '<select class="sel" id="ni-tipo">' + TIPOS.map(t => '<option value="' + t.id + '"' + (t.id === 'task' ? ' selected' : '') + '>' + t.nome + ' · ' + t.expl + '</option>').join('') + '</select></label><label class="lb">Onde' + I('Onde: a frente de trabalho em que o item fica, como Frontend ou Backend. Decide em qual parte da estrutura ele aparece') + '<select class="sel" id="ni-ws">' + wsList.map(w => '<option value="' + w.id + '">' + esc(byId('apps', w.app).nome + ' › ' + w.nome) + '</option>').join('') + '</select></label><label class="lb">Prioridade' + I('Priority (prioridade)') + '<select class="sel" id="ni-p">' + PRIOS.map(p => '<option value="' + p.id + '"' + (p.id === 'medium' ? ' selected' : '') + '>' + p.nome + ' · ' + p.expl + '</option>').join('') + '</select></label><label class="lb">Responsável<select class="sel" id="ni-r"><option value="">Sem responsável</option>' + D.people.filter(p => p.acesso !== 'stakeholder').map(p => '<option value="' + p.id + '">' + esc(p.nome) + '</option>').join('') + '</select></label><label class="lb">Início<input class="campo" type="date" id="ni-i" value="' + iso(HOJE) + '"></label><label class="lb">Prazo<input class="campo" type="date" id="ni-f" value="' + iso(dAdd(HOJE, 7)) + '"></label><label class="lb">Estimativa em horas' + I('Estimate (estimativa de esforço, em horas)') + '<input class="campo" type="number" min="0" id="ni-e" value="4"></label><label class="lb largo">Descrição<textarea class="campo" id="ni-d" rows="3"></textarea></label></div>' +
     '<div class="bloco-g"><h4>References' + I('References (referências: imagens, arquivos, áudios, vídeos e links que ajudam a entender o item)') + '</h4><label class="solta"><input type="file" multiple id="ni-refs" accept="image/*,audio/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip"><span class="solta-ico">' + ICO.clip + '</span><span><b>Adicionar referências</b><small id="ni-refs-n">Imagens, arquivos, áudios e vídeos. Pode escolher vários.</small></span></label><label class="lb">Link de referência<input class="campo" id="ni-link" placeholder="https://"></label></div>',
     [{txt:'Cancelar', cls:'sec'},{txt:'Criar item', acao:d => { const t = $('#ni-t', d).value.trim(); if (!t){ toast('Escreva o título'); return false; } const dados = {titulo:t, tipo:$('#ni-tipo', d).value, ws:$('#ni-ws', d).value, prio:$('#ni-p', d).value, resp:$('#ni-r', d).value || null, ini:$('#ni-i', d).value, fim:$('#ni-f', d).value, alvo:$('#ni-f', d).value, est:+$('#ni-e', d).value || 0, desc:$('#ni-d', d).value}; const lk = $('#ni-link', d).value.trim(); Promise.all(Array.from($('#ni-refs', d).files || []).map(lerArquivo)).then(refs => { if (lk) refs.push({nome:lk, tipo:'link', url:lk}); dados.refs = refs; const ni = novoIssue(dados); D.issues.push(ni); registrar('criou', ni); salvar(); rView(); toast(refs.length ? 'Item criado com ' + refs.length + (refs.length === 1 ? ' referência' : ' referências') : 'Item criado'); }); }}]);
 }
@@ -6484,13 +6553,13 @@ function abrirConfigBoard(){
   const desenhar = dl => {
     const usados = new Map(); cfg.colunas.forEach(c => c.status.forEach(s => usados.set(s, c.id)));
     $('.modal-corpo', dl).innerHTML =
-      '<p class="sec" style="margin:0">Vale para ' + esc(nomeDe(alvoK)) + ' e tudo o que está dentro. Igual ao Board de um projeto no Jira.</p>' +
-      '<div class="grade-form"><label class="lb">Tipo do Board' + I('Scrum: trabalha em sprints; o Board mostra só o sprint ativo e o Backlog guarda o resto. Kanban: fluxo contínuo; o Board mostra tudo. Simples: como o Trello, só colunas.') +
-        '<select class="sel" data-bjc="tipo">' + [['kanban','Kanban'],['scrum','Scrum'],['simples','Simples (como o Trello)']].map(([v, n]) => '<option value="' + v + '"' + (cfg.tipo === v ? ' selected' : '') + '>' + n + '</option>').join('') + '</select></label>' +
-      '<label class="lb">Estimativa' + I('O que o Board soma em cada coluna e no sprint (Jira: estimation)') + '<select class="sel" data-bjc="estimativa">' + [['pontos','Story points'],['horas','Horas'],['contagem','Quantidade de itens'],['nenhuma','Nenhuma']].map(([v, n]) => '<option value="' + v + '"' + (cfg.estimativa === v ? ' selected' : '') + '>' + n + '</option>').join('') + '</select></label>' +
-      '<label class="lb"><span>Backlog separado</span><select class="sel" data-bjc="backlog"><option value="1"' + (cfg.backlog ? ' selected' : '') + '>Sim, o Backlog fica fora do Board</option><option value="0"' + (!cfg.backlog ? ' selected' : '') + '>Não</option></select></label>' +
-      '<label class="lb"><span>Subtarefas contam no limite</span><select class="sel" data-bjc="subtarefas"><option value="1"' + (cfg.subtarefas !== false ? ' selected' : '') + '>Sim</option><option value="0"' + (cfg.subtarefas === false ? ' selected' : '') + '>Não</option></select></label></div>' +
-      '<h3 class="bj-cfg-tit">Colunas</h3><p class="sec" style="margin:0 0 8px;font-size:13px">Cada coluna junta um ou mais status. A última coluna é a de concluído. Mínimo e máximo deixam a coluna amarela ou vermelha quando saem do limite.</p>' +
+      '<p class="sec" style="margin:0">Vale para ' + esc(nomeDe(alvoK)) + ' e tudo o que está dentro.</p>' +
+      '<div class="grade-form"><label class="lb">Forma de trabalhar' + I('Contínuo: o Quadro mostra tudo o que começou. Com sprints: o Quadro mostra só o sprint em andamento e a Fila guarda o resto. Só colunas: o mais simples, sem fila') +
+        '<select class="sel" data-bjc="tipo">' + [['kanban','Contínuo (sem sprints)'],['scrum','Com sprints de 1 ou 2 semanas'],['simples','Só colunas']].map(([v, n]) => '<option value="' + v + '"' + (cfg.tipo === v ? ' selected' : '') + '>' + n + '</option>').join('') + '</select></label>' +
+      '<label class="lb">O que somar em cada coluna' + I('O total que aparece no topo de cada coluna e do sprint') + '<select class="sel" data-bjc="estimativa">' + [['pontos','Pontos de esforço'],['horas','Horas estimadas'],['contagem','Quantidade de itens'],['nenhuma','Nada']].map(([v, n]) => '<option value="' + v + '"' + (cfg.estimativa === v ? ' selected' : '') + '>' + n + '</option>').join('') + '</select></label>' +
+      '<label class="lb"><span>Fila fora do Quadro</span><select class="sel" data-bjc="backlog"><option value="1"' + (cfg.backlog ? ' selected' : '') + '>Sim, o que está na fila não aparece no Quadro</option><option value="0"' + (!cfg.backlog ? ' selected' : '') + '>Não</option></select></label>' +
+      '<label class="lb"><span>Subtarefas contam no máximo da coluna</span><select class="sel" data-bjc="subtarefas"><option value="1"' + (cfg.subtarefas !== false ? ' selected' : '') + '>Sim</option><option value="0"' + (cfg.subtarefas === false ? ' selected' : '') + '>Não</option></select></label></div>' +
+      '<h3 class="bj-cfg-tit">Colunas do Quadro</h3><p class="sec" style="margin:0 0 8px;font-size:13px">Cada coluna junta uma ou mais situações. A última é a de concluído. Se passar do mínimo ou do máximo, a coluna fica amarela ou vermelha.</p>' +
       '<div class="bj-cfg-cols">' + cfg.colunas.map((c, k) => '<div class="bj-cfg-col" data-k="' + k + '">' +
         '<div class="bj-cfg-l1"><input class="campo" data-bjcol="nome" value="' + esc(c.nome) + '" aria-label="Nome da coluna">' +
         '<label class="bj-mini">Mín.<input class="campo" type="number" min="0" data-bjcol="min" value="' + (c.min ?? '') + '"></label><label class="bj-mini">Máx.<input class="campo" type="number" min="1" data-bjcol="max" value="' + (c.max ?? '') + '"></label>' +
@@ -6499,11 +6568,11 @@ function abrirConfigBoard(){
         '<div class="bj-cfg-sts">' + sts.map(s => { const dono = usados.get(s.id); const aqui = c.status.includes(s.id);
           return '<label class="bj-chk' + (dono && !aqui ? ' outra' : '') + '"><input type="checkbox" data-bjcol-st="' + esc(s.id) + '"' + (aqui ? ' checked' : '') + '>' + esc(s.nome) + (dono && !aqui ? ' <small>(em outra coluna)</small>' : '') + '</label>'; }).join('') + '</div></div>').join('') + '</div>' +
       '<button type="button" class="btn sec peq" data-bjcol-nova>' + ICO.mais + 'Adicionar outra coluna</button>' +
-      (sts.filter(s => !usados.has(s.id)).length ? '<p class="bj-sem-col">Status sem coluna (os itens neles não aparecem no Board): ' + sts.filter(s => !usados.has(s.id)).map(s => esc(s.nome)).join(', ') + '</p>' : '');
+      (sts.filter(s => !usados.has(s.id)).length ? '<p class="bj-sem-col">Situações sem coluna (os itens nelas não aparecem no Quadro): ' + sts.filter(s => !usados.has(s.id)).map(s => esc(s.nome)).join(', ') + '</p>' : '');
   };
-  const dl = modal('Configurar o Board', '', [{txt:'Cancelar', cls:'sec'}, {txt:'Salvar', acao:() => {
+  const dl = modal('Configurar o quadro', '', [{txt:'Cancelar', cls:'sec'}, {txt:'Salvar', acao:() => {
     cfg.colunas = cfg.colunas.filter(c => c.nome.trim()).map((c, k) => Object.assign(c, {ordem:k, nome:c.nome.trim()}));
-    if (!cfg.colunas.length){ toast('O Board precisa de pelo menos uma coluna'); return false; }
+    if (!cfg.colunas.length){ toast('O quadro precisa de pelo menos uma coluna'); return false; }
     if (cfg.colunas.some(c => c.min != null && c.max != null && c.max < c.min)){ toast('O máximo não pode ser menor que o mínimo'); return false; }
     cfg.colunas.forEach(c => c.status.sort((x, y) => ordemToken(x) - ordemToken(y)));
     D.boards[alvoK] = cfg; salvar(); rView(); toast('Board configurado');
@@ -9712,6 +9781,130 @@ const _montarDadosRl = montarDados;
 montarDados = function(){ MT.cache = null; return _montarDadosRl.apply(this, arguments); };
 
 if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {rlCaminhoCritico, mtCarregar, MT, rMeuPainel, vRelatorios, rOperacoes, rView});
+
+/* ================= Janelas: um padrão só para todas as janelas do sistema e a janela do item organizada =================
+   Carrega por último. Não muda dado nenhum: só arruma o que as outras partes montaram. */
+
+/* ---------- texto de ajuda: o que estava escondido no "i" vira uma linha escrita ---------- */
+function jnAjuda(t){
+  let s = String(t || '').trim();
+  s = s.replace(/^[^:()]{1,40}\([^)]{1,80}\)\s*[:.]?\s*/, '');           // "Priority (prioridade): ..." vira só o texto
+  if (/^[^:]{1,40}:\s/.test(s) && s.indexOf(':') < 40) s = s.slice(s.indexOf(':') + 1).trim();
+  s = s.split(/(?<=[.!?])\s+/)[0] || s;                                   // só a primeira frase
+  s = s.replace(/[.]$/, '');
+  if (!s) return '';
+  s = s.charAt(0).toUpperCase() + s.slice(1);
+  return s.length > 140 ? s.slice(0, 137).replace(/\s+\S*$/, '') + '...' : s;
+}
+
+/* ---------- janelas (modal) ---------- */
+const JN_PERIGO = /^(excluir|apagar|remover|tirar|encerrar)/i;
+const JN_VOLTA = /^(cancelar|fechar|voltar|não|agora não)$/i;
+function jnArrumarCampos(dlg){
+  const corpo = $('.modal-corpo', dlg);
+  if (corpo){
+    // cada campo: rótulo legível em cima, explicação escrita embaixo
+    $$('label.lb', corpo).forEach(l => {
+      l.classList.add('jn-campo');
+      const inf = $(':scope > button.info', l);
+      if (inf){ const a = jnAjuda(inf.dataset.info); inf.remove(); if (a && !$(':scope > .jn-ajuda', l)) l.insertAdjacentHTML('beforeend', '<small class="jn-ajuda">' + esc(a) + '</small>'); }
+      const primeiro = [...l.childNodes].find(n => n.nodeType === 3 && n.textContent.trim());
+      if (primeiro){ const sp = document.createElement('span'); sp.className = 'jn-rot'; sp.textContent = primeiro.textContent.trim(); l.replaceChild(sp, primeiro); }
+    });
+    // títulos de grupo: letra normal, com o "i" virando explicação
+    $$('.bloco-g > h4, .modal-corpo > h3, .modal-corpo > h4', dlg).forEach(h => {
+      h.classList.add('jn-grupo');
+      const inf = $('button.info', h);
+      if (inf){ const a = jnAjuda(inf.dataset.info); inf.remove(); if (a) h.insertAdjacentHTML('afterend', '<p class="jn-grupo-ajuda">' + esc(a) + '</p>'); }
+    });
+  }
+}
+function jnArrumarJanela(dlg){
+  if (!dlg || dlg.dataset.jn) return; dlg.dataset.jn = '1';
+  jnArrumarCampos(dlg);
+  const corpo = $('.modal-corpo', dlg), rod = $('.modal-rod', dlg);
+  // janela que troca o próprio conteúdo depois de aberta: aplica o padrão de novo
+  if (corpo){ let t = 0; new MutationObserver(() => { clearTimeout(t); t = setTimeout(() => jnArrumarCampos(dlg), 0); }).observe(corpo, {childList:true, subtree:true}); }
+  if (rod){
+    const bs = $$(':scope > .btn', rod);
+    bs.forEach(b => {
+      const t = b.textContent.trim();
+      if (JN_PERIGO.test(t)){ b.classList.remove('sec', 'fant'); b.classList.add('jn-perigo'); }
+      if (JN_VOLTA.test(t)){ b.classList.remove('fant'); b.classList.add('sec', 'jn-volta'); }
+    });
+    // o principal (o último) fica na ponta direita; Cancelar/Fechar logo antes dele; o resto vai para a esquerda
+    const principal = bs[bs.length - 1];
+    const outros = bs.filter(b => b !== principal && !b.classList.contains('jn-volta'));
+    if (bs.length > 1 && outros.length){ outros.forEach(b => b.classList.add('jn-esq')); }
+    const volta = bs.find(b => b.classList.contains('jn-volta') && b !== principal);
+    if (volta && principal) rod.insertBefore(volta, principal);
+    if (outros.length){ outros.slice().reverse().forEach(b => rod.insertBefore(b, rod.firstChild)); outros[outros.length - 1].classList.add('jn-ultimo-esq'); }
+    if (bs.length === 1 && JN_VOLTA.test(bs[0].textContent.trim())) bs[0].classList.remove('sec');
+  }
+}
+const _modalJn = modal;
+modal = function(){ const d = _modalJn.apply(this, arguments); try { jnArrumarJanela(d); if (document.activeElement && document.activeElement.matches('[data-fechar]')){ const bs = $$('.modal-rod .btn', d); if (bs.length) bs[bs.length - 1].focus(); } } catch(e){} return d; };
+// janelas que outras partes montam depois de abrir (conteúdo trocado) também passam pelo padrão
+new MutationObserver(ms => { ms.forEach(m => m.addedNodes.forEach(n => { if (n.nodeType === 1){ const d = n.matches && n.matches('dialog.modal') ? n : null; if (d) setTimeout(() => jnArrumarJanela(d), 0); } })); }).observe(document.body, {childList:true});
+
+/* ---------- janela do item ---------- */
+function jnGaveta(i){
+  const g = $('#gaveta-wrap .gaveta'); if (!g || !i || g.dataset.jn) return; g.dataset.jn = '1';
+  const pri = $('.g-principal', g), lat = $('.g-lateral', g); if (!pri || !lat) return;
+  g.classList.add('jn-item');
+  // 1. sem repetição: situação e prioridade já estão em "Principal"; a faixa fica só com avisos
+  const faixa = $('.g-faixa', pri);
+  if (faixa){ $$(':scope > .st, :scope > .pr', faixa).forEach(x => x.remove()); if (!faixa.textContent.trim()) faixa.remove(); }
+  // 2. lembrete e repetir viram linhas do cartão Principal
+  const chips = $('.tf-chips', pri), cart = $(':scope > .g-cartao', lat);
+  if (chips && cart){
+    const lem = $('[data-tf-lembrete], .tf-chip:first-child', chips), rep = $('[data-tf-repetir]', chips) || $$('.tf-chip', chips)[1];
+    const linha = (rot, el) => { if (!el) return; const d = document.createElement('div'); d.className = 'd-lin jn-lin'; d.innerHTML = '<span class="d-rot">' + rot + '</span><span class="d-val"></span>'; el.classList.add('jn-chip'); d.lastChild.appendChild(el); cart.appendChild(d); };
+    linha('Lembrete', lem); linha('Repetir', rep);
+    chips.remove();
+  }
+  // 3. rótulos do lado direito: o "i" vira dica ao passar o mouse, sem poluir
+  $$('.d-rot > button.info', lat).forEach(b => { const r = b.parentElement; r.title = jnAjuda(b.dataset.info); b.remove(); });
+  $$('.g-cartao > h4 > button.info, .sm-dobra summary h4 button.info', lat).forEach(b => { b.closest('h4').title = jnAjuda(b.dataset.info); b.remove(); });
+  $$('label.lb', pri).forEach(l => { l.classList.add('jn-campo'); const inf = $(':scope > button.info', l); if (inf){ const a = jnAjuda(inf.dataset.info); inf.remove(); if (a) l.insertAdjacentHTML('beforeend', '<small class="jn-ajuda">' + esc(a) + '</small>'); } });
+  // 4. seções do corpo: título em letra normal, explicação curta embaixo, estado vazio claro
+  const JN_SEC = {
+    'Checklist':['Checklist', 'Passos para conferir antes de dar como pronto'],
+    'Child issues':['Subitens', 'As partes menores deste item'],
+    'References':['Anexos e links', 'Imagens, arquivos e links que ajudam a entender'],
+    'Links':['Ligações', 'Outros itens que dependem deste ou que têm relação com ele'],
+    'Custom fields':['Campos do projeto', 'Informações extras que este projeto pede em todo item'],
+    'Comments':['Comentários', 'Conversa sobre o item. Use @ para chamar alguém']
+  };
+  $$(':scope > .g-sec', pri).forEach(s => {
+    const h = $(':scope > h4', s); if (!h) return;
+    const k = s.dataset.smSec, def = JN_SEC[k];
+    $$('button.info', h).forEach(b => b.remove());
+    if (def){
+      const cont = $('.g-cont', h);
+      h.innerHTML = '<span class="jn-sec-tit">' + def[0] + '</span>' + (cont ? '<span class="g-cont">' + cont.textContent + '</span>' : '');
+      h.insertAdjacentHTML('afterend', '<p class="jn-sec-ajuda">' + def[1] + '</p>');
+    }
+    s.classList.add('jn-sec');
+    if (k === 'Checklist' && !$('.g-lista li', s)) { const ul = $('.g-lista', s); if (ul) ul.outerHTML = '<p class="jn-vazio">Nenhum passo ainda.</p>'; }
+    if (k === 'Links'){
+      const ul = $('.g-lista', s); if (ul && !$('li', ul)) ul.outerHTML = '<p class="jn-vazio">Nenhuma ligação.</p>';
+      const f = $('form[data-form="link"]', s); if (f){ f.classList.add('jn-ligar'); f.insertAdjacentHTML('afterbegin', '<span class="jn-este">Este item</span>'); }
+    }
+  });
+  // 5. Arquivar e Excluir: numa barra de rodapé da janela, no lugar certo
+  const rod = $('.tf-rodape-item', lat);
+  if (rod){
+    const barra = document.createElement('div'); barra.className = 'jn-rodape';
+    const quem = i.rep && pessoa(i.rep);
+    barra.innerHTML = '<span class="jn-criado">' + (i.criado ? 'Criado em ' + fmt(i.criado) : '') + (quem ? ' por ' + esc(quem.nome) : '') + '</span>';
+    barra.appendChild(rod); g.appendChild(barra);
+  }
+}
+const _abrirItemJn = abrirItem;
+abrirItem = function(id){ const r = _abrirItemJn.apply(this, arguments); try { jnGaveta(byId('issues', id)); } catch(e){ console.warn(e); } return r; };
+
+if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {abrirItem, jnAjuda, modal});
 
 abrirModulo(UI.modulo);
 })();
