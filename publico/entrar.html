@@ -2367,6 +2367,11 @@ dialog.modal.modal-larga{max-width:min(960px,calc(100% - 32px))}
 .ops-arvore .no-arv.es-arrastando{opacity:.4}
 .ops-arvore .no-arv.es-antes{box-shadow:inset 0 2px 0 var(--vermelho)}
 .ops-arvore .no-arv.es-depois{box-shadow:inset 0 -2px 0 var(--vermelho)}
+/* Configurações de cada trabalho (ajustes.js) */
+.aj-tela{max-width:1100px}
+.aj-intro{margin:0 0 8px}
+.aj-aviso{margin:12px 0 0;padding:10px 14px;border-left:3px solid var(--vermelho);background:var(--preto-04);max-width:760px}
+.rc-vem{display:block;font-size:12px}
 
   .conteudo.sem-pad{padding:0;display:flex;flex-direction:column;flex:1}
   .conteudo.sem-pad > div{flex:1;display:flex;flex-direction:column}
@@ -5505,46 +5510,53 @@ rOverview = function(){
 
 /* ---------- Settings: status personalizados, campos personalizados e automações ---------- */
 const nosDeProjeto = () => D.projects.map(p => ['project:' + p.id, p.nome]).concat(D.products.map(p => ['product:' + p.id, byId('projects', p.project).nome + ' › ' + p.nome])).concat(D.apps.map(a => ['app:' + a.id, (byId('projects', a.project) || {nome:''}).nome + ' › ' + a.nome]));
-const _rConfig = rConfig;
-rConfig = function(){
-  _rConfig();
-  const el = $('#m-configuracoes'); if (!el) return;
+// status, campos e automações são de um trabalho: aparecem na aba Configurações do projeto, produto ou aplicação (ajustes.js),
+// com o que vale ali (criado ali ou vindo de cima) e o que foi criado nas partes de dentro
+const rcDoLugar = (no, chave) => !chave || chave === 'all' || escoposAcima(chave).has(no) || caminho(no).some(p => p[0] === chave);
+const rcRedesenhar = () => { if (UI.modulo === 'operacoes' && UI.view === 'ajustes') rView(); else rConfig(); };
+function rcOpcoesLugar(){
+  const aqui = UI.modulo === 'operacoes' && UI.view === 'ajustes' ? UI.sel : null;
+  return nosDeProjeto().filter(([k]) => !aqui || k === aqui || caminho(k).some(p => p[0] === aqui)).map(([k, n]) => '<option value="' + k + '"' + (k === aqui ? ' selected' : '') + '>' + esc(n) + '</option>').join('');
+}
+function rcTrabalhoHTML(chave){
   const m = souMaster();
+  const SC = D.statusCustom.filter(x => rcDoLugar(x.no, chave)), CF = D.camposItem.filter(x => rcDoLugar(x.no, chave)), AU = D.automacoes.filter(x => rcDoLugar(x.no, chave));
+  const idsAu = new Set(AU.map(a => a.id)), LOG = D.autoLog.filter(r => idsAu.has(r.auto));
+  const onde = no => esc(nomeDe(no)) + (chave && no !== chave && escoposAcima(chave).has(no) ? '<small class="sec rc-vem">vem de cima</small>' : '');
   const pessoaNome = id => (pessoa(id) || {nome:'-'}).nome;
   const descAuto = a => { const c = a.cond || {}, p = a.param || {}; return [c.tipo ? 'tipo ' + tipoNome(c.tipo) : '', c.grupo ? 'status no grupo ' + GRUPO_NOME[c.grupo] : '', c.prio ? 'prioridade ' + prioNome(c.prio) : ''].filter(Boolean).join(' e ') || 'qualquer item'; };
   const descAcao = a => { const p = a.param || {}; return ({notificar:'Avisar ' + (p.pessoa ? pessoaNome(p.pessoa) : p.para === 'relator' ? 'quem abriu' : 'o responsável'), comentar:'Comentar: "' + (p.texto || '') + '"', mudar_prioridade:'Prioridade vira ' + prioNome(p.prio || 'high'), atribuir:'Passar para ' + pessoaNome(p.pessoa), mudar_status:'Status vira ' + ((D.statusCustom.find(x => x.id === p.status) || {}).nome || stNome(p.status)), marcar_visivel:'Deixar visível ao cliente'})[a.acao] || a.acao; };
   const html =
     '<h2 class="sub">Custom statuses' + I('Custom statuses (status personalizados): colunas novas do Board para um projeto, como "Aguardando cliente". Cada uma pertence a um grupo do fluxo, e os painéis somam pelo grupo.') + '</h2>' +
     '<div class="tabela-rolo"><table class="tabela"><thead><tr><th style="width:28%">Status</th><th>Grupo do fluxo</th><th>Vale em</th><th>Itens agora</th><th></th></tr></thead><tbody>' +
-      (D.statusCustom.length ? D.statusCustom.map(c => '<tr><th scope="row"><span class="st st-custom"><i style="background:' + esc(c.cor) + '"></i>' + esc(c.nome) + '</span></th><td>' + GRUPO_NOME[c.grupo] + '</td><td>' + esc(nomeDe(c.no)) + '</td><td>' + D.issues.filter(i => i.st === c.id && !i.arquivado).length + '</td><td>' + (m ? '<button class="btn fant peq" type="button" data-rc-cs-del="' + c.id + '">Excluir</button>' : '') + '</td></tr>').join('') : '<tr><td colspan="5" class="sec">Nenhum status personalizado.</td></tr>') +
+      (SC.length ? SC.map(c => '<tr><th scope="row"><span class="st st-custom"><i style="background:' + esc(c.cor) + '"></i>' + esc(c.nome) + '</span></th><td>' + GRUPO_NOME[c.grupo] + '</td><td>' + onde(c.no) + '</td><td>' + D.issues.filter(i => i.st === c.id && !i.arquivado).length + '</td><td>' + (m ? '<button class="btn fant peq" type="button" data-rc-cs-del="' + c.id + '">Excluir</button>' : '') + '</td></tr>').join('') : '<tr><td colspan="5" class="sec">Nenhum status personalizado.</td></tr>') +
     '</tbody></table></div>' + (m ? '<div class="acoes" style="margin-top:10px"><button class="btn sec" type="button" data-rc-acao="cs-novo">' + ICO.mais + 'Novo status</button></div>' : '') +
     '<h2 class="sub">Custom fields dos itens' + I('Custom fields (campos personalizados): informações extras que aparecem no item aberto, como "Ambiente" ou "Cliente final". Valem para o nível escolhido e tudo abaixo dele.') + '</h2>' +
     '<div class="tabela-rolo"><table class="tabela"><thead><tr><th style="width:28%">Campo</th><th>Tipo</th><th>Opções</th><th>Vale em</th><th></th></tr></thead><tbody>' +
-      (D.camposItem.length ? D.camposItem.map(c => '<tr><th scope="row">' + esc(c.nome) + '</th><td>' + ({texto:'Texto', numero:'Número', data:'Data', lista:'Lista', sim_nao:'Sim ou não', dinheiro:'Dinheiro'})[c.tipo] + '</td><td class="sec">' + esc((c.opcoes || []).join(', ')) + '</td><td>' + esc(nomeDe(c.no)) + '</td><td>' + (m ? '<button class="btn fant peq" type="button" data-rc-cf-del="' + c.id + '">Excluir</button>' : '') + '</td></tr>').join('') : '<tr><td colspan="5" class="sec">Nenhum campo personalizado.</td></tr>') +
+      (CF.length ? CF.map(c => '<tr><th scope="row">' + esc(c.nome) + '</th><td>' + ({texto:'Texto', numero:'Número', data:'Data', lista:'Lista', sim_nao:'Sim ou não', dinheiro:'Dinheiro'})[c.tipo] + '</td><td class="sec">' + esc((c.opcoes || []).join(', ')) + '</td><td>' + onde(c.no) + '</td><td>' + (m ? '<button class="btn fant peq" type="button" data-rc-cf-del="' + c.id + '">Excluir</button>' : '') + '</td></tr>').join('') : '<tr><td colspan="5" class="sec">Nenhum campo personalizado.</td></tr>') +
     '</tbody></table></div>' + (m ? '<div class="acoes" style="margin-top:10px"><button class="btn sec" type="button" data-rc-acao="cf-novo">' + ICO.mais + 'Novo campo</button></div>' : '') +
     '<h2 class="sub">Automations' + I('Automations (automações): regras do tipo "quando acontecer X, faça Y", que rodam sozinhas. Por exemplo: quando um bug for concluído, avisar quem abriu.') + '</h2>' +
     '<div class="tabela-rolo"><table class="tabela"><colgroup><col style="width:22%"><col style="width:18%"><col style="width:20%"><col style="width:20%"><col style="width:10%"><col style="width:10%"></colgroup><thead><tr><th>Nome</th><th>Quando</th><th>Se</th><th>Faça</th><th>Vale em</th><th></th></tr></thead><tbody>' +
-      (D.automacoes.length ? D.automacoes.map(a => '<tr' + (a.ativa ? '' : ' class="apagada"') + '><th scope="row">' + esc(a.nome) + '</th><td>' + esc((GATILHOS.find(g => g[0] === a.gatilho) || ['', a.gatilho])[1]) + '</td><td>' + esc(descAuto(a)) + '</td><td>' + esc(descAcao(a)) + '</td><td>' + esc(nomeDe(a.no)) + '</td><td>' + (m ? '<div class="acoes"><label class="rc-liga"><input type="checkbox" data-rc-auto-liga="' + a.id + '"' + (a.ativa ? ' checked' : '') + '> ' + (a.ativa ? 'Ligada' : 'Desligada') + '</label><button class="btn fant peq" type="button" data-rc-auto-del="' + a.id + '">Excluir</button></div>' : (a.ativa ? 'Ligada' : 'Desligada')) + '</td></tr>').join('') : '<tr><td colspan="6" class="sec">Nenhuma automação.</td></tr>') +
+      (AU.length ? AU.map(a => '<tr' + (a.ativa ? '' : ' class="apagada"') + '><th scope="row">' + esc(a.nome) + '</th><td>' + esc((GATILHOS.find(g => g[0] === a.gatilho) || ['', a.gatilho])[1]) + '</td><td>' + esc(descAuto(a)) + '</td><td>' + esc(descAcao(a)) + '</td><td>' + onde(a.no) + '</td><td>' + (m ? '<div class="acoes"><label class="rc-liga"><input type="checkbox" data-rc-auto-liga="' + a.id + '"' + (a.ativa ? ' checked' : '') + '> ' + (a.ativa ? 'Ligada' : 'Desligada') + '</label><button class="btn fant peq" type="button" data-rc-auto-del="' + a.id + '">Excluir</button></div>' : (a.ativa ? 'Ligada' : 'Desligada')) + '</td></tr>').join('') : '<tr><td colspan="6" class="sec">Nenhuma automação.</td></tr>') +
     '</tbody></table></div>' + (m ? '<div class="acoes" style="margin-top:10px"><button class="btn sec" type="button" data-rc-acao="auto-nova">' + ICO.mais + 'Nova automação</button></div>' : '') +
     '<h2 class="sub">Registro das automações</h2>' +
-    (D.autoLog.length ? '<div class="tabela-rolo"><table class="tabela"><thead><tr><th style="width:18%">Quando</th><th>Automação</th><th>Item</th><th>Resultado</th></tr></thead><tbody>' + D.autoLog.slice(0, 20).map(r => { const a = D.automacoes.find(x => x.id === r.auto), i = byId('issues', r.item); return '<tr><td>' + new Date(r.quando).toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}) + '</td><td>' + esc(a ? a.nome : 'Automação apagada') + '</td><td>' + (i ? '<button class="btn fant peq" type="button" data-abrir-item="' + i.id + '">' + esc(i.titulo) + '</button>' : '-') + '</td><td>' + (r.ok ? 'Feito' : 'Não rodou: ' + esc(r.det || '')) + '</td></tr>'; }).join('') + '</tbody></table></div>' : '<p class="sec" style="font-size:13px">Nenhuma automação rodou ainda.</p>');
-  const alvo = $$('#m-configuracoes h2.sub').find(h => h.textContent.startsWith('Dados deste protótipo'));
-  if (alvo) alvo.insertAdjacentHTML('beforebegin', html); else el.insertAdjacentHTML('beforeend', html);
-};
+    (LOG.length ? '<div class="tabela-rolo"><table class="tabela"><thead><tr><th style="width:18%">Quando</th><th>Automação</th><th>Item</th><th>Resultado</th></tr></thead><tbody>' + LOG.slice(0, 20).map(r => { const a = D.automacoes.find(x => x.id === r.auto), i = byId('issues', r.item); return '<tr><td>' + new Date(r.quando).toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}) + '</td><td>' + esc(a ? a.nome : 'Automação apagada') + '</td><td>' + (i ? '<button class="btn fant peq" type="button" data-abrir-item="' + i.id + '">' + esc(i.titulo) + '</button>' : '-') + '</td><td>' + (r.ok ? 'Feito' : 'Não rodou: ' + esc(r.det || '')) + '</td></tr>'; }).join('') + '</tbody></table></div>' : '<p class="sec" style="font-size:13px">Nenhuma automação rodou ainda.</p>');
+  return html;
+}
 function novoStatus(){
-  modal('Novo status', '<div class="grade-form"><label class="lb largo">Nome<input class="campo" id="cs-n" placeholder="Ex.: Aguardando cliente"></label><label class="lb">Grupo do fluxo<select class="sel" id="cs-g">' + Object.keys(GRUPO_NOME).map(k => '<option value="' + k + '">' + GRUPO_NOME[k] + '</option>').join('') + '</select></label><label class="lb">Cor<input class="campo" type="color" id="cs-c" value="#B04A00"></label><label class="lb largo">Vale em<select class="sel" id="cs-o">' + nosDeProjeto().map(([k, n]) => '<option value="' + k + '">' + esc(n) + '</option>').join('') + '</select></label></div>',
-    [{txt:'Cancelar', cls:'sec'}, {txt:'Criar status', acao:dl => { const n = $('#cs-n', dl).value.trim(); if (!n){ toast('Escreva o nome'); return false; } D.statusCustom.push({id:uid('cs'), no:$('#cs-o', dl).value, nome:n, cor:$('#cs-c', dl).value, grupo:$('#cs-g', dl).value}); salvar(); rConfig(); toast('Status criado. Ele já aparece no Board.'); }}]);
+  modal('Novo status', '<div class="grade-form"><label class="lb largo">Nome<input class="campo" id="cs-n" placeholder="Ex.: Aguardando cliente"></label><label class="lb">Grupo do fluxo<select class="sel" id="cs-g">' + Object.keys(GRUPO_NOME).map(k => '<option value="' + k + '">' + GRUPO_NOME[k] + '</option>').join('') + '</select></label><label class="lb">Cor<input class="campo" type="color" id="cs-c" value="#B04A00"></label><label class="lb largo">Vale em<select class="sel" id="cs-o">' + rcOpcoesLugar() + '</select></label></div>',
+    [{txt:'Cancelar', cls:'sec'}, {txt:'Criar status', acao:dl => { const n = $('#cs-n', dl).value.trim(); if (!n){ toast('Escreva o nome'); return false; } D.statusCustom.push({id:uid('cs'), no:$('#cs-o', dl).value, nome:n, cor:$('#cs-c', dl).value, grupo:$('#cs-g', dl).value}); salvar(); rcRedesenhar(); toast('Status criado. Ele já aparece no Board.'); }}]);
 }
 function novoCampo(){
-  modal('Novo campo dos itens', '<div class="grade-form"><label class="lb largo">Nome<input class="campo" id="cf-n" placeholder="Ex.: Ambiente"></label><label class="lb">Tipo<select class="sel" id="cf-t"><option value="texto">Texto</option><option value="numero">Número</option><option value="dinheiro">Dinheiro</option><option value="data">Data</option><option value="lista">Lista de opções</option><option value="sim_nao">Sim ou não</option></select></label><label class="lb">Opções (para lista, separadas por vírgula)<input class="campo" id="cf-op" placeholder="Teste, Produção"></label><label class="lb largo">Vale em<select class="sel" id="cf-o">' + nosDeProjeto().map(([k, n]) => '<option value="' + k + '">' + esc(n) + '</option>').join('') + '</select></label></div>',
+  modal('Novo campo dos itens', '<div class="grade-form"><label class="lb largo">Nome<input class="campo" id="cf-n" placeholder="Ex.: Ambiente"></label><label class="lb">Tipo<select class="sel" id="cf-t"><option value="texto">Texto</option><option value="numero">Número</option><option value="dinheiro">Dinheiro</option><option value="data">Data</option><option value="lista">Lista de opções</option><option value="sim_nao">Sim ou não</option></select></label><label class="lb">Opções (para lista, separadas por vírgula)<input class="campo" id="cf-op" placeholder="Teste, Produção"></label><label class="lb largo">Vale em<select class="sel" id="cf-o">' + rcOpcoesLugar() + '</select></label></div>',
     [{txt:'Cancelar', cls:'sec'}, {txt:'Criar campo', acao:dl => { const n = $('#cf-n', dl).value.trim(), t = $('#cf-t', dl).value; const op = $('#cf-op', dl).value.split(',').map(x => x.trim()).filter(Boolean);
       if (!n){ toast('Escreva o nome'); return false; } if (t === 'lista' && !op.length){ toast('Uma lista precisa de opções'); return false; }
-      D.camposItem.push({id:uid('cf'), no:$('#cf-o', dl).value, nome:n, tipo:t, opcoes:t === 'lista' ? op : []}); salvar(); rConfig(); toast('Campo criado. Ele aparece no item aberto.'); }}]);
+      D.camposItem.push({id:uid('cf'), no:$('#cf-o', dl).value, nome:n, tipo:t, opcoes:t === 'lista' ? op : []}); salvar(); rcRedesenhar(); toast('Campo criado. Ele aparece no item aberto.'); }}]);
 }
 function novaAutomacao(){
   const equipe = D.people.filter(p => p.acesso !== 'stakeholder');
   modal('Nova automação', '<div class="grade-form"><label class="lb largo">Nome<input class="campo" id="au-n" placeholder="Ex.: Bug concluído avisa quem abriu"></label>' +
-    '<label class="lb">Vale em<select class="sel" id="au-o">' + nosDeProjeto().map(([k, n]) => '<option value="' + k + '">' + esc(n) + '</option>').join('') + '</select></label>' +
+    '<label class="lb">Vale em<select class="sel" id="au-o">' + rcOpcoesLugar() + '</select></label>' +
     '<label class="lb">Quando<select class="sel" id="au-g">' + GATILHOS.map(([k, n]) => '<option value="' + k + '">' + n + '</option>').join('') + '</select></label>' +
     '<label class="lb">Se o tipo for<select class="sel" id="au-ct"><option value="">Qualquer tipo</option>' + TIPOS.map(t => '<option value="' + t.id + '">' + t.nome + '</option>').join('') + '</select></label>' +
     '<label class="lb">E o status estiver em<select class="sel" id="au-cg"><option value="">Qualquer status</option>' + Object.keys(GRUPO_NOME).map(k => '<option value="' + k + '">' + GRUPO_NOME[k] + '</option>').join('') + '</select></label>' +
@@ -5557,7 +5569,7 @@ function novaAutomacao(){
       const pp = $('#au-pp', dl).value, ac = $('#au-a', dl).value, tx = $('#au-tx', dl).value.trim();
       const param = {notificar:{pessoa: pp && pp !== 'relator' ? pp : null, para: pp === 'relator' ? 'relator' : 'responsavel', titulo:tx || n}, comentar:{texto:tx || n}, mudar_prioridade:{prio:$('#au-pr', dl).value}, atribuir:{pessoa: pp && pp !== 'relator' ? pp : null}, mudar_status:{status:$('#au-st', dl).value}, marcar_visivel:{}}[ac];
       if (ac === 'atribuir' && !param.pessoa){ toast('Escolha a pessoa'); return false; }
-      D.automacoes.push({id:uid('au'), no:$('#au-o', dl).value, nome:n, gatilho:$('#au-g', dl).value, cond:{tipo:$('#au-ct', dl).value || undefined, grupo:$('#au-cg', dl).value || undefined}, acao:ac, param, ativa:true}); salvar(); rConfig(); toast('Automação criada e ligada'); }}]);
+      D.automacoes.push({id:uid('au'), no:$('#au-o', dl).value, nome:n, gatilho:$('#au-g', dl).value, cond:{tipo:$('#au-ct', dl).value || undefined, grupo:$('#au-cg', dl).value || undefined}, acao:ac, param, ativa:true}); salvar(); rcRedesenhar(); toast('Automação criada e ligada'); }}]);
 }
 
 /* ---------- etapas: itens a mais quando o código é de terceiros ---------- */
@@ -5687,9 +5699,9 @@ document.addEventListener('click', e => {
   if ((x = q('[data-rc-marco-ed]'))){ formMarco(D.marcos.find(z => z.id === x.dataset.rcMarcoEd)); return; }
   if ((x = q('[data-rc-qd-del]'))){ const qd = quadroDe(UI.sel); const id = x.dataset.rcQdDel; qd.els = qd.els.filter(z => z.id !== id && z.de !== id && z.para !== id); salvar(); rView(); return; }
   if ((x = q('[data-rc-ovserv]'))){ UI.ovServ = x.dataset.rcOvserv; salvarUI(); rOverview(); return; }
-  if ((x = q('[data-rc-cs-del]'))){ const c = D.statusCustom.find(z => z.id === x.dataset.rcCsDel); modal('Excluir o status ' + esc(c.nome) + '?', '<p style="margin:0">Os itens nele voltam para ' + GRUPO_NOME[c.grupo] + '.</p>', [{txt:'Cancelar', cls:'sec'}, {txt:'Excluir', cls:'acento', acao:() => { D.issues.forEach(i => { if (i.st === c.id) i.st = null; }); D.statusCustom = D.statusCustom.filter(z => z.id !== c.id); salvar(); rConfig(); }}]); return; }
-  if ((x = q('[data-rc-cf-del]'))){ const c = D.camposItem.find(z => z.id === x.dataset.rcCfDel); modal('Excluir o campo ' + esc(c.nome) + '?', '<p style="margin:0">Os valores preenchidos nos itens saem junto.</p>', [{txt:'Cancelar', cls:'sec'}, {txt:'Excluir', cls:'acento', acao:() => { D.issues.forEach(i => { if (i.cf) delete i.cf[c.id]; }); D.camposItem = D.camposItem.filter(z => z.id !== c.id); salvar(); rConfig(); }}]); return; }
-  if ((x = q('[data-rc-auto-del]'))){ D.automacoes = D.automacoes.filter(z => z.id !== x.dataset.rcAutoDel); salvar(); rConfig(); return; }
+  if ((x = q('[data-rc-cs-del]'))){ const c = D.statusCustom.find(z => z.id === x.dataset.rcCsDel); modal('Excluir o status ' + esc(c.nome) + '?', '<p style="margin:0">Os itens nele voltam para ' + GRUPO_NOME[c.grupo] + '.</p>', [{txt:'Cancelar', cls:'sec'}, {txt:'Excluir', cls:'acento', acao:() => { D.issues.forEach(i => { if (i.st === c.id) i.st = null; }); D.statusCustom = D.statusCustom.filter(z => z.id !== c.id); salvar(); rcRedesenhar(); }}]); return; }
+  if ((x = q('[data-rc-cf-del]'))){ const c = D.camposItem.find(z => z.id === x.dataset.rcCfDel); modal('Excluir o campo ' + esc(c.nome) + '?', '<p style="margin:0">Os valores preenchidos nos itens saem junto.</p>', [{txt:'Cancelar', cls:'sec'}, {txt:'Excluir', cls:'acento', acao:() => { D.issues.forEach(i => { if (i.cf) delete i.cf[c.id]; }); D.camposItem = D.camposItem.filter(z => z.id !== c.id); salvar(); rcRedesenhar(); }}]); return; }
+  if ((x = q('[data-rc-auto-del]'))){ D.automacoes = D.automacoes.filter(z => z.id !== x.dataset.rcAutoDel); salvar(); rcRedesenhar(); return; }
   if ((x = q('[data-rc-acao]'))){
     const a = x.dataset.rcAcao;
     if (a === 'vista-salvar') salvarVista();
@@ -5715,7 +5727,7 @@ document.addEventListener('change', e => {
   if (t.hasAttribute('data-rc-sel-todos')){ const l = listaFiltrada(); if (t.checked) l.forEach(i => selItens.add(i.id)); else selItens.clear(); rView(); return; }
   if (t.dataset.rcMassa){ aplicarMassa(t.dataset.rcMassa, t.value); return; }
   if (t.dataset.rcOrigem){ const a = byId('apps', t.dataset.rcOrigem); a.origemCodigo = t.value; salvar(); toast(t.value === 'terceiros' ? 'Código de terceiros: o Discovery ganhou itens a mais em Stages' : 'Código nosso'); return; }
-  if (t.dataset.rcAutoLiga){ const a = D.automacoes.find(z => z.id === t.dataset.rcAutoLiga); a.ativa = t.checked; salvar(); rConfig(); return; }
+  if (t.dataset.rcAutoLiga){ const a = D.automacoes.find(z => z.id === t.dataset.rcAutoLiga); a.ativa = t.checked; salvar(); rcRedesenhar(); return; }
   if (t.dataset.rcG && itemAberto){ const i = byId('issues', itemAberto); const c = t.dataset.rcG; const v = t.value || null;
     if (c === 'pontos') i.pontos = v ? +v : null; else i[c] = v;
     salvar(); abrirItem(i.id); return; }
@@ -10150,6 +10162,42 @@ document.addEventListener('drop', e => {
 });
 document.addEventListener('dragend', () => { ES.arr = null; esLimpar(); });
 if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {esEditar, linhasDaTela});
+
+/* ===== Configurações de cada trabalho =====
+   Status personalizados, campos dos itens e automações são de um trabalho, não do sistema todo.
+   Por isso ficam numa aba Configurações dentro do projeto, do produto e da aplicação (no botão Mais das abas),
+   e o menu principal Configurações fica só com o que é geral: etapas padrão, requisitos, acessos e a conta.
+   O conteúdo é montado por rcTrabalhoHTML (recursos.js), filtrado pelo ponto escolhido na Estrutura. */
+VIEWS.push(['ajustes', 'Configurações', 'status, campos e automações deste trabalho']);
+SM_ABAS.ajustes = ['Configurações', 'Os status, os campos dos itens e as automações deste trabalho. O que for criado aqui vale para ele e para tudo o que está dentro dele.'];
+SM_DICA.ajustes = 'status, campos e automações';
+EXPL_VIEW.ajustes = SM_ABAS.ajustes[1];
+
+const AJ_ONDE = {project:'este projeto', product:'este produto', app:'esta aplicação'};
+const _rViewAj = rView;
+rView = function(){
+  const c = $('#ops-corpo');
+  if (c && UI.view === 'ajustes'){
+    const tipo = (UI.sel || '').split(':')[0];
+    c.innerHTML = '<div class="aj-tela"><p class="lead aj-intro">Configurações de <b>' + esc(nomeDe(UI.sel)) + '</b>. O que você cria aqui vale para ' + (AJ_ONDE[tipo] || 'este trabalho') + ' e para tudo o que está dentro. O que foi criado num nível acima aparece marcado com "vem de cima".</p>' + rcTrabalhoHTML(UI.sel) + '</div>';
+    smAgruparAbas(); return;
+  }
+  _rViewAj();
+};
+const _rOperacoesAj = rOperacoes;
+rOperacoes = function(){
+  _rOperacoesAj();
+  const tipo = (UI.sel || '').split(':')[0];
+  if (!AJ_ONDE[tipo] || !podeEditar()){ const b = $('.view-b[data-view="ajustes"]'); if (b) (b.closest('.view-casa') || b).remove(); if (UI.view === 'ajustes'){ UI.view = 'dashboard'; rView(); } }
+};
+// no menu principal, um aviso de onde ficam agora
+const _rConfigAj = rConfig;
+rConfig = function(){
+  _rConfigAj();
+  const lead = $('#m-configuracoes .topo-tela .lead');
+  if (lead && !$('#m-configuracoes .aj-aviso')) lead.insertAdjacentHTML('afterend', '<p class="aj-aviso">Status, campos dos itens e automações ficam dentro de cada trabalho: abra o projeto, o produto ou a aplicação em Operações e clique em <b>Mais → Configurações</b>.</p>');
+};
+if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {rOperacoes, rcTrabalhoHTML});
 
 abrirModulo(UI.modulo);
 })();

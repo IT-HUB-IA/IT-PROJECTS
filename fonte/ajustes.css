@@ -1,0 +1,5 @@
+/* Configurações de cada trabalho (ajustes.js) */
+.aj-tela{max-width:1100px}
+.aj-intro{margin:0 0 8px}
+.aj-aviso{margin:12px 0 0;padding:10px 14px;border-left:3px solid var(--vermelho);background:var(--preto-04);max-width:760px}
+.rc-vem{display:block;font-size:12px}
