@@ -12,6 +12,10 @@
   .forEach(([id, nome, expl]) => { const e = EST.find(x => x.id === id); if (e){ e.nome = nome; e.expl = expl; } });
 Object.assign(GRUPO_NOME, {backlog:'Na fila', todo:'A fazer', doing:'Fazendo', review:'Em revisão', blocked:'Travado', done:'Feito'});
 
+/* ---------- nomes do menu ---------- */
+const SM_MODULOS = {overview:'Visão geral', clientes:'Clientes', catalog:'Catálogo', custos:'Custos', servicedesk:'Atendimento', time:'Equipe', configuracoes:'Configurações'};
+$$('.menu .item[data-tela]').forEach(el => { const n = SM_MODULOS[el.dataset.tela]; if (!n) return; el.dataset.nome = n; const s = el.querySelector('.item-nome'); if (s) s.textContent = n; });
+
 /* ---------- abas da tela de Operações ---------- */
 const SM_ABAS = {
   dashboard:['Painel','Resumo do que está escolhido na estrutura: quanto já foi feito, o que está atrasado, os avisos e o que mudou.'],

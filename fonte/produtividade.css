@@ -1,0 +1,56 @@
+/* ---------- Produtividade: busca rápida, atalhos, tema escuro ---------- */
+  kbd{font-family:var(--font-mono);font-size:10.5px;line-height:1;padding:3px 5px;border:1px solid var(--nevoa);border-bottom-width:2px;background:var(--branco);color:var(--preto);white-space:nowrap}
+  dialog.pk{padding:0;border:1px solid var(--preto);width:min(640px,calc(100vw - 32px));max-height:min(560px,calc(100vh - 96px));margin:12vh auto auto;background:var(--branco);color:var(--preto);box-shadow:0 24px 64px rgba(0,0,0,.28);overflow:hidden}
+  dialog.pk[open]{display:flex;flex-direction:column}
+  dialog.pk::backdrop{background:rgba(5,5,6,.45)}
+  .pk-cab{display:flex;align-items:center;gap:10px;padding:0 14px;border-bottom:1px solid var(--nevoa)}
+  .pk-cab > svg{flex:none;color:var(--grafite)}
+  .pk-inp{flex:1;min-width:0;border:0;outline:0;height:54px;font:inherit;font-size:16px;background:transparent;color:var(--preto)}
+  .pk-lista{list-style:none;margin:0;padding:6px 0;overflow:auto;flex:1}
+  .pk-grupo{font-family:var(--font-mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--grafite);padding:10px 16px 4px}
+  .pk-op{display:flex;align-items:center;gap:10px;padding:8px 16px;cursor:pointer;border-left:2px solid transparent}
+  .pk-op[aria-selected="true"]{background:var(--preto-04);border-left-color:var(--vermelho)}
+  .pk-t{flex:1;min-width:0;display:grid}
+  .pk-t b{font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pk-t small{font-size:12px;color:var(--grafite);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pk-nada{padding:18px 16px;font-size:14px;color:var(--grafite)}
+  .pk-rod{display:flex;gap:16px;flex-wrap:wrap;padding:8px 14px;border-top:1px solid var(--nevoa);font-size:12px;color:var(--grafite)}
+  .pk-rod kbd{margin-right:3px}
+  .pk-atalhos{display:grid;gap:16px}
+  .pk-atalhos .rotulo-mini,.pk-campos .rotulo-mini{margin:0 0 6px}
+  .pk-atalhos dl,.pk-campos dl{margin:0;display:grid}
+  .pk-atalhos dl > div,.pk-campos dl > div{display:grid;grid-template-columns:120px minmax(0,1fr);gap:12px;align-items:center;padding:6px 0;border-top:1px solid var(--preto-04)}
+  .pk-atalhos dd,.pk-campos dd{margin:0;font-size:14px}
+  .pk-campos dt{font-family:var(--font-mono);font-size:12px}
+  .pk-exemplos{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+  .pk-exemplos button{width:100%;text-align:left;display:grid;gap:2px;padding:8px 10px;border:1px solid var(--nevoa);background:var(--branco);cursor:pointer;font:inherit;color:var(--preto)}
+  .pk-exemplos button:hover{border-color:var(--preto)}
+  .pk-exemplos code{font-family:var(--font-mono);font-size:13px}
+  .pk-exemplos small{font-size:12px;color:var(--grafite)}
+  .pk-ajuda-b{white-space:nowrap}
+  .pk-menu-botoes{margin-top:auto;display:flex;gap:6px;padding:10px 20px;border-top:1px solid var(--border-on-inverse)}
+  .pk-menu-b{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 10px;border:1px solid var(--grafite);background:transparent;color:var(--nevoa);cursor:pointer;font:inherit;font-size:13px}
+  .pk-menu-b:hover,.pk-menu-b:focus-visible{color:var(--branco);border-color:var(--nevoa)}
+  .pk-menu-b[data-pk-abrir]{flex:1;min-width:0}
+  .pk-menu-b kbd{margin-left:auto;background:transparent;color:var(--nevoa);border-color:var(--grafite)}
+  .pk-tema-b[aria-pressed="true"]{color:var(--branco);border-color:var(--vermelho)}
+  .app.recolhido .pk-menu-botoes{flex-direction:column;padding:8px}
+  .app.recolhido .pk-menu-b span,.app.recolhido .pk-menu-b kbd{display:none}
+  .app.recolhido .pk-menu-b{justify-content:center;padding:0}
+
+  /* tema escuro: a área de trabalho e as janelas ganham cores invertidas; o menu já é escuro.
+     Fotos, vídeos, avatares com foto e o cabeçalho (que já é escuro) voltam ao normal. */
+  html.tema-escuro{color-scheme:dark;background:#0B0B0C}
+  html.tema-escuro .principal,
+  html.tema-escuro #gaveta-wrap .gaveta,
+  html.tema-escuro dialog.modal,
+  html.tema-escuro dialog.pk,
+  html.tema-escuro #tf-menu,
+  html.tema-escuro .tf-aviso,
+  html.tema-escuro .dica{filter:invert(.92) hue-rotate(180deg)}
+  html.tema-escuro .principal img,html.tema-escuro .principal video,html.tema-escuro .principal .ops-cab,
+  html.tema-escuro .gaveta img,html.tema-escuro .gaveta video,
+  html.tema-escuro dialog.modal img,html.tema-escuro dialog.modal video{filter:invert(1) hue-rotate(180deg)}
+  html.tema-escuro .principal .ops-cab .sm-abas-menu{filter:invert(1) hue-rotate(180deg)}
+  html.tema-escuro .veu{background:rgba(0,0,0,.6)}
+  .pk-menu-botoes + .menu-rodape{margin-top:0}
