@@ -46,3 +46,13 @@ Um lugar no sistema para guardar cada domínio do grupo e tudo o que depende del
 **Domínios já conhecidos para cadastrar:**
 - `it-ia.tec.br`: Registro.br, DNS no Cloudflare, comprado em 09/09/2026, vence em 09/09/2036. Subdomínio `ciclodev` para o CicloDev (o antigo `system` leva para ele).
 - Domínios das empresas do grupo (YOU, Realizze, BEEC, Blanco & Lisboa...): levantar com o William.
+
+## Comunicação, relatórios e metas (feito em 29/09/2026, falta ligar no banco e no e-mail)
+
+A tela já tem: @menção, caixa de avisos com filtros, preferências, aviso do navegador, Meu painel, Portfólio, Relatórios (fluxo acumulado), caminho crítico e Metas.
+
+Falta, quando o William autorizar:
+1. Aplicar a parte 20 do banco (`banco/20_comunicacao_metas.sql`). Sem ela, Metas e Preferências avisam "falta atualizar o banco" e as menções não geram aviso para os outros.
+2. Criar a conta de envio de e-mail (Resend), confirmar o domínio `it-ia.tec.br` nela e guardar os segredos da função `enviar-avisos` (`RESEND_API_KEY`, `AVISOS_REMETENTE`, `AVISOS_SEGREDO`).
+3. Implantar a função `enviar-avisos` (verify_jwt desligado).
+4. Ligar a extensão `pg_net`, guardar o segredo `ciclodev_avisos_segredo` no Vault e aplicar `banco/21_avisos_email_SUPABASE.sql`.

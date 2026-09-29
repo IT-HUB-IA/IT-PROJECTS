@@ -49,7 +49,7 @@ window.supabase = { createClient(){ let sess = JSON.parse(localStorage.getItem('
   await p.click('.item[data-tela=operacoes]'); await p.waitForTimeout(250);
   ok((await p.evaluate(() => document.querySelector('.principal').textContent)).includes('App Só No Banco'), 'Estrutura mostra a aplicação com o nome do banco');
   for (const v of ['board','list','table','timeline','calendar','workload','sheet','stages','whiteboard','dashboard']){
-    const bt = p.locator('[data-view=' + v + ']').first(); if (await bt.count()) { await bt.click(); await p.waitForTimeout(200); }
+    const bt = p.locator('[data-view=' + v + ']').first(); if (await bt.count()) { await bt.evaluate(e => e.click()); await p.waitForTimeout(200); }   // as abas menos usadas ficam no menu Mais
   }
   await p.screenshot({path:'b_ops.png'});
   // um nível só de usuário (parte 15): não existe mais o "Ver como"

@@ -39,3 +39,7 @@
   .ops-cab .sm-abas-menu > .btn{color:var(--preto)}
   .sm-abas-menu ul{max-height:32vh}
   .sm-abas-menu ul + .rotulo-mini{margin-top:6px}
+  @media (max-width:760px){
+    .sm-abas-menu{position:fixed;left:16px;right:16px;top:auto;bottom:16px;width:auto;max-width:none;max-height:72vh;overflow:auto}
+    .sm-abas-menu ul{max-height:none}
+  }

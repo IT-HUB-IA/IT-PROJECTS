@@ -34,6 +34,24 @@ Testada no Postgres local (`96_teste_tarefas_LOCAL.sql`: 37 de 37) e conferida n
 | `lixeira_mover`, `lixeira_restaurar`, `lixeira_apagar`, `lixeira_listar` | O que a tela chama. Confere quem pode: o que é do meu espaço, ou está dentro de algo compartilhado comigo como owner ou dev. O ponto compartilhado em si só o dono do espaço exclui |
 | Rotina `ciclodev_lixeira` (todo dia, 4h23) | Apaga de vez o que está na lixeira há mais de 30 dias, com tudo o que tinha dentro |
 
+## Parte 20: comunicação e metas (AINDA NÃO APLICADA)
+
+Testada no Postgres local (`98_teste_comunicacao_LOCAL.sql`: 47 de 47; as partes 18 e 19 continuam 37 de 37 e 42 de 42 com a 20 por cima). Pode ser aplicada antes da tela nova: a tela lê as tabelas novas separado e, se elas ainda não existirem, só avisa "falta atualizar o banco" nas Metas e nas Preferências.
+
+| Peça | Para que serve |
+|---|---|
+| `pessoas_preferencias` | Como cada pessoa quer os avisos por e-mail (na hora, resumo do dia, nunca), de quais tipos, aviso do navegador, relatório da semana e a arrumação do Meu painel. Cada um só vê e muda a sua |
+| `notificacoes.tipo`, `autor_id`, `email_modo`, `email_status`, `email_em` | Tipo do aviso (menção, comentário, responsável, lembrete, automação, aviso) e a fila da cópia por e-mail |
+| Gatilho `comentarios_avisar` | Comentário com `@[Nome](id)` avisa quem foi mencionado; comentário avisa o responsável, quem pediu e os observadores. Ninguém é avisado do que fez, nem de item que não pode ver, nem de comentário interno se for stakeholder |
+| Gatilho `itens_avisar_responsavel` | Quem vira responsável de um item é avisado (menos quando pega para si) |
+| Gatilho `notificacoes_preparar` | Põe cada aviso novo na fila de e-mail, conforme a preferência da pessoa (sem preferência: resumo do dia) |
+| `metas`, `metas_resultados`, `metas_resultados_itens` | Metas de um projeto, produto ou aplicação, com resultados por número ou pelos itens concluídos. Mesma regra de acesso do ponto; stakeholder não vê |
+| `avisos_email_lote`, `avisos_email_marcar`, `relatorio_semanal_lote` | Só para a função `enviar-avisos` (papel `service_role`) |
+
+## Parte 21: rotinas do e-mail (SÓ NO SUPABASE, depois da função `enviar-avisos` no ar)
+
+`21_avisos_email_SUPABASE.sql` agenda as chamadas à função: a cada 5 minutos (na hora), às 8h de Brasília (resumo do dia) e segunda às 8h05 (relatório da semana). Precisa da extensão `pg_net` e do segredo `ciclodev_avisos_segredo` no Vault, com o mesmo valor do segredo `AVISOS_SEGREDO` da função. Não entra no `APLICAR_NO_SUPABASE.sql`.
+
 ## Parte 19: código, publicações e notas de versão (aplicada em 29/09/2026 como `ciclodev_26_codigo_entregas` + `ciclodev_27_ajuste_verificador`)
 
 Testada no Postgres local (`97_teste_codigo_LOCAL.sql`: 42 de 42; a parte 18 continua 37 de 37 com a 19 por cima) e conferida no Supabase depois de aplicar (tabelas com RLS e GRANT, segredos sem acesso de fora, `git_receber` só para `service_role`). A Edge Function `git-webhook` está implantada (versão 1, verify_jwt desligado). **Foi aplicada ANTES da tela nova, como precisa**: a tela passa a gravar `marcos.notas`.
@@ -77,6 +95,9 @@ Junto vai a Edge Function `supabase/functions/git-webhook` (implantar com **veri
 | `96_teste_tarefas_LOCAL.sql` | 37 testes da parte 18: repetição, lembrete, versões, lixeira, limpeza de 30 dias, modelos e quem pode o quê | Não |
 | `19_codigo_entregas.sql` | Código do GitHub e do GitLab ligado aos itens (status anda sozinho), registro das publicações e notas de versão | Sim (aplicada em 29/09/2026) |
 | `97_teste_codigo_LOCAL.sql` | 42 testes da parte 19: avisos assinados do GitHub e do GitLab, status sozinho, publicações, versões e quem pode o quê | Não |
+| `20_comunicacao_metas.sql` | Menções, avisos automáticos, fila de e-mail, preferências de cada pessoa e metas | Ainda não |
+| `98_teste_comunicacao_LOCAL.sql` | 47 testes da parte 20: quem é avisado e quem não é, fila de e-mail, preferências, metas e quem pode o quê | Não |
+| `21_avisos_email_SUPABASE.sql` | Rotinas que chamam a função `enviar-avisos` (precisa de `pg_net` e do segredo no Vault) | Ainda não, e só depois da função |
 
 ## Decisões de estrutura (e por quê)
 

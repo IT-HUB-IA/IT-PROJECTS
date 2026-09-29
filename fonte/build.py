@@ -1,10 +1,10 @@
 head=open('parte_head.html',encoding='utf-8').read()
-css=open('parte_css_base.css',encoding='utf-8').read()+open('app.css',encoding='utf-8').read()+open('design.css',encoding='utf-8').read()+open('tarefas.css',encoding='utf-8').read()+open('entregas.css',encoding='utf-8').read()+open('simples.css',encoding='utf-8').read()+open('produtividade.css',encoding='utf-8').read()+open('comunicacao.css',encoding='utf-8').read()
+css=open('parte_css_base.css',encoding='utf-8').read()+open('app.css',encoding='utf-8').read()+open('design.css',encoding='utf-8').read()+open('tarefas.css',encoding='utf-8').read()+open('entregas.css',encoding='utf-8').read()+open('simples.css',encoding='utf-8').read()+open('produtividade.css',encoding='utf-8').read()+open('comunicacao.css',encoding='utf-8').read()+open('relatorios.css',encoding='utf-8').read()
 pb=open('parte_playbook.html',encoding='utf-8').read().replace('class="conteudo" id="tela-playbook"','class="conteudo cheio" id="tela-playbook"').replace('<h1 id="titulo-pb">','<div class="topo-hero"><div><h1 id="titulo-pb">',1).replace('mesmo com uma pessoa só no time.</p>','mesmo com uma pessoa só no time.</p></div></div>',1)
 js=open('app.js',encoding='utf-8').read()
 _fim='\nabrirModulo(UI.modulo);\n})();'
 assert js.rstrip().endswith(_fim.strip()), 'final do app.js mudou'
-js=js.rstrip()[:-len(_fim.strip())]+'\n'+open('recursos.js',encoding='utf-8').read()+'\n'+open('board.js',encoding='utf-8').read()+'\n'+open('multiusuario.js',encoding='utf-8').read()+'\n'+open('admin.js',encoding='utf-8').read()+'\n'+open('studio.js',encoding='utf-8').read()+'\n'+open('tarefas.js',encoding='utf-8').read()+'\n'+open('entregas.js',encoding='utf-8').read()+'\n'+open('simples.js',encoding='utf-8').read()+'\n'+open('produtividade.js',encoding='utf-8').read()+'\n'+open('comunicacao.js',encoding='utf-8').read()+'\n'+_fim.strip()+'\n'
+js=js.rstrip()[:-len(_fim.strip())]+'\n'+open('recursos.js',encoding='utf-8').read()+'\n'+open('board.js',encoding='utf-8').read()+'\n'+open('multiusuario.js',encoding='utf-8').read()+'\n'+open('admin.js',encoding='utf-8').read()+'\n'+open('studio.js',encoding='utf-8').read()+'\n'+open('tarefas.js',encoding='utf-8').read()+'\n'+open('entregas.js',encoding='utf-8').read()+'\n'+open('simples.js',encoding='utf-8').read()+'\n'+open('produtividade.js',encoding='utf-8').read()+'\n'+open('comunicacao.js',encoding='utf-8').read()+'\n'+open('relatorios.js',encoding='utf-8').read()+'\n'+_fim.strip()+'\n'
 import json, html as _h
 from explicacoes import EXPL
 js='window.EXPL = '+json.dumps(EXPL, ensure_ascii=False)+';\n'+js
@@ -14,6 +14,7 @@ for _k,_v in EXPL.items():
 P='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">'
 MODS=[
  ('overview','Overview',P+'<rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg>'),
+ ('painel','Meu painel',P+'<path d="M3 12l9-8 9 8"></path><path d="M5 10v10h14V10"></path><path d="M10 20v-6h4v6"></path></svg>'),
  ('operacoes','Operações',P+'<path d="M12 3l9 4.5-9 4.5-9-4.5z"></path><path d="M3 12l9 4.5 9-4.5"></path><path d="M3 16.5l9 4.5 9-4.5"></path></svg>'),
  ('clientes','Clients',P+'<rect x="3" y="7" width="18" height="14"></rect><path d="M8 7V3h8v4"></path><path d="M3 13h18"></path></svg>'),
  ('catalog','Catalog',P+'<path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4z"></path><path d="M16.5 13v7M13 16.5h7"></path></svg>'),
