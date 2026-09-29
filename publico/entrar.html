@@ -1861,6 +1861,47 @@ dialog.modal.modal-larga{max-width:min(960px,calc(100% - 32px))}
     .tf-aviso{left:16px;right:16px;transform:none;flex-wrap:wrap;row-gap:4px}
     .tf-aviso-txt{flex:1 1 100%}
   }
+/* ---------- Simplificar: abas agrupadas e tela do item ---------- */
+  .ops-cab .views > .view-casa .info{display:none}
+  .sm-mais-casa{position:relative;display:inline-flex}
+  .sm-mais-b{display:inline-flex;align-items:center;gap:6px}
+  .sm-cont{font-family:var(--font-mono);font-size:10px;padding:1px 5px;border:1px solid currentColor;letter-spacing:0}
+  .sm-abas-menu{position:absolute;top:100%;right:0;z-index:40;width:340px;max-width:calc(100vw - 32px);background:var(--branco);color:var(--preto);border:1px solid var(--nevoa);box-shadow:0 12px 32px rgba(0,0,0,.18);padding:12px;display:grid;gap:8px}
+  .sm-abas-menu[hidden]{display:none}
+  .sm-abas-menu .rotulo-mini{margin:0;color:var(--grafite)}
+  .sm-abas-menu ul{list-style:none;margin:0;padding:0;display:grid;max-height:60vh;overflow:auto}
+  .sm-abas-menu li{display:flex;align-items:center;gap:4px;border-top:1px solid var(--preto-04)}
+  .sm-abas-menu li:first-child{border-top:0}
+  .sm-aba-ir{flex:1;min-width:0;text-align:left;border:0;background:none;padding:8px 6px;cursor:pointer;display:grid;gap:2px;color:var(--preto);font:inherit}
+  .sm-aba-ir b{font-size:13px;font-weight:600}
+  .sm-aba-ir small{font-size:12px;color:var(--grafite);line-height:1.35}
+  .sm-aba-ir:hover,.sm-aba-ir:focus-visible{background:var(--preto-04)}
+  .sm-aba-ir[aria-current="true"] b{box-shadow:inset 0 -2px 0 var(--vermelho)}
+  .sm-fixar{color:var(--nevoa);flex:none}
+  .sm-fixar[aria-pressed="true"]{color:var(--vermelho)}
+  .sm-fixar:hover{color:var(--preto)}
+  .sm-abas-menu > .btn{justify-self:start}
+  .ops-cab .view-casa.sm-temp .view-b{font-style:italic}
+
+  /* gaveta do item */
+  .sm-dobra{padding:0}
+  .sm-dobra > summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:14px}
+  .sm-dobra > summary::-webkit-details-marker{display:none}
+  .sm-dobra > summary h4{margin:0;font-family:var(--font-mono);font-size:11px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--preto);display:flex;align-items:center;gap:10px}
+  .sm-dobra > summary h4::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--nevoa);flex:0 0 6px}
+  .sm-dobra > summary::after{content:"";margin-left:auto;width:8px;height:8px;border-right:1.5px solid var(--grafite);border-bottom:1.5px solid var(--grafite);transform:rotate(45deg);transition:transform .15s}
+  .sm-dobra[open] > summary::after{transform:rotate(-135deg)}
+  .sm-dobra > summary:hover h4::before{background:var(--vermelho)}
+  .sm-resumo{font-size:12px;color:var(--grafite)}
+  .sm-dobra-corpo{display:grid;gap:16px;padding:0 14px 14px}
+  .sm-grupo{display:grid;gap:4px}
+  .sm-grupo > .rotulo-mini{margin:0 0 4px;display:flex;align-items:center;gap:8px;color:var(--grafite)}
+  .view-casa[hidden]{display:none}
+  .sm-abas-menu > .btn{color:var(--preto);border-color:var(--nevoa)}
+  .sm-aba-ir small{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .ops-cab .sm-abas-menu > .btn{color:var(--preto)}
+  .sm-abas-menu ul{max-height:32vh}
+  .sm-abas-menu ul + .rotulo-mini{margin-top:6px}
 
   .conteudo.sem-pad{padding:0;display:flex;flex-direction:column;flex:1}
   .conteudo.sem-pad > div{flex:1;display:flex;flex-direction:column}
@@ -8364,6 +8405,159 @@ linhasDaTela = function(d){
   return L;
 };
 if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {EN, enGerarNotas, enLerLink, enLerRepo, enBranch, abrirItem, rOperacoes});
+
+/* ================= Simplificar: nomes em português, abas agrupadas e a tela do item organizada =================
+   Carrega por último: só troca nomes e reorganiza o que as camadas anteriores montaram, sem mudar dado nenhum. */
+
+/* ---------- vocabulário em português (o id guardado no banco continua o mesmo) ---------- */
+[['backlog','Na fila','ainda não planejado'],['todo','A fazer','planejado, ninguém começou'],['doing','Fazendo','alguém está trabalhando nele'],['review','Em revisão','pronto, esperando conferência'],['blocked','Travado','parado, esperando algo'],['done','Feito','concluído']]
+  .forEach(([id, nome, expl]) => { const s = STATUS.find(x => x.id === id); if (s){ s.en = s.nome; s.nome = nome; s.expl = expl; } });
+[['highest','Urgente','largar o resto e fazer já'],['high','Alta','fazer antes das outras'],['medium','Média','no ritmo normal'],['low','Baixa','quando der']]
+  .forEach(([id, nome, expl]) => { const p = PRIOS.find(x => x.id === id); if (p){ p.en = p.nome; p.nome = nome; p.expl = expl; } });
+[['epic','Épico','entrega grande, reúne várias histórias'],['story','História','algo que o usuário vai ver ou usar'],['task','Tarefa','trabalho a fazer'],['subtask','Subtarefa','parte de uma tarefa'],['bug','Defeito','algo que não funciona como deveria']]
+  .forEach(([id, nome, expl]) => { const t = TIPOS.find(x => x.id === id); if (t){ t.en = t.nome; t.nome = nome; t.expl = expl; } });
+[['active','Ativo','em andamento'],['on_hold','Pausado','parado por um motivo'],['done','Concluído','terminado'],['archived','Arquivado','guardado, sai das listas']]
+  .forEach(([id, nome, expl]) => { const e = EST.find(x => x.id === id); if (e){ e.nome = nome; e.expl = expl; } });
+Object.assign(GRUPO_NOME, {backlog:'Na fila', todo:'A fazer', doing:'Fazendo', review:'Em revisão', blocked:'Travado', done:'Feito'});
+
+/* ---------- abas da tela de Operações ---------- */
+const SM_ABAS = {
+  dashboard:['Painel','Resumo do que está escolhido na estrutura: quanto já foi feito, o que está atrasado, os avisos e o que mudou.'],
+  board:['Quadro','Os itens em colunas pela situação. Arraste o cartão de uma coluna para outra para mudar a situação.'],
+  table:['Tabela','Os itens em linhas e colunas, como numa planilha, para ver e mudar vários campos de uma vez.'],
+  calendar:['Calendário','Os itens nos dias do prazo, por mês, semana, dia ou em forma de agenda.'],
+  timeline:['Linha do tempo','Cada item vira uma barra do início até o prazo, para ver o que acontece ao mesmo tempo e o que depende do quê.'],
+  entregas:['Entregas','As versões, as publicações e o código ligado a este ponto da estrutura.'],
+  backlog:['Fila','Tudo o que ainda vai ser feito, em ordem de prioridade, e o planejamento dos sprints.'],
+  sprints:['Sprints','Períodos curtos, de 1 ou 2 semanas, com uma meta e os itens escolhidos para aquele período.'],
+  list:['Lista','Os itens agrupados por situação, pessoa ou prioridade, para ler rápido tudo o que existe.'],
+  workload:['Carga do time','Quantas horas cada pessoa tem em cada dia ou semana, comparado com o quanto ela aguenta.'],
+  mywork:['Meu trabalho','Só os itens que estão com você, separados em atrasados, de hoje e próximos.'],
+  whiteboard:['Quadro livre','Uma área livre para desenhar, colar notas e ligar ideias. As notas podem virar itens.'],
+  custos:['Custos','Quanto este ponto da estrutura já gastou e já cobrou, e a previsão dos próximos meses.'],
+  sheet:['Ficha técnica','As informações técnicas guardadas: linguagem, banco, integrações, regras do cliente e arquivos.'],
+  stages:['Etapas','As etapas obrigatórias do processo e o que já foi cumprido em cada uma, com a prova.']
+};
+VIEWS.forEach(v => { const a = SM_ABAS[v[0]]; if (a){ v[1] = a[0]; v[2] = a[1]; EXPL_VIEW[v[0]] = a[1]; } });
+Object.keys(SM_ABAS).forEach(k => { EXPL_VIEW[k] = SM_ABAS[k][1]; });
+const SM_PRINCIPAIS = ['dashboard','board','table','calendar','timeline','entregas'];
+const smFixas = () => Array.isArray(UI.abasFixas) ? UI.abasFixas : SM_PRINCIPAIS;
+const SM_PINO = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square" aria-hidden="true"><path d="M9 4h6l-1 6 4 3v2H6v-2l4-3z"/><path d="M12 15v6"/></svg>';
+
+/* agrupa as abas que já estão na tela: as fixas ficam à vista, o resto vai para "Mais". Pode rodar várias vezes. */
+function smAgruparAbas(){
+  const nav = $('.ops-cab .views'); if (!nav) return;
+  const casas = $$('.view-casa', nav).filter(c => c.querySelector('[data-view]'));
+  if (casas.length < 2) return;
+  const fixas = smFixas();
+  const ordem = Object.keys(SM_ABAS).concat(VIEWS.map(v => v[0]));
+  casas.sort((a, b) => ordem.indexOf(a.querySelector('[data-view]').dataset.view) - ordem.indexOf(b.querySelector('[data-view]').dataset.view));
+  const visiveis = [], outras = [];
+  casas.forEach(c => { const v = c.querySelector('[data-view]').dataset.view; (fixas.includes(v) || v === UI.view ? visiveis : outras).push(c); c.classList.toggle('sm-temp', !fixas.includes(v)); c.querySelector('[data-view]').setAttribute('aria-selected', String(v === UI.view)); });
+  const velho = $('.sm-mais-casa', nav); if (velho) velho.remove();
+  casas.forEach(c => nav.appendChild(c));
+  visiveis.forEach(c => { c.hidden = false; }); outras.forEach(c => { c.hidden = true; });
+  const todas = casas.map(c => { const b = c.querySelector('[data-view]'); return [b.dataset.view, b.textContent]; });
+  nav.insertAdjacentHTML('beforeend', '<span class="sm-mais-casa"><button class="view-b sm-mais-b" type="button" aria-haspopup="true" aria-expanded="false" data-sm-mais-abas>' + (outras.length ? 'Mais <span class="sm-cont">' + outras.length + '</span>' : 'Abas') + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>' +
+    '<div class="sm-abas-menu" role="menu" hidden>' +
+    [['Sempre à vista', todas.filter(([v]) => fixas.includes(v))], ['Outras abas', todas.filter(([v]) => !fixas.includes(v))]].filter(([, l]) => l.length).map(([tit, l]) => '<p class="rotulo-mini">' + tit + '</p><ul>' +
+    l.map(([v, n]) => '<li><button type="button" class="sm-aba-ir" role="menuitem" data-view="' + v + '"' + (UI.view === v ? ' aria-current="true"' : '') + '><b>' + esc(n) + '</b><small>' + esc((SM_ABAS[v] || ['', ''])[1]) + '</small></button>' +
+      '<button type="button" class="ico-btn sm-fixar" data-sm-fixar="' + v + '" aria-pressed="' + fixas.includes(v) + '" aria-label="' + (fixas.includes(v) ? 'Tirar ' + esc(n) + ' das abas à vista' : 'Deixar ' + esc(n) + ' sempre à vista') + '" title="' + (fixas.includes(v) ? 'Tirar das abas à vista' : 'Deixar sempre à vista') + '">' + SM_PINO + '</button></li>').join('') + '</ul>').join('') +
+    '<button type="button" class="btn fant peq" data-sm-abas-padrao>Voltar às abas padrão</button></div></span>');
+}
+function smFecharMenuAbas(){ const m = $('.sm-abas-menu'); if (m && !m.hidden){ m.hidden = true; const b = $('[data-sm-mais-abas]'); if (b) b.setAttribute('aria-expanded', 'false'); } }
+const _rOperacoesSm = rOperacoes;
+rOperacoes = function(){ _rOperacoesSm.apply(this, arguments); smAgruparAbas(); };
+const _rViewSm = rView;
+rView = function(){ const r = _rViewSm.apply(this, arguments); smAgruparAbas(); return r; };
+document.addEventListener('click', ev => {
+  const t = ev.target;
+  const mais = t.closest('[data-sm-mais-abas]');
+  if (mais){ const m = mais.nextElementSibling; m.hidden = !m.hidden; mais.setAttribute('aria-expanded', String(!m.hidden)); if (!m.hidden){ const a = m.querySelector('[aria-current]') || m.querySelector('.sm-aba-ir'); if (a) a.focus(); } return; }
+  const fx = t.closest('[data-sm-fixar]');
+  if (fx){ const v = fx.dataset.smFixar; let f = smFixas().slice(); f = f.includes(v) ? f.filter(x => x !== v) : f.concat(v); if (!f.length){ toast('Deixe pelo menos uma aba à vista'); return; } UI.abasFixas = f; salvarUI(); smAgruparAbas(); const m = $('.sm-abas-menu'); if (m){ m.hidden = false; const b = m.querySelector('[data-sm-fixar="' + v + '"]'); if (b) b.focus(); } return; }
+  if (t.closest('[data-sm-abas-padrao]')){ delete UI.abasFixas; salvarUI(); smAgruparAbas(); toast('Abas padrão de volta'); return; }
+  if (!t.closest('.sm-mais-casa')) smFecharMenuAbas();
+}, true);
+document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && $('.sm-abas-menu:not([hidden])')){ ev.stopPropagation(); smFecharMenuAbas(); const b = $('[data-sm-mais-abas]'); if (b) b.focus(); } }, true);
+
+/* ---------- tela do item ---------- */
+const SM_ROTULOS = {
+  'Priority':['Prioridade','Prioridade: quanto isso é urgente perto dos outros itens.'],
+  'Assignee':['Responsável','Responsável: quem vai fazer.'],
+  'Tipo':['Tipo','Tipo: épico (entrega grande), história (algo que o usuário vê), tarefa, subtarefa ou defeito.'],
+  'Workstream':['Frente','Frente de trabalho: onde o item fica na estrutura.'],
+  'Visibility':['Visibilidade','Visibilidade: só a equipe vê, ou o cliente também vê no painel dele.'],
+  'Reporter':['Quem pediu','Quem pediu: quem abriu o item. É a pessoa avisada quando uma automação diz "avisar quem abriu".'],
+  'Parent':['Item pai','Item pai: o item maior do qual este faz parte.'],
+  'Sprint':['Sprint','Sprint: o ciclo curto (1 ou 2 semanas) em que o item vai ser feito.'],
+  'Milestone':['Versão','Versão: a versão ou marco em que isto vai ser entregue.'],
+  'Story points':['Pontos','Pontos: o tamanho do esforço, comparado com outros itens.'],
+  'Start date':['Início','Início: quando o trabalho começa.'],
+  'Due date':['Prazo','Prazo: até quando tem que ficar pronto.'],
+  'Target date':['Entrega prevista','Entrega prevista: quando se espera entregar ao cliente.'],
+  'Estimate':['Estimativa','Estimativa: quantas horas deve levar.']
+};
+const SM_SECOES = {'References':'Anexos e links','Child issues':'Subitens','Custom fields':'Campos','Links':'Ligações','Comments':'Comentários','Time tracking':'Tempo gasto','Time blocking':'Horário reservado'};
+const SM_LIGACAO = {'Blocks':'Bloqueia','Is blocked by':'É bloqueado por','Relates to':'Tem relação com','Duplicates':'Duplica','Is duplicated by':'É duplicado por','Clones':'Copia'};
+const smTextoDe = el => { const n = el && [...el.childNodes].find(x => x.nodeType === 3 && x.textContent.trim()); return n ? n.textContent.trim() : ''; };
+const smTrocarTexto = (el, novo) => { const n = el && [...el.childNodes].find(x => x.nodeType === 3 && x.textContent.trim()); if (n) n.textContent = novo; };
+const smTrocarInfo = (el, txt) => { const b = el && el.querySelector('button.info'); if (b){ b.dataset.info = txt; b.setAttribute('aria-label', 'O que é: ' + txt); } };
+function smDobra(chave, titulo, resumo, filhos){
+  const d = document.createElement('details'); d.className = 'g-cartao sm-dobra'; d.dataset.smDobra = chave;
+  if (UI['smDobra_' + chave]) d.open = true;
+  d.innerHTML = '<summary><h4>' + esc(titulo) + '</h4>' + (resumo ? '<span class="sm-resumo">' + resumo + '</span>' : '') + '</summary><div class="sm-dobra-corpo"></div>';
+  const corpo = d.querySelector('.sm-dobra-corpo'); filhos.filter(Boolean).forEach(f => corpo.appendChild(f));
+  d.addEventListener('toggle', () => { UI['smDobra_' + chave] = d.open; salvarUI(); });
+  return d;
+}
+function smGaveta(i){
+  const g = $('#gaveta-wrap .gaveta'); if (!g || !i || g.dataset.sm) return; g.dataset.sm = '1';
+  const lat = $('.g-lateral', g), pri = $('.g-principal', g); if (!lat || !pri) return;
+  // rótulos e explicações em português
+  $$('.d-rot', g).forEach(r => { const k = smTextoDe(r), n = SM_ROTULOS[k]; if (n){ smTrocarTexto(r, n[0]); smTrocarInfo(r, n[1]); } r.closest('.d-lin').dataset.smCampo = k; });
+  $$('.g-sec > h4, .g-cartao > h4', g).forEach(h => { const k = smTextoDe(h); if (SM_SECOES[k]){ smTrocarTexto(h, SM_SECOES[k]); smTrocarInfo(h, SM_SECOES[k]); } h.closest('.g-sec, .g-cartao').dataset.smSec = k; });
+  $$('.g-lk-tipo', g).forEach(s => { if (SM_LIGACAO[s.textContent]) s.textContent = SM_LIGACAO[s.textContent]; });
+  $$('form[data-form="link"] select[name="tipo"] option', g).forEach(o => { if (SM_LIGACAO[o.textContent]){ o.value = o.value || o.textContent; o.textContent = SM_LIGACAO[o.textContent]; } });
+  $$('select[data-g="status"] option, select[data-g="prio"] option, select[data-g="tipo"] option', lat).forEach(o => { const [n, ...x] = o.textContent.split(' · '); if (x.length){ o.title = x.join(' · '); o.textContent = n; } });
+  $$('input[placeholder]', pri).forEach(inp => { if (/^Novo .+ dentro deste$/.test(inp.placeholder)) inp.placeholder = 'Novo subitem: escreva o título'; });
+  // o cartão principal: só o que se mexe todo dia
+  const cartoes = $$(':scope > .g-cartao', lat);
+  const det = cartoes[0]; if (!det) return;
+  const linha = k => $('.d-lin[data-sm-campo="' + k + '"]', lat);
+  smTrocarTexto(det.querySelector('h4'), 'Principal');
+  ['Status','Priority','Assignee','Due date','Milestone','Sprint'].map(linha).filter(Boolean).forEach(l => det.appendChild(l));
+  // "Mais detalhes": o resto, recolhido
+  const sobre = document.createElement('section'); sobre.className = 'sm-grupo';
+  sobre.innerHTML = '<p class="rotulo-mini">Sobre o item</p>';
+  ['Tipo','Workstream','Visibility','Reporter','Parent'].map(linha).filter(Boolean).forEach(l => sobre.appendChild(l));
+  $$(':scope > .d-lin', det).forEach(l => { if (!['Status','Priority','Assignee','Due date','Milestone','Sprint'].includes(l.dataset.smCampo)) sobre.appendChild(l); });
+  const secao = k => cartoes.find(c => c.dataset.smSec === k || (c.querySelector('h4') && smTextoDe(c.querySelector('h4')) === k));
+  const datas = secao('Datas'), estim = secao('Estimativa e conclusão'), pessoas = secao('Pessoas e etiquetas');
+  if (datas && estim){ smTrocarTexto(estim.querySelector('h4'), 'Esforço e datas'); $$(':scope > .d-lin', datas).forEach(l => estim.appendChild(l)); datas.remove(); }
+  const grupos = [sobre, pessoas, estim || datas].filter(Boolean).map(c => { c.classList.remove('g-cartao'); c.classList.add('sm-grupo'); const h = c.querySelector(':scope > h4'); if (h){ const p = document.createElement('p'); p.className = 'rotulo-mini'; p.innerHTML = h.innerHTML; h.replaceWith(p); } return c; });
+  const dev = $(':scope > .en-dev, :scope > .en-dev-lugar', lat);
+  const qtdMais = $$('.d-lin', grupos[0]).length + grupos.slice(1).reduce((s, c) => s + $$('.d-lin', c).length, 0);
+  (dev || det).after(smDobra('mais', 'Mais detalhes', qtdMais + ' campos', grupos));
+  // "Tempo": cronômetro e horário reservado juntos, recolhido
+  const cron = secao('Time tracking'), bloco = secao('Time blocking');
+  if (cron || bloco){
+    const tempo = [cron, bloco].filter(Boolean).map(c => { c.classList.remove('g-cartao'); c.classList.add('sm-grupo'); const h = c.querySelector(':scope > h4'); if (h){ const p = document.createElement('p'); p.className = 'rotulo-mini'; p.innerHTML = h.innerHTML; h.replaceWith(p); } return c; });
+    const gasto = $('#g-cron', g);
+    const dobraT = smDobra('tempo', 'Tempo', gasto ? '<span class="sm-cron-resumo">' + esc(gasto.textContent) + '</span>' : '', tempo);
+    const rod = $(':scope > .tf-rodape-item', lat);
+    lat.insertBefore(dobraT, rod || null);
+  }
+  // corpo: a ordem de leitura do mais usado para o menos usado
+  const ordem = ['Checklist','Child issues','References','Links','Custom fields','Comments'];
+  const secs = ordem.map(k => $$(':scope > .g-sec', pri).find(s => s.dataset.smSec === k)).filter(Boolean);
+  secs.forEach(s => pri.appendChild(s));
+  $$(':scope > .g-sec', pri).forEach(s => { if (!ordem.includes(s.dataset.smSec) && !s.classList.contains('tf-desc')) pri.insertBefore(s, secs.find(x => x.dataset.smSec === 'Comments') || null); });
+}
+const _abrirItemSm = abrirItem;
+abrirItem = function(id){ const r = _abrirItemSm.apply(this, arguments); smGaveta(byId('issues', id)); return r; };
+
+if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {abrirItem, rOperacoes, rView, smAgruparAbas, STATUS, VIEWS});
 
 abrirModulo(UI.modulo);
 })();
