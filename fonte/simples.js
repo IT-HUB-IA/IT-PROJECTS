@@ -77,6 +77,58 @@ document.addEventListener('click', ev => {
 }, true);
 document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && $('.sm-abas-menu:not([hidden])')){ ev.stopPropagation(); smFecharMenuAbas(); const b = $('[data-sm-mais-abas]'); if (b) b.focus(); } }, true);
 
+/* ---------- cabeçalho do ponto escolhido: o que é, como está e o que dá para fazer ---------- */
+const SM_TIPO_NO = {Client:['Cliente','cliente'], Project:['Projeto','projeto'], Product:['Produto','produto'], Application:['Aplicação','aplicação'], Workstream:['Frente de trabalho','frente']};
+function smCabecalho(){
+  const tit = $('.ops-cab .ops-titulo'); if (!tit || tit.dataset.sm) return; tit.dataset.sm = '1';
+  const esq = $('.titulo-esq', tit), acoes = $(':scope > .acoes', tit), h1 = esq && $('h1', esq); if (!h1) return;
+  const pequeno = $('small', h1), tipo = pequeno && SM_TIPO_NO[pequeno.textContent.trim()];
+  if (tipo) pequeno.textContent = tipo[0];
+  if (UI.sel === 'all'){
+    smTrocarTexto(h1, 'Tudo'); if (pequeno) pequeno.textContent = 'Todos os projetos';
+    smTrocarInfo(h1, 'Tudo: os itens de todos os clientes e projetos numa tela só, com as mesmas abas e filtros.');
+    $$('.ops-cab .ops-trilha [data-rc-tudo]').forEach(b => { b.textContent = 'Tudo'; });
+  }
+  $$('.ops-arvore .rc-tudo .nome').forEach(n => { n.textContent = 'Tudo'; });
+  // uma linha que diz como está
+  if (UI.sel){
+    const its = issuesEm(UI.sel), abertos = its.filter(i => i.status !== 'done'), atr = abertos.filter(atrasado).length, trav = abertos.filter(i => i.status === 'blocked').length;
+    const partes = [its.length ? abertos.length + (abertos.length === 1 ? ' item em aberto' : ' itens em aberto') : 'Nenhum item ainda'];
+    if (its.length) partes.push(Math.round((its.length - abertos.length) / its.length * 100) + '% concluído');
+    if (atr) partes.push('<b class="sm-ruim">' + atr + (atr === 1 ? ' atrasado' : ' atrasados') + '</b>');
+    if (trav) partes.push('<b class="sm-ruim">' + trav + (trav === 1 ? ' travado' : ' travados') + '</b>');
+    h1.insertAdjacentHTML('afterend', '<p class="sm-resumo-no">' + partes.join('<span aria-hidden="true"> · </span>') + '</p>');
+  }
+  // etiquetas numa linha própria, com nome
+  const tags = $('.tags', esq);
+  if (tags){
+    tags.insertAdjacentHTML('afterbegin', '<span class="sm-rot-tags">Etiquetas</span>');
+    $$('.tag.sistema', tags).forEach(t => { t.title = 'Etiqueta automática: vem da ligação com o cliente e não pode ser apagada'; });
+    const add = $('[data-acao="por-tag"]', tags); if (add) smTrocarTexto(add, 'Etiqueta');
+    esq.appendChild(tags);
+  }
+  // situação: rótulo em português, nome curto e bolinha com a cor
+  const sel = acoes && $('select[data-estado]', acoes);
+  if (sel){
+    const lab = sel.closest('label'); if (lab){ smTrocarTexto(lab, 'Situação'); lab.classList.add('sm-situacao'); lab.dataset.est = sel.value; sel.insertAdjacentHTML('beforebegin', '<span class="sm-bola" aria-hidden="true"></span>'); }
+    $$('option', sel).forEach(o => { const [n, ...x] = o.textContent.split(' · '); if (x.length){ o.title = x.join(' · '); o.textContent = n; } });
+    sel.addEventListener('change', () => { if (lab) lab.dataset.est = sel.value; });
+  }
+  const faixa = $('.ops-cab .aviso-faixa b'); if (faixa && faixa.textContent.trim() === 'On Hold') faixa.textContent = 'Pausado';
+  smCompartilharJunto();
+  const exc = acoes && $('.tf-excluir-cab', acoes); if (exc) acoes.appendChild(exc);
+}
+// o botão Compartilhar chega um instante depois (multiusuario.js); vai para junto dos outros botões
+function smCompartilharJunto(){
+  const tit = $('#m-operacoes .ops-titulo'), comp = tit && $(':scope > .mu-comp-box', tit), acoes = tit && $(':scope > .acoes', tit);
+  if (!comp || !acoes) return;
+  const b = $('.mu-compartilhar', comp); if (b) b.classList.remove('peq');
+  acoes.insertBefore(comp, $('.tf-mais-cab', acoes) || null);
+}
+new MutationObserver(() => { if ($('#m-operacoes .ops-titulo > .mu-comp-box')) smCompartilharJunto(); }).observe(document.querySelector('.principal') || document.body, {childList:true, subtree:true});
+const _rOperacoesSmCab = rOperacoes;
+rOperacoes = function(){ const r = _rOperacoesSmCab.apply(this, arguments); smCabecalho(); return r; };
+
 /* ---------- tela do item ---------- */
 const SM_ROTULOS = {
   'Priority':['Prioridade','Prioridade: quanto isso é urgente perto dos outros itens.'],

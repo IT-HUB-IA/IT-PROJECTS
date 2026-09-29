@@ -1907,6 +1907,26 @@ dialog.modal.modal-larga{max-width:min(960px,calc(100% - 32px))}
     .sm-abas-menu{position:fixed;left:16px;right:16px;top:auto;bottom:16px;width:auto;max-width:none;max-height:72vh;overflow:auto}
     .sm-abas-menu ul{max-height:none}
   }
+
+  /* cabeçalho do ponto escolhido */
+  .ops-cab .ops-titulo{align-items:flex-start}
+  .ops-cab .titulo-esq{display:grid;gap:6px;min-width:0}
+  .ops-cab .titulo-esq h1 small{font-family:var(--font-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--nevoa);border:1px solid var(--grafite);padding:3px 8px;font-weight:500}
+  .sm-resumo-no{margin:0;font-size:14px;color:var(--nevoa)}
+  .sm-resumo-no .sm-ruim{color:#FF6B6B;font-weight:600}
+  .ops-cab .titulo-esq .tags{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0}
+  .sm-rot-tags{font-family:var(--font-mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--nevoa);margin-right:4px}
+  .ops-cab .ops-titulo > .acoes{display:flex;flex-wrap:wrap;align-items:center;gap:8px;justify-content:flex-end}
+  .sm-situacao{display:flex;align-items:center;gap:8px}
+  .sm-bola{width:10px;height:10px;border-radius:50%;background:var(--sm-cor,#16B36B);box-shadow:0 0 0 3px rgba(255,255,255,.08);flex:none}
+  .sm-situacao[data-est="active"]{--sm-cor:#16B36B}
+  .sm-situacao[data-est="on_hold"]{--sm-cor:#E08600}
+  .sm-situacao[data-est="done"]{--sm-cor:#6D8BFF}
+  .sm-situacao[data-est="archived"]{--sm-cor:#8A8A92}
+  .ops-cab .tf-excluir-cab{color:#FF8A8A}
+  .ops-cab .tf-excluir-cab:hover{color:#fff;background:var(--vermelho);border-color:var(--vermelho)}
+  @media (max-width:760px){ .ops-cab .ops-titulo > .acoes{justify-content:flex-start} }
+  .ops-cab .acoes > .mu-comp-box{display:contents}
 /* ---------- Produtividade: busca rápida, atalhos, tema escuro ---------- */
   kbd{font-family:var(--font-mono);font-size:10.5px;line-height:1;padding:3px 5px;border:1px solid var(--nevoa);border-bottom-width:2px;background:var(--branco);color:var(--preto);white-space:nowrap}
   dialog.pk{padding:0;border:1px solid var(--preto);width:min(640px,calc(100vw - 32px));max-height:min(560px,calc(100vh - 96px));margin:12vh auto auto;background:var(--branco);color:var(--preto);box-shadow:0 24px 64px rgba(0,0,0,.28);overflow:hidden}
@@ -8698,6 +8718,58 @@ document.addEventListener('click', ev => {
   if (!t.closest('.sm-mais-casa')) smFecharMenuAbas();
 }, true);
 document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && $('.sm-abas-menu:not([hidden])')){ ev.stopPropagation(); smFecharMenuAbas(); const b = $('[data-sm-mais-abas]'); if (b) b.focus(); } }, true);
+
+/* ---------- cabeçalho do ponto escolhido: o que é, como está e o que dá para fazer ---------- */
+const SM_TIPO_NO = {Client:['Cliente','cliente'], Project:['Projeto','projeto'], Product:['Produto','produto'], Application:['Aplicação','aplicação'], Workstream:['Frente de trabalho','frente']};
+function smCabecalho(){
+  const tit = $('.ops-cab .ops-titulo'); if (!tit || tit.dataset.sm) return; tit.dataset.sm = '1';
+  const esq = $('.titulo-esq', tit), acoes = $(':scope > .acoes', tit), h1 = esq && $('h1', esq); if (!h1) return;
+  const pequeno = $('small', h1), tipo = pequeno && SM_TIPO_NO[pequeno.textContent.trim()];
+  if (tipo) pequeno.textContent = tipo[0];
+  if (UI.sel === 'all'){
+    smTrocarTexto(h1, 'Tudo'); if (pequeno) pequeno.textContent = 'Todos os projetos';
+    smTrocarInfo(h1, 'Tudo: os itens de todos os clientes e projetos numa tela só, com as mesmas abas e filtros.');
+    $$('.ops-cab .ops-trilha [data-rc-tudo]').forEach(b => { b.textContent = 'Tudo'; });
+  }
+  $$('.ops-arvore .rc-tudo .nome').forEach(n => { n.textContent = 'Tudo'; });
+  // uma linha que diz como está
+  if (UI.sel){
+    const its = issuesEm(UI.sel), abertos = its.filter(i => i.status !== 'done'), atr = abertos.filter(atrasado).length, trav = abertos.filter(i => i.status === 'blocked').length;
+    const partes = [its.length ? abertos.length + (abertos.length === 1 ? ' item em aberto' : ' itens em aberto') : 'Nenhum item ainda'];
+    if (its.length) partes.push(Math.round((its.length - abertos.length) / its.length * 100) + '% concluído');
+    if (atr) partes.push('<b class="sm-ruim">' + atr + (atr === 1 ? ' atrasado' : ' atrasados') + '</b>');
+    if (trav) partes.push('<b class="sm-ruim">' + trav + (trav === 1 ? ' travado' : ' travados') + '</b>');
+    h1.insertAdjacentHTML('afterend', '<p class="sm-resumo-no">' + partes.join('<span aria-hidden="true"> · </span>') + '</p>');
+  }
+  // etiquetas numa linha própria, com nome
+  const tags = $('.tags', esq);
+  if (tags){
+    tags.insertAdjacentHTML('afterbegin', '<span class="sm-rot-tags">Etiquetas</span>');
+    $$('.tag.sistema', tags).forEach(t => { t.title = 'Etiqueta automática: vem da ligação com o cliente e não pode ser apagada'; });
+    const add = $('[data-acao="por-tag"]', tags); if (add) smTrocarTexto(add, 'Etiqueta');
+    esq.appendChild(tags);
+  }
+  // situação: rótulo em português, nome curto e bolinha com a cor
+  const sel = acoes && $('select[data-estado]', acoes);
+  if (sel){
+    const lab = sel.closest('label'); if (lab){ smTrocarTexto(lab, 'Situação'); lab.classList.add('sm-situacao'); lab.dataset.est = sel.value; sel.insertAdjacentHTML('beforebegin', '<span class="sm-bola" aria-hidden="true"></span>'); }
+    $$('option', sel).forEach(o => { const [n, ...x] = o.textContent.split(' · '); if (x.length){ o.title = x.join(' · '); o.textContent = n; } });
+    sel.addEventListener('change', () => { if (lab) lab.dataset.est = sel.value; });
+  }
+  const faixa = $('.ops-cab .aviso-faixa b'); if (faixa && faixa.textContent.trim() === 'On Hold') faixa.textContent = 'Pausado';
+  smCompartilharJunto();
+  const exc = acoes && $('.tf-excluir-cab', acoes); if (exc) acoes.appendChild(exc);
+}
+// o botão Compartilhar chega um instante depois (multiusuario.js); vai para junto dos outros botões
+function smCompartilharJunto(){
+  const tit = $('#m-operacoes .ops-titulo'), comp = tit && $(':scope > .mu-comp-box', tit), acoes = tit && $(':scope > .acoes', tit);
+  if (!comp || !acoes) return;
+  const b = $('.mu-compartilhar', comp); if (b) b.classList.remove('peq');
+  acoes.insertBefore(comp, $('.tf-mais-cab', acoes) || null);
+}
+new MutationObserver(() => { if ($('#m-operacoes .ops-titulo > .mu-comp-box')) smCompartilharJunto(); }).observe(document.querySelector('.principal') || document.body, {childList:true, subtree:true});
+const _rOperacoesSmCab = rOperacoes;
+rOperacoes = function(){ const r = _rOperacoesSmCab.apply(this, arguments); smCabecalho(); return r; };
 
 /* ---------- tela do item ---------- */
 const SM_ROTULOS = {
