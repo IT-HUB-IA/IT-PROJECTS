@@ -1959,6 +1959,15 @@ dialog.modal.modal-larga{max-width:min(960px,calc(100% - 32px))}
   .sm-escolha small{font-size:12px;color:var(--tinta-3)}
   .sm-escolha input{accent-color:var(--preto)}
   @media (max-width:760px){ .sm-abas-menu{width:auto} .sm-escolha{grid-template-columns:1fr} }
+
+  /* Fila (backlog): uma frase que diz o que é */
+  .bj-intro{display:grid;gap:2px;margin:0 0 14px;padding:12px 16px;background:var(--branco);border:1px solid var(--linha);border-left:3px solid var(--preto);font-size:14px}
+  .bj-intro b{font-size:15px}
+  .bj-intro span{color:var(--tinta-2)}
+  .bj-ep-expl{display:block;font-weight:400;font-size:12px;color:var(--tinta-3);margin-top:2px}
+  .bj-link{border:0;background:none;padding:0;font:inherit;font-weight:600;color:var(--preto);text-decoration:underline;cursor:pointer}
+  .bj-sec-acoes .btn[disabled]{opacity:.55;cursor:not-allowed}
+  .bj-epicos header{align-items:flex-start!important;gap:8px}
 /* ---------- Produtividade: busca rápida, atalhos, tema escuro ---------- */
   kbd{font-family:var(--font-mono);font-size:10.5px;line-height:1;padding:3px 5px;border:1px solid var(--nevoa);border-bottom-width:2px;background:var(--branco);color:var(--preto);white-space:nowrap}
   dialog.pk{padding:0;border:1px solid var(--preto);width:min(640px,calc(100vw - 32px));max-height:min(560px,calc(100vh - 96px));margin:12vh auto auto;background:var(--branco);color:var(--preto);box-shadow:0 24px 64px rgba(0,0,0,.28);overflow:hidden}
@@ -6550,15 +6559,16 @@ function vBacklog(){
     const aberto = (UI.bjFechadas || []).includes(id || 'backlog') ? false : aberta !== false;
     return '<section class="bj-sec' + (aberto ? '' : ' fechada') + '"><header class="bj-sec-cab"><button type="button" class="bj-sec-seta" data-bj-dobrar="' + (id || 'backlog') + '" aria-expanded="' + aberto + '" aria-label="Abrir ou fechar">' + (aberto ? '▾' : '▸') + '</button>' +
       '<div class="bj-sec-tit"><b>' + titulo + '</b><span class="sec">' + sub + ' · ' + itens.length + ' ite' + (itens.length === 1 ? 'm' : 'ns') + (soma ? ' · ' + soma : '') + '</span></div><div class="bj-sec-acoes">' + (acoes || '') + '</div></header>' +
-      (aberto ? '<ul class="bj-lista" data-bj-sec="' + (id || '') + '">' + (itens.length ? itens.sort(porOrdemItem).map(linhaBacklog).join('') : '<li class="bj-vazio-linha">' + (id ? 'Arraste itens do backlog para planejar este sprint.' : 'O backlog está vazio.') + '</li>') + '</ul>' +
-        (pode ? '<form class="bj-criar-linha" data-bj-criar="' + (id || '') + '"><input class="campo" name="t" placeholder="+ Criar item' + (id ? ' neste sprint' : ' no backlog') + '" aria-label="Criar item"><button class="btn peq" type="submit">Criar</button></form>' : '') : '') + '</section>';
+      (aberto ? '<ul class="bj-lista" data-bj-sec="' + (id || '') + '">' + (itens.length ? itens.sort(porOrdemItem).map(linhaBacklog).join('') : '<li class="bj-vazio-linha">' + (id ? 'Arraste itens da fila para planejar este sprint.' : 'Nada na fila. Tudo o que foi criado já começou.') + '</li>') + '</ul>' +
+        (pode ? '<form class="bj-criar-linha" data-bj-criar="' + (id || '') + '"><input class="campo" name="t" placeholder="+ Novo item' + (id ? ' neste sprint' : ' na fila') + '" aria-label="Criar item"><button class="btn peq" type="submit">Criar</button></form>' : '') : '') + '</section>';
   };
   let html = '';
   if (tipoB === 'kanban' || tipoB === 'simples'){
     const bl = todos.filter(i => i.status === 'backlog' || (!cfg || !cfg.backlog ? false : false));
-    html += secao('', 'Backlog', 'no Kanban, o Backlog guarda o que ainda não entrou no Board', bl, pode ? '<button type="button" class="btn sec peq" data-bj-acao="mover-board">Mandar os marcados para o Board</button>' : '');
+    const nMarc = (UI.bjSel || []).filter(id => bl.some(i => i.id === id)).length;
+    html += secao('', 'Na fila', 'ainda não começaram', bl, pode ? '<button type="button" class="btn ' + (nMarc ? '' : 'sec ') + 'peq" data-bj-acao="mover-board"' + (nMarc ? '' : ' disabled title="Marque os itens na caixinha da esquerda"') + '>' + (nMarc ? 'Começar ' + nMarc + (nMarc === 1 ? ' item' : ' itens') : 'Começar os marcados') + '</button>' : '');
     const resto = todos.filter(i => i.status !== 'backlog' && i.status !== 'done');
-    html += '<p class="sec bj-dica">No Board estão ' + resto.length + ' itens em andamento. Para trabalhar com sprints, mude o tipo do Board para Scrum em <b>⋯ Configurar</b>.</p>';
+    html += '<p class="sec bj-dica">Já começados: ' + resto.length + (resto.length === 1 ? ' item está' : ' itens estão') + ' no Quadro. <button type="button" class="bj-link" data-view="board">Ver o Quadro</button></p>';
   } else {
     sps.forEach(s => {
       const its = todos.filter(i => i.sprint === s.id);
@@ -6567,22 +6577,23 @@ function vBacklog(){
       html += secao(s.id, esc(s.nome), sub, its, ac);
     });
     const bl = todos.filter(i => i.status !== 'done' && (!i.sprint || !idsSp.has(i.sprint)));
-    html += secao('', 'Backlog', 'o que ainda não está em nenhum sprint', bl, pode ? '<button type="button" class="btn sec peq" data-rc-acao="sprint-novo">Criar sprint</button>' : '');
+    html += secao('', 'Na fila', 'ainda não estão em nenhum sprint', bl, pode ? '<button type="button" class="btn sec peq" data-rc-acao="sprint-novo">Criar sprint</button>' : '');
   }
   const marc = (UI.bjSel || []).filter(id => byId('issues', id));
   const barra = marc.length && pode ? '<div class="bj-massa"><b>' + marc.length + ' selecionado' + (marc.length === 1 ? '' : 's') + '</b>' +
-    (tipoB === 'scrum' ? '<label class="rotulo-mini">Mover para<select class="sel peq" data-bj-massa="sprint"><option value="">Escolha</option><option value="__bl">Backlog</option>' + sps.map(s => '<option value="' + s.id + '">' + esc(s.nome) + '</option>').join('') + '</select></label>' : '') +
+    (tipoB === 'scrum' ? '<label class="rotulo-mini">Mover para<select class="sel peq" data-bj-massa="sprint"><option value="">Escolha</option><option value="__bl">Fila</option>' + sps.map(s => '<option value="' + s.id + '">' + esc(s.nome) + '</option>').join('') + '</select></label>' : '') +
     '<label class="rotulo-mini">Épico<select class="sel peq" data-bj-massa="epic"><option value="">Escolha</option><option value="__sem">Tirar do épico</option>' + epics.map(e => '<option value="' + e.id + '">' + esc(e.titulo) + '</option>').join('') + '</select></label>' +
     '<button type="button" class="btn sec peq" data-bj-acao="sinalizar-massa">Sinalizar</button><button type="button" class="btn fant peq" data-bj-acao="limpar-sel">Limpar seleção</button></div>' : '';
-  const painelEp = UI.bjEpicos === false ? '' : '<aside class="bj-epicos" aria-label="Épicos"><header><b>Épicos</b><button type="button" class="ico-btn" data-bj-acao="epicos" aria-label="Fechar o painel de épicos">' + ICO.fechar + '</button></header>' +
+  const painelEp = UI.bjEpicos === false ? '' : '<aside class="bj-epicos" aria-label="Épicos"><header><b>Épicos<small class="bj-ep-expl">as entregas grandes. Clique para ver só os itens de uma</small></b><button type="button" class="ico-btn" data-bj-acao="epicos" aria-label="Fechar o painel de épicos">' + ICO.fechar + '</button></header>' +
     '<button type="button" class="bj-ep' + (!UI.bjEpic ? ' ligado' : '') + '" data-bj-epic="">Todos os itens</button>' +
     epics.map(e => { const filhos = D.issues.filter(x => epicDe(x) && epicDe(x).id === e.id); const f = filhos.filter(x => x.status === 'done').length; const p = filhos.length ? Math.round(f / filhos.length * 100) : 0;
       return '<button type="button" class="bj-ep' + (UI.bjEpic === e.id ? ' ligado' : '') + '" data-bj-epic="' + e.id + '" style="--c:' + corEpic(e) + '"><span class="bj-ep-nome">' + esc(e.titulo) + '</span><span class="bj-ep-bar"><i style="width:' + p + '%"></i></span><small>' + f + ' de ' + filhos.length + ' concluídos</small></button>'; }).join('') +
     '<button type="button" class="bj-ep' + (UI.bjEpic === 'sem' ? ' ligado' : '') + '" data-bj-epic="sem">Itens sem épico</button>' +
     (pode ? '<button type="button" class="btn fant peq" data-bj-acao="novo-epic">' + ICO.mais + 'Criar épico</button>' : '') + '</aside>';
   const extra = avataresFiltro(issuesEm(UI.sel)) + (UI.bjEpicos === false ? '<button class="btn sec peq" type="button" data-bj-acao="epicos">Épicos</button>' : '') +
-    '<span class="bj-tipo-board">' + ({scrum:'Scrum', kanban:'Kanban', simples:'Simples'}[tipoB]) + '</span>' + (souMaster() ? '<button class="btn sec peq" type="button" data-bj-acao="config">⋯ Configurar</button>' : '');
-  return ferramentasHTML(extra) + barra + '<div class="bj-backlog' + (painelEp ? ' com-epicos' : '') + '">' + painelEp + '<div class="bj-secs">' + html + '</div></div>';
+    (souMaster() ? '<button class="btn sec peq" type="button" data-bj-acao="config" title="Colunas do quadro, forma de trabalhar (com ou sem sprints) e estimativa">⋯ Configurar o quadro</button>' : '');
+  const intro = '<div class="bj-intro"><b>Fila de ' + esc(pj.nome) + '</b><span>' + (tipoB === 'scrum' ? 'Tudo o que ainda não está em nenhum sprint. Arraste um item para um sprint para planejar.' : 'Tudo o que foi pedido e ainda não começou. Para começar, marque os itens e clique em <b>Começar</b>: eles vão para a coluna A fazer do Quadro.') + '</span></div>';
+  return ferramentasHTML(extra) + barra + intro + '<div class="bj-backlog' + (painelEp ? ' com-epicos' : '') + '">' + painelEp + '<div class="bj-secs">' + html + '</div></div>';
 }
 
 /* ---------- criar item pelo Backlog e ações ---------- */
@@ -6634,7 +6645,7 @@ document.addEventListener('click', e => {
     else if (a === 'epicos'){ UI.bjEpicos = UI.bjEpicos === false; salvarUI(); rView(); }
     else if (a === 'limpar-sel'){ UI.bjSel = []; rView(); }
     else if (a === 'sinalizar-massa'){ (UI.bjSel || []).map(id => byId('issues', id)).filter(Boolean).forEach(i => { if (!i.sinal) alternarSinal(i, ''); }); UI.bjSel = []; salvar(); rView(); }
-    else if (a === 'mover-board'){ const ids = (UI.bjSel || []).map(id => byId('issues', id)).filter(Boolean); if (!ids.length){ toast('Marque os itens que vão para o Board'); return; } ids.forEach(i => mudarStatus(i, 'todo')); UI.bjSel = []; salvar(); rView(); }
+    else if (a === 'mover-board'){ const ids = (UI.bjSel || []).map(id => byId('issues', id)).filter(Boolean); if (!ids.length){ toast('Marque os itens que quer começar'); return; } ids.forEach(i => mudarStatus(i, 'todo')); UI.bjSel = []; salvar(); rView(); toast(ids.length + (ids.length === 1 ? ' item foi' : ' itens foram') + ' para A fazer, no Quadro'); }
     else if (a === 'novo-epic'){ modal('Criar épico', '<label class="lb">Nome do épico<input class="campo" id="bj-ep-n" placeholder="Ex.: Área do cliente"></label>', [{txt:'Cancelar', cls:'sec'}, {txt:'Criar', acao:dl => { const n = $('#bj-ep-n', dl).value.trim(); if (!n){ toast('Escreva o nome'); return false; } const ni = criarItemRapido(n, null, 'todo'); if (!ni) return false; ni.tipo = 'epic'; ni.pai = null; salvar(); rView(); toast('Épico criado'); }}]); }
     return;
   }
