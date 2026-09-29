@@ -4,7 +4,7 @@
 
 export type Rpc = (nome: string, args?: Record<string, unknown>) => Promise<{ data: unknown; error: { message?: string } | null }>;
 export type Enviar = (m: { para: string; assunto: string; html: string; texto: string }) => Promise<boolean>;
-export type Config = { segredo: string; site: string };
+export type Config = { segredo: string; site: string; envioPronto?: boolean };
 
 type Aviso = { id: string; tipo: string; titulo: string; texto: string | null; item_id: string | null; quando: string };
 type Grupo = { pessoa_id: string; nome: string; email: string; avisos: Aviso[] };
@@ -67,6 +67,8 @@ export async function tratar(req: Request, rpc: Rpc, enviar: Enviar, cfg: Config
   if (req.method !== "POST") return resposta({ ok: false, erro: "use POST" }, 405);
   if (!cfg.segredo || !iguais(req.headers.get("x-avisos-segredo") ?? "", cfg.segredo)) return resposta({ ok: false, erro: "não autorizado" }, 401);
   const modo = new URL(req.url).searchParams.get("modo") ?? "";
+  // sem a conta de envio configurada, não pega nada da fila: os avisos esperam até o e-mail estar pronto
+  if (cfg.envioPronto === false) return resposta({ ok: false, erro: "envio de e-mail ainda não configurado" }, 503);
   if (modo === "semanal") {
     const { data, error } = await rpc("relatorio_semanal_lote");
     if (error) return resposta({ ok: false, erro: "não deu para ler o banco" }, 500);

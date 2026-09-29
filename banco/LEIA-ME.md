@@ -34,9 +34,9 @@ Testada no Postgres local (`96_teste_tarefas_LOCAL.sql`: 37 de 37) e conferida n
 | `lixeira_mover`, `lixeira_restaurar`, `lixeira_apagar`, `lixeira_listar` | O que a tela chama. Confere quem pode: o que é do meu espaço, ou está dentro de algo compartilhado comigo como owner ou dev. O ponto compartilhado em si só o dono do espaço exclui |
 | Rotina `ciclodev_lixeira` (todo dia, 4h23) | Apaga de vez o que está na lixeira há mais de 30 dias, com tudo o que tinha dentro |
 
-## Parte 20: comunicação e metas (AINDA NÃO APLICADA)
+## Parte 20: comunicação e metas (aplicada em 29/09/2026 como `ciclodev_28_comunicacao_metas`)
 
-Testada no Postgres local (`98_teste_comunicacao_LOCAL.sql`: 47 de 47; as partes 18 e 19 continuam 37 de 37 e 42 de 42 com a 20 por cima). Pode ser aplicada antes da tela nova: a tela lê as tabelas novas separado e, se elas ainda não existirem, só avisa "falta atualizar o banco" nas Metas e nas Preferências.
+Testada no Postgres local (`98_teste_comunicacao_LOCAL.sql`: 47 de 47; as partes 18 e 19 continuam 37 de 37 e 42 de 42 com a 20 por cima). Conferida no Supabase depois de aplicar: 4 tabelas novas com RLS e GRANT (nada para `anon`), uma versão só de cada função, os 4 gatilhos criados e as funções do e-mail só para `service_role`. A Edge Function `enviar-avisos` está implantada (versão 1, verify_jwt desligado); enquanto `RESEND_API_KEY` e `AVISOS_REMETENTE` não existirem, ela responde 503 e não mexe na fila.
 
 | Peça | Para que serve |
 |---|---|
@@ -95,7 +95,7 @@ Junto vai a Edge Function `supabase/functions/git-webhook` (implantar com **veri
 | `96_teste_tarefas_LOCAL.sql` | 37 testes da parte 18: repetição, lembrete, versões, lixeira, limpeza de 30 dias, modelos e quem pode o quê | Não |
 | `19_codigo_entregas.sql` | Código do GitHub e do GitLab ligado aos itens (status anda sozinho), registro das publicações e notas de versão | Sim (aplicada em 29/09/2026) |
 | `97_teste_codigo_LOCAL.sql` | 42 testes da parte 19: avisos assinados do GitHub e do GitLab, status sozinho, publicações, versões e quem pode o quê | Não |
-| `20_comunicacao_metas.sql` | Menções, avisos automáticos, fila de e-mail, preferências de cada pessoa e metas | Ainda não |
+| `20_comunicacao_metas.sql` | Menções, avisos automáticos, fila de e-mail, preferências de cada pessoa e metas | Sim (aplicada em 29/09/2026) |
 | `98_teste_comunicacao_LOCAL.sql` | 47 testes da parte 20: quem é avisado e quem não é, fila de e-mail, preferências, metas e quem pode o quê | Não |
 | `21_avisos_email_SUPABASE.sql` | Rotinas que chamam a função `enviar-avisos` (precisa de `pg_net` e do segredo no Vault) | Ainda não, e só depois da função |
 

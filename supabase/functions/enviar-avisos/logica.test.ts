@@ -50,5 +50,8 @@ const b = JSON.parse(String(pedidoResend!.init.body));
 ok(pedidoResend!.url === "https://api.resend.com/emails" && b.from === "CicloDev <avisos@it-ia.tec.br>" && b.to[0] === "w@x.com" && b.text === "t", "Resend: remetente, destino e texto certos");
 ok(!(await enviarPeloResend("", "x", falso)({ para: "w@x.com", assunto: "a", html: "", texto: "" })), "sem chave do Resend não tenta enviar");
 
+chamadas.length = 0;
+res = await tratar(pedido("imediato"), rpc([grupo("w@x.com", ["a"])]), enviar(() => true), { ...cfg, envioPronto: false });
+ok(res.status === 503 && chamadas.length === 0, "sem conta de envio configurada, não mexe na fila");
 console.log(falhas ? falhas + " FALHA(S)" : "TUDO OK");
 if (falhas) process.exit(1);

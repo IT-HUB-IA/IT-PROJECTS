@@ -6,6 +6,7 @@ import { enviarPeloResend, tratar } from "./logica.ts";
 
 const banco = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
 const enviar = enviarPeloResend(Deno.env.get("RESEND_API_KEY") ?? "", Deno.env.get("AVISOS_REMETENTE") ?? "");
-const cfg = { segredo: Deno.env.get("AVISOS_SEGREDO") ?? "", site: Deno.env.get("CICLODEV_SITE") ?? "https://ciclodev.it-ia.tec.br/entrar" };
+const cfg = { segredo: Deno.env.get("AVISOS_SEGREDO") ?? "", site: Deno.env.get("CICLODEV_SITE") ?? "https://ciclodev.it-ia.tec.br/entrar",
+  envioPronto: !!Deno.env.get("RESEND_API_KEY") && !!Deno.env.get("AVISOS_REMETENTE") };
 
 Deno.serve((req) => tratar(req, (nome, args) => banco.rpc(nome, args), enviar, cfg));
