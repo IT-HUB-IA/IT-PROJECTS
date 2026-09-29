@@ -21,3 +21,12 @@ dialog.modal.lt-modal{width:min(1040px, calc(100vw - 32px));max-width:none}
 .lt-lista ul li > span:first-child{min-width:0;overflow-wrap:anywhere}
 @media (max-width:760px){ .lt-grade{grid-template-columns:1fr} .lt-texto, .lt-previa{min-height:200px} }
 .lt-vs{border-color:var(--preto);color:var(--preto);text-transform:none}
+/* atalhos em cima da caixa */
+.lt-atalhos{display:grid;gap:6px}
+.lt-at-g{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.lt-at-g > span{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--tinta-3);min-width:74px}
+.lt-at{display:inline-flex;align-items:center;gap:4px;font:inherit;font-size:12.5px;padding:4px 10px;border:1px solid var(--linha);background:var(--branco);color:var(--preto);cursor:pointer}
+.lt-at svg{width:12px;height:12px}
+.lt-at:hover{border-color:var(--preto)}
+.lt-at:focus-visible{outline:2px solid var(--preto);outline-offset:1px}
+.lt-at-nova{border-style:dashed}

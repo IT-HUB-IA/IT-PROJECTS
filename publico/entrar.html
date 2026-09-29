@@ -2395,6 +2395,15 @@ dialog.modal.lt-modal{width:min(1040px, calc(100vw - 32px));max-width:none}
 .lt-lista ul li > span:first-child{min-width:0;overflow-wrap:anywhere}
 @media (max-width:760px){ .lt-grade{grid-template-columns:1fr} .lt-texto, .lt-previa{min-height:200px} }
 .lt-vs{border-color:var(--preto);color:var(--preto);text-transform:none}
+/* atalhos em cima da caixa */
+.lt-atalhos{display:grid;gap:6px}
+.lt-at-g{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.lt-at-g > span{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--tinta-3);min-width:74px}
+.lt-at{display:inline-flex;align-items:center;gap:4px;font:inherit;font-size:12.5px;padding:4px 10px;border:1px solid var(--linha);background:var(--branco);color:var(--preto);cursor:pointer}
+.lt-at svg{width:12px;height:12px}
+.lt-at:hover{border-color:var(--preto)}
+.lt-at:focus-visible{outline:2px solid var(--preto);outline-offset:1px}
+.lt-at-nova{border-style:dashed}
 /* Entregas: versões em tabela (versoes.js) */
 dialog.modal.vs-modal{width:min(1100px, calc(100vw - 32px));max-width:none}
 .vs-rolo{overflow-x:auto;border:1px solid var(--linha)}
@@ -2417,6 +2426,20 @@ dialog.modal.vs-modal{width:min(1100px, calc(100vw - 32px));max-width:none}
 .vs-abrir{margin-top:8px}
 .vs-lapis{width:30px;height:30px}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+/* voltar para a janela anterior (navegar.js) e decisões para a ficha técnica (decisoes.js) */
+.nav-voltar{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;flex:0 0 auto;margin-right:-4px;border:0;background:transparent;color:var(--vermelho);cursor:pointer;padding:0}
+.nav-voltar:hover{background:var(--preto-04)}
+.nav-voltar:focus-visible{outline:2px solid var(--vermelho);outline-offset:1px}
+.gaveta-cab .nav-voltar + *{margin-left:0}
+.dc-sec{display:grid;gap:10px}
+.dc-ajuda{margin:0;font-size:13px;color:var(--tinta-3)}
+.dc-campo{display:grid;gap:4px}
+.dc-onde{margin:0;font-size:13px;color:var(--tinta-2);display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.dc-veio{display:block;margin-top:4px;font-size:12px;color:var(--tinta-3);text-transform:none;letter-spacing:0;font-weight:400}
+.dc-link{border:0;background:none;padding:0;font:inherit;color:var(--preto);text-decoration:underline;cursor:pointer}
+.dc-curta{padding-top:0}
+.dc-linha{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:13px;color:var(--tinta-3);margin:0}
+.dc-linha .sel{max-width:280px}
 
   .conteudo.sem-pad{padding:0;display:flex;flex-direction:column;flex:1}
   .conteudo.sem-pad > div{flex:1;display:flex;flex-direction:column}
@@ -10271,7 +10294,7 @@ function ltLer(texto){
   const achaFrente = nome => { const n = ltNorm(nome); return frentes.find(w => ltNorm(w.nome) === n) || frentes.find(w => ltNorm(byId('apps', w.app).nome + ' › ' + w.nome) === n) || null; };
   const versoes = marcosDoEscopo(UI.sel);
   const achaVersao = nome => { const n = ltNorm(nome); return versoes.find(v => ltNorm(v.nome) === n) || null; };
-  const grupos = [], avisos = [];
+  const grupos = [], avisos = [], novasV = [];
   let atual = null;
   String(texto || '').split(/\r?\n/).forEach((bruta, k) => {
     let l = bruta.trim(); if (!l) return;
@@ -10281,21 +10304,30 @@ function ltLer(texto){
     while ((m = /\s*(\[([^\]]+)\]|\{([^}]+)\})\s*$/.exec(l))){
       l = l.slice(0, m.index).trim();
       if (m[2] != null){ const f = achaFrente(m[2]); if (f) ws = f.id; else avisos.push('Linha ' + (k + 1) + ': a frente "' + m[2].trim() + '" não existe aqui. Vai para ' + (item && atual ? 'a frente do épico' : 'a frente escolhida na Estrutura') + '.'); }
-      else { const v = achaVersao(m[3]); if (v) mc = v.id; else avisos.push('Linha ' + (k + 1) + ': a versão "' + m[3].trim() + '" não existe. Crie antes em Entregas › Nova versão, ou o item fica sem versão.'); }
+      else { const v = achaVersao(m[3]); if (v) mc = v.id; else if (m[3].trim()){ const n = m[3].trim(); mc = LT_NOVA + n; if (!novasV.includes(n)) novasV.push(n); } }
     }
     if (!l) return;
     if (!item){ const ja = epicsJa.find(e => ltNorm(e.titulo) === ltNorm(l)) || null; atual = {titulo:l, ws:ws || (ja ? ja.ws : padrao), mc:mc || (ja ? ja.marco || null : null), ja, itens:[]}; grupos.push(atual); return; }
     if (!atual){ atual = {titulo:null, ws:padrao, mc:null, ja:null, itens:[]}; grupos.push(atual); }
     atual.itens.push({titulo:l, ws:ws || atual.ws, mc:mc || atual.mc});
   });
-  return {grupos, avisos, padrao};
+  return {grupos, avisos, padrao, novasV};
 }
 const ltFrenteNome = id => { const w = byId('ws', id); return w ? w.nome : 'sem frente'; };
-const ltVersao = id => { const v = id && D.marcos.find(x => x.id === id); return v ? '<span class="lt-fr lt-vs">' + esc(v.nome) + '</span>' : ''; };
+const LT_NOVA = 'nova:';   // versão escrita no texto que ainda não existe: é criada junto, no projeto
+const ltVersao = id => { if (id && String(id).startsWith(LT_NOVA)) return '<span class="lt-fr lt-vs">' + esc(id.slice(LT_NOVA.length)) + ' (nova)</span>'; const v = id && D.marcos.find(x => x.id === id); return v ? '<span class="lt-fr lt-vs">' + esc(v.nome) + '</span>' : ''; };
+// a próxima versão depois da maior que existe: v1.2 vira v1.3, v1.2.0 vira v1.3.0; sem nenhuma, v0.1
+function ltProximaVersao(){
+  const ns = marcosDoEscopo(UI.sel).filter(m => m.tipo === 'release').map(m => m.nome);
+  const lidas = ns.map(n => { const m = /^(\D*)(\d+)\.(\d+)(?:\.(\d+))?/.exec(n); return m ? {pre:m[1] || 'v', a:+m[2], b:+m[3], c:m[4] == null ? null : +m[4]} : null; }).filter(Boolean);
+  if (!lidas.length) return 'v0.1';
+  lidas.sort((x, y) => y.a - x.a || y.b - x.b || (y.c || 0) - (x.c || 0));
+  const t = lidas[0]; return t.pre + t.a + '.' + (t.b + 1) + (t.c == null ? '' : '.0');
+}
 function ltPreviaHTML(r){
   const novos = r.grupos.filter(g => g.titulo && !g.ja).length, nItens = r.grupos.reduce((s, g) => s + g.itens.length, 0);
   if (!r.grupos.length) return '<p class="lt-vazio">A prévia aparece aqui enquanto você escreve.</p>';
-  return '<p class="lt-conta"><b>' + novos + (novos === 1 ? ' épico novo' : ' épicos novos') + '</b> e <b>' + nItens + (nItens === 1 ? ' item' : ' itens') + '</b> vão ser criados.</p>' +
+  return '<p class="lt-conta"><b>' + novos + (novos === 1 ? ' épico novo' : ' épicos novos') + '</b> e <b>' + nItens + (nItens === 1 ? ' item' : ' itens') + '</b> vão ser criados.' + (r.novasV && r.novasV.length ? ' Junto, ' + (r.novasV.length === 1 ? 'a versão nova ' : 'as versões novas ') + '<b>' + r.novasV.map(esc).join(', ') + '</b>.' : '') + '</p>' +
     (r.avisos.length ? '<ul class="lt-avisos">' + r.avisos.map(a => '<li>' + esc(a) + '</li>').join('') + '</ul>' : '') +
     '<ol class="lt-lista">' + r.grupos.map(g => '<li><div class="lt-ep">' + (g.titulo ? '<b>' + esc(g.titulo) + '</b>' + (g.ja ? '<small>já existe: os itens entram nele</small>' : '') : '<b class="lt-sem">Itens sem épico</b>') + '<span class="lt-fr">' + esc(ltFrenteNome(g.ws)) + '</span>' + ltVersao(g.mc) + '</div>' +
       (g.itens.length ? '<ul>' + g.itens.map(i => '<li><span>' + esc(i.titulo) + '</span>' + (i.ws !== g.ws ? '<span class="lt-fr">' + esc(ltFrenteNome(i.ws)) + '</span>' : '') + (i.mc !== g.mc ? ltVersao(i.mc) : '') + '</li>').join('') + '</ul>' : '') + '</li>').join('') + '</ol>';
@@ -10306,21 +10338,54 @@ function ltNovo(titulo, ws, tipo, status, pai, mc){
   ni.ordem = novaOrdem(D.issues.filter(x => !x.sprint), null);
   D.issues.push(ni); registrar('criou', ni); return ni;
 }
+// botões em cima da caixa: épico, item, cada frente, cada versão e a próxima versão
+function ltAtalhosHTML(){
+  const frentes = ltFrentes().map(w => w.nome).filter((n, k, a) => a.indexOf(n) === k);
+  const versoes = marcosDoEscopo(UI.sel).filter(m => m.tipo === 'release').map(m => m.nome), prox = ltProximaVersao();
+  const bt = (tipo, valor, txt, cls) => '<button type="button" class="lt-at' + (cls ? ' ' + cls : '') + '" data-lt-por="' + tipo + '" data-lt-valor="' + esc(valor) + '">' + txt + '</button>';
+  return '<div class="lt-atalhos" role="toolbar" aria-label="Atalhos">' +
+    '<div class="lt-at-g"><span>Linha nova</span>' + bt('epico', '', ICO.mais + 'Épico') + bt('item', '', ICO.mais + 'Item') + '</div>' +
+    '<div class="lt-at-g"><span>Frente</span>' + frentes.map(n => bt('frente', n, esc(n))).join('') + '</div>' +
+    '<div class="lt-at-g"><span>Versão</span>' + versoes.map(n => bt('versao', n, esc(n))).join('') + (versoes.includes(prox) ? '' : bt('versao', prox, ICO.mais + esc(prox) + ' (nova)', 'lt-at-nova')) + '</div></div>';
+}
+// põe o atalho na linha onde está o cursor: troca a frente ou a versão que já estiver no fim da linha
+function ltPor(ta, tipo, valor){
+  const v = ta.value, pos = ta.selectionStart == null ? v.length : ta.selectionStart;
+  const ini = v.lastIndexOf('\n', pos - 1) + 1, fimN = v.indexOf('\n', pos), fim = fimN < 0 ? v.length : fimN;
+  let linha = v.slice(ini, fim), cursor;
+  if (tipo === 'epico' || tipo === 'item'){
+    const novo = tipo === 'item' ? '- ' : '';
+    const antes = v.slice(0, fim), depois = v.slice(fim);
+    const sep = !antes.trim() ? '' : tipo === 'epico' ? '\n\n' : '\n';
+    ta.value = antes + sep + novo + depois; cursor = (antes + sep + novo).length;
+  } else {
+    const re = tipo === 'frente' ? /\s*\[[^\]]*\]/g : /\s*\{[^}]*\}/g;
+    const marca = tipo === 'frente' ? '[' + valor + ']' : '{' + valor + '}';
+    linha = linha.replace(re, '').replace(/\s+$/, '');
+    if (!linha.trim()){ toast('Escreva o nome na linha primeiro, depois escolha ' + (tipo === 'frente' ? 'a frente' : 'a versão')); ta.focus(); return; }
+    linha = linha + ' ' + marca;
+    ta.value = v.slice(0, ini) + linha + v.slice(fim); cursor = ini + linha.length;
+  }
+  ta.focus(); ta.setSelectionRange(cursor, cursor);
+}
 function ltAbrir(){
   if (!podeEditar()) return;
   if (!ltFrentes().length){ toast('Crie antes uma frente de trabalho numa aplicação (Estrutura › aplicação › ⋯ › Criar dentro)'); return; }
   modal('Criar em lote', '<div class="lt-grade"><div class="lt-esq"><label class="lb" for="lt-t">Escreva ou cole a lista</label>' +
+    ltAtalhosHTML() +
     '<textarea class="campo lt-texto" id="lt-t" rows="16" spellcheck="false" placeholder="' + esc(LT_EXEMPLO) + '"></textarea>' +
-    '<div class="lt-regras"><p><b>Linha sem traço</b> vira épico.</p><p><b>Linha com - na frente</b> vira item dentro do épico de cima.</p><p><b>[Nome da frente]</b> no fim da linha escolhe a frente, e <b>{Nome da versão}</b> escolhe a versão. O item fica na frente e na versão do épico, se não disser outra.</p>' +
-    '<p class="lt-frentes">Frentes daqui: ' + ltFrentes().map(w => esc(w.nome)).filter((n, k, a) => a.indexOf(n) === k).join(', ') + '. Versões: ' + (marcosDoEscopo(UI.sel).map(v => esc(v.nome)).join(', ') || 'nenhuma ainda') + '.</p>' +
+    '<div class="lt-regras"><p><b>Linha sem traço</b> vira épico.</p><p><b>Linha com - na frente</b> vira item dentro do épico de cima.</p><p>Para escolher a <b>frente</b> e a <b>versão</b>, clique na linha e depois no botão dela, em cima da caixa. O item fica na frente e na versão do épico, se não disser outra. Uma versão que ainda não existe é criada junto.</p>' +
     '<button type="button" class="btn fant peq" data-lt-exemplo>Usar o exemplo</button></div></div>' +
     '<div class="lt-dir"><span class="lb">Prévia</span><div class="lt-previa" aria-live="polite">' + ltPreviaHTML({grupos:[], avisos:[]}) + '</div></div></div>',
     [{txt:'Cancelar', cls:'sec'}, {txt:'Criar tudo', acao:dl => {
       const r = ltLer($('#lt-t', dl).value); const nItens = r.grupos.reduce((s, g) => s + g.itens.length, 0);
       const novos = r.grupos.filter(g => g.titulo && !g.ja).length;
       if (!novos && !nItens){ toast('Escreva pelo menos um épico ou um item'); return false; }
-      tfComDesfazer((novos ? novos + (novos === 1 ? ' épico' : ' épicos') + (nItens ? ' e ' : '') : '') + (nItens ? nItens + (nItens === 1 ? ' item' : ' itens') : '') + ' criados.', () => {
-        r.grupos.forEach(g => {
+      tfComDesfazer((novos ? novos + (novos === 1 ? ' épico' : ' épicos') + (nItens ? ' e ' : '') : '') + (nItens ? nItens + (nItens === 1 ? ' item' : ' itens') : '') + ' criados' + (r.novasV.length ? ', com ' + r.novasV.length + (r.novasV.length === 1 ? ' versão nova' : ' versões novas') : '') + '.', () => {
+        const pj = enProjeto(UI.sel), idNova = {};
+        r.novasV.forEach(n => { const m = {id:uid('mc'), no:pj, tipo:'release', nome:n, desc:'', data:iso(dAdd(HOJE, 30)), vis:true, entregue:null, notas:''}; D.marcos.push(m); idNova[LT_NOVA + n] = m.id; });
+        const vs = x => x && String(x).startsWith(LT_NOVA) ? idNova[x] || null : x;
+        r.grupos.forEach(g => { g.mc = vs(g.mc); g.itens.forEach(i => { i.mc = vs(i.mc); });
           const ep = g.titulo ? (g.ja && byId('issues', g.ja.id)) || ltNovo(g.titulo, g.ws, 'epic', 'todo', null, g.mc) : null;
           g.itens.forEach(i => ltNovo(i.titulo, i.ws, ep ? 'story' : 'task', 'backlog', ep ? ep.id : null, i.mc));
         });
@@ -10332,6 +10397,9 @@ function ltAbrir(){
   const atualizar = () => { pv.innerHTML = ltPreviaHTML(ltLer(ta.value)); };
   ta.addEventListener('input', atualizar);
   $('[data-lt-exemplo]', dl).addEventListener('click', () => { ta.value = LT_EXEMPLO; atualizar(); ta.focus(); });
+  // os botões de atalho não tiram o cursor da caixa: o clique não rouba o foco
+  dl.addEventListener('mousedown', e => { if (e.target.closest('[data-lt-por]')) e.preventDefault(); });
+  dl.addEventListener('click', e => { const b = e.target.closest('[data-lt-por]'); if (!b) return; ltPor(ta, b.dataset.ltPor, b.dataset.ltValor || ''); atualizar(); });
   ta.focus();
 }
 
@@ -10439,6 +10507,126 @@ function vsBotoes(){
 new MutationObserver(vsBotoes).observe(document.body, {childList:true, subtree:true});
 document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-vs-abrir]'); if (b){ e.preventDefault(); vsAbrir(b.dataset.vsAbrir || null); } });
 if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {vsAbrir, vsData});
+
+/* ===== Voltar para a janela anterior =====
+   Quando, de dentro de um item, a pessoa abre outro (o épico, um subitem, uma ligação, um item citado),
+   a janela nova ganha uma setinha vermelha no canto que volta para o item de antes. Guarda o caminho todo:
+   dá para voltar vários passos. Fechar a janela esquece o caminho. */
+const NAV = {pilha:[], voltando:false};
+const NAV_SETA = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
+const _abrirItemNav = abrirItem;
+abrirItem = function(id){
+  const antes = itemAberto;
+  if (!NAV.voltando && antes && antes !== id && byId('issues', antes)){ if (NAV.pilha[NAV.pilha.length - 1] !== antes) NAV.pilha.push(antes); if (NAV.pilha.length > 30) NAV.pilha.shift(); }
+  const r = _abrirItemNav.apply(this, arguments);
+  navSeta();
+  return r;
+};
+function navSeta(){
+  const cab = $('#gaveta-wrap .gaveta-cab'); if (!cab) return;
+  const velho = $('.nav-voltar', cab); if (velho) velho.remove();
+  NAV.pilha = NAV.pilha.filter(id => byId('issues', id) && id !== itemAberto);
+  const ant = NAV.pilha.length && byId('issues', NAV.pilha[NAV.pilha.length - 1]); if (!ant) return;
+  const nome = ((typeof chaveDe === 'function' && chaveDe(ant)) ? chaveDe(ant) + ' ' : '') + ant.titulo;
+  cab.insertAdjacentHTML('afterbegin', '<button type="button" class="nav-voltar" data-nav-voltar aria-label="Voltar para ' + esc(nome) + '" title="Voltar para ' + esc(nome) + '">' + NAV_SETA + '</button>');
+}
+function navVoltar(){
+  const id = NAV.pilha.pop(); if (!id || !byId('issues', id)) { navSeta(); return; }
+  NAV.voltando = true; try { abrirItem(id); } finally { NAV.voltando = false; }
+}
+const _fecharItemNav = fecharItem;
+fecharItem = function(){ NAV.pilha = []; return _fecharItemNav.apply(this, arguments); };
+document.addEventListener('click', e => { if (e.target.closest && e.target.closest('[data-nav-voltar]')){ e.preventDefault(); e.stopPropagation(); navVoltar(); } }, true);
+// Alt + seta para a esquerda também volta, como no navegador
+document.addEventListener('keydown', e => { if (e.altKey && e.key === 'ArrowLeft' && itemAberto && NAV.pilha.length && !document.querySelector('dialog[open]')){ e.preventDefault(); navVoltar(); } });
+if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {abrirItem, fecharItem, NAV});
+
+/* ===== Decisões que vão para a ficha técnica =====
+   Um item de decisão (por exemplo "Escolher o banco de dados") pode ser ligado a um campo da ficha técnica do projeto
+   (por exemplo Database › Banco e schema). O texto da decisão fica num lugar só, o campo da ficha:
+   escrever no item muda a ficha, escrever na ficha muda o item, e aplicações e produtos do projeto herdam como sempre.
+   A ligação fica na própria ficha do projeto, na chave "_decisao|Seção›Campo" com o id do item (grava em ficha_campos,
+   sem mudar o banco). O item mostra a ligação no cartão Principal e o campo da ficha mostra de qual item veio. */
+const DC_PREFIXO = '_decisao|';
+const dcChave = (sec, campo) => DC_PREFIXO + sec + '›' + campo;
+function dcProjeto(i){ const c = i && cadeia('ws:' + i.ws); return c && c.project ? 'project:' + c.project.id : null; }
+function dcFicha(pk){ return D.sheets[pk] || (D.sheets[pk] = {campos:{}, custom:[], arquivos:[]}); }
+// o campo da ficha ligado a este item, ou null
+function dcLigacao(i){
+  const pk = dcProjeto(i); if (!pk || !D.sheets[pk]) return null;
+  const k = Object.keys(D.sheets[pk].campos).find(x => x.startsWith(DC_PREFIXO) && D.sheets[pk].campos[x] === i.id); if (!k) return null;
+  const [sec, campo] = k.slice(DC_PREFIXO.length).split('›'); return {pk, sec, campo, chave:sec + '|' + campo};
+}
+// o item ligado a um campo da ficha, ou null
+function dcItemDoCampo(pk, sec, campo){ const f = D.sheets[pk]; const id = f && f.campos[dcChave(sec, campo)]; const it = id ? byId('issues', id) : null; return it && dcProjeto(it) === pk ? it : null; }   // o item precisa ser do mesmo projeto (uma cópia de projeto leva a ficha junto)
+function dcLigar(i, alvo){
+  const pk = dcProjeto(i); if (!pk) return;
+  const f = dcFicha(pk), atual = dcLigacao(i);
+  if (atual) delete f.campos[dcChave(atual.sec, atual.campo)];
+  if (alvo){ const [sec, campo] = alvo.split('|'); const outro = dcItemDoCampo(pk, sec, campo);
+    if (outro && outro.id !== i.id) toast('Esse campo estava ligado a "' + outro.titulo + '". Agora fica com este item.');
+    f.campos[dcChave(sec, campo)] = i.id; }
+  salvar(); abrirItem(i.id);
+}
+
+function dcHTML(i){
+  const pode = podeEditar(), dis = pode ? '' : ' disabled', lig = dcLigacao(i), pk = dcProjeto(i); if (!pk) return '';
+  const opcoes = '<option value="">Não vai para a ficha</option>' + FICHA.map(([sec, expl, campos]) => '<optgroup label="' + esc(expl ? expl.charAt(0).toUpperCase() + expl.slice(1) + ' (' + sec + ')' : sec) + '">' +
+    campos.map(cp => { const k = sec + '|' + cp; return '<option value="' + esc(k) + '"' + (lig && lig.chave === k ? ' selected' : '') + '>' + esc(cp) + '</option>'; }).join('') + '</optgroup>').join('');
+  const valor = lig ? (dcFicha(pk).campos[lig.chave] || '') : '';
+  // item que não é decisão: uma linha só, discreta
+  if (!lig) return pode ? '<section class="g-sec dc-sec dc-curta" data-dc-item="' + i.id + '"><label class="dc-linha"><span>É uma decisão? Mande para a ficha técnica:</span><select class="sel peq" data-dc-ligar>' + opcoes + '</select></label></section>' : '';
+  return '<section class="g-sec dc-sec" data-dc-item="' + i.id + '"><h4>Decisão para a ficha técnica</h4>' +
+    '<p class="dc-ajuda">Se este item é uma decisão (nome, banco, cores...), escolha o campo da ficha técnica. O que você escrever aqui aparece lá na hora, e o que mudar lá aparece aqui.</p>' +
+    '<label class="lb dc-campo">Campo da ficha técnica<select class="sel" data-dc-ligar' + dis + '>' + opcoes + '</select></label>' +
+    (lig ? '<label class="lb dc-campo">O que foi decidido<textarea class="campo" rows="3" data-dc-valor="' + esc(lig.chave) + '"' + dis + ' placeholder="Ex.: Postgres no Supabase">' + esc(valor) + '</textarea></label>' +
+      '<p class="dc-onde">Fica em <b>' + esc(nomeDe(pk)) + ' › Ficha técnica › ' + esc(lig.sec) + ' › ' + esc(lig.campo) + '</b>. <button type="button" class="btn fant peq" data-dc-abrir-ficha="' + esc(pk) + '">Abrir a ficha</button></p>' : '') + '</section>';
+}
+const _abrirItemDc = abrirItem;
+abrirItem = function(id){
+  const r = _abrirItemDc.apply(this, arguments);
+  const i = byId('issues', id), g = $('#gaveta-wrap .gaveta'); if (!i || !g || $('.dc-sec', g)) return r;
+  const pri = $('.g-principal', g); if (!pri) return r;
+  // entra logo depois da descrição, antes do checklist
+  const desc = $(':scope > .tf-desc', pri) || $(':scope > .g-sec', pri);
+  if (desc) desc.insertAdjacentHTML('afterend', dcHTML(i)); else pri.insertAdjacentHTML('beforeend', dcHTML(i));
+  return r;
+};
+document.addEventListener('change', e => {
+  const s = e.target.closest && e.target.closest('[data-dc-ligar]'); if (!s || !itemAberto) return;
+  const i = byId('issues', itemAberto); if (i) dcLigar(i, s.value);
+});
+document.addEventListener('input', e => {
+  const t = e.target.closest && e.target.closest('[data-dc-valor]'); if (!t || !itemAberto) return;
+  const i = byId('issues', itemAberto), lig = i && dcLigacao(i); if (!lig) return;
+  dcFicha(lig.pk).campos[lig.chave] = t.value; salvar();
+});
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('[data-dc-abrir-ficha]'); if (b){ const k = b.dataset.dcAbrirFicha; fecharItem(); UI.sel = k; UI.view = 'sheet'; salvarUI(); abrirModulo('operacoes'); return; }
+  const a = e.target.closest && e.target.closest('[data-dc-abrir-item]'); if (a){ abrirItem(a.dataset.dcAbrirItem); }
+});
+
+// na ficha técnica: cada campo ligado mostra de qual item veio a decisão
+const _vSheetDc = vSheet;
+vSheet = function(){
+  let h = _vSheetDc();
+  const pk = (cadeia(UI.sel).project && UI.sel.startsWith('project:')) ? UI.sel : null; if (!pk || !D.sheets[pk]) return h;
+  FICHA.forEach(([sec, , campos]) => campos.forEach(cp => {
+    const it = dcItemDoCampo(pk, sec, cp); if (!it) return;
+    const k = esc(sec + '|' + cp), marca = 'data-ficha="' + k + '"';
+    const ix = h.indexOf(marca); if (ix < 0) return;
+    const fim = h.indexOf('</label>', ix); if (fim < 0) return;
+    const nota = '<small class="dc-veio">Decidido no item <button type="button" class="dc-link" data-dc-abrir-item="' + it.id + '">' + esc(((typeof chaveDe === 'function' && chaveDe(it)) ? chaveDe(it) + ' ' : '') + it.titulo) + '</button></small>';
+    h = h.slice(0, fim) + nota + h.slice(fim);
+  }));
+  return h;
+};
+// escrever na ficha com a janela do item aberta atualiza o texto da decisão na janela
+document.addEventListener('input', e => {
+  const t = e.target.closest && e.target.closest('textarea[data-ficha]'); if (!t) return;
+  const box = $('#gaveta-wrap [data-dc-valor="' + (window.CSS && CSS.escape ? CSS.escape(t.dataset.ficha) : t.dataset.ficha) + '"]'); if (box && box !== t) box.value = t.value;
+});
+if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {dcLigacao, dcLigar, dcItemDoCampo, abrirItem, fecharItem});
 
 abrirModulo(UI.modulo);
 })();

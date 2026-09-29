@@ -1,0 +1,14 @@
+/* voltar para a janela anterior (navegar.js) e decisões para a ficha técnica (decisoes.js) */
+.nav-voltar{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;flex:0 0 auto;margin-right:-4px;border:0;background:transparent;color:var(--vermelho);cursor:pointer;padding:0}
+.nav-voltar:hover{background:var(--preto-04)}
+.nav-voltar:focus-visible{outline:2px solid var(--vermelho);outline-offset:1px}
+.gaveta-cab .nav-voltar + *{margin-left:0}
+.dc-sec{display:grid;gap:10px}
+.dc-ajuda{margin:0;font-size:13px;color:var(--tinta-3)}
+.dc-campo{display:grid;gap:4px}
+.dc-onde{margin:0;font-size:13px;color:var(--tinta-2);display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.dc-veio{display:block;margin-top:4px;font-size:12px;color:var(--tinta-3);text-transform:none;letter-spacing:0;font-weight:400}
+.dc-link{border:0;background:none;padding:0;font:inherit;color:var(--preto);text-decoration:underline;cursor:pointer}
+.dc-curta{padding-top:0}
+.dc-linha{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:13px;color:var(--tinta-3);margin:0}
+.dc-linha .sel{max-width:280px}
