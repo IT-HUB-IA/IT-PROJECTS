@@ -48,9 +48,9 @@ Testada no Postgres local (`98_teste_comunicacao_LOCAL.sql`: 47 de 47; as partes
 | `metas`, `metas_resultados`, `metas_resultados_itens` | Metas de um projeto, produto ou aplicação, com resultados por número ou pelos itens concluídos. Mesma regra de acesso do ponto; stakeholder não vê |
 | `avisos_email_lote`, `avisos_email_marcar`, `relatorio_semanal_lote` | Só para a função `enviar-avisos` (papel `service_role`) |
 
-## Parte 21: rotinas do e-mail (SÓ NO SUPABASE, depois da função `enviar-avisos` no ar)
+## Parte 21: rotinas do e-mail (aplicada em 29/09/2026 como `ciclodev_29_avisos_email`)
 
-`21_avisos_email_SUPABASE.sql` agenda as chamadas à função: a cada 5 minutos (na hora), às 8h de Brasília (resumo do dia) e segunda às 8h05 (relatório da semana). Precisa da extensão `pg_net` e do segredo `ciclodev_avisos_segredo` no Vault, com o mesmo valor do segredo `AVISOS_SEGREDO` da função. Não entra no `APLICAR_NO_SUPABASE.sql`.
+`21_avisos_email_SUPABASE.sql` agenda as chamadas à função: a cada 5 minutos (na hora), às 8h de Brasília (resumo do dia) e segunda às 8h05 (relatório da semana). Precisa da extensão `pg_net` e do segredo `ciclodev_avisos_segredo` no Vault, com o mesmo valor do segredo `AVISOS_SEGREDO` da função. Não entra no `APLICAR_NO_SUPABASE.sql`. Conferida em 29/09/2026: `pg_net` ligada, segredo no Vault, a rotina de 5 minutos rodou sozinha (resposta 200) e um e-mail de teste saiu para admin@it-ia.tec.br.
 
 ## Parte 19: código, publicações e notas de versão (aplicada em 29/09/2026 como `ciclodev_26_codigo_entregas` + `ciclodev_27_ajuste_verificador`)
 
@@ -97,7 +97,7 @@ Junto vai a Edge Function `supabase/functions/git-webhook` (implantar com **veri
 | `97_teste_codigo_LOCAL.sql` | 42 testes da parte 19: avisos assinados do GitHub e do GitLab, status sozinho, publicações, versões e quem pode o quê | Não |
 | `20_comunicacao_metas.sql` | Menções, avisos automáticos, fila de e-mail, preferências de cada pessoa e metas | Sim (aplicada em 29/09/2026) |
 | `98_teste_comunicacao_LOCAL.sql` | 47 testes da parte 20: quem é avisado e quem não é, fila de e-mail, preferências, metas e quem pode o quê | Não |
-| `21_avisos_email_SUPABASE.sql` | Rotinas que chamam a função `enviar-avisos` (precisa de `pg_net` e do segredo no Vault) | Ainda não, e só depois da função |
+| `21_avisos_email_SUPABASE.sql` | Rotinas que chamam a função `enviar-avisos` (precisa de `pg_net` e do segredo no Vault) | Sim (aplicada em 29/09/2026) |
 
 ## Decisões de estrutura (e por quê)
 
