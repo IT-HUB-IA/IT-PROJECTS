@@ -1862,6 +1862,70 @@ dialog.modal.modal-larga{max-width:min(960px,calc(100% - 32px))}
     .tf-aviso{left:16px;right:16px;transform:none;flex-wrap:wrap;row-gap:4px}
     .tf-aviso-txt{flex:1 1 100%}
   }
+
+/* ---------- Entregas (remodelada): do código ao ar ---------- */
+  .en2{display:grid;gap:20px;min-width:0;max-width:100%}
+  .en2-trilho{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;counter-reset:p}
+  .en2-passo{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:1fr auto;gap:10px 12px;padding:16px;background:var(--branco);border:1px solid var(--linha);min-width:0}
+  .en2-passo:not(:last-child)::after{content:"";position:absolute;right:-9px;top:50%;width:14px;height:14px;background:var(--branco);border-top:1px solid var(--linha);border-right:1px solid var(--linha);transform:translateY(-50%) rotate(45deg);z-index:1}
+  .en2-n{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-family:var(--font-mono);font-size:12px;font-weight:600;border:1.5px solid var(--linha-f);color:var(--tinta-2)}
+  .en2-passo.feito .en2-n{background:#0E8A55;border-color:#0E8A55;color:#fff}
+  .en2-p-t{display:grid;gap:3px;min-width:0}
+  .en2-p-t small{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--tinta-2)}
+  .en2-p-t b{font-size:16px;overflow-wrap:anywhere}
+  .en2-p-t b em{font-style:normal;font-weight:400;font-size:13px;color:var(--tinta-2);margin-left:4px}
+  .en2-p-t > span{font-size:12.5px;color:var(--tinta-3);line-height:1.4}
+  .en2-passo > .btn{grid-column:2;justify-self:start;gap:6px}
+  .en2-grade{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:16px;align-items:start}
+  .en2-col{display:grid;gap:16px;min-width:0}
+  .en2-caixa{background:var(--branco);border:1px solid var(--linha);min-width:0}
+  .en2-caixa > header{padding:14px 16px 12px;border-bottom:1px solid var(--linha)}
+  .en2-caixa h3{margin:0;font-size:15px;font-weight:700}
+  .en2-caixa header p{margin:2px 0 0;font-size:12.5px;color:var(--tinta-3)}
+  .en2-vazio{margin:0;padding:16px;font-size:13px;color:var(--tinta-3)}
+  .en2-lista{list-style:none;margin:0;padding:0}
+  .en2-lista > li{padding:12px 16px;border-bottom:1px solid var(--preto-04);min-width:0}
+  .en2-lista > li:last-child{border-bottom:0}
+  .en2-v{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px 12px}
+  .en2-v > .en2-pilula{justify-self:end}
+  .en2-v > .en2-prog{max-width:320px}
+  .en2-v-nome{display:flex;align-items:center;gap:10px;min-width:0}
+  .en2-v-nome > svg{flex:none;color:var(--tinta-2)}
+  .en2-v-nome b{display:block;font-size:14px}
+  .en2-v-nome small{display:block;font-size:12px;color:var(--tinta-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .en2-pilula{font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;white-space:nowrap;background:#E8EDFF;color:#2F4BC4}
+  .en2-pilula.en2-ok{background:#E6F6EE;color:#0B6B40}
+  .en2-pilula.en2-atraso{background:#FFE8E8;color:#B00000}
+  .en2-prog{display:grid;gap:4px}
+  .en2-prog small{font-size:11.5px;color:var(--tinta-3)}
+  .en2-acoes{display:flex;gap:6px;align-items:center;justify-content:flex-end}
+  .en2-acoes .btn{gap:6px}
+  .en2-lixo{color:var(--tinta-3)}
+  .en2-lixo:hover{color:var(--vermelho)}
+  .en2-pub{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:start}
+  .en2-pub b{font-size:14px}
+  .en2-pub small{display:block;font-size:12px;color:var(--tinta-3);margin-top:2px}
+  .en2-amb{font-size:11px;padding:2px 7px;background:var(--papel);border:1px solid var(--linha);margin-left:4px}
+  .en2-bola{width:9px;height:9px;border-radius:50%;margin-top:5px;background:var(--nevoa)}
+  .en2-bola.en-st-sucesso{background:#0E8A55}.en2-bola.en-st-falha{background:var(--vermelho)}.en2-bola.en-st-em_andamento{background:#E08600}
+  .en2-bola::before{display:none}
+  .en2-repo{display:grid;gap:8px}
+  .en2-repo-t{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:start}
+  .en2-repo-t a{color:var(--preto);text-decoration:none;overflow-wrap:anywhere}
+  .en2-repo-t a:hover{text-decoration:underline}
+  .en2-repo-t small{display:block;font-size:12px;color:var(--tinta-3)}
+  .en2-erro{color:var(--vermelho)!important}
+  .en2-repo-a{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;padding-left:28px}
+  .en2-caixa .en-feed{border:0}
+  @media (max-width:1100px){ .en2-grade{grid-template-columns:minmax(0,1fr)} }
+  @media (max-width:760px){
+    .en2-trilho{grid-template-columns:minmax(0,1fr)}
+    .en2-passo:not(:last-child)::after{right:50%;top:auto;bottom:-9px;transform:translateX(50%) rotate(135deg)}
+    .en2-v{grid-template-columns:minmax(0,1fr)}
+    .en2-v > .en2-pilula{justify-self:start}
+    .en2-acoes{justify-content:flex-start;flex-wrap:wrap}
+  }
+  .en2-v-nome > div{min-width:0}
 /* ---------- Simplificar: abas agrupadas e tela do item ---------- */
   .ops-cab .views > .view-casa .info{display:none}
   .sm-mais-casa{position:relative;display:inline-flex}
@@ -8539,40 +8603,47 @@ function enView(c){
 }
 function enHTML(chave){
   const pode = podeEditar(), nos = enNos(chave);
-  const repos = EN.repos.filter(r => nos.has(r.no_id)), pubs = EN.pubs.filter(p => nos.has(p.no_id)), versoes = enVersoes(chave);
-  const versaoCard = m => {
-    const lig = issuesEm(m.no || chave).filter(i => i.marco === m.id), feitos = lig.filter(i => i.status === 'done').length;
-    const atr = !m.entregue && m.data && parse(m.data) < HOJE;
-    return '<article class="en-versao' + (m.entregue ? ' entregue' : '') + '"><header>' + EN_ICO.versao + '<b>' + esc(m.nome) + '</b>' +
-      '<span class="en-selo ' + (m.entregue ? 'ok' : atr ? 'atraso' : '') + '">' + (m.entregue ? 'Publicada em ' + fmtData(m.entregue) : (atr ? 'Atrasada · era ' : 'Prevista para ') + fmtData(m.data)) + '</span></header>' +
-      (m.desc ? '<p class="sec">' + esc(m.desc) + '</p>' : '') +
-      (lig.length ? '<div class="en-prog"><div class="progresso"><i style="width:' + (feitos / lig.length * 100) + '%"></i></div><span>' + feitos + ' de ' + lig.length + ' itens concluídos</span></div>' : '<p class="sec en-mini">Sem itens ligados: as notas usam o que foi concluído desde a versão anterior.</p>') +
-      '<footer><button type="button" class="btn sec peq" data-en-notas="' + m.id + '">' + (m.notas ? 'Ver notas de versão' : 'Gerar notas de versão') + '</button>' +
-      (pode && !m.entregue ? '<button type="button" class="btn sec peq" data-en-publicar="' + m.id + '">' + EN_ICO.foguete + 'Publicar</button>' : '') +
-      (pode ? '<button type="button" class="btn fant peq perigo" data-en-excluir-versao="' + m.id + '">Excluir</button>' : '') + '</footer></article>';
-  };
-  const linhaPub = p => '<tr><td>' + esc(enData(p.publicado_em)) + '</td><td><b>' + esc(p.versao || '-') + '</b></td><td>' + esc(enAmb(p.ambiente)) + '</td>' +
-    '<td><span class="en-st en-st-' + esc(p.status) + '">' + esc(EN_ST_PUB[p.status] || p.status) + '</span></td><td>' + (p.origem !== 'manual' ? EN_ICO[p.origem] || '' : '') + esc(EN_ORIGEM[p.origem] || p.origem) + '</td>' +
-    '<td>' + (p.url ? '<a href="' + esc(p.url) + '" target="_blank" rel="noopener noreferrer">' + esc(p.referencia ? String(p.referencia).slice(0, 12) : 'abrir') + '</a>' : esc(p.referencia ? String(p.referencia).slice(0, 12) : '')) + (p.observacao ? '<small>' + esc(p.observacao) + '</small>' : '') + '</td>' +
-    '<td>' + (pode ? '<button type="button" class="btn fant peq perigo" data-en-excluir-pub="' + p.id + '">Excluir</button>' : '') + '</td></tr>';
-  const cardRepo = r => '<article class="en-repo"><header>' + (EN_ICO[r.provedor] || '') + '<a href="' + esc(r.url || (r.provedor === 'gitlab' ? 'https://gitlab.com/' : 'https://github.com/') + r.nome) + '" target="_blank" rel="noopener noreferrer"><b>' + esc(r.nome) + '</b></a>' +
-      '<span class="en-mini sec">ligado a ' + esc(enNomeNo(r.no_id)) + '</span></header>' +
-    '<p class="en-aviso-rep ' + (r.ultimo_erro ? 'erro' : r.ultimo_evento_em ? 'ok' : '') + '">' + (r.ultimo_erro ? esc(r.ultimo_erro) + ' · ' + enHa(r.ultimo_evento_em) : r.ultimo_evento_em ? 'Último aviso recebido: ' + esc(r.ultimo_evento) + ', ' + enHa(r.ultimo_evento_em) : (COM_BANCO ? 'Ainda não recebeu nenhum aviso. Falta ligar no ' + (r.provedor === 'gitlab' ? 'GitLab' : 'GitHub') + ': veja em "Como ligar".' : 'No modo de exemplo, os avisos do GitHub e do GitLab não chegam.')) + '</p>' +
-    '<footer>' + (pode ? '<label class="en-liga"><input type="checkbox" data-en-mover="' + r.id + '"' + (r.mover_status ? ' checked' : '') + '> Mudar o status dos itens sozinho</label>' : '') +
-      '<span class="en-acoes"><button type="button" class="btn sec peq" data-en-como="' + r.id + '">Como ligar</button>' + (pode ? '<button type="button" class="btn fant peq perigo" data-en-excluir-repo="' + r.id + '">Excluir</button>' : '') + '</span></footer></article>';
-  return '<div class="en">' +
-    '<div class="en-cab"><p class="lead">Versões, o que foi para o ar e o código ligado a <b>' + esc(nomeDe(chave)) + '</b>.</p>' +
-      (pode ? '<div class="acoes"><button type="button" class="btn" data-en-nova-versao>' + ICO.mais + 'Nova versão</button><button type="button" class="btn sec" data-en-nova-pub>' + EN_ICO.foguete + 'Registrar publicação</button><button type="button" class="btn sec" data-en-novo-repo>' + EN_ICO.branch + 'Ligar repositório</button></div>' : '') + '</div>' +
-    (EN.erro ? '<p class="aviso-faixa">Não deu para ler tudo do banco: ' + esc(EN.erro) + '</p>' : '') +
-    '<section class="en-sec"><h2 class="sub">Versões' + I('Versões (releases): cada entrega com nome, como v1.2.0. Ligue os itens a uma versão (campo Milestone do item) ou deixe as notas pegarem o que foi concluído desde a versão anterior.') + '</h2>' +
-      (versoes.length ? '<div class="en-versoes">' + versoes.map(versaoCard).join('') + '</div>' : '<div class="tf-vazio"><b>Nenhuma versão ainda.</b><p>Crie a primeira em "Nova versão". As notas de versão saem dos itens concluídos.</p></div>') + '</section>' +
-    '<section class="en-sec"><h2 class="sub">Publicações' + I('Publicações: o registro de cada vez que algo foi para o ar, quando, em que ambiente e com qual versão. Chega sozinho do GitHub e do GitLab (release e deployment) ou é registrado aqui.') + '</h2>' +
-      (pubs.length ? '<div class="tabela-rolo"><table class="tabela en-tab"><thead><tr><th scope="col">Quando</th><th scope="col">Versão</th><th scope="col">Ambiente</th><th scope="col">Situação</th><th scope="col">De onde</th><th scope="col">Referência</th><th scope="col"><span class="sr-only">Ações</span></th></tr></thead><tbody>' + pubs.map(linhaPub).join('') + '</tbody></table></div>'
-        : '<div class="tf-vazio"><b>Nada publicado ainda.</b><p>Registre em "Registrar publicação" ou ligue um repositório para as publicações chegarem sozinhas.</p></div>') + '</section>' +
-    '<section class="en-sec"><h2 class="sub">Repositórios' + I('Repositórios: o código do GitHub ou do GitLab. Com o repositório ligado, cada branch, commit e pull request que tiver a chave do item (por exemplo BL-37) aparece no item, e o status anda sozinho: branch ou commit leva para Em andamento, PR aberto para Em revisão e PR mesclado para Concluído.') + '</h2>' +
-      (repos.length ? '<div class="en-repos">' + repos.map(cardRepo).join('') + '</div>' : '<div class="tf-vazio"><b>Nenhum repositório ligado.</b><p>Ligue o repositório do projeto em "Ligar repositório". Leva um minuto.</p></div>') + '</section>' +
-    '<section class="en-sec"><h2 class="sub">Atividade de código</h2><div id="en-atividade"><p class="sec">Lendo...</p></div></section>' +
-  '</div>';
+  const repos = EN.repos.filter(r => nos.has(r.no_id));
+  const pubs = EN.pubs.filter(p => nos.has(p.no_id)).slice().sort((x, y) => String(y.publicado_em).localeCompare(String(x.publicado_em)));
+  const versoes = enVersoes(chave);
+  const lixo = (attr, id, nome) => pode ? '<button type="button" class="ico-btn en2-lixo" ' + attr + '="' + id + '" aria-label="Excluir ' + esc(nome) + '" title="Excluir">' + TF_ICO.lixo + '</button>' : '';
+  const situ = m => { const atr = !m.entregue && m.data && parse(m.data) < HOJE; return m.entregue ? ['ok', 'No ar desde ' + fmtData(m.entregue)] : atr ? ['atraso', 'Atrasada · era ' + fmtData(m.data)] : ['prev', 'Prevista para ' + fmtData(m.data)]; };
+  const itensV = m => { const lig = issuesEm(m.no || chave).filter(i => i.marco === m.id); return [lig.filter(i => i.status === 'done').length, lig.length]; };
+  // 1, 2, 3: do código ao ar
+  const prox = versoes.filter(m => !m.entregue).sort((x, y) => String(x.data).localeCompare(String(y.data)))[0];
+  const ult = pubs[0];
+  const passo = (n, cls, tit, valor, dica, botao) => '<li class="en2-passo ' + cls + '"><span class="en2-n">' + n + '</span><div class="en2-p-t"><small>' + tit + '</small><b>' + valor + '</b><span>' + dica + '</span></div>' + (pode && botao ? botao : '') + '</li>';
+  const [pf, pt] = prox ? itensV(prox) : [0, 0];
+  const trilho = '<ol class="en2-trilho" aria-label="Do código ao ar">' +
+    passo(1, repos.length ? 'feito' : '', 'Código', repos.length ? repos.length + (repos.length === 1 ? ' repositório ligado' : ' repositórios ligados') : 'Nenhum repositório', 'Branch, commit e PR com a chave do item (ex.: BL-37) aparecem no item sozinhos',
+      '<button type="button" class="btn sec peq" data-en-novo-repo>' + EN_ICO.branch + 'Ligar repositório</button>') +
+    passo(2, prox ? 'feito' : '', 'Próxima versão', prox ? esc(prox.nome) + ' <em>' + esc(situ(prox)[1]) + '</em>' : 'Nenhuma versão planejada', prox ? (pt ? pf + ' de ' + pt + ' itens concluídos' : 'Sem itens ligados: as notas pegam o que foi concluído') : 'Uma versão junta o que vai para o ar de uma vez',
+      '<button type="button" class="btn peq" data-en-nova-versao>' + ICO.mais + 'Nova versão</button>') +
+    passo(3, ult ? 'feito' : '', 'No ar', ult ? esc(ult.versao || 'Sem versão') + ' <em>' + esc(enAmb(ult.ambiente)) + ', ' + esc(enHa(ult.publicado_em)) + '</em>' : 'Nada publicado ainda', ult ? (EN_ST_PUB[ult.status] || ult.status) : 'Registre aqui ou deixe chegar sozinho do repositório',
+      '<button type="button" class="btn sec peq" data-en-nova-pub>' + EN_ICO.foguete + 'Registrar publicação</button>') + '</ol>';
+  // versões: uma linha por versão
+  const linhaV = m => { const [f, t] = itensV(m), st = situ(m);
+    return '<li class="en2-v en2-' + st[0] + '"><div class="en2-v-nome">' + EN_ICO.versao + '<div><b>' + esc(m.nome) + '</b>' + (m.desc ? '<small>' + esc(m.desc) + '</small>' : '') + '</div></div>' +
+      '<span class="en2-pilula en2-' + st[0] + '">' + esc(st[1]) + '</span>' +
+      '<div class="en2-prog">' + (t ? '<div class="rl-barra fina"><i style="width:' + (f / t * 100) + '%"></i></div><small>' + f + ' de ' + t + ' itens</small>' : '<small>sem itens ligados</small>') + '</div>' +
+      '<div class="en2-acoes"><button type="button" class="btn fant peq" data-en-notas="' + m.id + '">' + (m.notas ? 'Notas' : 'Gerar notas') + '</button>' +
+      (pode && !m.entregue ? '<button type="button" class="btn sec peq" data-en-publicar="' + m.id + '">' + EN_ICO.foguete + 'Publicar</button>' : '') + lixo('data-en-excluir-versao', m.id, m.nome) + '</div></li>'; };
+  // no ar: histórico curto
+  const linhaP = p => '<li class="en2-pub"><span class="en2-bola en-st-' + esc(p.status) + '" title="' + esc(EN_ST_PUB[p.status] || p.status) + '"></span><div><b>' + esc(p.versao || 'Sem versão') + '</b> <span class="en2-amb">' + esc(enAmb(p.ambiente)) + '</span>' +
+    '<small>' + esc(enData(p.publicado_em)) + ' · ' + esc(EN_ORIGEM[p.origem] || p.origem) + (p.url ? ' · <a href="' + esc(p.url) + '" target="_blank" rel="noopener noreferrer">abrir</a>' : '') + (p.observacao ? '<br>' + esc(p.observacao) : '') + '</small></div>' + lixo('data-en-excluir-pub', p.id, 'a publicação ' + (p.versao || '')) + '</li>';
+  // repositórios: uma linha por repositório
+  const linhaR = r => '<li class="en2-repo"><div class="en2-repo-t">' + (EN_ICO[r.provedor] || '') + '<div><a href="' + esc(r.url || (r.provedor === 'gitlab' ? 'https://gitlab.com/' : 'https://github.com/') + r.nome) + '" target="_blank" rel="noopener noreferrer"><b>' + esc(r.nome) + '</b></a>' +
+      '<small class="' + (r.ultimo_erro ? 'en2-erro' : '') + '">' + (r.ultimo_erro ? esc(r.ultimo_erro) : r.ultimo_evento_em ? 'Último aviso: ' + esc(r.ultimo_evento) + ', ' + esc(enHa(r.ultimo_evento_em)) : 'Ainda sem avisos. Veja "Como ligar"') + '</small></div>' + lixo('data-en-excluir-repo', r.id, r.nome) + '</div>' +
+    '<div class="en2-repo-a">' + (pode ? '<label class="en-liga"><input type="checkbox" data-en-mover="' + r.id + '"' + (r.mover_status ? ' checked' : '') + '> Status anda sozinho</label>' : '') + '<button type="button" class="btn fant peq" data-en-como="' + r.id + '">Como ligar</button></div></li>';
+  const caixa = (tit, ajuda, corpo, vazio) => '<section class="en2-caixa"><header><h3>' + tit + '</h3><p>' + ajuda + '</p></header>' + (corpo || '<p class="en2-vazio">' + vazio + '</p>') + '</section>';
+  return '<div class="en2">' + (EN.erro ? '<p class="aviso-faixa">Não deu para ler tudo do banco: ' + esc(EN.erro) + '</p>' : '') + trilho +
+    '<div class="en2-grade"><div class="en2-col">' +
+      caixa('Versões', 'Cada entrega com nome (como v1.2.0). Ligue itens a uma versão pelo campo Versão do item.', versoes.length ? '<ul class="en2-lista">' + versoes.map(linhaV).join('') + '</ul>' : '', 'Nenhuma versão ainda. Crie a primeira em "Nova versão".') +
+      '<section class="en2-caixa"><header><h3>Atividade de código</h3><p>O que chegou do repositório, com o item de cada um.</p></header><div id="en-atividade"><p class="en2-vazio">Lendo...</p></div></section>' +
+    '</div><div class="en2-col">' +
+      caixa('No ar', 'Cada vez que algo foi publicado: qual versão, onde e quando.', pubs.length ? '<ul class="en2-lista">' + pubs.slice(0, 12).map(linhaP).join('') + '</ul>' : '', 'Nada publicado ainda.') +
+      caixa('Repositórios', 'O código no GitHub ou no GitLab.', repos.length ? '<ul class="en2-lista">' + repos.map(linhaR).join('') + '</ul>' : '', 'Nenhum repositório ligado. Leva um minuto em "Ligar repositório".') +
+    '</div></div></div>';
 }
 async function enCarregarAtividade(chave){
   const el = $('#en-atividade'); if (!el) return;
@@ -8589,7 +8660,7 @@ async function enCarregarAtividade(chave){
     return '<li>' + (EN_ICO[l.tipo] || '') + '<span class="en-feed-t"><b>' + esc(l.tipo === 'pr' ? (l.provedor === 'gitlab' ? 'MR !' : 'PR #') + l.ref : l.tipo === 'commit' ? String(l.ref).slice(0, 7) : l.ref) + '</b> ' + esc(l.titulo && l.titulo !== l.ref ? l.titulo : '') +
       '<small>' + (i ? '<button type="button" class="en-link-item" data-abrir-item="' + i.id + '">' + esc((typeof chaveDe === 'function' && chaveDe(i)) || '') + ' ' + esc(i.titulo) + '</button> · ' : '') + esc(EN_EST[l.estado] || l.estado) + (l.autor ? ' · ' + esc(l.autor) : '') + ' · ' + esc(enHa(l.quando)) + '</small></span>' +
       (l.url ? '<a class="btn fant peq" href="' + esc(l.url) + '" target="_blank" rel="noopener noreferrer">Abrir</a>' : '') + '</li>'; }).join('') + '</ul>'
-    : '<p class="sec">' + (repos.length || !COM_BANCO ? 'Nenhum branch, commit ou pull request ligado a itens ainda. Use a chave do item (por exemplo BL-37) no nome do branch, na mensagem do commit ou no título do PR.' : 'Ligue um repositório para ver aqui o código de cada item.') + '</p>';
+    : '<p class="en2-vazio">' + (repos.length || !COM_BANCO ? 'Nada ainda. Coloque a chave do item (por exemplo BL-37) no nome do branch, na mensagem do commit ou no título do PR.' : 'Ligue um repositório para ver aqui o código de cada item.') + '</p>';
 }
 
 /* ---------- versões ---------- */
