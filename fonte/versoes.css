@@ -1,0 +1,22 @@
+/* Entregas: versões em tabela (versoes.js) */
+dialog.modal.vs-modal{width:min(1100px, calc(100vw - 32px));max-width:none}
+.vs-rolo{overflow-x:auto;border:1px solid var(--linha)}
+.vs-tabela{width:100%;min-width:720px;border-collapse:collapse;table-layout:fixed}
+.vs-tabela th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;text-align:left;color:var(--tinta-2);background:var(--preto-04);padding:8px 10px;border-bottom:1px solid var(--linha)}
+.vs-tabela td{padding:0;border-bottom:1px solid var(--linha);border-right:1px solid var(--linha);vertical-align:middle}
+.vs-tabela td:last-child{border-right:0}
+.vs-tabela .vs-c{width:100%;border:0;border-radius:0;background:transparent;padding:10px;min-height:40px;box-shadow:none}
+.vs-tabela .vs-c:focus{outline:2px solid var(--preto);outline-offset:-2px;background:var(--branco)}
+.vs-tabela .vs-c.vs-ruim{outline:2px solid var(--vermelho);outline-offset:-2px}
+.vs-tabela .vs-meio{text-align:center}
+.vs-tabela input[type="checkbox"]{accent-color:var(--preto);width:16px;height:16px}
+.vs-sit{padding:0 10px!important}
+.vs-tag{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--tinta-3);border:1px solid var(--linha);padding:1px 6px;white-space:nowrap}
+.vs-tag.ok{color:#0B6B2E;border-color:#0B6B2E}
+.vs-nova .vs-c::placeholder{color:var(--tinta-3)}
+.vs-foco td{background:var(--preto-04)}
+.vs-mais{margin-top:10px;width:auto!important;justify-self:start;display:inline-flex}
+.vs-erro{margin:10px 0 0;color:var(--vermelho);font-weight:600}
+.vs-abrir{margin-top:8px}
+.vs-lapis{width:30px;height:30px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
