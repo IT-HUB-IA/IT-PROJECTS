@@ -20,3 +20,4 @@ dialog.modal.lt-modal{width:min(1040px, calc(100vw - 32px));max-width:none}
 .lt-lista ul li{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline}
 .lt-lista ul li > span:first-child{min-width:0;overflow-wrap:anywhere}
 @media (max-width:760px){ .lt-grade{grid-template-columns:1fr} .lt-texto, .lt-previa{min-height:200px} }
+.lt-vs{border-color:var(--preto);color:var(--preto);text-transform:none}

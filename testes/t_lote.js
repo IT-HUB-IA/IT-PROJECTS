@@ -65,8 +65,12 @@ window.supabase = { createClient(){ let sess = {user:{id:'u1', email:'admin@it-i
   const frentes = await p.evaluate(a => window.ciclodevDados().ws.filter(w => w.app === a).map(w => w.nome), app);
   await p.evaluate(() => document.querySelector('[data-tela="operacoes"]').click()); await p.waitForTimeout(400);
   await p.evaluate(a => { __tf.UI.sel = 'app:' + a; __tf.UI.view = 'backlog'; __tf.UI.bjEpic = null; __tf.rOperacoes(); }, app); await p.waitForTimeout(500);
+  // uma versão no projeto da aplicação, para o {versão} do texto
+  await p.evaluate(a => { const D = window.ciclodevDados(); const ap = D.apps.find(x => x.id === a); D.marcos.push({id:crypto.randomUUID(), no:'project:' + ap.project, tipo:'release', nome:'vLote', desc:'', data:'2026-12-01', vis:true, entregue:null, notas:''}); window.ciclodevGravarAgora(); }, app);
+  await espera(); await semErro('criar a versão sem erro');
+  await p.evaluate(a => { __tf.rOperacoes(); }, app); await p.waitForTimeout(300);
   await p.click('[data-lt-abrir]'); await p.waitForTimeout(300);
-  await p.fill('#lt-t', 'Lote Teste A [' + frentes[1] + ']\n- Lote item 1\n- Lote item 2 [' + frentes[0] + ']\n\nLote Teste B\n- Lote item 3');
+  await p.fill('#lt-t', 'Lote Teste A [' + frentes[1] + '] {vLote}\n- Lote item 1\n- Lote item 2 [' + frentes[0] + ']\n\nLote Teste B\n- Lote item 3');
   await p.click('dialog.modal .modal-rod .btn:not(.sec)');
   await espera(); await semErro('gravar o lote sem erro');
   const q = "select string_agg(i.titulo || '/' || i.tipo || '/' || n.nome || '/' || coalesce(pai.titulo, '-'), ', ' order by i.titulo) from public.itens i join public.nos n on n.id = i.frente_id left join public.itens pai on pai.id = i.pai_id where i.titulo like 'Lote %'";
@@ -74,6 +78,8 @@ window.supabase = { createClient(){ let sess = {user:{id:'u1', email:'admin@it-i
   const esperado = ['Lote item 1/story/' + frentes[1] + '/Lote Teste A', 'Lote item 2/story/' + frentes[0] + '/Lote Teste A', 'Lote item 3/story/' + frentes[0] + '/Lote Teste B', 'Lote Teste A/epic/' + frentes[1] + '/-', 'Lote Teste B/epic/' + frentes[0] + '/-'].sort().join(', ');
   ok(noBanco === esperado, 'no banco: ' + noBanco + (noBanco === esperado ? '' : ' | esperado: ' + esperado));
   ok(conta("select count(*) from public.itens where titulo like 'Lote item%' and chave is not null") === '3', 'os itens ganharam chave do banco');
+  const vs = conta("select string_agg(i.titulo, ', ' order by i.titulo) from public.itens i join public.marcos m on m.id = i.marco_id where m.nome = 'vLote'");
+  ok(vs.split(', ').sort().join(', ') === ['Lote item 1', 'Lote item 2', 'Lote Teste A'].sort().join(', '), 'versão gravada no épico A e nos itens dele: ' + vs);
   await p.reload(); await p.waitForTimeout(2500);
   ok(await p.evaluate(() => window.ciclodevDados().issues.filter(i => /^Lote /.test(i.titulo) && (i.tipo === 'epic' || i.pai)).length) === 5, 'depois de recarregar, os 5 voltam com o épico certo');
   ops.length = 0; await p.evaluate(() => { window.ciclodevGravarAgora(); }); await espera();
