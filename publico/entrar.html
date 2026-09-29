@@ -2440,6 +2440,83 @@ dialog.modal.vs-modal{width:min(1100px, calc(100vw - 32px));max-width:none}
 .dc-curta{padding-top:0}
 .dc-linha{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:13px;color:var(--tinta-3);margin:0}
 .dc-linha .sel{max-width:280px}
+/* Portal do stakeholder (portal.js) */
+.pt-tela{display:grid;gap:18px;max-width:1100px}
+.pt-topo{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;gap:12px}
+.pt-topo code, .pt-caixa code{font-size:12px;overflow-wrap:anywhere}
+.pt-caixa{border:1px solid var(--linha);background:var(--branco);padding:16px 18px;display:grid;gap:10px;min-width:0}
+.pt-caixa h3{margin:0;font-size:16px}
+.pt-caixa > p.sec{margin:0;font-size:13px}
+.pt-convidar{display:flex;flex-wrap:wrap;gap:8px}
+.pt-convidar .campo{flex:1 1 220px;min-width:0}
+.pt-chaves, .pt-eventos, .pt-lista{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.pt-chaves li, .pt-eventos li{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;padding:8px 0;border-top:1px solid var(--linha)}
+.pt-chaves li:first-child, .pt-eventos li:first-child{border-top:0}
+.pt-chaves small, .pt-eventos small{color:var(--tinta-3);font-size:12px}
+.pt-st{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:#8A3B00;border:1px solid #D9A06A;padding:1px 6px;white-space:nowrap}
+.pt-st.ok, .pt-respondida .pt-st, .pt-ok .pt-st{color:#0B6B2E;border-color:#7FBF95}
+.pt-q{border:1px solid var(--linha);padding:10px 12px;display:grid;gap:6px;min-width:0}
+.pt-q.pt-aguardando{border-left:3px solid #B04A00}
+.pt-q.pt-respondida{border-left:3px solid #0B6B2E}
+.pt-q-cab{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}
+.pt-q-cab small{color:var(--tinta-3);font-size:12px}
+.pt-q-cab .btn{margin-left:auto}
+.pt-pergunta{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.pt-resposta{margin:0;padding:8px 10px;background:var(--preto-04);border-left:2px solid #0B6B2E;font-size:13.5px;overflow-wrap:anywhere}
+.pt-vazio{margin:0;font-size:13px;color:var(--tinta-3)}
+.pt-lnk{border:0;background:none;padding:0;font:inherit;font-weight:600;color:var(--preto);text-align:left;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.pt-segredo{padding:10px 12px;background:var(--preto-04);border:1px solid var(--linha);overflow-wrap:anywhere}
+.pt-segredo code{font-size:13px}
+.pt-painel{border:1px solid #D9A06A;border-left:3px solid #B04A00;background:var(--branco);padding:12px 16px;margin-bottom:16px;display:grid;gap:8px}
+.pt-painel-cab{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:baseline}
+.pt-painel-cab span{font-size:13px;color:var(--tinta-2)}
+.pt-painel ul{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.pt-painel li{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;min-width:0}
+.pt-painel li small{flex:1 1 100%;color:var(--tinta-3);font-size:12.5px;overflow-wrap:anywhere}
+.pt-caixa > .btn{justify-self:start;width:auto!important}
+.pt-caixa td, .pt-caixa th{overflow-wrap:anywhere}
+/* Agente de IA (ia.js): aba Permissões de IA no Admin e chat flutuante */
+.ia-adm{display:grid;gap:14px}
+.ia-adm-intro{margin:0;max-width:760px}
+.ia-tab td{vertical-align:middle}
+.ia-chave{display:inline-flex;align-items:center;gap:8px;border:0;background:none;padding:4px 0;font:inherit;font-size:13px;color:var(--tinta-2);cursor:pointer}
+.ia-chave i{position:relative;width:34px;height:18px;border:1px solid var(--nevoa);background:var(--branco);flex:none;transition:background var(--dur,.15s)}
+.ia-chave i::after{content:"";position:absolute;top:2px;left:2px;width:12px;height:12px;background:var(--nevoa);transition:left var(--dur,.15s)}
+.ia-chave.on{color:var(--preto);font-weight:600}
+.ia-chave.on i{background:var(--preto);border-color:var(--preto)}
+.ia-chave.on i::after{left:18px;background:var(--branco)}
+.ia-chave:disabled{cursor:progress;opacity:.6}
+.ia-chave:focus-visible{outline:2px solid var(--vermelho);outline-offset:2px}
+
+/* o balão: a imagem como veio, só no tamanho do canto da tela */
+#ia-raiz{position:fixed;right:20px;bottom:20px;z-index:25;display:flex;flex-direction:column;align-items:flex-end;gap:10px;pointer-events:none}
+#ia-raiz > *{pointer-events:auto}
+.ia-balao{width:76px;height:76px;padding:0;border:0;background:none;cursor:pointer;display:block;transition:transform var(--dur,.15s)}
+.ia-balao img{display:block;width:100%;height:100%;object-fit:contain;user-select:none}
+.ia-balao:hover{transform:translateY(-2px)}
+.ia-balao:focus-visible{outline:2px solid var(--vermelho);outline-offset:2px}
+
+.ia-chat{width:min(380px,calc(100vw - 32px));height:min(560px,calc(100vh - 140px));display:flex;flex-direction:column;background:var(--branco);border:1px solid var(--preto);box-shadow:0 12px 32px rgba(5,5,6,.18)}
+.ia-chat[hidden]{display:none}
+.ia-cab{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;background:var(--preto);color:var(--branco);border-bottom:3px solid var(--vermelho)}
+.ia-cab b{display:block;font-size:14px}
+.ia-cab small{display:block;font-size:11.5px;opacity:.75;margin-top:2px}
+.ia-fechar{border:0;background:none;color:inherit;padding:4px;cursor:pointer;display:grid;place-items:center}
+.ia-fechar:focus-visible{outline:2px solid var(--vermelho)}
+.ia-msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;min-height:0}
+.ia-msg{max-width:85%;display:grid;gap:3px}
+.ia-msg p{margin:0;padding:8px 11px;font-size:13.5px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere}
+.ia-msg time{font-size:11px;color:var(--tinta-3)}
+.ia-usuario{align-self:flex-end;justify-items:end}
+.ia-usuario p{background:var(--preto);color:var(--branco)}
+.ia-agente{align-self:flex-start}
+.ia-agente p{background:var(--preto-04);border-left:2px solid var(--vermelho)}
+.ia-aviso{margin:0;font-size:12.5px;color:var(--tinta-3);text-align:center}
+.ia-aviso.erro{color:var(--vermelho)}
+.ia-escrever{display:flex;gap:8px;align-items:flex-end;padding:10px;border-top:1px solid var(--linha)}
+.ia-escrever textarea{flex:1;min-width:0;resize:none;max-height:140px;font-size:13.5px}
+html.tema-escuro .ia-chat{filter:invert(.92) hue-rotate(180deg)}
+@media (max-width:720px){ #ia-raiz{right:12px;bottom:12px} .ia-balao{width:64px;height:64px} .ia-chat{height:min(520px,calc(100vh - 110px))} }
 
   .conteudo.sem-pad{padding:0;display:flex;flex-direction:column;flex:1}
   .conteudo.sem-pad > div{flex:1;display:flex;flex-direction:column}
@@ -3567,6 +3644,8 @@ function modal(titulo, corpo, botoes){
 }
 const lerArquivo = f => new Promise(res => {
   const base = {nome:f.name, tipo:f.type.startsWith('image') ? 'imagem' : f.type.startsWith('audio') ? 'áudio' : f.type.startsWith('video') ? 'vídeo' : 'arquivo', tam:f.size};
+  // o arquivo em si fica guardado (sem aparecer no JSON) para ir ao depósito de arquivos do banco (arquivos.js)
+  Object.defineProperty(base, '_arq', {value:f, enumerable:false, writable:true});
   if ((f.type.startsWith('image') && f.size < 600000) || (f.type.startsWith('audio') && f.size < 1500000)){ const r = new FileReader(); r.onload = () => res(Object.assign(base, {url:r.result})); r.onerror = () => res(base); r.readAsDataURL(f); }
   else res(base);
 });
@@ -4914,7 +4993,7 @@ function cumprirItem(id){
     [{txt:'Cancelar', cls:'sec'},{txt:'Marcar como cumprido', acao:d => {
       const arq = $('#cp-arq', d), txt = $('#cp-txt', d);
       const fim = prova => { D.stages[UI.sel][id] = {feito:true, quem:idEu(UI.verComo), quando:iso(HOJE), prova}; salvar(); rView(); toast('Item cumprido e registrado'); };
-      if (arq){ if (!arq.files[0]){ toast('Anexe a prova pedida'); return false; } lerArquivo(arq.files[0]).then(a => fim({tipo:cfg.prova, nome:a.nome, url:a.url})); return; }
+      if (arq){ if (!arq.files[0]){ toast('Anexe a prova pedida'); return false; } lerArquivo(arq.files[0]).then(a => fim(Object.defineProperty({tipo:cfg.prova, nome:a.nome, url:a.url}, '_arq', {value:a._arq, enumerable:false, writable:true}))); return; }
       if (txt){ if (!txt.value.trim()){ toast('Preencha a prova pedida'); return false; } fim({tipo:cfg.prova, valor:txt.value.trim()}); return; }
       fim(null);
     }}]);
@@ -6510,7 +6589,7 @@ async function gravarNoBanco(){
   SYNC.rodando = false;
   if (SYNC.erros.length){ selo('Erro ao salvar', true); const c = $('.chip-exemplo'); if (c) c.title = 'Não gravou: ' + SYNC.erros.join(' · ');
     const txt = SYNC.erros.join('|'); if (txt !== SYNC.ultimoErro) toast('Não deu para gravar tudo no banco: ' + SYNC.erros[0] + (SYNC.erros.length > 1 ? ' (e mais ' + (SYNC.erros.length - 1) + ')' : '')); SYNC.ultimoErro = txt; }
-  else { SYNC.ultimoErro = ''; selo('Dados do banco'); const c = $('.chip-exemplo'); if (c) c.title = 'Tudo gravado no banco'; if (BANCO.arquivosFora){ BANCO.arquivosFora = false; toast('Os links foram gravados. Arquivos (imagem, áudio, vídeo) ainda não vão para o banco.'); } }
+  else { SYNC.ultimoErro = ''; selo('Dados do banco'); const c = $('.chip-exemplo'); if (c) c.title = 'Tudo gravado no banco'; if (BANCO.arquivosFora){ BANCO.arquivosFora = false; toast('Algum arquivo não foi guardado no banco. Anexe de novo para tentar outra vez.'); } }
   if (SYNC.chavesNovas){ SYNC.chavesNovas = false; if (!document.querySelector('dialog[open]')) rView(); }
   if (SYNC.deNovo){ SYNC.deNovo = false; return gravarNoBanco(); }
   // as automações rodam no banco: se mexeu em itens e há automação ligada, relê para mostrar o resultado
@@ -7389,7 +7468,7 @@ function rAdmin(){
   if (!ADM.dono){ el.innerHTML = '<p class="vazio-linha">Só o dono do sistema abre este módulo.</p>'; return; }
   const topo = '<div class="topo-tela"><div><h1><span>Admin</span>' + I('Admin: painel do dono do sistema. Mostra quem usa, quanto usa e como o sistema está respondendo. Não mostra o conteúdo dos projetos de ninguém.') + '</h1><p class="lead">Usuários, cadastro, uso e desempenho do CicloDev.</p></div>' +
     '<div class="acoes"><label class="adm-per">Período <select class="sel peq" data-adm-dias>' + [7, 30, 90].map(d => '<option value="' + d + '"' + (ADM.dias === d ? ' selected' : '') + '>Últimos ' + d + ' dias</option>').join('') + '</select></label><button class="btn sec" type="button" data-adm-atualizar' + (ADM.carregando ? ' disabled' : '') + '>' + (ADM.carregando ? 'Atualizando…' : 'Atualizar') + '</button></div></div>';
-  const abas = '<div class="adm-abas" role="tablist">' + [['visao','Visão geral'],['usuarios','Usuários' + (ADM.usuarios ? ' (' + ADM.usuarios.length + ')' : '')],['desempenho','Desempenho']].map(([k, n]) => '<button type="button" role="tab" aria-selected="' + (ADM.aba === k) + '" data-adm-aba="' + k + '">' + esc(n) + '</button>').join('') + '</div>';
+  const abas = '<div class="adm-abas" role="tablist">' + [['visao','Visão geral'],['usuarios','Usuários' + (ADM.usuarios ? ' (' + ADM.usuarios.length + ')' : '')],['ia','Permissões de IA'],['desempenho','Desempenho']].map(([k, n]) => '<button type="button" role="tab" aria-selected="' + (ADM.aba === k) + '" data-adm-aba="' + k + '">' + esc(n) + '</button>').join('') + '</div>';
   if (!ADM.resumo){
     el.innerHTML = topo + (ADM.erro ? '<p class="entrada-erro">Não foi possível ler os números: ' + esc(ADM.erro) + '</p>' : '<p class="vazio-linha">Lendo os números do banco…</p>');
     if (!ADM.carregando && !ADM.erro) admCarregar();
@@ -7408,6 +7487,8 @@ function rAdmin(){
       '<section class="grafico"><h3>Uso por finalidade</h3>' + admFinalidade() + '</section></div>';
   } else if (ADM.aba === 'usuarios'){
     corpo = admTabelaUsuarios();
+  } else if (ADM.aba === 'ia' && typeof iaAdminHTML === 'function'){
+    corpo = iaAdminHTML();
   } else {
     corpo = '<div class="kpis">' + admKpi(admMs(R.carregar_ms_mediana), 'Carregar (tempo típico)') + admKpi(admMs(R.carregar_ms_p95), 'Carregar (95% abaixo de)', R.carregar_ms_p95 > 5000) + admKpi(admMs(R.salvar_ms_mediana), 'Salvar (tempo típico)') + admKpi(num(R.salvamentos_7d, 0), 'Salvamentos em 7 dias') + admKpi(num(R.erros_7d, 0), 'Erros em 7 dias', R.erros_7d > 0) + admKpi(num(R.banco_mb, 1) + ' MB', 'Tamanho do banco') + '</div>' +
       '<div class="graficos"><section class="grafico"><h3>Erros por dia</h3>' + admBarras(ADM.diario, 'erros', 'Erros') + '</section><section class="grafico"><h3>Tempo típico para carregar, por dia (ms)</h3>' + admBarras(ADM.diario, 'carregar_ms', 'Tempo para carregar') + '</section></div>' +
@@ -7722,7 +7803,8 @@ const TF_ICO = {
   criar:TF_SV('<path d="M12 5v14M5 12h14"/>'),
   mover:TF_SV('<path d="M4 12h16M14 6l6 6-6 6"/>'),
   restaurar:TF_SV('<path d="M4 10a8 8 0 1 1 2 6"/><path d="M4 4v6h6"/>'),
-  editar:TF_SV('<path d="M4 20h4L20 8l-4-4L4 16z"/>')
+  editar:TF_SV('<path d="M4 20h4L20 8l-4-4L4 16z"/>'),
+  baixar:TF_SV('<path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/>')
 };
 const tfClone = o => JSON.parse(JSON.stringify(o));
 const tfSb = () => COM_BANCO ? window.ciclodevBanco : null;
@@ -8371,6 +8453,8 @@ function tfAcoesItem(i, ancora){
     pode && {txt:i.lembrete ? 'Mudar o lembrete' : 'Lembrete', sub:i.lembrete ? tfQuando(i.lembrete) : 'Avisa no dia e hora que você escolher', ico:TF_ICO.sino, acao:() => tfLembrete(i)},
     pode && {txt:i.recorrencia ? 'Mudar a repetição' : 'Repetir', sub:i.recorrencia ? tfTextoRepete(i.recorrencia) : 'Todo dia, semana, mês ou ano', ico:TF_ICO.repete, acao:() => tfRepetir(i)},
     {txt:'Histórico da descrição', sub:'Ver e voltar versões', ico:TF_ICO.historico, acao:() => tfHistorico(i)},
+    pode && typeof ptItemNoPortal === 'function' && ptItemNoPortal(i) && {txt:'Perguntar ao stakeholder', sub:'Vai para quem responde pelo portal do cliente', ico:TF_ICO.sino, acao:() => ptPerguntar(i)},
+    {txt:'Baixar em .md', sub:i.tipo === 'epic' ? 'O épico com todos os itens, para mandar a alguém ou a uma IA' : 'O card completo, para mandar a alguém ou a uma IA', ico:TF_ICO.baixar, acao:() => exBaixarItem(i)},
     pode && {sep:true},
     pode && {txt:'Arquivar', sub:'Sai das telas e fica guardado', ico:TF_ICO.arquivo, acao:() => { tfComDesfazer('Item arquivado.', () => { i.arquivado = true; registrar('arquivou', i); }); fecharItem(); }},
     pode && {txt:'Excluir', sub:'Vai para a lixeira por 30 dias', ico:TF_ICO.lixo, perigo:true, acao:() => tfExcluirItem(i)}
@@ -8389,6 +8473,7 @@ function tfAcoesNo(chave, ancora){
     tipo !== 'client' && {txt:'Duplicar', sub:'Com tudo o que tem dentro', ico:TF_ICO.copia, acao:() => tfDuplicarNo(chave)},
     tipo !== 'client' && {txt:'Salvar como modelo', sub:'Guarda a estrutura para repetir', ico:TF_ICO.modelo, acao:() => tfSalvarNoComoModelo(chave)},
     tipo === 'app' && {txt:'Mover', sub:'Para outro produto ou projeto', ico:TF_ICO.mover, acao:() => moverApp(id)},
+    {txt:'Baixar em .md', sub:'Tudo o que tem dentro, para mandar a alguém ou a uma IA', ico:TF_ICO.baixar, acao:() => exBaixarNo(chave)},
     {sep:true},
     tipo !== 'client' && {txt:arq ? 'Tirar do arquivo' : 'Arquivar', sub:arq ? 'Volta a ficar ativo' : 'Fica apagado na estrutura, sem sumir', ico:TF_ICO.arquivo, acao:() => { tfComDesfazer(o0.nome + (arq ? ' voltou a ficar ativo.' : ' arquivado.'), () => { o0.status = arq ? 'active' : 'archived'; o0.motivo = ''; }); if (UI.modulo === 'operacoes') rOperacoes(); }},
     {txt:'Excluir', sub:'Vai para a lixeira por 30 dias', ico:TF_ICO.lixo, perigo:true, acao:() => tfExcluirNo(chave)}
@@ -10627,6 +10712,736 @@ document.addEventListener('input', e => {
   const box = $('#gaveta-wrap [data-dc-valor="' + (window.CSS && CSS.escape ? CSS.escape(t.dataset.ficha) : t.dataset.ficha) + '"]'); if (box && box !== t) box.value = t.value;
 });
 if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {dcLigacao, dcLigar, dcItemDoCampo, abrirItem, fecharItem});
+
+/* ===== Baixar em .md =====
+   Qualquer item (card), épico ou ponto da Estrutura (cliente, projeto, produto, aplicação, frente) vira um arquivo .md
+   organizado, com só aquilo que foi escolhido, para mandar para outra pessoa ou para um agente de IA.
+   Todo arquivo começa pela identificação: de que sistema veio, de onde é (o caminho na Estrutura), a chave e o id,
+   quem exportou e quando. Depois vêm a situação, o conteúdo e as ligações com outras coisas. */
+const EX_SISTEMA = 'CicloDev (IT.IA) · ciclodev.it-ia.tec.br';
+const exData = d => { if (!d) return ''; const x = typeof d === 'number' ? new Date(d) : new Date(String(d).length === 10 ? d + 'T12:00:00' : d); return isNaN(x) ? String(d) : x.toLocaleDateString('pt-BR'); };
+const exAgora = () => new Date().toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'});
+const exPessoa = id => { const p = id && pessoa(id); return p ? p.nome : ''; };
+const exMencoes = t => String(t || '').replace(/@\[([^\]]+)\]\([^)]+\)/g, '@$1');
+const exChave = i => (typeof chaveDe === 'function' && chaveDe(i)) || '';
+const exNomeItem = i => (exChave(i) ? exChave(i) + ' · ' : '') + i.titulo;
+const exLinha = (rot, v) => v === '' || v == null || v === false ? '' : '- **' + rot + ':** ' + v + '\n';
+const exCaminho = chave => caminho(chave).map(p => p[1]).join(' › ');
+const EX_NIVEL = {client:'Cliente', project:'Projeto', product:'Produto', app:'Aplicação', ws:'Frente de trabalho'};
+function exCabecalho(tipo, titulo){
+  return '<!-- Exportado do ' + EX_SISTEMA + ' em ' + exAgora() + (exPessoa(idEu(UI.verComo)) ? ' por ' + exPessoa(idEu(UI.verComo)) : '') + '. ' + tipo + '. -->\n\n# ' + titulo + '\n\n';
+}
+function exStatus(i){ const c = i.st && D.statusCustom.find(s => s.id === i.st); return c ? c.nome : stNome(i.status); }
+function exMinutos(i){ const m = Math.round((i.tempo || []).reduce((s, t) => s + (((t.fim || Date.now()) - t.ini) / 60000 || 0), 0)); return m ? Math.floor(m / 60) + 'h ' + String(m % 60).padStart(2, '0') + 'min' : ''; }
+
+// a parte de identificação de um item: de onde é e com o que está ligado
+function exIdentItem(i){
+  const ep = i.pai && byId('issues', i.pai), mc = i.marco && D.marcos.find(m => m.id === i.marco), sp = i.sprint && D.sprints.find(s => s.id === i.sprint);
+  return '## Identificação\n\n' +
+    exLinha('Sistema', EX_SISTEMA) +
+    exLinha('Chave', exChave(i)) +
+    exLinha('Tipo', tipoNome(i.tipo)) +
+    exLinha('Onde fica', exCaminho('ws:' + i.ws) + ' (cliente › projeto › produto › aplicação › frente)') +
+    exLinha(i.tipo === 'subtask' ? 'Item de cima' : 'Épico', ep ? exNomeItem(ep) : '') +
+    exLinha('Versão', mc ? mc.nome : '') +
+    exLinha('Sprint', sp ? sp.nome : '') +
+    exLinha('Id interno', '`' + i.id + '`') + '\n';
+}
+function exSituacao(i){
+  const etq = typeof etiquetasDoItem === 'function' ? etiquetasDoItem(i).map(t => t.nome).join(', ') : '';
+  return '## Situação\n\n' +
+    exLinha('Status', exStatus(i)) + exLinha('Prioridade', prioNome(i.prio)) +
+    exLinha('Responsável', exPessoa(i.resp) || 'sem responsável') + exLinha('Quem abriu', exPessoa(i.rep)) +
+    exLinha('Início', exData(i.ini)) + exLinha('Prazo', exData(i.fim)) + exLinha('Concluído em', exData(i.feito)) +
+    exLinha('Estimativa', i.est ? i.est + ' h' : '') + exLinha('Pontos', i.pontos || '') + exLinha('Tempo registrado', exMinutos(i)) +
+    exLinha('O cliente vê', i.vis === 'cliente' ? 'sim' : 'não') + exLinha('Etiquetas', etq) + exLinha('Criado em', exData(i.criado)) +
+    (i.arquivado ? exLinha('Arquivado', 'sim') : '') + '\n';
+}
+function exCorpoItem(i, nh){
+  const h = '#'.repeat(nh), partes = [];
+  partes.push(h + ' Descrição\n\n' + ((i.desc || '').trim() || '_Sem descrição._') + '\n');
+  if ((i.check || []).length) partes.push(h + ' Checklist\n\n' + i.check.map(c => '- [' + (c.f ? 'x' : ' ') + '] ' + c.t).join('\n') + '\n');
+  const cfs = (typeof camposDoEscopo === 'function' ? camposDoEscopo('ws:' + i.ws) : []).filter(c => i.cf && i.cf[c.id] != null && i.cf[c.id] !== '');
+  if (cfs.length) partes.push(h + ' Campos do projeto\n\n' + cfs.map(c => '- **' + c.nome + ':** ' + i.cf[c.id]).join('\n') + '\n');
+  const dc = typeof dcLigacao === 'function' && dcLigacao(i);
+  if (dc) partes.push(h + ' Decisão na ficha técnica\n\n- **Campo:** ' + dc.sec + ' › ' + dc.campo + '\n- **Decidido:** ' + ((D.sheets[dc.pk] || {campos:{}}).campos[dc.chave] || '_ainda vazio_') + '\n');
+  const lig = (i.links || []).map(l => { const o = byId('issues', l.alvo); return o ? '- ' + ({'Blocks':'Bloqueia', 'Is blocked by':'É bloqueado por', 'Relates to':'Tem relação com', 'Duplicates':'Duplica'}[l.tipo] || l.tipo) + ': ' + exNomeItem(o) + ' (' + exStatus(o) + ')' : ''; }).filter(Boolean);
+  if (lig.length) partes.push(h + ' Ligações\n\n' + lig.join('\n') + '\n');
+  const refs = (i.refs || []).map(r => '- ' + (r.url ? '[' + (r.nome || r.url) + '](' + r.url + ')' : r.nome + ' (arquivo)'));
+  if (refs.length) partes.push(h + ' Anexos e links\n\n' + refs.join('\n') + '\n');
+  const coms = (i.coments || []).filter(c => (c.txt || '').trim());
+  if (coms.length) partes.push(h + ' Comentários\n\n' + coms.map(c => '**' + (exPessoa(c.quem) || (c.cliente ? 'Cliente' : 'Alguém')) + '** · ' + exData(c.quando) + (c.cliente ? ' · visível ao cliente' : '') + '\n\n' + exMencoes(c.txt).split('\n').map(l => '> ' + l).join('\n')).join('\n\n') + '\n');
+  return partes.join('\n');
+}
+// um item completo; num épico, os itens de dentro vêm logo depois, cada um com o que tem
+function exItemMd(i){
+  const filhos = D.issues.filter(x => x.pai === i.id && !x.arquivado);
+  let md = exCabecalho(tipoNome(i.tipo), exNomeItem(i)) + exIdentItem(i) + exSituacao(i) + exCorpoItem(i, 2);
+  if (filhos.length){
+    const feitos = filhos.filter(x => x.status === 'done').length;
+    md += '\n## ' + (i.tipo === 'epic' ? 'Itens do épico' : 'Subitens') + ' (' + feitos + ' de ' + filhos.length + ' concluídos)\n\n' +
+      filhos.map(f => '- ' + (f.status === 'done' ? '[x] ' : '[ ] ') + exNomeItem(f) + ' · ' + exStatus(f) + (f.resp ? ' · ' + exPessoa(f.resp) : '') + (f.fim ? ' · prazo ' + exData(f.fim) : '')).join('\n') + '\n';
+    if (i.tipo === 'epic') md += '\n' + filhos.map(f => '### ' + exNomeItem(f) + '\n\n' +
+      exLinha('Tipo', tipoNome(f.tipo)) + exLinha('Onde fica', exCaminho('ws:' + f.ws)) + exLinha('Status', exStatus(f)) + exLinha('Prioridade', prioNome(f.prio)) + exLinha('Responsável', exPessoa(f.resp)) + exLinha('Prazo', exData(f.fim)) + exLinha('Id interno', '`' + f.id + '`') + '\n' +
+      exCorpoItem(f, 4)).join('\n');
+  }
+  return md;
+}
+// um ponto da Estrutura: o caminho, o que tem dentro, a ficha técnica, as versões e os épicos com os itens
+function exNoMd(chave){
+  const [tipo, id] = chave.split(':'), o = tfObjNo(chave); if (!o) return '';
+  const itens = issuesEm(chave).filter(i => !i.arquivado), epics = itens.filter(i => i.tipo === 'epic');
+  const semEpico = itens.filter(i => i.tipo !== 'epic' && !(i.pai && epics.some(e => e.id === i.pai)) && !(i.pai && itens.some(x => x.id === i.pai)));
+  const feitos = itens.filter(i => i.status === 'done').length;
+  let md = exCabecalho(EX_NIVEL[tipo], o.nome) + '## Identificação\n\n' + exLinha('Sistema', EX_SISTEMA) + exLinha('Nível', EX_NIVEL[tipo]) + exLinha('Onde fica', exCaminho(chave)) +
+    exLinha('Situação', (EST.find(e => e.id === o.status) || {nome:o.status}).nome) + (o.motivo ? exLinha('Motivo da pausa', o.motivo) : '') +
+    (tipo === 'app' ? exLinha('Plataforma', {web:'Web', desktop:'Desktop', mobile:'Celular'}[o.plataforma] || o.plataforma) : '') + (tipo === 'project' ? exLinha('Origem', o.origem === 'brownfield' ? 'Brownfield (já em andamento)' : 'Greenfield (do zero)') : '') +
+    exLinha('Id interno', '`' + o.id + '`') + exLinha('Itens', itens.length + ' (' + feitos + ' concluídos)') + '\n';
+  // o que tem dentro
+  const dentro = [];
+  if (tipo === 'client') D.projects.filter(p => p.client === id).forEach(p => dentro.push('- Projeto: ' + p.nome));
+  if (tipo === 'project'){ D.products.filter(p => p.project === id).forEach(p => dentro.push('- Produto: ' + p.nome)); D.apps.filter(a => a.project === id).forEach(a => dentro.push('- Aplicação: ' + a.nome + (a.product ? ' (em ' + (byId('products', a.product) || {nome:''}).nome + ')' : '') + ' · frentes: ' + D.ws.filter(w => w.app === a.id).map(w => w.nome).join(', '))); }
+  if (tipo === 'product') D.apps.filter(a => a.product === id).forEach(a => dentro.push('- Aplicação: ' + a.nome + ' · frentes: ' + D.ws.filter(w => w.app === a.id).map(w => w.nome).join(', ')));
+  if (tipo === 'app') D.ws.filter(w => w.app === id).forEach(w => dentro.push('- Frente: ' + w.nome + ' (' + issuesEm('ws:' + w.id).filter(i => !i.arquivado).length + ' itens)'));
+  if (dentro.length) md += '## O que tem dentro\n\n' + dentro.join('\n') + '\n\n';
+  // ficha técnica preenchida (a do próprio ponto, ou a do projeto que ele herda)
+  const pj = cadeia(chave).project, fichas = [D.sheets[chave], pj && D.sheets['project:' + pj.id]].filter(Boolean);
+  const valores = []; FICHA.forEach(([sec, , campos]) => campos.forEach(cp => { const k = sec + '|' + cp; const v = fichas.map(f => f.campos[k]).find(x => x && String(x).trim()); if (v) valores.push('- **' + sec + ' › ' + cp + ':** ' + String(v).replace(/\n/g, ' ')); }));
+  if (valores.length) md += '## Ficha técnica\n\n' + valores.join('\n') + '\n\n';
+  const vs = typeof enVersoes === 'function' && tipo !== 'client' ? enVersoes(typeof enProjeto === 'function' ? enProjeto(chave) : chave) : [];
+  if (vs.length) md += '## Versões\n\n' + vs.map(v => { const lig = itens.filter(i => i.marco === v.id); return '- **' + v.nome + '**' + (v.desc ? ': ' + v.desc : '') + ' · ' + (v.entregue ? 'no ar desde ' + exData(v.entregue) : 'prevista para ' + exData(v.data)) + (lig.length ? ' · ' + lig.filter(i => i.status === 'done').length + ' de ' + lig.length + ' itens' : ''); }).join('\n') + '\n\n';
+  const linhaIt = i => '- ' + (i.status === 'done' ? '[x] ' : '[ ] ') + exNomeItem(i) + ' · ' + exStatus(i) + (i.resp ? ' · ' + exPessoa(i.resp) : '') + (i.fim ? ' · prazo ' + exData(i.fim) : '') + (tipo !== 'ws' ? ' · ' + ((byId('ws', i.ws) || {}).nome || '') : '');
+  if (epics.length) md += '## Épicos\n\n' + epics.map(e => { const f = itens.filter(i => i.pai === e.id); return '### ' + exNomeItem(e) + '\n\n' + exLinha('Status', exStatus(e)) + exLinha('Frente', (byId('ws', e.ws) || {}).nome) + exLinha('Versão', (D.marcos.find(m => m.id === e.marco) || {}).nome) +
+    ((e.desc || '').trim() ? '\n' + e.desc.trim() + '\n' : '') + (f.length ? '\n' + f.map(linhaIt).join('\n') + '\n' : '\n_Sem itens._\n'); }).join('\n') + '\n';
+  if (semEpico.length) md += '## Itens sem épico\n\n' + semEpico.map(linhaIt).join('\n') + '\n';
+  return md;
+}
+function exBaixar(nome, md){
+  // nome do arquivo sem acento e sem símbolos: alguns navegadores trocam o nome por "download" quando tem acento
+  const arq = String(nome).replace(/\s*·\s*/g, ' - ').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9 ._()-]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 90) + '.md';
+  const url = URL.createObjectURL(new Blob([md], {type:'text/markdown;charset=utf-8'}));
+  const a = document.createElement('a'); a.href = url; a.download = arq; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+  toast('Baixado: ' + arq);
+}
+const exBaixarItem = i => exBaixar(exNomeItem(i), exItemMd(i));
+const exBaixarNo = chave => { const o = tfObjNo(chave); if (o) exBaixar(EX_NIVEL[chave.split(':')[0]] + ' ' + o.nome, exNoMd(chave)); };
+if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {exItemMd, exNoMd});
+
+/* ===== Tudo para o banco: Quadro livre e Visões salvas =====
+   As duas já tinham tabela no banco (parte 02: quadros, quadro_elementos e visoes_salvas, com as regras de acesso da parte 07),
+   mas a tela só guardava na memória e perdia ao recarregar. Aqui entram na gravação e na leitura como todo o resto.
+   Quadro livre: nota vira elemento "texto"; cartão de registro vira "cartao" ligado ao item ou ao ponto da Estrutura; ligação vira "seta".
+   Visão salva: a view, os filtros, a busca, as raias e a ordem vão juntos no campo filtros (a coluna visao só aceita algumas views). */
+GRAVAR.push(['quadros', ['no_id']], ['quadro_elementos', ['id']], ['visoes_salvas', ['id']]);
+TABELAS_BANCO.push('quadros', 'quadro_elementos', 'visoes_salvas');
+const PS_VISOES = ['board', 'table', 'list', 'calendar', 'timeline', 'workload'];
+const psNum = v => { const n = +v; return isFinite(n) ? Math.round(n * 10) / 10 : 0; };
+
+const _linhasDaTelaPs = linhasDaTela;
+linhasDaTela = function(d){
+  const L = _linhasDaTelaPs(d);
+  L.quadros = []; L.quadro_elementos = []; L.visoes_salvas = [];
+  const temNo = new Set(L.nos.map(n => n.id)), temItem = new Set(L.itens.map(i => i.id));
+  Object.entries(d.quadros || {}).forEach(([chave, q]) => {
+    const no = idNo(chave); if (!no || !temNo.has(no) || !q || !(q.els || []).length) return;
+    L.quadros.push({no_id:no});
+    const ids = new Set();
+    const els = q.els.filter(e => e && e.tipo !== 'seta'), setas = q.els.filter(e => e && e.tipo === 'seta');
+    els.forEach(e => {
+      const base = {id:e.id, quadro_id:no, x:psNum(e.x), y:psNum(e.y), largura:e.w ? psNum(e.w) : null};
+      if (e.tipo === 'nota'){ L.quadro_elementos.push(Object.assign(base, {tipo:'texto', texto:e.texto || ''})); ids.add(e.id); return; }
+      if (e.tipo === 'registro' && e.ref){ const [t, rid] = String(e.ref).split(':');
+        if (t === 'issue'){ if (!temItem.has(rid)) return; L.quadro_elementos.push(Object.assign(base, {tipo:'cartao', ref_item_id:rid})); }
+        else { if (!temNo.has(rid)) return; L.quadro_elementos.push(Object.assign(base, {tipo:'cartao', ref_no_id:rid})); }
+        ids.add(e.id); }
+    });
+    // as setas depois dos elementos que elas ligam
+    setas.forEach(s => { if (ids.has(s.de) && ids.has(s.para) && s.de !== s.para) L.quadro_elementos.push({id:s.id, quadro_id:no, tipo:'seta', de_id:s.de, para_id:s.para, x:0, y:0}); });
+  });
+  const temPessoa = new Set(d.people.map(p => p.id)), nomes = new Set();
+  (d.vistas || []).slice().reverse().forEach(v => {
+    if (!v || !v.nome || !temPessoa.has(v.pessoa)) return;
+    const k = v.pessoa + '|' + v.nome.toLowerCase(); if (nomes.has(k)) return; nomes.add(k);   // o banco não aceita duas com o mesmo nome da mesma pessoa: fica a mais nova
+    const no = v.sel && v.sel !== 'all' ? idNo(v.sel) : null;
+    L.visoes_salvas.push({id:v.id, pessoa_id:v.pessoa, no_id:no && temNo.has(no) ? no : null, nome:v.nome, visao:PS_VISOES.includes(v.view) ? v.view : 'table',
+      filtros:{view:v.view || 'table', sel:v.sel || 'all', filtros:v.filtros || {}, busca:v.busca || '', raias:v.raias || null, calModo:v.calModo || null, ordem:v.ordem || null}, compartilhada:!!v.compartilhada});
+  });
+  L.visoes_salvas.reverse();
+  return L;
+};
+
+const _montarDadosPs = montarDados;
+montarDados = function(T, eu){
+  const d = _montarDadosPs(T, eu);
+  const chaveDe = {}; [['clients', 'client'], ['projects', 'project'], ['products', 'product'], ['apps', 'app'], ['ws', 'ws']].forEach(([lista, t]) => (d[lista] || []).forEach(o => { chaveDe[o.id] = t + ':' + o.id; }));
+  d.quadros = d.quadros || {};
+  const porQuadro = new Map(); (T.quadro_elementos || []).forEach(e => { if (!porQuadro.has(e.quadro_id)) porQuadro.set(e.quadro_id, []); porQuadro.get(e.quadro_id).push(e); });
+  (T.quadros || []).forEach(q => {
+    const k = chaveDe[q.no_id]; if (!k) return;
+    const els = [];
+    (porQuadro.get(q.no_id) || []).forEach(e => {
+      if (e.tipo === 'seta') els.push({id:e.id, tipo:'seta', de:e.de_id, para:e.para_id});
+      else if (e.tipo === 'cartao' && (e.ref_item_id || e.ref_no_id)) els.push({id:e.id, tipo:'registro', ref:e.ref_item_id ? 'issue:' + e.ref_item_id : (chaveDe[e.ref_no_id] || ''), x:+e.x || 0, y:+e.y || 0, w:e.largura ? +e.largura : 220});
+      else els.push({id:e.id, tipo:'nota', texto:e.texto || '', x:+e.x || 0, y:+e.y || 0, w:e.largura ? +e.largura : 220});
+    });
+    // setas por último, como a tela espera
+    d.quadros[k] = {els:els.filter(e => e.tipo !== 'seta').concat(els.filter(e => e.tipo === 'seta'))};
+  });
+  d.vistas = (T.visoes_salvas || []).slice().sort((a, b) => String(a.criado_em || '').localeCompare(String(b.criado_em || ''))).map(v => { const f = v.filtros || {};
+    return {id:v.id, nome:v.nome, pessoa:v.pessoa_id, sel:f.sel || (v.no_id && chaveDe[v.no_id]) || 'all', view:f.view || v.visao, filtros:f.filtros || {}, busca:f.busca || '', raias:f.raias || 'nenhuma', calModo:f.calModo || undefined, ordem:f.ordem || undefined, compartilhada:!!v.compartilhada}; });
+  return d;
+};
+
+/* ===== Arquivos no banco =====
+   Imagem, áudio, vídeo, PDF e qualquer outro arquivo anexado vai para o depósito de arquivos do Supabase (bucket privado
+   "anexos", parte 09) e ganha uma linha na tabela anexos (parte 04). Vale para: anexos dos itens, arquivos da ficha técnica,
+   anexos dos pedidos do Atendimento e provas das etapas. Antes, só o nome (e uma cópia das imagens pequenas) ficava na tela.
+   Caminho no depósito: <id do login>/<onde>/<uuid>-<nome do arquivo>; na ficha, o <onde> guarda também a seção.
+   Para mostrar, o sistema pede ao banco um link temporário (1 hora) de cada arquivo. */
+const AQ_TIPO = {'imagem':'imagem', 'áudio':'audio', 'audio':'audio', 'vídeo':'video', 'video':'video'};
+const AQ_LIMITE = 52428800;   // 50 MB, o mesmo do bucket
+const aqSlug = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'x';
+const aqNomeSeguro = n => (String(n || 'arquivo').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9._-]+/g, '_').replace(/_+/g, '_').slice(-80)) || 'arquivo';
+const aqEArquivo = x => x && x.tipo !== 'link';
+
+// todos os arquivos que a tela conhece, com o lugar de cada um no banco
+function aqTodos(d){
+  const L = [];
+  (d.issues || []).forEach(i => (i.refs || []).forEach(x => { if (aqEArquivo(x)) L.push({x, onde:'item', col:'item_id', alvo:i.id}); }));
+  (d.requests || []).forEach(r => (r.anexos || []).forEach(x => { if (aqEArquivo(x)) L.push({x, onde:'pedido', col:'pedido_id', alvo:r.id}); }));
+  Object.entries(d.sheets || {}).forEach(([k, s]) => { const nid = idNo(k); if (nid) (s.arquivos || []).forEach(x => { if (aqEArquivo(x)) L.push({x, onde:'ficha', col:'no_id', alvo:nid, sec:x.sec}); }); });
+  Object.entries(d.stages || {}).forEach(([k, itens]) => Object.values(itens || {}).forEach(s => { const p = s && s.prova; if (p && (p._arq || p.storage) && (p.tipo === 'Arquivo' || p.tipo === 'Captura de tela' || p.storage || p._arq)) L.push({x:p, onde:'prova', col:'prova_id', alvo:null, prova:p}); }));
+  return L;
+}
+
+// antes de gravar: manda para o depósito o que ainda não foi
+async function aqEnviarPendentes(){
+  const sb = window.ciclodevBanco; if (!sb || !sb.storage) return;
+  const pend = aqTodos(D).filter(a => !a.x.storage && !a.x._enviando && (a.x._arq || String(a.x.url || '').startsWith('data:')));
+  if (!pend.length) return;
+  let uid = null; try { const {data} = await sb.auth.getSession(); uid = data && data.session && data.session.user && data.session.user.id; } catch(e){}
+  if (!uid){ console.warn('Arquivos: sem login, não deu para enviar'); return; }
+  for (const a of pend){
+    const x = a.x; x._enviando = true;
+    try {
+      let blob = x._arq;
+      if (!blob && String(x.url || '').startsWith('data:')) blob = await (await fetch(x.url)).blob();
+      if (!blob) continue;
+      if (blob.size > AQ_LIMITE){ toast('O arquivo ' + x.nome + ' passa de 50 MB e não foi guardado.'); continue; }
+      const id = novoUuid(), pasta = a.onde === 'ficha' ? 'ficha/' + aqSlug(a.sec) : a.onde;
+      const caminho = uid + '/' + pasta + '/' + id + '-' + aqNomeSeguro(x.nome);
+      const {error} = await sb.storage.from('anexos').upload(caminho, blob, {contentType:blob.type || 'application/octet-stream', upsert:false});
+      if (error){ toast('Não deu para guardar o arquivo ' + x.nome + ': ' + (error.message || error)); continue; }
+      x._id = x._id && /^[0-9a-f-]{36}$/.test(x._id) ? x._id : id; x.storage = caminho; x.mime = blob.type || null; x.tam = blob.size;
+      if (a.onde === 'prova' && !x.valor) x.valor = x.nome;   // a prova precisa de um valor: fica o nome do arquivo
+    } catch(e){ console.warn('Arquivos', e); }
+    finally { x._enviando = false; }
+  }
+}
+
+// na gravação: uma linha em anexos para cada arquivo guardado no depósito
+const _linhasDaTelaAq = linhasDaTela;
+linhasDaTela = function(d){
+  const L = _linhasDaTelaAq(d);
+  L.anexos = L.anexos || [];
+  const temItem = new Set((L.itens || []).map(r => r.id)), temPed = new Set((L.pedidos || []).map(r => r.id)), temNo = new Set((L.nos || []).map(r => r.id)), temProva = new Set((L.provas || []).map(r => r.id));
+  const ja = new Set(L.anexos.map(r => r.id)), eu = idEu('master') || null;
+  aqTodos(d).forEach(a => { const x = a.x; if (!x.storage) return;
+    let alvo = a.alvo;
+    if (a.onde === 'prova'){ alvo = a.prova._id; if (!alvo || !temProva.has(alvo)) return; }
+    if ((a.onde === 'item' && !temItem.has(alvo)) || (a.onde === 'pedido' && !temPed.has(alvo)) || (a.onde === 'ficha' && !temNo.has(alvo))) return;
+    const id = a.onde === 'prova' ? (x._anexo || (x._anexo = novoUuid())) : x._id; if (!id || ja.has(id)) return; ja.add(id);
+    const row = {id, nome:x.nome || 'arquivo', tipo:AQ_TIPO[x.tipo] || 'documento', mime:x.mime || null, tamanho_bytes:x.tam == null ? null : +x.tam, storage_path:x.storage, enviado_por:x._por || eu};
+    row[a.col] = alvo; L.anexos.push(row);
+  });
+  // o aviso "arquivos não vão para o banco" só vale para o que não conseguiu ir
+  BANCO.arquivosFora = aqTodos(d).some(a => !a.x.storage && (a.x._arq || String(a.x.url || '').startsWith('data:')));
+  return L;
+};
+// os anexos gravam depois dos pedidos e das provas, que eles apontam (e são apagados antes deles)
+(function(){ const k = GRAVAR.findIndex(g => g[0] === 'anexos'); if (k >= 0){ const [g] = GRAVAR.splice(k, 1); const n = GRAVAR.findIndex(x => x[0] === 'notificacoes'); GRAVAR.splice(n >= 0 ? n : GRAVAR.length, 0, g); } })();
+
+// na leitura: os arquivos voltam com o caminho no depósito (e a ficha, com a seção de cada um)
+const _montarDadosAq = montarDados;
+montarDados = function(T, eu){
+  const d = _montarDadosAq(T, eu);
+  const arqs = (T.anexos || []).filter(a => a.storage_path);
+  const porId = new Map(arqs.map(a => [a.id, a]));
+  const DE = {audio:'áudio', video:'vídeo', documento:'arquivo'};
+  const ref = a => ({nome:a.nome, tipo:DE[a.tipo] || a.tipo, tam:a.tamanho_bytes || undefined, mime:a.mime || undefined, storage:a.storage_path, _id:a.id, _por:a.enviado_por || undefined, _banco:true});
+  // itens: completa os que já vieram (ficam na mesma ordem)
+  (d.issues || []).forEach(i => (i.refs || []).forEach(x => { const a = x._id && porId.get(x._id); if (a){ x.storage = a.storage_path; x.mime = a.mime || undefined; x._por = a.enviado_por || undefined; } }));
+  // pedidos: refaz a lista com o que o banco tem
+  const porPed = new Map(); arqs.filter(a => a.pedido_id).forEach(a => { if (!porPed.has(a.pedido_id)) porPed.set(a.pedido_id, []); porPed.get(a.pedido_id).push(ref(a)); });
+  (d.requests || []).forEach(r => { const links = (r.anexos || []).filter(x => x.tipo === 'link'); r.anexos = links.concat(porPed.get(r.id) || []); });
+  // ficha: a seção vem do caminho (…/ficha/<seção>/…)
+  const secDe = {}; FICHA.forEach(([sec]) => { secDe[aqSlug(sec)] = sec; });
+  const chaveDe = {}; [['clients', 'client'], ['projects', 'project'], ['products', 'product'], ['apps', 'app'], ['ws', 'ws']].forEach(([l, t]) => (d[l] || []).forEach(o => { chaveDe[o.id] = t + ':' + o.id; }));
+  Object.values(d.sheets || {}).forEach(s => { s.arquivos = (s.arquivos || []).filter(x => !x.storage && x.tipo === 'link'); });
+  arqs.filter(a => a.no_id).forEach(a => { const k = chaveDe[a.no_id]; if (!k) return; const s = d.sheets[k] || (d.sheets[k] = {campos:{}, custom:[], arquivos:[]});
+    const m = /\/ficha\/([^/]+)\//.exec(a.storage_path); s.arquivos.push(Object.assign(ref(a), {sec:(m && secDe[m[1]]) || 'Anexos e anotações'})); });
+  // provas: o arquivo fica junto da prova
+  const porProva = new Map(arqs.filter(a => a.prova_id).map(a => [a.prova_id, a]));
+  Object.values(d.stages || {}).forEach(itens => Object.values(itens || {}).forEach(s => { const p = s && s.prova; const a = p && p._id && porProva.get(p._id); if (a){ p.storage = a.storage_path; p.nome = a.nome; p._anexo = a.id; p.mime = a.mime || undefined; } }));
+  AQ.links = null;
+  return d;
+};
+
+// links temporários para mostrar e abrir os arquivos
+const AQ = {links:null, pedindo:false};
+async function aqPedirLinks(){
+  const sb = window.ciclodevBanco; if (!sb || !sb.storage || AQ.pedindo) return;
+  const L = aqTodos(D).filter(a => a.x.storage && !String(a.x.url || '').startsWith('data:') && !(a.x._urlAte > Date.now())); if (!L.length) return;
+  AQ.pedindo = true;
+  try {
+    const caminhos = [...new Set(L.map(a => a.x.storage))];
+    const {data, error} = await sb.storage.from('anexos').createSignedUrls(caminhos, 3600);
+    if (error || !data) return;
+    const url = new Map(data.filter(r => r && r.signedUrl).map(r => [r.path, r.signedUrl]));
+    let mudou = false; L.forEach(a => { const u = url.get(a.x.storage); if (u){ a.x.url = u; a.x._urlAte = Date.now() + 3300000; mudou = true; } });
+    if (mudou){ if (itemAberto) abrirItem(itemAberto); else if (UI.modulo === 'operacoes' && UI.view === 'sheet') rView(); else if (UI.modulo === 'servicedesk' && typeof rServiceDesk === 'function') rServiceDesk(); }
+  } catch(e){ console.warn('Arquivos: links', e); }
+  finally { AQ.pedindo = false; }
+}
+// o link temporário não é dado: não entra na gravação (a linha usa o caminho no depósito)
+if (COM_BANCO){
+  const _gravarAq = gravarNoBanco;
+  gravarNoBanco = async function(){ await aqEnviarPendentes(); return _gravarAq.apply(this, arguments); };
+  window.ciclodevGravarAgora = gravarNoBanco;
+  const _carregarAq = carregarDoBanco;
+  carregarDoBanco = async function(){ const r = await _carregarAq.apply(this, arguments); setTimeout(aqPedirLinks, 50); return r; };
+  window.ciclodevCarregarBanco = carregarDoBanco;
+  // ao abrir um item ou a ficha, garante os links (eles vencem em 1 hora)
+  const _abrirItemAq = abrirItem;
+  abrirItem = function(id){ const r = _abrirItemAq.apply(this, arguments); const i = byId('issues', id); if (i && (i.refs || []).some(x => x.storage && !(x._urlAte > Date.now()))) setTimeout(aqPedirLinks, 0); return r; };
+}
+// nada de arquivo acima de 50 MB: avisa na hora de escolher
+document.addEventListener('change', e => { const t = e.target; if (!t || t.type !== 'file' || !t.files) return; const g = [...t.files].filter(f => f.size > AQ_LIMITE); if (g.length) toast('Passa de 50 MB e não vai ser guardado: ' + g.map(f => f.name).join(', ')); }, true);
+if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {aqTodos, aqEnviarPendentes});
+
+/* ===== Preferências de tela e lembretes vistos no banco (parte 22) =====
+   A arrumação da tela de cada pessoa vai para pessoas_preferencias.tela, e os lembretes que já apareceram vão para
+   pessoas_preferencias.lembretes_vistos. O navegador continua com uma cópia só para abrir mais rápido.
+   Na primeira vez (banco ainda vazio para a pessoa), o que já estava guardado neste navegador sobe para o banco,
+   para ninguém ter de arrumar tudo de novo. */
+const PF_CAMPOS = ['modulo', 'sel', 'view', 'ovSel', 'abertos', 'tabAbertos', 'filtros', 'raias', 'calModo', 'cargaModo', 'ordem', 'abasFixas', 'arvW', 'semArvore', 'bjEpicos', 'bjFechadas'];
+const PF = {pronto:false, timer:0, ultimo:'', vistosUlt:'', semColuna:false};
+const pfBanco = () => (COM_BANCO && BANCO.carregado && window.ciclodevBanco && typeof eu === 'function' && eu()) ? window.ciclodevBanco : null;
+function pfTela(){
+  const t = {}; PF_CAMPOS.forEach(k => { if (UI[k] !== undefined) t[k] = UI[k]; });
+  t.tema = document.documentElement.classList.contains('tema-escuro') ? 'escuro' : 'claro';
+  return t;
+}
+function pfAplicar(t){
+  if (!t || typeof t !== 'object') return;
+  PF_CAMPOS.forEach(k => { if (t[k] !== undefined) UI[k] = t[k]; });
+  // um ponto da Estrutura que não existe mais (apagado por alguém) não é aplicado
+  ['sel', 'ovSel'].forEach(k => { if (t[k] && t[k] !== 'all' && typeof tfObjNo === 'function' && !tfObjNo(t[k])) UI[k] = k === 'sel' ? (D.projects[0] ? 'project:' + D.projects[0].id : 'all') : 'all'; });
+  if (t.tema) { document.documentElement.classList.toggle('tema-escuro', t.tema === 'escuro'); try { localStorage.setItem('ciclodev-tema', t.tema); } catch(e){} }
+  try { localStorage.setItem('ciclodev-ui', JSON.stringify(UI)); } catch(e){}
+}
+// os lembretes vistos há mais de 60 dias saem, para a lista não crescer para sempre
+const pfPodar = v => { const lim = Date.now() - 60 * 864e5, o = {}; Object.entries(v || {}).forEach(([k, t]) => { if (+t > lim) o[k] = +t; }); return o; };
+async function pfGravar(campos){
+  const sb = pfBanco(); if (!sb || PF.semColuna) return false;
+  const {error} = await sb.from('pessoas_preferencias').upsert(Object.assign({pessoa_id:eu()}, campos), {onConflict:'pessoa_id'});
+  if (error){ if (/column|tela|lembretes_vistos|schema cache/i.test(error.message || '')) PF.semColuna = true; console.warn('Preferências:', error.message); return false; }
+  return true;
+}
+function pfAgendar(){
+  if (!PF.pronto) return;
+  clearTimeout(PF.timer);
+  PF.timer = setTimeout(() => { const t = pfTela(), j = JSON.stringify(t); if (j === PF.ultimo) return; PF.ultimo = j; pfGravar({tela:t}); }, 1500);
+}
+// depois de ler o banco: traz a arrumação da pessoa (ou sobe a deste navegador, se o banco ainda não tem)
+async function pfCarregar(){
+  const sb = pfBanco(); if (!sb) return;
+  const {data:lido, error} = await sb.from('pessoas_preferencias').select('tela, lembretes_vistos').eq('pessoa_id', eu()).maybeSingle();
+  const data = Array.isArray(lido) ? lido[0] : lido;
+  if (error){ if (/column|tela|lembretes_vistos|schema cache/i.test(error.message || '')) PF.semColuna = true; PF.pronto = true; return; }
+  const noBanco = data && data.tela && Object.keys(data.tela).length ? data.tela : null;
+  const vistosBanco = (data && data.lembretes_vistos) || {};
+  let local = {}; try { local = JSON.parse(localStorage.getItem('ciclodev-lembretes-vistos') || '{}'); } catch(e){}
+  const vistos = pfPodar(Object.assign({}, local, vistosBanco));
+  if (typeof TF !== 'undefined'){ TF.vistos = vistos; try { localStorage.setItem('ciclodev-lembretes-vistos', JSON.stringify(vistos)); } catch(e){} }
+  PF.vistosUlt = JSON.stringify(vistosBanco);
+  if (noBanco){ pfAplicar(noBanco); PF.ultimo = JSON.stringify(pfTela()); if (typeof render === 'function') render(); }
+  else { const t = pfTela(); PF.ultimo = JSON.stringify(t); await pfGravar({tela:t}); }   // primeira vez: o que já estava neste navegador vai para o banco
+  if (JSON.stringify(vistos) !== PF.vistosUlt){ if (await pfGravar({lembretes_vistos:vistos})) PF.vistosUlt = JSON.stringify(vistos); }
+  PF.pronto = true;
+}
+if (COM_BANCO){
+  const _salvarUIPf = salvarUI;
+  salvarUI = function(){ const r = _salvarUIPf.apply(this, arguments); pfAgendar(); return r; };
+  const _pkTemaPf = pkTema;
+  pkTema = function(){ const r = _pkTemaPf.apply(this, arguments); pfAgendar(); return r; };
+  const _carregarPf = carregarDoBanco;
+  carregarDoBanco = async function(){ const r = await _carregarPf.apply(this, arguments); if (!PF.pronto) pfCarregar().catch(e => { console.warn('Preferências', e); PF.pronto = true; }); return r; };
+  window.ciclodevCarregarBanco = carregarDoBanco;
+  // lembretes vistos: quando aparecer um novo, sobe para o banco
+  setInterval(() => { if (!PF.pronto || typeof TF === 'undefined' || !TF.vistos) return; const v = pfPodar(TF.vistos), j = JSON.stringify(v); if (j === PF.vistosUlt) return; pfGravar({lembretes_vistos:v}).then(ok => { if (ok) PF.vistosUlt = j; }); }, 20000);
+  // largura da Estrutura e outras mudanças que não passam por salvarUI: confere de tempos em tempos
+  setInterval(pfAgendar, 15000);
+  window.addEventListener('beforeunload', () => { if (PF.pronto && JSON.stringify(pfTela()) !== PF.ultimo) pfGravar({tela:pfTela()}); });
+}
+window.ciclodevPrefs = PF;
+
+/* ===== Portal do stakeholder (parte 23 do banco, função portal-api) =====
+   No CicloDev:
+   - no cliente da Estrutura, a aba "Portal do stakeholder" (no Mais), só para o dono: criar o portal, convidar quem responde,
+     gerar a chave do sistema de fora, ligar o webhook, e ver as perguntas e os avisos;
+   - no ⋯ de cada item e épico de um cliente com portal: "Perguntar ao stakeholder" (o item vai para "Aguardando stakeholder");
+   - dentro do item: as perguntas com as respostas;
+   - no painel do cliente e das partes dele: um aviso com as perguntas esperando e as últimas respostas.
+   Tudo é lido e gravado direto no banco (nada fica só na tela). O sistema de fora lê e responde pela portal-api. */
+const PT = {clientes:new Set(), portal:null, carregando:false, ultimaResposta:null, perguntasItem:{}, resumo:{}};
+const ptSb = () => (COM_BANCO && window.ciclodevBanco && BANCO.carregado) ? window.ciclodevBanco : null;
+const ptErro = e => (typeof tfErro === 'function' ? tfErro(e) : ((e && e.message) || String(e)));
+const ptQuando = t => t ? new Date(t).toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'}) : '';
+const ptClienteDe = chave => { const c = cadeia(chave); return c && c.client ? c.client.id : null; };
+const ptItemNoPortal = i => { const c = i && cadeia('ws:' + i.ws); return !!(c && c.client && PT.clientes.has(c.client.id)); };
+const ptCopiar = t => { if (typeof enCopiar === 'function') enCopiar(t); else if (navigator.clipboard) navigator.clipboard.writeText(t).catch(() => {}); };
+const PT_URL_API = 'https://tfcvoszeewmpghgxztuy.supabase.co/functions/v1/portal-api';
+
+async function ptCarregarClientes(){
+  const sb = ptSb(); if (!sb) return;
+  const {data, error} = await sb.rpc('portais_clientes');
+  if (!error) PT.clientes = new Set((data || []).map(x => typeof x === 'string' ? x : x.portais_clientes || Object.values(x)[0]));
+  ptResumo();
+}
+// as perguntas esperando e as últimas respostas (para o aviso no painel e para saber quando chegou resposta nova)
+async function ptResumo(){
+  const sb = ptSb(); if (!sb || !PT.clientes.size) return;
+  const {data} = await sb.from('perguntas_stakeholder').select('id, item_id, pergunta, status, resposta, respondida_por_nome, respondida_em, criada_em').neq('status', 'cancelada').order('criada_em', {ascending:false}).limit(200);
+  const L = data || [];
+  const ultima = L.filter(q => q.respondida_em).map(q => q.respondida_em).sort().pop() || null;
+  const novas = PT.ultimaResposta && ultima && ultima > PT.ultimaResposta ? L.filter(q => q.respondida_em && q.respondida_em > PT.ultimaResposta) : [];
+  PT.lista = L; if (!PT.ultimaResposta || ultima > PT.ultimaResposta) PT.ultimaResposta = ultima || PT.ultimaResposta || new Date(0).toISOString();
+  if (novas.length){
+    const q = novas[0], i = byId('issues', q.item_id);
+    tfAviso((q.respondida_por_nome || 'O stakeholder') + ' respondeu' + (i ? ' em ' + i.titulo : '') + '.', i ? [{txt:'Abrir', acao:() => abrirItem(i.id)}] : [], 12000);
+    // o item voltou de status no banco: relê em silêncio, se ninguém estiver no meio de algo
+    if (!document.querySelector('dialog[open]') && !(window.ciclodevSync && (window.ciclodevSync.rodando || window.ciclodevSync.pendente))) {
+      const aberto = itemAberto; await window.ciclodevCarregarBanco(null); render(); if (aberto && byId('issues', aberto)) abrirItem(aberto);
+    }
+  }
+  if (UI.modulo === 'operacoes' && UI.view === 'dashboard') ptAvisoPainel();
+}
+
+/* ---------- perguntar a partir do item ou épico ---------- */
+function ptPerguntar(i){
+  if (!ptSb()) { toast('Precisa estar com login para mandar pergunta ao stakeholder.'); return; }
+  modal('Perguntar ao stakeholder', '<p class="sec tf-nota" style="margin-top:0">Vai para quem foi convidado no portal do cliente. Enquanto não responderem, o ' + (i.tipo === 'epic' ? 'épico' : 'item') + ' fica em <b>Aguardando stakeholder</b>; a resposta volta ele para o status de agora e vira comentário aqui.</p>' +
+    '<div class="grade-form"><label class="lb largo">' + esc((chaveDe(i) ? chaveDe(i) + ' · ' : '') + i.titulo) + '<textarea class="campo" id="pt-q" rows="5" maxlength="4000" placeholder="Escreva a pergunta de um jeito que dê para responder sem precisar de mais explicação."></textarea></label></div>',
+    [{txt:'Cancelar', cls:'sec'}, {txt:'Mandar pergunta', acao:dl => {
+      const t = $('#pt-q', dl).value.trim(); if (!t){ toast('Escreva a pergunta'); return false; }
+      (async () => {
+        if (window.ciclodevSync && (window.ciclodevSync.rodando || window.ciclodevSync.pendente)) await window.ciclodevGravarAgora();
+        const {error} = await ptSb().rpc('pergunta_criar', {p_item:i.id, p_texto:t});
+        if (error){ toast('Não deu para mandar: ' + ptErro(error)); return; }
+        await window.ciclodevCarregarBanco(null); render(); abrirItem(i.id); toast('Pergunta mandada ao stakeholder');
+        PT.perguntasItem[i.id] = null; ptResumo();
+      })();
+    }}]);
+  setTimeout(() => { const t = $('#pt-q'); if (t) t.focus(); }, 30);
+}
+async function ptCancelar(id, itemId){
+  const {error} = await ptSb().rpc('pergunta_cancelar', {p_pergunta:id});
+  if (error){ toast('Não deu para cancelar: ' + ptErro(error)); return; }
+  await window.ciclodevCarregarBanco(null); render(); if (byId('issues', itemId)) abrirItem(itemId); toast('Pergunta cancelada'); ptResumo();
+}
+
+/* ---------- dentro do item: as perguntas e as respostas ---------- */
+async function ptSecaoItem(i){
+  if (!$('#gaveta-wrap .gaveta') || !ptItemNoPortal(i)) return;
+  const sb = ptSb(); if (!sb) return;
+  const {data} = await sb.from('perguntas_stakeholder').select('id, pergunta, status, resposta, respondida_por_nome, respondida_em, criada_em').eq('item_id', i.id).neq('status', 'cancelada').order('criada_em', {ascending:false});
+  if (itemAberto !== i.id) return;
+  // a janela pode ter sido redesenhada enquanto lia: usa a de agora
+  const pri = $('#gaveta-wrap .gaveta .g-principal'); if (!pri) return;
+  const velho = $('.pt-sec', pri); if (velho) velho.remove();
+  const L = data || [], pode = podeEditar();
+  const html = '<section class="g-sec pt-sec"><h4>Perguntas ao stakeholder' + (pode ? '<span class="tf-h4-acoes"><button type="button" class="btn fant peq" data-pt-perguntar="' + i.id + '">' + ICO.mais + 'Nova pergunta</button></span>' : '') + '</h4>' +
+    (L.length ? '<ul class="pt-lista">' + L.map(q => '<li class="pt-q pt-' + q.status + '"><div class="pt-q-cab"><span class="pt-st">' + (q.status === 'aguardando' ? 'Esperando resposta' : 'Respondida') + '</span><small>' + esc(ptQuando(q.criada_em)) + '</small>' +
+      (q.status === 'aguardando' && pode ? '<button type="button" class="btn fant peq" data-pt-cancelar="' + q.id + '">Cancelar</button>' : '') + '</div><p class="pt-pergunta">' + esc(q.pergunta) + '</p>' +
+      (q.status === 'respondida' ? '<blockquote class="pt-resposta"><b>' + esc(q.respondida_por_nome || 'Stakeholder') + '</b> · ' + esc(ptQuando(q.respondida_em)) + '<br>' + esc(q.resposta || '').replace(/\n/g, '<br>') + '</blockquote>' : '') + '</li>').join('') + '</ul>'
+      : '<p class="pt-vazio">Nenhuma pergunta ainda. Use o ⋯ ou o botão acima para mandar uma ao stakeholder.</p>') + '</section>';
+  const antes = $(':scope > .dc-sec', pri) || $(':scope > .tf-desc', pri);
+  if (antes) antes.insertAdjacentHTML('afterend', html); else pri.insertAdjacentHTML('beforeend', html);
+}
+const _abrirItemPt = abrirItem;
+abrirItem = function(id){ const r = _abrirItemPt.apply(this, arguments); const i = byId('issues', id); if (i && ptItemNoPortal(i)) ptSecaoItem(i); return r; };
+
+/* ---------- no painel: aviso das perguntas esperando e das últimas respostas ---------- */
+function ptAvisoPainel(){
+  const c = $('#ops-corpo'); if (!c || UI.view !== 'dashboard') return;
+  const velho = $('.pt-painel', c); if (velho) velho.remove();
+  const cl = ptClienteDe(UI.sel); if (!cl || !PT.clientes.has(cl) || !PT.lista) return;
+  const aqui = new Set(issuesEm(UI.sel).map(i => i.id));
+  const L = PT.lista.filter(q => aqui.has(q.item_id));
+  const esp = L.filter(q => q.status === 'aguardando'), resp = L.filter(q => q.status === 'respondida').sort((a, b) => String(b.respondida_em).localeCompare(String(a.respondida_em))).slice(0, 4);
+  if (!esp.length && !resp.length) return;
+  const nome = q => { const i = byId('issues', q.item_id); return i ? (chaveDe(i) ? chaveDe(i) + ' · ' : '') + i.titulo : 'Item'; };
+  c.insertAdjacentHTML('afterbegin', '<section class="pt-painel" aria-label="Perguntas ao stakeholder"><div class="pt-painel-cab"><b>Perguntas ao stakeholder</b><span>' + (esp.length ? esp.length + ' esperando resposta' : 'nenhuma esperando resposta') + '</span></div>' +
+    '<ul>' + esp.slice(0, 4).map(q => '<li><button type="button" class="pt-lnk" data-abrir-item="' + q.item_id + '">' + esc(nome(q)) + '</button><span class="pt-st">esperando</span><small>' + esc(q.pergunta.slice(0, 120)) + '</small></li>').join('') +
+    resp.map(q => '<li class="pt-ok"><button type="button" class="pt-lnk" data-abrir-item="' + q.item_id + '">' + esc(nome(q)) + '</button><span class="pt-st">' + esc(q.respondida_por_nome || '') + ' respondeu</span><small>' + esc((q.resposta || '').slice(0, 120)) + '</small></li>').join('') + '</ul></section>');
+}
+const _rViewPt = rView;
+rView = function(){
+  const c = $('#ops-corpo');
+  if (c && UI.view === 'portal'){ ptTela(c); if (typeof smAgruparAbas === 'function') smAgruparAbas(); return; }
+  const r = _rViewPt.apply(this, arguments);
+  if (UI.view === 'dashboard') ptAvisoPainel();
+  return r;
+};
+
+/* ---------- a aba Portal do stakeholder, no cliente ---------- */
+VIEWS.push(['portal', 'Portal do stakeholder', 'quem de fora lê e responde']);
+SM_ABAS.portal = ['Portal do stakeholder', 'O portal deste cliente para um sistema de fora: quem pode responder, a chave, o webhook, as perguntas e os avisos.'];
+SM_DICA.portal = 'quem de fora lê e responde';
+EXPL_VIEW.portal = SM_ABAS.portal[1];
+const _rOperacoesPt = rOperacoes;
+rOperacoes = function(){
+  _rOperacoesPt.apply(this, arguments);
+  const tipo = (UI.sel || '').split(':')[0];
+  if (tipo !== 'client' || !podeEditar() || !COM_BANCO){ const b = $('.view-b[data-view="portal"]'); if (b) (b.closest('.view-casa') || b).remove(); if (UI.view === 'portal'){ UI.view = 'dashboard'; rView(); } }
+};
+async function ptTela(c){
+  const sb = ptSb(); const cl = (UI.sel || '').split(':')[1];
+  if (!sb){ c.innerHTML = '<p class="sec" style="padding:24px">O portal do stakeholder funciona com login, direto no banco.</p>'; return; }
+  c.innerHTML = '<p class="sec" style="padding:24px">Lendo o portal...</p>';
+  const {data:ps, error} = await sb.from('portais').select('id, nome, ativo, webhook_url, criado_em, dono_id').eq('no_id', cl);
+  if (UI.view !== 'portal') return;
+  if (error){ c.innerHTML = '<p class="aviso-faixa">Não deu para ler o portal: ' + esc(ptErro(error)) + '</p>'; return; }
+  const p = (ps || [])[0];
+  if (!p){
+    c.innerHTML = '<div class="pt-tela"><h2 class="sub">Portal do stakeholder</h2><p class="lead">Um portal deixa um sistema de fora (por exemplo, o Java da Blanco & Lisboa) ler o andamento de <b>' + esc(nomeDe(UI.sel)) + '</b> e responder as perguntas que a equipe mandar. Só você vê e mexe no portal; quem responde é quem você convidar.</p>' +
+      '<button type="button" class="btn" data-pt-criar="' + cl + '">' + ICO.mais + 'Criar o portal de ' + esc(nomeDe(UI.sel)) + '</button></div>';
+    return;
+  }
+  const [m, k, q, e] = await Promise.all([
+    sb.from('portais_membros').select('email, nome, ativo, convidado_em').eq('portal_id', p.id).order('nome'),
+    sb.from('portais_chaves').select('id, nome, prefixo, criada_em, usada_em, revogada_em').eq('portal_id', p.id).order('criada_em', {ascending:false}),
+    sb.from('perguntas_stakeholder').select('id, item_id, pergunta, status, resposta, respondida_por_nome, respondida_em, criada_em').eq('portal_id', p.id).order('criada_em', {ascending:false}).limit(50),
+    sb.from('portais_eventos').select('id, tipo, criado_em, entregue_em, tentativas, ultimo_erro').eq('portal_id', p.id).order('id', {ascending:false}).limit(20)]);
+  if (UI.view !== 'portal') return;
+  PT.portal = p;
+  const nomeItem = id => { const i = byId('issues', id); return i ? (chaveDe(i) ? chaveDe(i) + ' · ' : '') + i.titulo : 'Item'; };
+  const TIPO_EV = {pergunta_criada:'Pergunta nova', pergunta_respondida:'Pergunta respondida', pergunta_cancelada:'Pergunta cancelada'};
+  c.innerHTML = '<div class="pt-tela">' +
+    '<div class="pt-topo"><div><h2 class="sub" style="margin:0">Portal do stakeholder</h2><p class="sec" style="margin:4px 0 0">Criado em ' + esc(ptQuando(p.criado_em)) + '. O sistema de fora chama <code>' + esc(PT_URL_API) + '</code>.</p></div>' +
+      '<label class="rc-liga"><input type="checkbox" data-pt-ativo="' + p.id + '"' + (p.ativo ? ' checked' : '') + '> ' + (p.ativo ? 'Ligado' : 'Desligado') + '</label></div>' +
+    '<section class="pt-caixa"><h3>Quem pode responder</h3><p class="sec">O sistema de fora diz o e-mail de quem está respondendo; só os e-mails desta lista passam.</p>' +
+      '<div class="tabela-rolo"><table class="tabela"><thead><tr><th>Nome</th><th>E-mail</th><th>Convidado em</th><th>Situação</th><th></th></tr></thead><tbody>' +
+      ((m.data || []).map(x => '<tr><th scope="row">' + esc(x.nome) + '</th><td>' + esc(x.email) + '</td><td>' + esc(ptQuando(x.convidado_em)) + '</td><td><label class="rc-liga"><input type="checkbox" data-pt-membro-ativo="' + esc(x.email) + '"' + (x.ativo ? ' checked' : '') + '> ' + (x.ativo ? 'Pode responder' : 'Pausado') + '</label></td><td><button type="button" class="btn fant peq" data-pt-membro-tirar="' + esc(x.email) + '">Tirar</button></td></tr>').join('') || '<tr><td colspan="5" class="sec">Ninguém convidado ainda.</td></tr>') +
+      '</tbody></table></div><form class="pt-convidar" data-pt-convidar><input class="campo" name="nome" placeholder="Nome (ex.: Lucas)" required maxlength="120"><input class="campo" name="email" type="email" placeholder="E-mail (ex.: lucas@blancolisboa.com)" required><button class="btn sec" type="submit">' + ICO.mais + 'Convidar</button></form></section>' +
+    '<section class="pt-caixa"><h3>Chave do sistema de fora</h3><p class="sec">O sistema de fora manda a chave em cada chamada (<code>Authorization: Bearer ...</code>). Ela só aparece uma vez, na hora de gerar: guarde no cofre de segredos de lá.</p>' +
+      '<ul class="pt-chaves">' + ((k.data || []).map(x => '<li><b>' + esc(x.nome) + '</b> <code>' + esc(x.prefixo) + '…</code><small>criada ' + esc(ptQuando(x.criada_em)) + (x.usada_em ? ' · usada ' + esc(ptQuando(x.usada_em)) : ' · ainda não usada') + '</small>' + (x.revogada_em ? '<span class="pt-st">revogada</span>' : '<button type="button" class="btn fant peq" data-pt-revogar="' + x.id + '">Revogar</button>') + '</li>').join('') || '<li class="sec">Nenhuma chave ainda.</li>') + '</ul>' +
+      '<button type="button" class="btn sec" data-pt-chave="' + p.id + '">' + ICO.mais + 'Gerar chave</button></section>' +
+    '<section class="pt-caixa"><h3>Aviso automático (webhook)</h3><p class="sec">Quando alguém manda, responde ou cancela uma pergunta, o CicloDev avisa neste endereço em até 1 minuto, assinado com um segredo. Se o aviso não chegar, o sistema de fora também busca a mesma lista pela função.</p>' +
+      '<form class="pt-convidar" data-pt-webhook="' + p.id + '"><input class="campo" name="url" type="url" placeholder="https://..." value="' + esc(p.webhook_url || '') + '"><button class="btn sec" type="submit">Salvar e gerar segredo</button></form></section>' +
+    '<section class="pt-caixa"><h3>Perguntas</h3>' + ((q.data || []).length ? '<ul class="pt-lista">' + q.data.map(x => '<li class="pt-q pt-' + x.status + '"><div class="pt-q-cab"><button type="button" class="pt-lnk" data-abrir-item="' + x.item_id + '">' + esc(nomeItem(x.item_id)) + '</button><span class="pt-st">' + ({aguardando:'Esperando', respondida:'Respondida', cancelada:'Cancelada'}[x.status]) + '</span><small>' + esc(ptQuando(x.criada_em)) + '</small></div><p class="pt-pergunta">' + esc(x.pergunta) + '</p>' +
+      (x.resposta ? '<blockquote class="pt-resposta"><b>' + esc(x.respondida_por_nome || '') + '</b> · ' + esc(ptQuando(x.respondida_em)) + '<br>' + esc(x.resposta).replace(/\n/g, '<br>') + '</blockquote>' : '') + '</li>').join('') + '</ul>' : '<p class="sec">Nenhuma pergunta ainda. No ⋯ de qualquer item ou épico deste cliente, use "Perguntar ao stakeholder".</p>') + '</section>' +
+    '<section class="pt-caixa"><h3>Avisos enviados</h3>' + ((e.data || []).length ? '<ul class="pt-eventos">' + e.data.map(x => '<li><b>' + esc(TIPO_EV[x.tipo] || x.tipo) + '</b><small>' + esc(ptQuando(x.criado_em)) + '</small><span class="pt-st' + (x.entregue_em ? ' ok' : '') + '">' + (x.entregue_em ? 'entregue' : p.webhook_url ? (x.ultimo_erro ? esc(x.ultimo_erro) : 'na fila') + (x.tentativas ? ' · ' + x.tentativas + (x.tentativas === 1 ? ' tentativa' : ' tentativas') : '') : 'sem webhook: o sistema de fora busca pela função') + '</span></li>').join('') + '</ul>' : '<p class="sec">Nenhum aviso ainda.</p>') + '</section>' +
+    '</div>';
+}
+function ptMostrarUmaVez(titulo, texto, valor){
+  modal(titulo, '<p style="margin-top:0">' + texto + '</p><div class="pt-segredo"><code>' + esc(valor) + '</code></div><p class="sec tf-nota">Esta é a única vez que aparece. Se perder, gere outro.</p>',
+    [{txt:'Copiar', cls:'sec', acao:() => { ptCopiar(valor); toast('Copiado'); return false; }}, {txt:'Já guardei'}]);
+}
+document.addEventListener('click', e => {
+  let b;
+  if ((b = e.target.closest('[data-pt-perguntar]'))){ e.preventDefault(); const i = byId('issues', b.dataset.ptPerguntar); if (i) ptPerguntar(i); return; }
+  if ((b = e.target.closest('[data-pt-cancelar]'))){ e.preventDefault(); const id = b.dataset.ptCancelar, it = itemAberto; modal('Cancelar a pergunta?', '<p style="margin:0">O item volta para o status de antes, se não houver outra pergunta esperando. O sistema de fora recebe o aviso.</p>', [{txt:'Voltar', cls:'sec'}, {txt:'Cancelar a pergunta', cls:'acento', acao:() => { ptCancelar(id, it); }}]); return; }
+  if ((b = e.target.closest('[data-pt-criar]'))){ const cl = b.dataset.ptCriar; (async () => { const {error} = await ptSb().rpc('portal_criar', {p_no:cl, p_nome:nomeDe('client:' + cl)}); if (error){ toast('Não deu para criar: ' + ptErro(error)); return; } await window.ciclodevCarregarBanco(null); await ptCarregarClientes(); render(); toast('Portal criado'); })(); return; }
+  if ((b = e.target.closest('[data-pt-chave]'))){ const id = b.dataset.ptChave; modal('Gerar chave', '<label class="lb">Para que sistema é esta chave<input class="campo" id="pt-k-n" value="Java Blanco & Lisboa" maxlength="80"></label>', [{txt:'Cancelar', cls:'sec'}, {txt:'Gerar', acao:dl => { const n = $('#pt-k-n', dl).value.trim() || 'Chave';
+    (async () => { const {data, error} = await ptSb().rpc('portal_gerar_chave', {p_portal:id, p_nome:n}); if (error){ toast('Não deu para gerar: ' + ptErro(error)); return; } rView(); ptMostrarUmaVez('Chave do portal', 'Copie e guarde no cofre de segredos do sistema de fora. Ele manda assim em cada chamada: <code>Authorization: Bearer &lt;chave&gt;</code>.', data); })(); }}]); return; }
+  if ((b = e.target.closest('[data-pt-revogar]'))){ const id = b.dataset.ptRevogar; modal('Revogar a chave?', '<p style="margin:0">O sistema que usa esta chave para de conseguir ler e responder na hora.</p>', [{txt:'Voltar', cls:'sec'}, {txt:'Revogar', cls:'acento', acao:() => { (async () => { const {error} = await ptSb().rpc('portal_revogar_chave', {p_chave:id}); if (error) toast('Não deu: ' + ptErro(error)); else { toast('Chave revogada'); rView(); } })(); }}]); return; }
+  if ((b = e.target.closest('[data-pt-membro-tirar]'))){ const em = b.dataset.ptMembroTirar; (async () => { const {data, error} = await ptSb().from('portais_membros').delete().eq('portal_id', PT.portal.id).eq('email', em).select('email'); if (error || !data || !data.length) toast('Não deu para tirar: ' + ptErro(error || 'sem permissão')); else { toast(em + ' não pode mais responder'); rView(); } })(); return; }
+}, true);
+document.addEventListener('change', e => {
+  const t = e.target;
+  if (t.dataset && t.dataset.ptMembroAtivo !== undefined){ (async () => { const {data, error} = await ptSb().from('portais_membros').update({ativo:t.checked}).eq('portal_id', PT.portal.id).eq('email', t.dataset.ptMembroAtivo).select('email'); if (error || !data || !data.length){ toast('Não deu para mudar: ' + ptErro(error || 'sem permissão')); t.checked = !t.checked; } else rView(); })(); return; }
+  if (t.dataset && t.dataset.ptAtivo){ (async () => { const {data, error} = await ptSb().from('portais').update({ativo:t.checked}).eq('id', t.dataset.ptAtivo).select('id'); if (error || !data || !data.length){ toast('Não deu para mudar: ' + ptErro(error || 'sem permissão')); t.checked = !t.checked; } else { await ptCarregarClientes(); rView(); } })(); }
+});
+document.addEventListener('submit', e => {
+  const f = e.target;
+  if (f.matches && f.matches('[data-pt-convidar]') && !f.dataset.ptWebhook){ e.preventDefault(); e.stopImmediatePropagation();
+    const nome = f.nome.value.trim(), email = f.email.value.trim().toLowerCase(); if (!nome || !/^[^@\s]+@[^@\s]+$/.test(email)){ toast('Escreva o nome e um e-mail válido'); return; }
+    (async () => { const {data, error} = await ptSb().from('portais_membros').upsert({portal_id:PT.portal.id, email, nome, ativo:true}, {onConflict:'portal_id,email'}).select('email'); if (error || !data || !data.length) toast('Não deu para convidar: ' + ptErro(error || 'sem permissão')); else { toast(nome + ' pode responder pelo portal'); rView(); } })(); return; }
+  if (f.matches && f.matches('[data-pt-webhook]')){ e.preventDefault(); e.stopImmediatePropagation();
+    const url = f.url.value.trim(); if (url && !/^https:\/\/\S+$/.test(url)){ toast('O endereço precisa começar com https://'); return; }
+    (async () => { const {data, error} = await ptSb().rpc('portal_webhook', {p_portal:f.dataset.ptWebhook, p_url:url}); if (error){ toast('Não deu para salvar: ' + ptErro(error)); return; } rView(); if (data) ptMostrarUmaVez('Segredo do webhook', 'Com ele o sistema de fora confere que o aviso veio mesmo do CicloDev: calcula HMAC-SHA256 do corpo recebido com este segredo e compara com o cabeçalho <code>X-CicloDev-Assinatura</code>.', data); else toast('Webhook desligado'); })(); }
+}, true);
+
+// o painel redesenha o conteúdo depois de pronto: o aviso volta sozinho quando some; e a seção do item também
+let ptObs = 0;
+new MutationObserver(() => { cancelAnimationFrame(ptObs); ptObs = requestAnimationFrame(() => {
+  if (UI.modulo === 'operacoes' && UI.view === 'dashboard' && PT.lista && $('#ops-corpo') && !$('#ops-corpo .pt-painel')) ptAvisoPainel();
+  if (itemAberto && $('#gaveta-wrap .gaveta .g-principal') && !$('#gaveta-wrap .pt-sec')){ const i = byId('issues', itemAberto); if (i && ptItemNoPortal(i) && !PT.lendoItem){ PT.lendoItem = true; ptSecaoItem(i).finally(() => { PT.lendoItem = false; }); } }
+}); }).observe(document.body, {childList:true, subtree:true});
+
+// liga depois de ler o banco, e confere respostas novas a cada minuto
+if (COM_BANCO){
+  const _carregarPt = carregarDoBanco;
+  carregarDoBanco = async function(){ const r = await _carregarPt.apply(this, arguments); if (!PT.carregando){ PT.carregando = true; ptCarregarClientes().finally(() => { PT.carregando = false; }); } return r; };
+  window.ciclodevCarregarBanco = carregarDoBanco;
+  setInterval(() => { if (document.visibilityState === 'visible') ptResumo(); }, 60000);
+}
+if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {PT, ptResumo, ptCarregarClientes, ptPerguntar});
+
+/* ===== Agente de IA: permissões (Admin) e chat flutuante (parte 25 do banco) =====
+   Admin › Permissões de IA: o dono do sistema liga ou desliga a IA de cada usuário. Começa todo mundo desligado.
+   Balão no canto de baixo, à direita: só aparece para quem tem a IA ligada. As imagens do balão são as que o William
+   mandou, usadas como vieram (publico/agente-fechado.webp e publico/agente-aberto.webp), sem recorte nem ajuste.
+   A conversa de cada usuário vai para ia_mensagens, e cada pessoa só lê a própria.
+   Ainda não existe agente respondendo: por enquanto o chat só guarda o que o usuário escreve.
+   Regra para quando o agente existir: ele só enxerga o que o dono dele enxerga no sistema, e nunca fala de outro projeto. */
+const IA = {posso:false, aberto:false, msgs:null, carregando:false, enviando:false, erro:'', perm:null, permErro:'', busca:'', filtro:'todos', mudando:{}};
+const iaBanco = () => (COM_BANCO && window.ciclodevBanco && typeof MU !== 'undefined' && MU.eu) ? window.ciclodevBanco : null;
+const IA_IMG = {fechado:'agente-fechado.webp', aberto:'agente-aberto.webp'};
+
+/* ---------- Admin › Permissões de IA ---------- */
+async function iaPermCarregar(){
+  const sb = iaBanco(); if (!sb) return;
+  const {data, error} = await sb.rpc('admin_ia_permissoes');
+  if (error){ IA.permErro = error.message; IA.perm = {}; }
+  else { IA.permErro = ''; IA.perm = {}; (data || []).forEach(r => { IA.perm[r.pessoa_id] = r; }); }
+  if (UI.modulo === 'admin' && ADM.aba === 'ia') rAdmin();
+}
+function iaAdminHTML(){
+  if (!IA.perm){ iaPermCarregar(); return '<p class="vazio-linha">Lendo as permissões do banco…</p>'; }
+  const todos = ADM.usuarios || [], ligado = u => !!(IA.perm[u.pessoa_id] && IA.perm[u.pessoa_id].ativo);
+  const n = todos.filter(ligado).length, b = IA.busca.trim().toLowerCase();
+  const lista = todos.filter(u => IA.filtro === 'todos' || (IA.filtro === 'com') === ligado(u))
+    .filter(u => !b || [u.nome, u.nome_completo, u.email, u.usuario, u.numero, u.empresa].some(v => v != null && String(v).toLowerCase().includes(b)))
+    .sort((a, c) => String(a.nome_completo || a.nome).localeCompare(String(c.nome_completo || c.nome), 'pt-BR'));
+  const filtro = [['todos', 'Todos (' + todos.length + ')'], ['com', 'Com IA (' + n + ')'], ['sem', 'Sem IA (' + (todos.length - n) + ')']]
+    .map(([k, t]) => '<option value="' + k + '"' + (IA.filtro === k ? ' selected' : '') + '>' + esc(t) + '</option>').join('');
+  return '<div class="ia-adm">' +
+    '<p class="lead ia-adm-intro">Aqui você escolhe quem pode usar o agente de IA. Todo mundo começa sem IA; só quem estiver ligado aqui vê o balão do chat. O agente de cada pessoa só enxerga o que essa pessoa enxerga no CicloDev.</p>' +
+    (IA.permErro ? '<p class="entrada-erro">Não foi possível ler as permissões: ' + esc(IA.permErro) + '</p>' : '') +
+    '<div class="adm-filtros"><input class="campo" type="search" data-ia-busca placeholder="Buscar por nome, e-mail, ID, empresa…" value="' + esc(IA.busca) + '" aria-label="Buscar usuário"><select class="sel" data-ia-filtro aria-label="Mostrar">' + filtro + '</select></div>' +
+    '<div class="tabela-rolo"><table class="tabela ia-tab"><thead><tr><th>Usuário</th><th>Empresa</th><th>IA</th><th>Última mudança</th></tr></thead><tbody>' +
+    (lista.length ? lista.map(u => { const p = IA.perm[u.pessoa_id] || {}, on = !!p.ativo, mud = IA.mudando[u.pessoa_id];
+      return '<tr><td><b>' + esc(u.nome_completo || u.nome) + '</b><small class="adm-sub">ID ' + esc(u.numero) + ' · ' + esc(u.email || '') + '</small></td>' +
+        '<td>' + esc(u.empresa || '') + '</td>' +
+        '<td><button type="button" class="ia-chave' + (on ? ' on' : '') + '" role="switch" aria-checked="' + on + '" data-ia-pessoa="' + esc(u.pessoa_id) + '"' + (mud ? ' disabled' : '') + ' aria-label="IA de ' + esc(u.nome_completo || u.nome) + '"><i></i><span>' + (mud ? 'Gravando…' : on ? 'Ligada' : 'Desligada') + '</span></button></td>' +
+        '<td>' + (p.alterado_em ? esc(admHora(p.alterado_em)) + (p.alterado_por ? '<small class="adm-sub">por ' + esc(p.alterado_por) + '</small>' : '') : '<span class="sec">nunca</span>') + '</td></tr>'; }).join('')
+      : '<tr><td colspan="4" class="vazio-linha">Nenhum usuário encontrado.</td></tr>') +
+    '</tbody></table></div></div>';
+}
+async function iaDefinir(pessoa, ativo){
+  const sb = iaBanco(); if (!sb || IA.mudando[pessoa]) return;
+  IA.mudando[pessoa] = true; rAdmin();
+  const {data, error} = await sb.rpc('admin_ia_definir', {p_pessoa:pessoa, p_ativo:ativo});
+  delete IA.mudando[pessoa];
+  if (error){ toast('Não deu para mudar a permissão: ' + error.message); }
+  else { await iaPermCarregar(); if (MU.eu && pessoa === MU.eu.pessoa_id) iaConferir(); toast(data ? 'IA ligada.' : 'IA desligada.'); }
+  if (UI.modulo === 'admin' && ADM.aba === 'ia') rAdmin();
+}
+document.addEventListener('click', e => {
+  const c = e.target.closest('#m-admin [data-ia-pessoa]'); if (!c) return;
+  iaDefinir(c.dataset.iaPessoa, c.getAttribute('aria-checked') !== 'true');
+});
+document.addEventListener('change', e => { const s = e.target.closest('#m-admin [data-ia-filtro]'); if (s){ IA.filtro = s.value; rAdmin(); } });
+document.addEventListener('input', e => {
+  const b = e.target.closest('#m-admin [data-ia-busca]'); if (!b) return;
+  IA.busca = b.value; const pos = b.selectionStart; rAdmin();
+  const n = $('#m-admin [data-ia-busca]'); if (n){ n.focus(); n.setSelectionRange(pos, pos); }
+});
+{ // o botão Atualizar do Admin também relê as permissões
+  const _admCarregarIa = admCarregar;
+  admCarregar = function(forcar){ if (forcar) IA.perm = null; return _admCarregarIa.apply(this, arguments); };
+}
+
+/* ---------- balão e chat flutuante ---------- */
+function iaMontar(){
+  let r = $('#ia-raiz');
+  if (!IA.posso){ if (r) r.remove(); IA.aberto = false; return; }
+  if (!r){
+    r = document.createElement('div'); r.id = 'ia-raiz';
+    r.innerHTML = '<section class="ia-chat" id="ia-chat" role="dialog" aria-label="Conversa com o agente de IA" hidden>' +
+      '<header class="ia-cab"><div><b>Agente de IA</b><small>Só enxerga o que você enxerga no CicloDev</small></div><button type="button" class="ia-fechar" data-ia-fechar aria-label="Fechar a conversa">' +
+      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19"></path></svg></button></header>' +
+      '<div class="ia-msgs" data-ia-msgs aria-live="polite"></div>' +
+      '<form class="ia-escrever" data-ia-form><textarea class="campo" data-ia-texto rows="2" maxlength="8000" placeholder="Escreva sua mensagem…" aria-label="Mensagem para o agente"></textarea><button class="btn" type="submit" data-ia-enviar>Enviar</button></form>' +
+      '</section>' +
+      '<button type="button" class="ia-balao" data-ia-balao aria-expanded="false" aria-controls="ia-chat" aria-label="Abrir a conversa com o agente de IA"><img src="' + IA_IMG.fechado + '" alt="" width="1254" height="1254" draggable="false"></button>';
+    document.body.appendChild(r);
+    new Image().src = IA_IMG.aberto;   // já deixa a imagem do chat aberto pronta, para não piscar
+  }
+  const chat = $('#ia-chat', r), bal = $('[data-ia-balao]', r), img = $('img', bal);
+  chat.hidden = !IA.aberto;
+  bal.setAttribute('aria-expanded', String(IA.aberto));
+  bal.setAttribute('aria-label', IA.aberto ? 'Fechar a conversa com o agente de IA' : 'Abrir a conversa com o agente de IA');
+  img.src = IA.aberto ? IA_IMG.aberto : IA_IMG.fechado;
+  bal.classList.toggle('aberto', IA.aberto);
+  if (IA.aberto) iaDesenharMsgs();
+}
+const iaHora = v => { const d = new Date(v), h = new Date(); return d.toDateString() === h.toDateString() ? d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}) : d.toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}); };
+function iaDesenharMsgs(){
+  const box = $('#ia-raiz [data-ia-msgs]'); if (!box) return;
+  let h = '';
+  if (IA.carregando && !IA.msgs) h = '<p class="ia-aviso">Lendo a conversa…</p>';
+  else if (IA.msgs && !IA.msgs.length) h = '<p class="ia-aviso">Olá! Esta é a sua conversa com o agente de IA. Ela fica guardada só para você.</p>';
+  else if (IA.msgs) h = IA.msgs.map(m => '<div class="ia-msg ia-' + (m.autor === 'agente' ? 'agente' : 'usuario') + '"><p>' + esc(m.texto) + '</p><time datetime="' + esc(m.criado_em) + '">' + esc(iaHora(m.criado_em)) + '</time></div>').join('');
+  if (IA.msgs && IA.msgs.length && IA.msgs[IA.msgs.length - 1].autor === 'usuario') h += '<p class="ia-aviso">O agente ainda não está ligado. Sua mensagem ficou guardada.</p>';
+  if (IA.erro) h += '<p class="ia-aviso erro">' + esc(IA.erro) + '</p>';
+  box.innerHTML = h; box.scrollTop = box.scrollHeight;
+  const bt = $('#ia-raiz [data-ia-enviar]'); if (bt){ bt.disabled = IA.enviando; bt.textContent = IA.enviando ? 'Enviando…' : 'Enviar'; }
+}
+async function iaLerConversa(){
+  const sb = iaBanco(); if (!sb || IA.carregando) return;
+  IA.carregando = true; iaDesenharMsgs();
+  const {data, error} = await sb.from('ia_mensagens').select('id, autor, texto, criado_em').order('criado_em', {ascending:false}).limit(200);
+  IA.carregando = false;
+  if (error){ IA.erro = 'Não deu para ler a conversa: ' + error.message; IA.msgs = IA.msgs || []; }
+  else { IA.erro = ''; IA.msgs = (data || []).slice().sort((a, b) => String(a.criado_em).localeCompare(String(b.criado_em))).slice(-200); }
+  iaDesenharMsgs();
+}
+async function iaEnviar(){
+  const sb = iaBanco(), t = $('#ia-raiz [data-ia-texto]'); if (!sb || !t || IA.enviando) return;
+  const texto = t.value.trim(); if (!texto) return;
+  IA.enviando = true; IA.erro = ''; iaDesenharMsgs();
+  const {data, error} = await sb.from('ia_mensagens').insert({autor:'usuario', texto}).select('id, autor, texto, criado_em');
+  IA.enviando = false;
+  const linha = Array.isArray(data) ? data[0] : data;
+  if (error || !linha){ IA.erro = 'A mensagem não foi guardada' + (error ? ': ' + error.message : '') + '. Tente de novo.'; }
+  else { (IA.msgs = IA.msgs || []).push(linha); t.value = ''; }
+  iaDesenharMsgs(); t.focus();
+}
+function iaAlternar(abrir){
+  IA.aberto = abrir === undefined ? !IA.aberto : !!abrir; iaMontar();
+  if (IA.aberto){ if (!IA.msgs) iaLerConversa(); setTimeout(() => { const t = $('#ia-raiz [data-ia-texto]'); if (t) t.focus(); }, 30); }
+  else { const b = $('#ia-raiz [data-ia-balao]'); if (b) b.focus(); }
+}
+async function iaConferir(){
+  const sb = iaBanco(); if (!sb){ IA.posso = false; return iaMontar(); }
+  const {data, error} = await sb.rpc('ia_posso');
+  IA.posso = !error && data === true;
+  if (!IA.posso){ IA.msgs = null; IA.aberto = false; }
+  iaMontar();
+}
+document.addEventListener('click', e => {
+  if (e.target.closest('#ia-raiz [data-ia-balao]')) return iaAlternar();
+  if (e.target.closest('#ia-raiz [data-ia-fechar]')) return iaAlternar(false);
+});
+document.addEventListener('submit', e => { if (e.target.closest('#ia-raiz [data-ia-form]')){ e.preventDefault(); iaEnviar(); } });
+document.addEventListener('keydown', e => {
+  if (e.target.closest && e.target.closest('#ia-raiz [data-ia-texto]') && e.key === 'Enter' && !e.shiftKey && !e.isComposing){ e.preventDefault(); iaEnviar(); }
+  else if (e.key === 'Escape' && IA.aberto && e.target.closest && e.target.closest('#ia-raiz')) iaAlternar(false);
+});
+if (COM_BANCO){
+  const _entrouIa = window.ciclodevEntrouComo;
+  window.ciclodevEntrouComo = function(){
+    const r = _entrouIa.apply(this, arguments);
+    Promise.resolve(r).then(() => iaConferir()).catch(e => console.warn('IA', e));
+    return r;
+  };
+}
+if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {iaAdminHTML, iaConferir, iaAlternar});
 
 abrirModulo(UI.modulo);
 })();

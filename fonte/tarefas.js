@@ -18,7 +18,8 @@ const TF_ICO = {
   criar:TF_SV('<path d="M12 5v14M5 12h14"/>'),
   mover:TF_SV('<path d="M4 12h16M14 6l6 6-6 6"/>'),
   restaurar:TF_SV('<path d="M4 10a8 8 0 1 1 2 6"/><path d="M4 4v6h6"/>'),
-  editar:TF_SV('<path d="M4 20h4L20 8l-4-4L4 16z"/>')
+  editar:TF_SV('<path d="M4 20h4L20 8l-4-4L4 16z"/>'),
+  baixar:TF_SV('<path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/>')
 };
 const tfClone = o => JSON.parse(JSON.stringify(o));
 const tfSb = () => COM_BANCO ? window.ciclodevBanco : null;
@@ -667,6 +668,8 @@ function tfAcoesItem(i, ancora){
     pode && {txt:i.lembrete ? 'Mudar o lembrete' : 'Lembrete', sub:i.lembrete ? tfQuando(i.lembrete) : 'Avisa no dia e hora que você escolher', ico:TF_ICO.sino, acao:() => tfLembrete(i)},
     pode && {txt:i.recorrencia ? 'Mudar a repetição' : 'Repetir', sub:i.recorrencia ? tfTextoRepete(i.recorrencia) : 'Todo dia, semana, mês ou ano', ico:TF_ICO.repete, acao:() => tfRepetir(i)},
     {txt:'Histórico da descrição', sub:'Ver e voltar versões', ico:TF_ICO.historico, acao:() => tfHistorico(i)},
+    pode && typeof ptItemNoPortal === 'function' && ptItemNoPortal(i) && {txt:'Perguntar ao stakeholder', sub:'Vai para quem responde pelo portal do cliente', ico:TF_ICO.sino, acao:() => ptPerguntar(i)},
+    {txt:'Baixar em .md', sub:i.tipo === 'epic' ? 'O épico com todos os itens, para mandar a alguém ou a uma IA' : 'O card completo, para mandar a alguém ou a uma IA', ico:TF_ICO.baixar, acao:() => exBaixarItem(i)},
     pode && {sep:true},
     pode && {txt:'Arquivar', sub:'Sai das telas e fica guardado', ico:TF_ICO.arquivo, acao:() => { tfComDesfazer('Item arquivado.', () => { i.arquivado = true; registrar('arquivou', i); }); fecharItem(); }},
     pode && {txt:'Excluir', sub:'Vai para a lixeira por 30 dias', ico:TF_ICO.lixo, perigo:true, acao:() => tfExcluirItem(i)}
@@ -685,6 +688,7 @@ function tfAcoesNo(chave, ancora){
     tipo !== 'client' && {txt:'Duplicar', sub:'Com tudo o que tem dentro', ico:TF_ICO.copia, acao:() => tfDuplicarNo(chave)},
     tipo !== 'client' && {txt:'Salvar como modelo', sub:'Guarda a estrutura para repetir', ico:TF_ICO.modelo, acao:() => tfSalvarNoComoModelo(chave)},
     tipo === 'app' && {txt:'Mover', sub:'Para outro produto ou projeto', ico:TF_ICO.mover, acao:() => moverApp(id)},
+    {txt:'Baixar em .md', sub:'Tudo o que tem dentro, para mandar a alguém ou a uma IA', ico:TF_ICO.baixar, acao:() => exBaixarNo(chave)},
     {sep:true},
     tipo !== 'client' && {txt:arq ? 'Tirar do arquivo' : 'Arquivar', sub:arq ? 'Volta a ficar ativo' : 'Fica apagado na estrutura, sem sumir', ico:TF_ICO.arquivo, acao:() => { tfComDesfazer(o0.nome + (arq ? ' voltou a ficar ativo.' : ' arquivado.'), () => { o0.status = arq ? 'active' : 'archived'; o0.motivo = ''; }); if (UI.modulo === 'operacoes') rOperacoes(); }},
     {txt:'Excluir', sub:'Vai para a lixeira por 30 dias', ico:TF_ICO.lixo, perigo:true, acao:() => tfExcluirNo(chave)}

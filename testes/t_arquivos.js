@@ -1,4 +1,4 @@
-// Decisão ligada à ficha técnica e versão nova criada pelo Criar em lote: gravam no banco local e voltam iguais depois de recarregar.
+// Arquivos: item, ficha técnica e pedido vão para o depósito (simulado aqui) e ganham linha em anexos; voltam iguais depois de recarregar.
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const { execFileSync } = require('child_process');
 const BD = process.env.BD || 'ciclodev_grava';
@@ -43,6 +43,7 @@ function q(t){ const st = {t, op:'select', filtro:{}, de:0, ate:998};
     if (k === 'eq') return (c, v) => { st.filtro[c] = v; return px; };
     return () => px; } }); return px; }
 window.supabase = { createClient(){ let sess = {user:{id:'u1', email:'admin@it-ia.tec.br'}}; return { auth:{ async getSession(){ return {data:{session:sess}}; }, onAuthStateChange(){ return {data:{subscription:{unsubscribe(){}}}}; }, async signOut(){} },
+  storage:{ from(){ return { async upload(caminho, blob){ window.__deposito = window.__deposito || {}; window.__deposito[caminho] = blob.size; return {data:{path:caminho}, error:null}; }, async createSignedUrls(ps){ return {data:ps.map(p => ({path:p, signedUrl:'https://deposito.teste/' + p})), error:null}; } }; } },
   from:q, async rpc(fn){ if (fn === 'sou_dono_sistema') return {data:true, error:null}; if (fn !== 'vincular_meu_login') return {data:null, error:null}; return {data:[{pessoa_id:window.__eu, nome:'William', papel:'master', numero:100001, espaco_id:window.__esp || null}], error:null}; } }; } };`;
 (async () => {
   prepararLogin();
@@ -60,29 +61,34 @@ window.supabase = { createClient(){ let sess = {user:{id:'u1', email:'admin@it-i
   const espera = async () => { await p.waitForTimeout(500); await p.waitForFunction(() => !window.ciclodevSync.rodando && !window.ciclodevSync.pendente, null, {timeout: 20000}); };
   const semErro = async m => { const e = await p.evaluate(() => window.ciclodevSync.erros); ok(!e.length, m + (e.length ? ' ' + JSON.stringify(e.slice(0, 3)) : '')); };
   const conta = sql => psql(sql).trim();
-  const it = await p.evaluate(() => { const D = window.ciclodevDados(); const i = D.issues.find(x => x.ws && x.tipo !== 'epic' && !x.arquivado); return i.id; });
-  await p.evaluate(id => __tf.abrirItem(id), it); await p.waitForTimeout(400);
-  await p.selectOption('[data-dc-ligar]', 'Database|Banco e schema'); await p.waitForTimeout(300);
-  await p.fill('[data-dc-valor]', 'Postgres no Supabase');
-  await espera(); await semErro('ligar a decisão e escrever sem erro');
-  const pj = await p.evaluate(id => __tf.dcLigacao(__tf.byId('issues', id)).pk.split(':')[1], it);
-  ok(conta("select valor from public.ficha_campos where no_id = '" + pj + "' and secao = 'Database' and campo = 'Banco e schema'") === 'Postgres no Supabase', 'o texto da decisão está na ficha do projeto no banco');
-  ok(conta("select valor from public.ficha_campos where no_id = '" + pj + "' and secao = '_decisao' and campo = 'Database›Banco e schema'") === it, 'a ligação com o item está no banco');
-  await p.evaluate(() => __tf.fecharItem());
-  // versão nova pelo Criar em lote
-  const app = await p.evaluate(pj => window.ciclodevDados().apps.find(a => a.project === pj).id, pj);
-  await p.evaluate(() => document.querySelector('[data-tela="operacoes"]').click()); await p.waitForTimeout(400);
-  await p.evaluate(a => { __tf.UI.sel = 'app:' + a; __tf.UI.view = 'backlog'; __tf.UI.bjEpic = null; __tf.rOperacoes(); }, app); await p.waitForTimeout(500);
-  await p.click('[data-lt-abrir]'); await p.waitForTimeout(300);
-  await p.fill('#lt-t', 'Lote Dec {vDecNova}\n- Lote Dec item');
-  await p.click('dialog.modal .modal-rod .btn:not(.sec)');
-  await espera(); await semErro('criar o lote com versão nova sem erro');
-  ok(conta("select count(*) from public.marcos where nome = 'vDecNova' and no_id = '" + pj + "'") === '1', 'a versão nova foi criada no projeto');
-  ok(conta("select string_agg(i.titulo, ', ' order by i.titulo) from public.itens i join public.marcos m on m.id = i.marco_id where m.nome = 'vDecNova'").split(', ').sort().join(', ') === ['Lote Dec', 'Lote Dec item'].sort().join(', '), 'épico e item ligados à versão nova');
-  await p.reload(); await p.waitForTimeout(2500);
-  ok(await p.evaluate(id => { const l = __tf.dcLigacao(__tf.byId('issues', id)); return !!l && window.ciclodevDados().sheets[l.pk].campos[l.chave] === 'Postgres no Supabase'; }, it), 'depois de recarregar, a decisão continua ligada e com o texto');
+  const r = await p.evaluate(() => { const D = window.ciclodevDados(); const i = D.issues.find(x => !x.arquivado); const k = 'project:' + D.projects[0].id; const ped = D.requests[0];
+    const arq = (nome, tipo, conteudo, mime) => { const o = {nome, tipo, tam:conteudo.length}; Object.defineProperty(o, '_arq', {value:new File([conteudo], nome, {type:mime}), enumerable:false, writable:true}); return o; };
+    i.refs = (i.refs || []).concat([arq('foto da tela.png', 'imagem', 'PNGDATA', 'image/png'), arq('contrato assinado.pdf', 'arquivo', 'PDFDATA-123', 'application/pdf')]);
+    D.sheets[k] = D.sheets[k] || {campos:{}, custom:[], arquivos:[]}; D.sheets[k].arquivos.push(Object.assign(arq('logo final.svg', 'imagem', '<svg/>', 'image/svg+xml'), {sec:'Visual identity'}));
+    if (ped){ ped.anexos = (ped.anexos || []).concat([arq('print do erro.jpg', 'imagem', 'JPGDATA', 'image/jpeg')]); }
+    // prova de etapa com arquivo, num item da etapa que ainda não foi cumprido
+    const mod = D.template.flatMap(e => e.itens).find(it => !(D.stages[k] || {})[it.id]); D.stages[k] = D.stages[k] || {};
+    D.stages[k][mod.id] = {feito:true, quem:window.__eu, quando:'2026-09-29', prova:Object.defineProperty({tipo:'Arquivo', nome:'ata da reuniao.pdf', url:undefined}, '_arq', {value:new File(['ATA'], 'ata da reuniao.pdf', {type:'application/pdf'}), enumerable:false, writable:true})};
+    window.ciclodevGravarAgora(); return {item:i.id, no:k.split(':')[1], ped:ped ? ped.id : null, mod:mod.id}; });
+  await espera(); await semErro('enviar e gravar os arquivos sem erro');
+  const dep = await p.evaluate(() => Object.keys(window.__deposito || {}));
+  ok(dep.length === (r.ped ? 5 : 4), 'os arquivos foram para o depósito: ' + dep.map(x => x.split('/').slice(1).join('/')).join(' ; '));
+  ok(conta("select string_agg(nome || '/' || tipo || '/' || coalesce(mime, ''), ', ' order by nome) from public.anexos where item_id = '" + r.item + "' and storage_path is not null") === 'contrato assinado.pdf/documento/application/pdf, foto da tela.png/imagem/image/png', 'os dois anexos do item estão na tabela anexos');
+  ok(conta("select count(*) from public.anexos where no_id = '" + r.no + "' and storage_path like '%/ficha/visual-identity/%'") === '1', 'o arquivo da ficha está no banco com a seção no caminho');
+  if (r.ped) ok(conta("select count(*) from public.anexos where pedido_id = '" + r.ped + "' and storage_path is not null") === '1', 'o anexo do pedido está no banco');
+  ok(conta("select p.valor || '/' || a.nome from public.provas p join public.anexos a on a.prova_id = p.id where p.no_id = '" + r.no + "' and p.item_modelo_id = '" + r.mod + "'") === 'ata da reuniao.pdf/ata da reuniao.pdf', 'a prova da etapa está no banco com o arquivo');
+  await p.reload(); await p.waitForFunction(() => window.ciclodevBancoInfo && window.ciclodevBancoInfo().carregado, null, {timeout:30000}); await p.waitForTimeout(1200);
+  const volta = await p.evaluate(r => { const D = window.ciclodevDados(); const i = D.issues.find(x => x.id === r.item); const s = D.sheets['project:' + r.no]; const ped = r.ped && D.requests.find(x => x.id === r.ped);
+    return {item:(i.refs || []).filter(x => x.storage).map(x => x.nome + (x.url ? ' com link' : '')).sort().join(', '), ficha:(s.arquivos || []).filter(x => x.storage).map(x => x.nome + '@' + x.sec).join(', '), ped:ped ? (ped.anexos || []).filter(x => x.storage).length : -1}; }, r);
+  ok(volta.item === 'contrato assinado.pdf com link, foto da tela.png com link', 'depois de recarregar, o item tem os dois arquivos com link para abrir: ' + volta.item);
+  ok(volta.ficha === 'logo final.svg@Visual identity', 'a ficha tem o arquivo na seção certa: ' + volta.ficha);
+  if (r.ped) ok(volta.ped === 1, 'o pedido tem o anexo');
   ops.length = 0; await p.evaluate(() => { window.ciclodevGravarAgora(); }); await espera();
-  ok(!ops.some(o => !o.startsWith('select') && !/uso_eventos|pessoas_preferencias/.test(o)), 'e nada fica pendente (' + ops.filter(o => !o.startsWith('select') && !/uso_eventos|pessoas_preferencias/.test(o)).join(', ') + ')');
+  ok(!ops.some(o => !o.startsWith('select') && !/uso_eventos|pessoas_preferencias/.test(o)), 'e nada fica pendente (' + ops.filter(o => !o.startsWith('select') && !/uso_eventos|pessoas_preferencias/.test(o)).join(', ') + ')');   // uso_eventos é o registro de uso, que já grava sozinho
+  // tirar um anexo do item tira a linha do banco
+  await p.evaluate(r => { const i = window.ciclodevDados().issues.find(x => x.id === r.item); i.refs = i.refs.filter(x => x.nome !== 'contrato assinado.pdf'); window.ciclodevGravarAgora(); }, r);
+  await espera(); await semErro('tirar um anexo sem erro');
+  ok(conta("select count(*) from public.anexos where item_id = '" + r.item + "' and storage_path is not null") === '1', 'sobrou um anexo no item');
   ok(!erros.length, 'sem erro na página ' + JSON.stringify(erros));
   console.log(falhas ? falhas + ' FALHAS' : 'TUDO OK'); await b.close();
 })();

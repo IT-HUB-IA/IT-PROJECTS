@@ -11,7 +11,7 @@ function prepararLogin(){
   const uid = psql("select auth_user_id from public.pessoas where id = 'd148fdc5-eef3-5398-bf89-f49b55b5cd28'").trim();
   COMO = "set role authenticated; set request.jwt.claim.sub = '" + uid + "'; set request.jwt.claims = '{\"sub\":\"" + uid + "\",\"email\":\"william@teste.com\"}'; ";
 }
-const ops = [];
+const ops = [];   // uso_eventos (registro de uso) e pessoas_preferencias (arrumação da tela) gravam sozinhos: não contam como pendência
 function executar(p){
   const {t, op, row, filtro, conflito, de, ate, sel, ret} = p; const T = 'public.' + t;
   const onde = f => { const ks = Object.keys(f); return ks.length ? '(' + ks.join(',') + ') = (select ' + ks.join(',') + ' from json_populate_record(null::' + T + ', ' + lit(f) + '))' : 'true'; };
@@ -63,7 +63,7 @@ window.supabase = { createClient(){ let sess = {user:{id:'u1', email:'admin@it-i
 
   // 1) nada muda: salvar sem mudança não manda nada
   ops.length = 0; await p.evaluate(() => { window.ciclodevGravarAgora(); }); await espera();
-  ok(!ops.some(o => !o.startsWith('select')), 'salvar sem mudança não grava nada (' + ops.filter(o => !o.startsWith('select')).length + ' operações)');
+  ok(!ops.some(o => !o.startsWith('select') && !/uso_eventos|pessoas_preferencias/.test(o)), 'salvar sem mudança não grava nada (' + ops.filter(o => !o.startsWith('select') && !/uso_eventos|pessoas_preferencias/.test(o)).length + ' operações)');
 
   // 2) cria cliente, projeto, produto, aplicação, frente e item pela própria estrutura de dados da tela
   const ids = await p.evaluate(() => { const D = window.ciclodevDados(); const u = () => crypto.randomUUID();
@@ -95,7 +95,7 @@ window.supabase = { createClient(){ let sess = {user:{id:'u1', email:'admin@it-i
   ops.length = 0;
   await p.evaluate(ids => { const D = window.ciclodevDados(); const i = D.issues.find(x => x.id === ids.it); i.titulo = 'História alterada'; i.status = 'doing'; i.check[0].f = true; window.ciclodevGravarAgora(); }, ids);
   await espera(); await semErro('alterar título, status e checklist sem erro');
-  const esc = ops.filter(o => !o.startsWith('select'));
+  const esc = ops.filter(o => !o.startsWith('select') && !/uso_eventos|pessoas_preferencias/.test(o));
   ok(esc.length === 2 && esc.includes('update itens') && esc.includes('update itens_checklist'), 'mandou só 2 alterações: ' + JSON.stringify(esc));
   ok(conta("select titulo || '|' || (iniciado_em is not null) from public.itens where id='" + ids.it + "'") === 'História alterada|true', 'título mudou e o banco marcou o início sozinho');
 
@@ -111,7 +111,7 @@ window.supabase = { createClient(){ let sess = {user:{id:'u1', email:'admin@it-i
   const depois = await p.evaluate(() => JSON.stringify(window.ciclodevDados().issues.map(i => [i.id, i.titulo, i.status, i.sprint, i.check.length, i.coments.length]).sort()));
   ok(antes === depois, 'depois de recarregar, os itens voltam iguais do banco');
   ops.length = 0; await p.evaluate(() => window.ciclodevGravarAgora()); await espera();
-  ok(!ops.some(o => !o.startsWith('select')), 'depois de recarregar, nada fica "pendente" para gravar');
+  ok(!ops.some(o => !o.startsWith('select') && !/uso_eventos|pessoas_preferencias/.test(o)), 'depois de recarregar, nada fica "pendente" para gravar');
 
   // 6) pela tela: criar item pelo Quick add do Board
   await p.evaluate(ids => { const UI = null; }, ids);
@@ -157,7 +157,7 @@ window.supabase = { createClient(){ let sess = {user:{id:'u1', email:'admin@it-i
   ok(a1 === a2, 'depois de recarregar, tudo o que mudou voltou do banco');
   if (a1 !== a2) console.log('     antes ', a1, '\n     depois', a2);
   ops.length = 0; await p.evaluate(() => window.ciclodevGravarAgora()); await espera();
-  ok(!ops.some(o => !o.startsWith('select')), 'e nada fica pendente depois de recarregar ' + JSON.stringify(ops.filter(o => !o.startsWith('select')).slice(0, 6)));
+  ok(!ops.some(o => !o.startsWith('select') && !/uso_eventos|pessoas_preferencias/.test(o)), 'e nada fica pendente depois de recarregar ' + JSON.stringify(ops.filter(o => !o.startsWith('select') && !/uso_eventos|pessoas_preferencias/.test(o)).slice(0, 6)));
 
   // 6c) Board no formato Jira: sinal, pessoas, etiquetas, ordem, colunas e equipes
   await p.evaluate(() => { const D = window.ciclodevDados(); const i = D.issues[0], pj = D.projects[0];
@@ -174,7 +174,7 @@ window.supabase = { createClient(){ let sess = {user:{id:'u1', email:'admin@it-i
     return JSON.stringify([i && i.motivoSinal, i && i.membros.length, i && i.observadores.length, i && i.votos.length, i && i.etiquetas.length, i && i.ordem, i && i.restante, i && i.resolucao, b && b.tipo, b && b.colunas.map(c => c.nome + ':' + c.status.join('+') + ':' + c.max).join('|'), q && q.membros.length, q && q.nos.length]); });
   ok(s1 === s2, 'Board no formato Jira volta igual do banco: ' + s2);
   ops.length = 0; await p.evaluate(() => window.ciclodevGravarAgora()); await espera();
-  ok(!ops.some(o => !o.startsWith('select')), 'e nada fica pendente ' + JSON.stringify(ops.filter(o => !o.startsWith('select')).slice(0, 5)));
+  ok(!ops.some(o => !o.startsWith('select') && !/uso_eventos|pessoas_preferencias/.test(o)), 'e nada fica pendente ' + JSON.stringify(ops.filter(o => !o.startsWith('select') && !/uso_eventos|pessoas_preferencias/.test(o)).slice(0, 5)));
   ok(await p.evaluate(() => window.ciclodevDados().issues.every(i => !!i.chave)), 'todo item tem chave vinda do banco (BL-123)');
   await p.evaluate(() => { const D = window.ciclodevDados(); const ws = D.ws[0]; const ni = {id:crypto.randomUUID(), ws:ws.id, tipo:'task', titulo:'Item com chave nova', desc:'', status:'todo', prio:'lowest', resp:null, rep:null, ini:null, fim:null, alvo:null, est:null, vis:'interno', pai:null, check:[], links:[], coments:[], tempo:[], refs:[], bloco:null, membros:[], observadores:[], votos:[], etiquetas:[], ordem:1}; D.issues.push(ni); window.ciclodevGravarAgora(); });
   await espera(); await semErro('criar item com prioridade Lowest');

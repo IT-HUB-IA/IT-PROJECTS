@@ -1,4 +1,4 @@
-// Decisão ligada à ficha técnica e versão nova criada pelo Criar em lote: gravam no banco local e voltam iguais depois de recarregar.
+// Preferências de tela e lembretes vistos (parte 22): o que já estava no navegador sobe para o banco, e outro navegador recebe igual.
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const { execFileSync } = require('child_process');
 const BD = process.env.BD || 'ciclodev_grava';
@@ -11,7 +11,7 @@ function prepararLogin(){
   const uid = psql("select auth_user_id from public.pessoas where id = 'd148fdc5-eef3-5398-bf89-f49b55b5cd28'").trim();
   COMO = "set role authenticated; set request.jwt.claim.sub = '" + uid + "'; set request.jwt.claims = '{\"sub\":\"" + uid + "\",\"email\":\"william@teste.com\"}'; ";
 }
-const ops = [];   // uso_eventos (registro de uso) e pessoas_preferencias (arrumação da tela) gravam sozinhos: não contam como pendência
+const ops = [];
 function executar(p){
   const {t, op, row, filtro, conflito, de, ate, sel, ret} = p; const T = 'public.' + t;
   const onde = f => { const ks = Object.keys(f); return ks.length ? '(' + ks.join(',') + ') = (select ' + ks.join(',') + ' from json_populate_record(null::' + T + ', ' + lit(f) + '))' : 'true'; };
@@ -55,34 +55,33 @@ window.supabase = { createClient(){ let sess = {user:{id:'u1', email:'admin@it-i
   await p.addInitScript(([id, e]) => { window.__eu = id; window.__esp = e || null; }, [eu, esp]);
   await p.route('**/supabase-js@*/**', r => r.fulfill({ contentType: 'text/javascript', body: FALSO }));
   await p.route(/fonts\.(googleapis|gstatic)/, r => r.abort());
+  await p.addInitScript(() => { if (!sessionStorage.getItem('pf-semeado')){ sessionStorage.setItem('pf-semeado', '1'); localStorage.setItem('ciclodev-ui', JSON.stringify({abasFixas:['dashboard','board','sheet'], arvW:333})); localStorage.setItem('ciclodev-tema', 'escuro'); localStorage.setItem('ciclodev-lembretes-vistos', JSON.stringify({'x|y': Date.now()})); } });
   await p.goto('file://' + process.cwd() + '/vercel/index.html'); await p.waitForTimeout(2500);
   ok(await p.evaluate(() => document.body.classList.contains('logado') && window.ciclodevBancoInfo().carregado), 'entrou e leu o banco local');
   const espera = async () => { await p.waitForTimeout(500); await p.waitForFunction(() => !window.ciclodevSync.rodando && !window.ciclodevSync.pendente, null, {timeout: 20000}); };
   const semErro = async m => { const e = await p.evaluate(() => window.ciclodevSync.erros); ok(!e.length, m + (e.length ? ' ' + JSON.stringify(e.slice(0, 3)) : '')); };
   const conta = sql => psql(sql).trim();
-  const it = await p.evaluate(() => { const D = window.ciclodevDados(); const i = D.issues.find(x => x.ws && x.tipo !== 'epic' && !x.arquivado); return i.id; });
-  await p.evaluate(id => __tf.abrirItem(id), it); await p.waitForTimeout(400);
-  await p.selectOption('[data-dc-ligar]', 'Database|Banco e schema'); await p.waitForTimeout(300);
-  await p.fill('[data-dc-valor]', 'Postgres no Supabase');
-  await espera(); await semErro('ligar a decisão e escrever sem erro');
-  const pj = await p.evaluate(id => __tf.dcLigacao(__tf.byId('issues', id)).pk.split(':')[1], it);
-  ok(conta("select valor from public.ficha_campos where no_id = '" + pj + "' and secao = 'Database' and campo = 'Banco e schema'") === 'Postgres no Supabase', 'o texto da decisão está na ficha do projeto no banco');
-  ok(conta("select valor from public.ficha_campos where no_id = '" + pj + "' and secao = '_decisao' and campo = 'Database›Banco e schema'") === it, 'a ligação com o item está no banco');
-  await p.evaluate(() => __tf.fecharItem());
-  // versão nova pelo Criar em lote
-  const app = await p.evaluate(pj => window.ciclodevDados().apps.find(a => a.project === pj).id, pj);
-  await p.evaluate(() => document.querySelector('[data-tela="operacoes"]').click()); await p.waitForTimeout(400);
-  await p.evaluate(a => { __tf.UI.sel = 'app:' + a; __tf.UI.view = 'backlog'; __tf.UI.bjEpic = null; __tf.rOperacoes(); }, app); await p.waitForTimeout(500);
-  await p.click('[data-lt-abrir]'); await p.waitForTimeout(300);
-  await p.fill('#lt-t', 'Lote Dec {vDecNova}\n- Lote Dec item');
-  await p.click('dialog.modal .modal-rod .btn:not(.sec)');
-  await espera(); await semErro('criar o lote com versão nova sem erro');
-  ok(conta("select count(*) from public.marcos where nome = 'vDecNova' and no_id = '" + pj + "'") === '1', 'a versão nova foi criada no projeto');
-  ok(conta("select string_agg(i.titulo, ', ' order by i.titulo) from public.itens i join public.marcos m on m.id = i.marco_id where m.nome = 'vDecNova'").split(', ').sort().join(', ') === ['Lote Dec', 'Lote Dec item'].sort().join(', '), 'épico e item ligados à versão nova');
-  await p.reload(); await p.waitForTimeout(2500);
-  ok(await p.evaluate(id => { const l = __tf.dcLigacao(__tf.byId('issues', id)); return !!l && window.ciclodevDados().sheets[l.pk].campos[l.chave] === 'Postgres no Supabase'; }, it), 'depois de recarregar, a decisão continua ligada e com o texto');
-  ops.length = 0; await p.evaluate(() => { window.ciclodevGravarAgora(); }); await espera();
-  ok(!ops.some(o => !o.startsWith('select') && !/uso_eventos|pessoas_preferencias/.test(o)), 'e nada fica pendente (' + ops.filter(o => !o.startsWith('select') && !/uso_eventos|pessoas_preferencias/.test(o)).join(', ') + ')');
+  await p.waitForFunction(() => window.ciclodevPrefs && window.ciclodevPrefs.pronto, null, {timeout:20000}); await p.waitForTimeout(800);
+  const tela = () => JSON.parse(conta("select tela::text from public.pessoas_preferencias where pessoa_id = '" + eu + "'") || '{}');
+  let t = tela();
+  ok(JSON.stringify(t.abasFixas) === '["dashboard","board","sheet"]' && t.arvW === 333 && t.tema === 'escuro', 'o que já estava no navegador subiu para o banco: ' + JSON.stringify({abas:t.abasFixas, arvW:t.arvW, tema:t.tema}));
+  ok(conta("select lembretes_vistos ? 'x|y' from public.pessoas_preferencias where pessoa_id = '" + eu + "'") === 't', 'os lembretes vistos também');
+  // muda o tema e as abas pela tela
+  await p.evaluate(() => { const b = document.querySelector('[data-pk-tema]'); if (b) b.click(); });
+  await p.evaluate(() => { window.__tf.UI.abasFixas = ['dashboard','table']; window.__tf.salvarUI(); });
+  await p.waitForTimeout(2500);
+  t = tela();
+  ok(t.tema === 'claro' && JSON.stringify(t.abasFixas) === '["dashboard","table"]', 'mudar pela tela grava no banco: ' + JSON.stringify({abas:t.abasFixas, tema:t.tema}));
+  // outro navegador, sem nada guardado: recebe a arrumação do banco
+  const p2 = await b.newPage({ viewport: { width: 1440, height: 900 } });
+  await p2.exposeFunction('__bd', s => JSON.stringify(executar(JSON.parse(s))));
+  await p2.addInitScript(([id, e]) => { window.__eu = id; window.__esp = e || null; localStorage.clear(); }, [eu, esp]);
+  await p2.route('**/supabase-js@*/**', r => r.fulfill({ contentType: 'text/javascript', body: FALSO }));
+  await p2.route(/fonts\.(googleapis|gstatic)/, r => r.abort());
+  await p2.goto('file://' + process.cwd() + '/vercel/index.html');
+  await p2.waitForFunction(() => window.ciclodevPrefs && window.ciclodevPrefs.pronto, null, {timeout:20000}); await p2.waitForTimeout(800);
+  const noOutro = await p2.evaluate(() => ({abas:window.__tf.UI.abasFixas, escuro:document.documentElement.classList.contains('tema-escuro')}));
+  ok(JSON.stringify(noOutro.abas) === '["dashboard","table"]' && noOutro.escuro === false, 'outro navegador recebe a mesma arrumação: ' + JSON.stringify(noOutro));
   ok(!erros.length, 'sem erro na página ' + JSON.stringify(erros));
   console.log(falhas ? falhas + ' FALHAS' : 'TUDO OK'); await b.close();
 })();

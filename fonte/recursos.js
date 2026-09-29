@@ -1531,7 +1531,7 @@ async function gravarNoBanco(){
   SYNC.rodando = false;
   if (SYNC.erros.length){ selo('Erro ao salvar', true); const c = $('.chip-exemplo'); if (c) c.title = 'Não gravou: ' + SYNC.erros.join(' · ');
     const txt = SYNC.erros.join('|'); if (txt !== SYNC.ultimoErro) toast('Não deu para gravar tudo no banco: ' + SYNC.erros[0] + (SYNC.erros.length > 1 ? ' (e mais ' + (SYNC.erros.length - 1) + ')' : '')); SYNC.ultimoErro = txt; }
-  else { SYNC.ultimoErro = ''; selo('Dados do banco'); const c = $('.chip-exemplo'); if (c) c.title = 'Tudo gravado no banco'; if (BANCO.arquivosFora){ BANCO.arquivosFora = false; toast('Os links foram gravados. Arquivos (imagem, áudio, vídeo) ainda não vão para o banco.'); } }
+  else { SYNC.ultimoErro = ''; selo('Dados do banco'); const c = $('.chip-exemplo'); if (c) c.title = 'Tudo gravado no banco'; if (BANCO.arquivosFora){ BANCO.arquivosFora = false; toast('Algum arquivo não foi guardado no banco. Anexe de novo para tentar outra vez.'); } }
   if (SYNC.chavesNovas){ SYNC.chavesNovas = false; if (!document.querySelector('dialog[open]')) rView(); }
   if (SYNC.deNovo){ SYNC.deNovo = false; return gravarNoBanco(); }
   // as automações rodam no banco: se mexeu em itens e há automação ligada, relê para mostrar o resultado

@@ -1,0 +1,64 @@
+// Rodar com: node --experimental-strip-types supabase/functions/portal-api/logica.test.ts
+import { tratar, rota } from "./logica.ts";
+let falhas = 0;
+const ok = (c: boolean, m: string) => { if (!c) falhas++; console.log((c ? "OK    " : "FALHA ") + m); };
+const CHAVE = "cdp_" + "a".repeat(43), PORTAL = "11111111-1111-1111-1111-111111111111", ITEM = "22222222-2222-2222-2222-222222222222";
+const base = "https://x.supabase.co/functions/v1/portal-api";
+const pedido = (caminho: string, o: { metodo?: string; chave?: string | null; usuario?: string; corpo?: string } = {}) => new Request(base + caminho, {
+  method: o.metodo || "GET", body: o.corpo,
+  headers: Object.assign({}, o.chave === null ? {} : { authorization: "Bearer " + (o.chave || CHAVE) }, o.usuario ? { "x-portal-usuario": o.usuario } : {}) });
+const chamadas: Array<[string, Record<string, unknown> | undefined]> = [];
+const rpc = (respostas: Record<string, { data?: unknown; error?: { message: string; code?: string } }> = {}) => async (nome: string, args?: Record<string, unknown>) => {
+  chamadas.push([nome, args]);
+  if (nome === "portal_por_chave") return { data: args!.p_chave === CHAVE ? [{ portal_id: PORTAL, no_id: "n", nome: "Blanco & Lisboa" }] : [], error: null };
+  const r = respostas[nome] || { data: { exemplo: nome } }; return { data: r.data ?? null, error: (r.error as null) || null };
+};
+const membros = async () => ({ data: [{ email: "lucas@bl.com", nome: "Lucas", ativo: true }], error: null });
+
+ok(JSON.stringify(rota(base + "/itens/abc")) === '["itens","abc"]' && JSON.stringify(rota("https://x/portal-api/painel")) === '["painel"]', "entende o caminho depois de /portal-api");
+let r = await tratar(pedido("/painel", { chave: null }), rpc(), membros);
+ok(r.status === 401, "sem chave: 401");
+r = await tratar(pedido("/painel", { chave: "cdp_" + "b".repeat(43) }), rpc(), membros);
+ok(r.status === 401, "chave errada ou revogada: 401");
+chamadas.length = 0;
+r = await tratar(pedido("/painel"), rpc(), membros);
+let j = await r.json();
+ok(r.status === 200 && j.ok && j.portal.id === PORTAL && j.dados.exemplo === "portal_painel", "painel com a chave certa");
+ok(chamadas[1][0] === "portal_painel" && chamadas[1][1]!.p_portal === PORTAL && chamadas[1][1]!.p_no === null, "o portal vem da chave, nunca de quem chama");
+r = await tratar(pedido("/painel?no=abc"), rpc(), membros);
+ok(r.status === 400, "no que não é id: 400");
+r = await tratar(pedido("/quadro?no=" + ITEM), rpc(), membros); j = await r.json();
+ok(r.status === 200 && j.dados.exemplo === "portal_quadro", "quadro de uma parte");
+r = await tratar(pedido("/estrutura"), rpc(), membros);
+ok(r.status === 200, "estrutura");
+r = await tratar(pedido("/itens/" + ITEM), rpc({ portal_item: { data: null } }), membros);
+ok(r.status === 404, "item de fora do portal: 404");
+r = await tratar(pedido("/itens/nao-e-id"), rpc(), membros);
+ok(r.status === 400, "item com id inválido: 400");
+r = await tratar(pedido("/perguntas?status=qualquer"), rpc(), membros);
+ok(r.status === 400, "status de pergunta desconhecido: 400");
+r = await tratar(pedido("/eventos?depois=-1"), rpc(), membros);
+ok(r.status === 400, "depois negativo: 400");
+r = await tratar(pedido("/membros"), rpc(), membros); j = await r.json();
+ok(r.status === 200 && j.dados[0].email === "lucas@bl.com", "membros");
+r = await tratar(pedido("/perguntas/" + ITEM + "/resposta", { metodo: "POST", corpo: JSON.stringify({ texto: "sim" }) }), rpc(), membros);
+ok(r.status === 400, "responder sem X-Portal-Usuario: 400");
+r = await tratar(pedido("/perguntas/" + ITEM + "/resposta", { metodo: "POST", usuario: "lucas@bl.com", corpo: "não é json" }), rpc(), membros);
+ok(r.status === 400, "corpo que não é JSON: 400");
+r = await tratar(pedido("/perguntas/" + ITEM + "/resposta", { metodo: "POST", usuario: "lucas@bl.com", corpo: JSON.stringify({ texto: "   " }) }), rpc(), membros);
+ok(r.status === 400, "resposta vazia: 400");
+r = await tratar(pedido("/perguntas/" + ITEM + "/resposta", { metodo: "POST", usuario: "intruso@x.com", corpo: JSON.stringify({ texto: "sim" }) }), rpc({ portal_responder: { error: { message: "Este e-mail não é membro do portal", code: "42501" } } }), membros);
+ok(r.status === 403, "quem não é convidado: 403");
+r = await tratar(pedido("/perguntas/" + ITEM + "/resposta", { metodo: "POST", usuario: "lucas@bl.com", corpo: JSON.stringify({ texto: "sim" }) }), rpc({ portal_responder: { error: { message: "Esta pergunta já foi respondida ou cancelada", code: "22023" } } }), membros);
+ok(r.status === 409, "pergunta já respondida: 409");
+chamadas.length = 0;
+r = await tratar(pedido("/perguntas/" + ITEM + "/resposta", { metodo: "POST", usuario: "lucas@bl.com", corpo: JSON.stringify({ texto: " Pode sim. " }) }), rpc({ portal_responder: { data: { status: "respondida" } } }), membros); j = await r.json();
+ok(r.status === 200 && j.dados.status === "respondida", "responder dá certo");
+ok(chamadas[1][1]!.p_texto === "Pode sim." && chamadas[1][1]!.p_email === "lucas@bl.com" && chamadas[1][1]!.p_portal === PORTAL, "manda o texto limpo, o e-mail e o portal da chave");
+r = await tratar(pedido("/painel", { metodo: "DELETE" }), rpc(), membros);
+ok(r.status === 405, "outro método: 405");
+r = await tratar(pedido("/qualquer-coisa"), rpc(), membros);
+ok(r.status === 404, "endereço desconhecido: 404");
+r = await tratar(pedido("/painel"), rpc({ portal_painel: { error: { message: "boom" } } }), membros); j = await r.json();
+ok(r.status === 500 && !JSON.stringify(j).includes("boom"), "erro do banco não vaza detalhe");
+console.log(falhas ? falhas + " FALHAS" : "TUDO OK");

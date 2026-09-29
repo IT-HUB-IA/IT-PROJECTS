@@ -52,6 +52,26 @@ Testada no Postgres local (`98_teste_comunicacao_LOCAL.sql`: 47 de 47; as partes
 
 `21_avisos_email_SUPABASE.sql` agenda as chamadas à função: a cada 5 minutos (na hora), às 8h de Brasília (resumo do dia) e segunda às 8h05 (relatório da semana). Precisa da extensão `pg_net` e do segredo `ciclodev_avisos_segredo` no Vault, com o mesmo valor do segredo `AVISOS_SEGREDO` da função. Não entra no `APLICAR_NO_SUPABASE.sql`. Conferida em 29/09/2026: `pg_net` ligada, segredo no Vault, a rotina de 5 minutos rodou sozinha (resposta 200) e um e-mail de teste saiu para admin@it-ia.tec.br.
 
+## Parte 22: preferências de tela e lembretes vistos (aplicada em 29/09/2026 como `ciclodev_30_preferencias_tela`)
+
+`22_preferencias_tela.sql` põe duas colunas em `pessoas_preferencias`: `tela` (tema, abas da barra, largura e itens abertos da Estrutura, último ponto e aba, filtros) e `lembretes_vistos` (lembretes que já apareceram na tela da pessoa). Antes, essas coisas ficavam só no navegador. Cada pessoa só mexe na própria linha (política `dono` da parte 20, sem mudança). Testada no Postgres local (`testes/t_prefs.js`: o que já estava no navegador sobe para o banco na primeira vez e outro navegador recebe igual) e conferida no Supabase depois de aplicar: colunas, as duas regras de tamanho e as permissões de `authenticated` (select, insert, update).
+
+Junto, sem mudar o banco, a tela passou a gravar três coisas que já tinham tabela e antes se perdiam ao recarregar: o Quadro livre (`quadros` e `quadro_elementos`), as Visões salvas (`visoes_salvas`) e os arquivos anexados (bucket `anexos` da parte 09 e tabela `anexos`: itens, ficha técnica, pedidos e provas das etapas). Testes: `testes/t_persistir.js` e `testes/t_arquivos.js`.
+
+## Parte 23: portal do stakeholder (aplicada em 29/09/2026 como `ciclodev_31_portal_stakeholder`)
+
+`23_portal_stakeholder.sql` cria o portal do stakeholder (primeiro uso: Blanco & Lisboa, no sistema Java deles, que não tem banco e só mostra o que vem daqui). Tabelas: `portais` (de qual cliente e de quem é), `portais_membros` (quem pode responder, pelo e-mail), `portais_chaves` (só o resumo sha256 da chave), `portais_segredos` (segredo do webhook, sem acesso pela tela), `perguntas_stakeholder` e `portais_eventos` (fila de avisos). Tudo do portal só o dono vê; as perguntas também quem enxerga o item. A tela chama `portal_criar`, `portal_gerar_chave`, `portal_revogar_chave`, `portal_webhook`, `pergunta_criar`, `pergunta_cancelar` e `portais_clientes`; as funções `portal_por_chave`, `portal_estrutura`, `portal_painel`, `portal_quadro`, `portal_item`, `portal_perguntas`, `portal_eventos_lista` e `portal_responder` são só da função `portal-api` (service_role). Testada no Postgres local (`99_teste_portal_LOCAL.sql`, 31 conferências) e conferida no Supabase depois de aplicar: RLS nas 6 tabelas, permissões e uma versão só de cada função.
+
+## Parte 24: avisos do portal por webhook (aplicada em 29/09/2026 como `ciclodev_32_portal_webhook`)
+
+`24_portal_webhook_SUPABASE.sql` cria `interno.portal_entregar()` e a rotina `ciclodev_portal_webhook` (a cada minuto): manda os avisos da fila para o endereço do webhook de cada portal, assinados com HMAC-SHA256 no cabeçalho `X-CicloDev-Assinatura`, e tenta de novo até 10 vezes. Precisa de `pg_net` e `pg_cron`. Não entra no `APLICAR_NO_SUPABASE.sql`. Conferida no Supabase: a rotina está ligada e a primeira rodada terminou certo.
+
+A função `portal-api` (pasta `supabase/functions/portal-api`, `verify_jwt` desligado porque confere a chave do portal) foi publicada em 29/09/2026. O que o sistema de fora precisa saber está em `docs/PORTAL-STAKEHOLDER-JAVA.md`.
+
+## Parte 25: permissões de IA e conversa com o agente (aplicada em 29/09/2026 como `ciclodev_33_ia_permissoes_chat`)
+
+`25_ia_permissoes_chat.sql` cria `ia_permissoes` (quem pode usar a IA; começa todo mundo desligado e só o dono do sistema muda, em Admin › Permissões de IA, pela função `admin_ia_definir`) e `ia_mensagens` (a conversa de cada usuário com o seu agente). Cada pessoa só lê a própria permissão e a própria conversa, só escreve na própria conversa, só como `usuario` e só com a IA ligada; ninguém muda nem apaga mensagem pela tela, e nem o dono do sistema lê a conversa dos outros. Ainda não existe agente respondendo. **Regra para quando existir:** o agente de um usuário só enxerga o que esse usuário enxerga no sistema (`interno.nos_visiveis()` dele) e nunca vê nem fala de projeto a que o dono dele não tem acesso. Testada no Postgres local (`99_teste_ia_LOCAL.sql`, 16 conferências; `testes/t_ia.js` pela tela) e conferida no Supabase depois de aplicar: RLS nas 2 tabelas, permissões e as 3 funções.
+
 ## Parte 19: código, publicações e notas de versão (aplicada em 29/09/2026 como `ciclodev_26_codigo_entregas` + `ciclodev_27_ajuste_verificador`)
 
 Testada no Postgres local (`97_teste_codigo_LOCAL.sql`: 42 de 42; a parte 18 continua 37 de 37 com a 19 por cima) e conferida no Supabase depois de aplicar (tabelas com RLS e GRANT, segredos sem acesso de fora, `git_receber` só para `service_role`). A Edge Function `git-webhook` está implantada (versão 1, verify_jwt desligado). **Foi aplicada ANTES da tela nova, como precisa**: a tela passa a gravar `marcos.notas`.

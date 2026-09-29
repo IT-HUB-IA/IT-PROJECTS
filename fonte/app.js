@@ -433,6 +433,8 @@ function modal(titulo, corpo, botoes){
 }
 const lerArquivo = f => new Promise(res => {
   const base = {nome:f.name, tipo:f.type.startsWith('image') ? 'imagem' : f.type.startsWith('audio') ? 'áudio' : f.type.startsWith('video') ? 'vídeo' : 'arquivo', tam:f.size};
+  // o arquivo em si fica guardado (sem aparecer no JSON) para ir ao depósito de arquivos do banco (arquivos.js)
+  Object.defineProperty(base, '_arq', {value:f, enumerable:false, writable:true});
   if ((f.type.startsWith('image') && f.size < 600000) || (f.type.startsWith('audio') && f.size < 1500000)){ const r = new FileReader(); r.onload = () => res(Object.assign(base, {url:r.result})); r.onerror = () => res(base); r.readAsDataURL(f); }
   else res(base);
 });
@@ -1780,7 +1782,7 @@ function cumprirItem(id){
     [{txt:'Cancelar', cls:'sec'},{txt:'Marcar como cumprido', acao:d => {
       const arq = $('#cp-arq', d), txt = $('#cp-txt', d);
       const fim = prova => { D.stages[UI.sel][id] = {feito:true, quem:idEu(UI.verComo), quando:iso(HOJE), prova}; salvar(); rView(); toast('Item cumprido e registrado'); };
-      if (arq){ if (!arq.files[0]){ toast('Anexe a prova pedida'); return false; } lerArquivo(arq.files[0]).then(a => fim({tipo:cfg.prova, nome:a.nome, url:a.url})); return; }
+      if (arq){ if (!arq.files[0]){ toast('Anexe a prova pedida'); return false; } lerArquivo(arq.files[0]).then(a => fim(Object.defineProperty({tipo:cfg.prova, nome:a.nome, url:a.url}, '_arq', {value:a._arq, enumerable:false, writable:true}))); return; }
       if (txt){ if (!txt.value.trim()){ toast('Preencha a prova pedida'); return false; } fim({tipo:cfg.prova, valor:txt.value.trim()}); return; }
       fim(null);
     }}]);

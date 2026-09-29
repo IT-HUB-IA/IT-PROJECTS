@@ -11,7 +11,7 @@ function prepararLogin(){
   const uid = psql("select auth_user_id from public.pessoas where id = 'd148fdc5-eef3-5398-bf89-f49b55b5cd28'").trim();
   COMO = "set role authenticated; set request.jwt.claim.sub = '" + uid + "'; set request.jwt.claims = '{\"sub\":\"" + uid + "\",\"email\":\"william@teste.com\"}'; ";
 }
-const ops = [];
+const ops = [];   // uso_eventos (registro de uso) e pessoas_preferencias (arrumação da tela) gravam sozinhos: não contam como pendência
 function executar(p){
   const {t, op, row, filtro, conflito, de, ate, sel, ret} = p; const T = 'public.' + t;
   const onde = f => { const ks = Object.keys(f); return ks.length ? '(' + ks.join(',') + ') = (select ' + ks.join(',') + ' from json_populate_record(null::' + T + ', ' + lit(f) + '))' : 'true'; };
@@ -83,7 +83,7 @@ window.supabase = { createClient(){ let sess = {user:{id:'u1', email:'admin@it-i
   await p.reload(); await p.waitForTimeout(2500);
   ok(await p.evaluate(() => window.ciclodevDados().issues.filter(i => /^Lote /.test(i.titulo) && (i.tipo === 'epic' || i.pai)).length) === 5, 'depois de recarregar, os 5 voltam com o épico certo');
   ops.length = 0; await p.evaluate(() => { window.ciclodevGravarAgora(); }); await espera();
-  ok(!ops.some(o => !o.startsWith('select')), 'e nada fica pendente (' + ops.filter(o => !o.startsWith('select')).join(', ') + ')');
+  ok(!ops.some(o => !o.startsWith('select') && !/uso_eventos|pessoas_preferencias/.test(o)), 'e nada fica pendente (' + ops.filter(o => !o.startsWith('select') && !/uso_eventos|pessoas_preferencias/.test(o)).join(', ') + ')');
   ok(!erros.length, 'sem erro na página ' + JSON.stringify(erros));
   console.log(falhas ? falhas + ' FALHAS' : 'TUDO OK'); await b.close();
 })();

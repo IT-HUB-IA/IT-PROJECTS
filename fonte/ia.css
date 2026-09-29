@@ -1,0 +1,42 @@
+/* Agente de IA (ia.js): aba Permissões de IA no Admin e chat flutuante */
+.ia-adm{display:grid;gap:14px}
+.ia-adm-intro{margin:0;max-width:760px}
+.ia-tab td{vertical-align:middle}
+.ia-chave{display:inline-flex;align-items:center;gap:8px;border:0;background:none;padding:4px 0;font:inherit;font-size:13px;color:var(--tinta-2);cursor:pointer}
+.ia-chave i{position:relative;width:34px;height:18px;border:1px solid var(--nevoa);background:var(--branco);flex:none;transition:background var(--dur,.15s)}
+.ia-chave i::after{content:"";position:absolute;top:2px;left:2px;width:12px;height:12px;background:var(--nevoa);transition:left var(--dur,.15s)}
+.ia-chave.on{color:var(--preto);font-weight:600}
+.ia-chave.on i{background:var(--preto);border-color:var(--preto)}
+.ia-chave.on i::after{left:18px;background:var(--branco)}
+.ia-chave:disabled{cursor:progress;opacity:.6}
+.ia-chave:focus-visible{outline:2px solid var(--vermelho);outline-offset:2px}
+
+/* o balão: a imagem como veio, só no tamanho do canto da tela */
+#ia-raiz{position:fixed;right:20px;bottom:20px;z-index:25;display:flex;flex-direction:column;align-items:flex-end;gap:10px;pointer-events:none}
+#ia-raiz > *{pointer-events:auto}
+.ia-balao{width:76px;height:76px;padding:0;border:0;background:none;cursor:pointer;display:block;transition:transform var(--dur,.15s)}
+.ia-balao img{display:block;width:100%;height:100%;object-fit:contain;user-select:none}
+.ia-balao:hover{transform:translateY(-2px)}
+.ia-balao:focus-visible{outline:2px solid var(--vermelho);outline-offset:2px}
+
+.ia-chat{width:min(380px,calc(100vw - 32px));height:min(560px,calc(100vh - 140px));display:flex;flex-direction:column;background:var(--branco);border:1px solid var(--preto);box-shadow:0 12px 32px rgba(5,5,6,.18)}
+.ia-chat[hidden]{display:none}
+.ia-cab{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;background:var(--preto);color:var(--branco);border-bottom:3px solid var(--vermelho)}
+.ia-cab b{display:block;font-size:14px}
+.ia-cab small{display:block;font-size:11.5px;opacity:.75;margin-top:2px}
+.ia-fechar{border:0;background:none;color:inherit;padding:4px;cursor:pointer;display:grid;place-items:center}
+.ia-fechar:focus-visible{outline:2px solid var(--vermelho)}
+.ia-msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;min-height:0}
+.ia-msg{max-width:85%;display:grid;gap:3px}
+.ia-msg p{margin:0;padding:8px 11px;font-size:13.5px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere}
+.ia-msg time{font-size:11px;color:var(--tinta-3)}
+.ia-usuario{align-self:flex-end;justify-items:end}
+.ia-usuario p{background:var(--preto);color:var(--branco)}
+.ia-agente{align-self:flex-start}
+.ia-agente p{background:var(--preto-04);border-left:2px solid var(--vermelho)}
+.ia-aviso{margin:0;font-size:12.5px;color:var(--tinta-3);text-align:center}
+.ia-aviso.erro{color:var(--vermelho)}
+.ia-escrever{display:flex;gap:8px;align-items:flex-end;padding:10px;border-top:1px solid var(--linha)}
+.ia-escrever textarea{flex:1;min-width:0;resize:none;max-height:140px;font-size:13.5px}
+html.tema-escuro .ia-chat{filter:invert(.92) hue-rotate(180deg)}
+@media (max-width:720px){ #ia-raiz{right:12px;bottom:12px} .ia-balao{width:64px;height:64px} .ia-chat{height:min(520px,calc(100vh - 110px))} }

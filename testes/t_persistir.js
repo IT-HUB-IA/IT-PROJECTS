@@ -1,4 +1,4 @@
-// Decisão ligada à ficha técnica e versão nova criada pelo Criar em lote: gravam no banco local e voltam iguais depois de recarregar.
+// Quadro livre e visões salvas: gravam no banco local e voltam iguais depois de recarregar.
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 const { execFileSync } = require('child_process');
 const BD = process.env.BD || 'ciclodev_grava';
@@ -17,7 +17,7 @@ function executar(p){
   const onde = f => { const ks = Object.keys(f); return ks.length ? '(' + ks.join(',') + ') = (select ' + ks.join(',') + ' from json_populate_record(null::' + T + ', ' + lit(f) + '))' : 'true'; };
   try {
     let sql;
-    if (op === 'select') sql = 'select coalesce(json_agg(x), \'[]\') from (select * from ' + T + ' order by 1 offset ' + (de || 0) + ' limit ' + ((ate || 999) - (de || 0) + 1) + ') x';
+    if (op === 'select') sql = 'select coalesce(json_agg(linha_lida), \'[]\') from (select * from ' + T + ' order by 1 offset ' + (de || 0) + ' limit ' + ((ate || 999) - (de || 0) + 1) + ') linha_lida';   // o quadro tem uma coluna x: o apelido da linha não pode ser x
     else if (op === 'insert' || op === 'upsert'){ const cs = Object.keys(row);
       sql = 'insert into ' + T + ' (' + cs.join(',') + ') select ' + cs.join(',') + ' from json_populate_record(null::' + T + ', ' + lit(row) + ')' +
         (op === 'upsert' ? ' on conflict (' + conflito + ') do update set ' + (cs.filter(c => !conflito.split(',').includes(c)).map(c => c + '=excluded.' + c).join(',') || conflito.split(',')[0] + '=excluded.' + conflito.split(',')[0]) : '') ;
@@ -60,29 +60,32 @@ window.supabase = { createClient(){ let sess = {user:{id:'u1', email:'admin@it-i
   const espera = async () => { await p.waitForTimeout(500); await p.waitForFunction(() => !window.ciclodevSync.rodando && !window.ciclodevSync.pendente, null, {timeout: 20000}); };
   const semErro = async m => { const e = await p.evaluate(() => window.ciclodevSync.erros); ok(!e.length, m + (e.length ? ' ' + JSON.stringify(e.slice(0, 3)) : '')); };
   const conta = sql => psql(sql).trim();
-  const it = await p.evaluate(() => { const D = window.ciclodevDados(); const i = D.issues.find(x => x.ws && x.tipo !== 'epic' && !x.arquivado); return i.id; });
-  await p.evaluate(id => __tf.abrirItem(id), it); await p.waitForTimeout(400);
-  await p.selectOption('[data-dc-ligar]', 'Database|Banco e schema'); await p.waitForTimeout(300);
-  await p.fill('[data-dc-valor]', 'Postgres no Supabase');
-  await espera(); await semErro('ligar a decisão e escrever sem erro');
-  const pj = await p.evaluate(id => __tf.dcLigacao(__tf.byId('issues', id)).pk.split(':')[1], it);
-  ok(conta("select valor from public.ficha_campos where no_id = '" + pj + "' and secao = 'Database' and campo = 'Banco e schema'") === 'Postgres no Supabase', 'o texto da decisão está na ficha do projeto no banco');
-  ok(conta("select valor from public.ficha_campos where no_id = '" + pj + "' and secao = '_decisao' and campo = 'Database›Banco e schema'") === it, 'a ligação com o item está no banco');
-  await p.evaluate(() => __tf.fecharItem());
-  // versão nova pelo Criar em lote
-  const app = await p.evaluate(pj => window.ciclodevDados().apps.find(a => a.project === pj).id, pj);
-  await p.evaluate(() => document.querySelector('[data-tela="operacoes"]').click()); await p.waitForTimeout(400);
-  await p.evaluate(a => { __tf.UI.sel = 'app:' + a; __tf.UI.view = 'backlog'; __tf.UI.bjEpic = null; __tf.rOperacoes(); }, app); await p.waitForTimeout(500);
-  await p.click('[data-lt-abrir]'); await p.waitForTimeout(300);
-  await p.fill('#lt-t', 'Lote Dec {vDecNova}\n- Lote Dec item');
-  await p.click('dialog.modal .modal-rod .btn:not(.sec)');
-  await espera(); await semErro('criar o lote com versão nova sem erro');
-  ok(conta("select count(*) from public.marcos where nome = 'vDecNova' and no_id = '" + pj + "'") === '1', 'a versão nova foi criada no projeto');
-  ok(conta("select string_agg(i.titulo, ', ' order by i.titulo) from public.itens i join public.marcos m on m.id = i.marco_id where m.nome = 'vDecNova'").split(', ').sort().join(', ') === ['Lote Dec', 'Lote Dec item'].sort().join(', '), 'épico e item ligados à versão nova');
-  await p.reload(); await p.waitForTimeout(2500);
-  ok(await p.evaluate(id => { const l = __tf.dcLigacao(__tf.byId('issues', id)); return !!l && window.ciclodevDados().sheets[l.pk].campos[l.chave] === 'Postgres no Supabase'; }, it), 'depois de recarregar, a decisão continua ligada e com o texto');
+  const r = await p.evaluate(() => { const D = window.ciclodevDados(); const a = D.apps[0], i = D.issues.find(x => !x.arquivado); return {app:a.id, item:i.id}; });
+  // monta um quadro: uma nota, um cartão do item, um cartão da aplicação e uma seta
+  await p.evaluate(r => { const D = window.ciclodevDados(); const k = 'app:' + r.app; const u = () => crypto.randomUUID();
+    const n1 = u(), c1 = u(), c2 = u();
+    D.quadros[k] = {els:[{id:n1, tipo:'nota', texto:'Nota do teste', x:40, y:40, w:220}, {id:c1, tipo:'registro', ref:'issue:' + r.item, x:300, y:40, w:220}, {id:c2, tipo:'registro', ref:'app:' + r.app, x:560, y:40, w:220}, {id:u(), tipo:'seta', de:n1, para:c1}]};
+    D.vistas.push({id:u(), nome:'Visão do teste', pessoa:window.__eu, sel:'app:' + r.app, view:'board', filtros:{meus:true}, busca:'login', raias:'nenhuma'});
+    D.vistas.push({id:u(), nome:'Painel do teste', pessoa:window.__eu, sel:'app:' + r.app, view:'dashboard', filtros:{}, busca:''});
+    window.ciclodevGravarAgora(); }, r);
+  await espera(); await semErro('gravar quadro e visões sem erro');
+  ok(conta("select count(*) from public.quadro_elementos where quadro_id = '" + r.app + "'") === '4', 'os 4 elementos do quadro estão no banco');
+  ok(conta("select texto from public.quadro_elementos where quadro_id = '" + r.app + "' and tipo = 'texto'") === 'Nota do teste', 'com o texto da nota');
+  ok(conta("select count(*) from public.visoes_salvas where nome in ('Visão do teste', 'Painel do teste')") === '2', 'as duas visões estão no banco');
+  // mexe: move a nota e muda o texto
+  await p.evaluate(r => { const q = window.ciclodevDados().quadros['app:' + r.app]; const n = q.els.find(e => e.tipo === 'nota'); n.x = 120; n.texto = 'Nota mudada'; window.ciclodevGravarAgora(); }, r);
+  await espera(); await semErro('alterar sem erro');
+  ok(conta("select texto || '/' || x from public.quadro_elementos where quadro_id = '" + r.app + "' and tipo = 'texto'") === 'Nota mudada/120', 'a mudança chegou no banco');
+  await p.reload(); await p.waitForFunction(() => window.ciclodevBancoInfo && window.ciclodevBancoInfo().carregado && window.ciclodevDados && window.ciclodevDados().quadros, null, {timeout:30000}); await p.waitForTimeout(800);
+  const volta = await p.evaluate(r => { const D = window.ciclodevDados(); const q = D.quadros['app:' + r.app] || {els:[]}; const v = D.vistas.find(x => x.nome === 'Visão do teste'), v2 = D.vistas.find(x => x.nome === 'Painel do teste');
+    return q.els.map(e => e.tipo + (e.texto ? ':' + e.texto : '') + (e.ref ? ':' + e.ref.split(':')[0] : '')).sort().join(',') + ' | ' + (v ? v.view + ':' + v.busca + ':' + !!(v.filtros || {}).meus : 'sem') + ' | ' + (v2 ? v2.view : 'sem'); }, r);
+  ok(volta === 'nota:Nota mudada,registro:app,registro:issue,seta | board:login:true | dashboard', 'depois de recarregar, quadro e visões voltam iguais: ' + volta);
   ops.length = 0; await p.evaluate(() => { window.ciclodevGravarAgora(); }); await espera();
   ok(!ops.some(o => !o.startsWith('select') && !/uso_eventos|pessoas_preferencias/.test(o)), 'e nada fica pendente (' + ops.filter(o => !o.startsWith('select') && !/uso_eventos|pessoas_preferencias/.test(o)).join(', ') + ')');
+  // apagar a nota leva a seta junto
+  await p.evaluate(r => { const q = window.ciclodevDados().quadros['app:' + r.app]; const n = q.els.find(e => e.tipo === 'nota'); q.els = q.els.filter(e => e.id !== n.id && e.de !== n.id && e.para !== n.id); window.ciclodevGravarAgora(); }, r);
+  await espera(); await semErro('apagar sem erro');
+  ok(conta("select count(*) from public.quadro_elementos where quadro_id = '" + r.app + "'") === '2', 'sobram os 2 cartões');
   ok(!erros.length, 'sem erro na página ' + JSON.stringify(erros));
   console.log(falhas ? falhas + ' FALHAS' : 'TUDO OK'); await b.close();
 })();
