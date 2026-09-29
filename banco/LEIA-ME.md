@@ -20,9 +20,9 @@ O banco está no ar no projeto `tfcvoszeewmpghgxztuy` ("IT-Systems", Postgres 17
 - Acesso, simulando o login do CEO da B&L: vê só os 9 itens marcados como visíveis ao cliente e nenhum custo ou receita.
 - Tempo no Supabase com os dados de exemplo: painel do projeto 25 ms, painel da raiz 12 ms, financeiro 79 ms, carga de 4 semanas 5 ms.
 
-## Parte 18: itens mais completos, lixeira e modelos (28/09/2026, AINDA NÃO APLICADA)
+## Parte 18: itens mais completos, lixeira e modelos (aplicada em 29/09/2026 como `ciclodev_25_tarefas_lixeira_modelos`)
 
-Escrita e testada no Postgres local (`96_teste_tarefas_LOCAL.sql`: 37 de 37). **Tem que ser aplicada ANTES de publicar a tela nova**: a tela passa a gravar as colunas `recorrencia`, `lembrete_em` e `lembrete_para` em `itens`; sem elas, criar ou alterar item dá erro.
+Testada no Postgres local (`96_teste_tarefas_LOCAL.sql`: 37 de 37) e conferida no Supabase depois de aplicar: colunas, tabelas com RLS e GRANT, funções, gatilhos e as duas rotinas (`ciclodev_lembretes` já rodou com sucesso). **Foi aplicada ANTES da tela nova, como precisa**: a tela passa a gravar as colunas `recorrencia`, `lembrete_em` e `lembrete_para` em `itens`; sem elas, criar ou alterar item dá erro.
 
 | Peça | Para que serve |
 |---|---|
@@ -58,7 +58,7 @@ Escrita e testada no Postgres local (`96_teste_tarefas_LOCAL.sql`: 37 de 37). **
 | `12_dominios_dados.sql` | Os domínios reais já conhecidos (hoje, o it-ia.tec.br) | Sim |
 | `90_testes_LOCAL.sql` | 16 testes das regras (tem que terminar em "TODOS OS TESTES PASSARAM") | Não |
 | `91_usuarios_teste_LOCAL.sql`, `92_carga_volume_LOCAL.sql` | Logins falsos e volume grande para medir desempenho | Não |
-| `18_tarefas_lixeira_modelos.sql` | Item que se repete, lembrete, histórico da descrição, lixeira (excluir e restaurar em 30 dias) e modelos de item e de estrutura | Sim (ainda não aplicada, ver abaixo) |
+| `18_tarefas_lixeira_modelos.sql` | Item que se repete, lembrete, histórico da descrição, lixeira (excluir e restaurar em 30 dias) e modelos de item e de estrutura | Sim (aplicada em 29/09/2026) |
 | `96_teste_tarefas_LOCAL.sql` | 37 testes da parte 18: repetição, lembrete, versões, lixeira, limpeza de 30 dias, modelos e quem pode o quê | Não |
 
 ## Decisões de estrutura (e por quê)
