@@ -130,6 +130,6 @@
   .conteudo[hidden],.conteudo.sem-pad[hidden]{display:none}   /* igual ao site publicado, que já esconde todo [hidden] */
   .tf-excluir-cab{color:var(--vermelho);gap:6px}
   .tf-excluir-cab:hover{background:rgba(255,0,0,.08)}
-  .ops-cab .tf-excluir-cab{color:#FF6B6B}
+  .ops-cab .tf-excluir-cab{color:var(--vermelho)}
   .tf-rodape-item{display:flex;gap:6px;flex-wrap:wrap}
   .tf-rodape-item .btn{gap:6px}

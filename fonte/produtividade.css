@@ -48,9 +48,8 @@
   html.tema-escuro #tf-menu,
   html.tema-escuro .tf-aviso,
   html.tema-escuro .dica{filter:invert(.92) hue-rotate(180deg)}
-  html.tema-escuro .principal img,html.tema-escuro .principal video,html.tema-escuro .principal .ops-cab,
+  html.tema-escuro .principal img,html.tema-escuro .principal video,
   html.tema-escuro .gaveta img,html.tema-escuro .gaveta video,
   html.tema-escuro dialog.modal img,html.tema-escuro dialog.modal video{filter:invert(1) hue-rotate(180deg)}
-  html.tema-escuro .principal .ops-cab .sm-abas-menu{filter:invert(1) hue-rotate(180deg)}
   html.tema-escuro .veu{background:rgba(0,0,0,.6)}
   .pk-menu-botoes + .menu-rodape{margin-top:0}

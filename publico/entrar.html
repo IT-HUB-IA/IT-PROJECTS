@@ -1055,26 +1055,26 @@
 
   /* Operações: cabeçalho como capa escura */
   .ops-arvore{background:var(--branco)}
-  .ops-cab{background-color:var(--preto);background-image:linear-gradient(var(--carvao) 1px,transparent 1px),linear-gradient(90deg,var(--carvao) 1px,transparent 1px);background-size:64px 64px;color:var(--branco);border-bottom:0;position:relative}
-  .ops-cab .ops-trilha,.ops-cab .ops-trilha button{color:var(--nevoa)}
-  .ops-cab .ops-trilha button:hover{color:var(--branco)}
-  .ops-cab h1{color:var(--branco)}
-  .ops-cab h1 small{color:var(--nevoa);border-color:var(--grafite)}
-  .ops-cab .info{border-color:var(--grafite);color:var(--nevoa)}
-  .ops-cab .rotulo-mini{color:var(--nevoa)}
-  .ops-cab .sel{background:var(--carvao);color:var(--branco);border-color:var(--grafite)}
-  .ops-cab .btn{background:var(--branco);color:var(--preto);border-color:var(--branco)}
-  .ops-cab .btn.sec,.ops-cab .btn.fant{background:transparent;color:var(--branco);border-color:var(--grafite)}
-  .ops-cab .btn.sec:hover,.ops-cab .btn.fant:hover{background:var(--carvao)}
+  /* cabeçalho de Operações: claro e limpo, igual ao resto da tela */
+  .ops-cab{background:var(--branco);color:var(--preto);border-bottom:1px solid var(--linha);position:relative}
+  .ops-cab .ops-trilha,.ops-cab .ops-trilha button{color:var(--tinta-2)}
+  .ops-cab .ops-trilha button:hover{color:var(--preto);text-decoration:underline}
+  .ops-cab h1{color:var(--preto)}
+  .ops-cab .info{border-color:var(--linha-f);color:var(--tinta-3)}
+  .ops-cab .rotulo-mini{color:var(--tinta-2)}
+  .ops-cab .sel{background:var(--branco);color:var(--preto);border-color:var(--linha-f)}
+  .ops-cab .btn{background:var(--preto);color:var(--branco);border-color:var(--preto)}
+  .ops-cab .btn.sec,.ops-cab .btn.fant{background:var(--branco);color:var(--preto);border-color:var(--linha-f)}
+  .ops-cab .btn.sec:hover,.ops-cab .btn.fant:hover{border-color:var(--preto)}
   .ops-cab .btn.acento{background:var(--vermelho);border-color:var(--vermelho);color:var(--branco)}
-  .ops-cab .tag{background:var(--carvao);border-color:var(--grafite);color:var(--branco)}
-  .ops-cab .tag.sistema{background:transparent;color:var(--nevoa);border-style:dashed}
-  .ops-cab .tag button{color:var(--nevoa)}
-  .ops-cab .aviso-faixa{background:var(--carvao);border-color:var(--grafite);color:var(--branco)}
-  .ops-cab .views{margin-top:8px;border-top:1px solid var(--carvao)}
-  .ops-cab .view-b{color:var(--nevoa);height:44px}
-  .ops-cab .view-b:hover{color:var(--branco)}
-  .ops-cab .view-b[aria-selected="true"]{color:var(--branco);border-bottom-color:var(--vermelho);background:linear-gradient(transparent 60%,rgba(255,0,0,.08))}
+  .ops-cab .tag{background:var(--papel);border-color:var(--linha);color:var(--preto)}
+  .ops-cab .tag.sistema{background:transparent;color:var(--tinta-2);border-style:dashed}
+  .ops-cab .tag button{color:var(--tinta-2)}
+  .ops-cab .aviso-faixa{background:#FFF4E5;border-color:#F5C98A;color:#6B3E00}
+  .ops-cab .views{margin-top:4px;border-top:0}
+  .ops-cab .view-b{color:var(--tinta-2);height:44px}
+  .ops-cab .view-b:hover{color:var(--preto)}
+  .ops-cab .view-b[aria-selected="true"]{color:var(--preto);border-bottom-color:var(--vermelho);background:none}
   .ops-corpo{background:var(--papel)}
 
   /* board sobre o fundo cinza */
@@ -1388,8 +1388,8 @@
 /* "i" de cada view de Operações, ao lado do nome da aba */
 .view-casa{display:inline-flex;align-items:center}
 .view-casa .info{margin:0 8px 0 -8px;flex:none}
-.ops-cab .view-casa .info{border-color:var(--grafite);color:var(--nevoa)}
-.ops-cab .view-casa .info:hover,.ops-cab .view-casa .info:focus-visible{border-color:var(--nevoa);color:#fff}
+.ops-cab .view-casa .info{border-color:var(--linha-f);color:var(--tinta-3)}
+.ops-cab .view-casa .info:hover,.ops-cab .view-casa .info:focus-visible{border-color:var(--preto);color:var(--preto)}
 /* produtos da estrutura: nome em preto e negrito (as aplicações continuam como estão) */
 .no-arv[data-no^="product:"]:not(.escolhido) .nome{color:#000;font-weight:700}
 .no-arv[data-no^="product:"].pausado:not(.escolhido) .nome{color:#000;opacity:.55}
@@ -1771,7 +1771,7 @@ dialog.modal.modal-larga{max-width:min(960px,calc(100% - 32px))}
   .conteudo[hidden],.conteudo.sem-pad[hidden]{display:none}   /* igual ao site publicado, que já esconde todo [hidden] */
   .tf-excluir-cab{color:var(--vermelho);gap:6px}
   .tf-excluir-cab:hover{background:rgba(255,0,0,.08)}
-  .ops-cab .tf-excluir-cab{color:#FF6B6B}
+  .ops-cab .tf-excluir-cab{color:var(--vermelho)}
   .tf-rodape-item{display:flex;gap:6px;flex-wrap:wrap}
   .tf-rodape-item .btn{gap:6px}
 /* ---------- Entregas: versões, publicações, repositórios e o código no item ---------- */
@@ -1909,24 +1909,37 @@ dialog.modal.modal-larga{max-width:min(960px,calc(100% - 32px))}
   }
 
   /* cabeçalho do ponto escolhido */
-  .ops-cab .ops-titulo{align-items:flex-start}
-  .ops-cab .titulo-esq{display:grid;gap:6px;min-width:0}
-  .ops-cab .titulo-esq h1 small{font-family:var(--font-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--nevoa);border:1px solid var(--grafite);padding:3px 8px;font-weight:500}
-  .sm-resumo-no{margin:0;font-size:14px;color:var(--nevoa)}
-  .sm-resumo-no .sm-ruim{color:#FF6B6B;font-weight:600}
-  .ops-cab .titulo-esq .tags{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0}
-  .sm-rot-tags{font-family:var(--font-mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--nevoa);margin-right:4px}
+  .ops-cab .ops-trilha.sm-escondida{display:none}
+  .ops-cab{padding-top:20px}
+  .ops-cab .ops-titulo{align-items:center;gap:16px}
+  .ops-cab .titulo-esq{display:grid;gap:4px;min-width:0}
+  .sm-onde{margin:0;font-size:13px;color:var(--tinta-2);display:flex;flex-wrap:wrap;align-items:center;gap:4px}
+  .sm-onde .sm-tipo{font-weight:600;color:var(--preto)}
+  .sm-onde button{border:0;background:none;padding:0;font:inherit;color:var(--tinta-2);cursor:pointer}
+  .sm-onde button:hover{color:var(--preto);text-decoration:underline}
+  .sm-onde .sm-sep{color:var(--tinta-3)}
+  .sm-linha{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;min-width:0}
+  .sm-linha h1{margin:0;font-size:30px;line-height:1.15;min-width:0;overflow-wrap:anywhere}
+  .sm-status{position:relative;display:inline-flex;align-items:center;height:28px;border-radius:999px;background:var(--sm-fundo,#E6F6EE);color:var(--sm-texto,#0B6B40)}
+  .sm-status .sm-bola{position:absolute;left:11px;width:8px;height:8px;border-radius:50%;background:currentColor;pointer-events:none}
+  .ops-cab .sm-status select{appearance:none;-webkit-appearance:none;height:28px;border:0;border-radius:999px;background:transparent;color:inherit;font:inherit;font-size:13px;font-weight:600;padding:0 26px 0 26px;cursor:pointer}
+  .sm-neutro select{padding-left:12px!important}
+  .sm-status::after{content:"";position:absolute;right:11px;top:10px;width:5px;height:5px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg);pointer-events:none}
+  .sm-status select:focus-visible{outline:2px solid var(--preto);outline-offset:2px}
+  .sm-status[data-est="active"]{--sm-fundo:#E6F6EE;--sm-texto:#0B6B40}
+  .sm-status[data-est="on_hold"]{--sm-fundo:#FFF1DE;--sm-texto:#8A4F00}
+  .sm-status[data-est="done"]{--sm-fundo:#E8EDFF;--sm-texto:#2F4BC4}
+  .sm-status[data-est="archived"]{--sm-fundo:#EEEEF0;--sm-texto:#55555C}
+  .sm-status.sm-neutro{--sm-fundo:#F1F1F3;--sm-texto:#3A3A40}
+  .ops-cab .sm-tags{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0}
+  .ops-cab .sm-add-tag{height:28px;border:1px dashed var(--linha-f)!important;background:none!important;color:var(--tinta-2)!important;font-size:12px;padding:0 10px}
+  .ops-cab .sm-add-tag:hover{color:var(--preto)!important;border-color:var(--preto)!important}
   .ops-cab .ops-titulo > .acoes{display:flex;flex-wrap:wrap;align-items:center;gap:8px;justify-content:flex-end}
-  .sm-situacao{display:flex;align-items:center;gap:8px}
-  .sm-bola{width:10px;height:10px;border-radius:50%;background:var(--sm-cor,#16B36B);box-shadow:0 0 0 3px rgba(255,255,255,.08);flex:none}
-  .sm-situacao[data-est="active"]{--sm-cor:#16B36B}
-  .sm-situacao[data-est="on_hold"]{--sm-cor:#E08600}
-  .sm-situacao[data-est="done"]{--sm-cor:#6D8BFF}
-  .sm-situacao[data-est="archived"]{--sm-cor:#8A8A92}
-  .ops-cab .tf-excluir-cab{color:#FF8A8A}
-  .ops-cab .tf-excluir-cab:hover{color:#fff;background:var(--vermelho);border-color:var(--vermelho)}
-  @media (max-width:760px){ .ops-cab .ops-titulo > .acoes{justify-content:flex-start} }
   .ops-cab .acoes > .mu-comp-box{display:contents}
+  .ops-cab .sm-so-ico{width:36px;padding:0;justify-content:center}
+  .ops-cab .tf-excluir-cab.sm-so-ico:hover{color:var(--branco);background:var(--vermelho);border-color:var(--vermelho)}
+  .ops-cab .aviso-faixa{margin-top:4px}
+  @media (max-width:760px){ .sm-linha h1{font-size:24px} .ops-cab .ops-titulo > .acoes{justify-content:flex-start} }
 /* ---------- Produtividade: busca rápida, atalhos, tema escuro ---------- */
   kbd{font-family:var(--font-mono);font-size:10.5px;line-height:1;padding:3px 5px;border:1px solid var(--nevoa);border-bottom-width:2px;background:var(--branco);color:var(--preto);white-space:nowrap}
   dialog.pk{padding:0;border:1px solid var(--preto);width:min(640px,calc(100vw - 32px));max-height:min(560px,calc(100vh - 96px));margin:12vh auto auto;background:var(--branco);color:var(--preto);box-shadow:0 24px 64px rgba(0,0,0,.28);overflow:hidden}
@@ -1977,10 +1990,9 @@ dialog.modal.modal-larga{max-width:min(960px,calc(100% - 32px))}
   html.tema-escuro #tf-menu,
   html.tema-escuro .tf-aviso,
   html.tema-escuro .dica{filter:invert(.92) hue-rotate(180deg)}
-  html.tema-escuro .principal img,html.tema-escuro .principal video,html.tema-escuro .principal .ops-cab,
+  html.tema-escuro .principal img,html.tema-escuro .principal video,
   html.tema-escuro .gaveta img,html.tema-escuro .gaveta video,
   html.tema-escuro dialog.modal img,html.tema-escuro dialog.modal video{filter:invert(1) hue-rotate(180deg)}
-  html.tema-escuro .principal .ops-cab .sm-abas-menu{filter:invert(1) hue-rotate(180deg)}
   html.tema-escuro .veu{background:rgba(0,0,0,.6)}
   .pk-menu-botoes + .menu-rodape{margin-top:0}
 /* ---------- Comunicação: menções, caixa de avisos e preferências ---------- */
@@ -8719,53 +8731,65 @@ document.addEventListener('click', ev => {
 }, true);
 document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && $('.sm-abas-menu:not([hidden])')){ ev.stopPropagation(); smFecharMenuAbas(); const b = $('[data-sm-mais-abas]'); if (b) b.focus(); } }, true);
 
-/* ---------- cabeçalho do ponto escolhido: o que é, como está e o que dá para fazer ---------- */
-const SM_TIPO_NO = {Client:['Cliente','cliente'], Project:['Projeto','projeto'], Product:['Produto','produto'], Application:['Aplicação','aplicação'], Workstream:['Frente de trabalho','frente']};
+/* ---------- cabeçalho do ponto escolhido: só o nome, onde fica, a situação e os botões ---------- */
+const SM_TIPO_NO = {Client:'Cliente', Project:'Projeto', Product:'Produto', Application:'Aplicação', Workstream:'Frente de trabalho'};
+const SM_ICO_MAIS = '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>';
 function smCabecalho(){
-  const tit = $('.ops-cab .ops-titulo'); if (!tit || tit.dataset.sm) return; tit.dataset.sm = '1';
+  const cab = $('.ops-cab'), tit = cab && $('.ops-titulo', cab); if (!tit || tit.dataset.sm) return; tit.dataset.sm = '1';
   const esq = $('.titulo-esq', tit), acoes = $(':scope > .acoes', tit), h1 = esq && $('h1', esq); if (!h1) return;
-  const pequeno = $('small', h1), tipo = pequeno && SM_TIPO_NO[pequeno.textContent.trim()];
-  if (tipo) pequeno.textContent = tipo[0];
-  if (UI.sel === 'all'){
-    smTrocarTexto(h1, 'Tudo'); if (pequeno) pequeno.textContent = 'Todos os projetos';
-    smTrocarInfo(h1, 'Tudo: os itens de todos os clientes e projetos numa tela só, com as mesmas abas e filtros.');
-    $$('.ops-cab .ops-trilha [data-rc-tudo]').forEach(b => { b.textContent = 'Tudo'; });
+  // "Projeto em Blanco & Lisboa": o tipo e onde fica, numa linha só (no lugar da trilha, que repetia o nome)
+  const pequeno = $('small', h1), tipo = UI.sel === 'all' ? 'Todos os clientes e projetos' : (pequeno && (SM_TIPO_NO[pequeno.textContent.trim()] || pequeno.textContent.trim())) || '';
+  if (pequeno) pequeno.remove();
+  $$('button.info', h1).forEach(b => b.remove());
+  if (UI.sel === 'all') smTrocarTexto(h1, 'Tudo');
+  const trilha = $('.ops-trilha', cab), onde = document.createElement('p'); onde.className = 'sm-onde';
+  onde.innerHTML = '<span class="sm-tipo">' + esc(tipo) + '</span>';
+  if (trilha && UI.sel !== 'all'){
+    const bs = $$('button', trilha).slice(0, -1);   // o último é ele mesmo
+    if (bs.length){ onde.insertAdjacentHTML('beforeend', ' <span class="sm-em">em</span> '); bs.forEach((b, i) => { if (i) onde.insertAdjacentHTML('beforeend', '<span class="sm-sep" aria-hidden="true">›</span>'); onde.appendChild(b); }); }
   }
-  $$('.ops-arvore .rc-tudo .nome').forEach(n => { n.textContent = 'Tudo'; });
-  // uma linha que diz como está
-  if (UI.sel){
-    const its = issuesEm(UI.sel), abertos = its.filter(i => i.status !== 'done'), atr = abertos.filter(atrasado).length, trav = abertos.filter(i => i.status === 'blocked').length;
-    const partes = [its.length ? abertos.length + (abertos.length === 1 ? ' item em aberto' : ' itens em aberto') : 'Nenhum item ainda'];
-    if (its.length) partes.push(Math.round((its.length - abertos.length) / its.length * 100) + '% concluído');
-    if (atr) partes.push('<b class="sm-ruim">' + atr + (atr === 1 ? ' atrasado' : ' atrasados') + '</b>');
-    if (trav) partes.push('<b class="sm-ruim">' + trav + (trav === 1 ? ' travado' : ' travados') + '</b>');
-    h1.insertAdjacentHTML('afterend', '<p class="sm-resumo-no">' + partes.join('<span aria-hidden="true"> · </span>') + '</p>');
-  }
-  // etiquetas numa linha própria, com nome
-  const tags = $('.tags', esq);
-  if (tags){
-    tags.insertAdjacentHTML('afterbegin', '<span class="sm-rot-tags">Etiquetas</span>');
-    $$('.tag.sistema', tags).forEach(t => { t.title = 'Etiqueta automática: vem da ligação com o cliente e não pode ser apagada'; });
-    const add = $('[data-acao="por-tag"]', tags); if (add) smTrocarTexto(add, 'Etiqueta');
-    esq.appendChild(tags);
-  }
-  // situação: rótulo em português, nome curto e bolinha com a cor
+  if (trilha) trilha.classList.add('sm-escondida');
+  esq.insertBefore(onde, h1);
+  // linha do nome: nome, situação, etiquetas
+  const linha = document.createElement('div'); linha.className = 'sm-linha'; esq.insertBefore(linha, h1); linha.appendChild(h1);
   const sel = acoes && $('select[data-estado]', acoes);
   if (sel){
-    const lab = sel.closest('label'); if (lab){ smTrocarTexto(lab, 'Situação'); lab.classList.add('sm-situacao'); lab.dataset.est = sel.value; sel.insertAdjacentHTML('beforebegin', '<span class="sm-bola" aria-hidden="true"></span>'); }
+    const lab = sel.closest('label'), pilula = document.createElement('span');
+    pilula.className = 'sm-status'; pilula.dataset.est = sel.value; pilula.innerHTML = '<span class="sm-bola" aria-hidden="true"></span>';
+    sel.setAttribute('aria-label', 'Situação');
     $$('option', sel).forEach(o => { const [n, ...x] = o.textContent.split(' · '); if (x.length){ o.title = x.join(' · '); o.textContent = n; } });
-    sel.addEventListener('change', () => { if (lab) lab.dataset.est = sel.value; });
+    pilula.appendChild(sel); linha.appendChild(pilula); if (lab) lab.remove();
+    sel.addEventListener('change', () => { pilula.dataset.est = sel.value; });
   }
-  const faixa = $('.ops-cab .aviso-faixa b'); if (faixa && faixa.textContent.trim() === 'On Hold') faixa.textContent = 'Pausado';
+  const orig = acoes && $('select[data-rc-origem]', acoes);
+  if (orig){
+    const lab = orig.closest('label'), p2 = document.createElement('span'); p2.className = 'sm-status sm-neutro';
+    orig.setAttribute('aria-label', 'De quem é o código'); orig.title = 'Nosso: feito pela IT.IA. De terceiros: feito por outra empresa (o Discovery ganha itens a mais).';
+    $$('option', orig).forEach(o => { o.textContent = o.value === 'terceiros' ? 'Código de terceiros' : 'Código nosso'; });
+    p2.appendChild(orig); linha.appendChild(p2); if (lab) lab.remove();
+  }
+  const tags = $('.tags', esq);
+  if (tags){
+    $$('.tag.sistema', tags).forEach(t => t.remove());   // "Holding: ..." repete o que a linha de cima já diz
+    const add = $('[data-acao="por-tag"]', tags); if (add){ smTrocarTexto(add, 'Etiqueta'); add.classList.add('sm-add-tag'); add.title = 'Pôr uma etiqueta'; }
+    tags.classList.add('sm-tags'); linha.appendChild(tags);
+  }
+  // botões: Mover já está em "Mais"; Mais e Excluir viram só ícone
+  if (acoes){
+    const mover = $('[data-acao="mover-app"]', acoes); if (mover) mover.remove();
+    const mais = $('.tf-mais-cab', acoes); if (mais){ mais.innerHTML = SM_ICO_MAIS; mais.setAttribute('aria-label', 'Mais ações'); mais.title = 'Mais ações: criar dentro, duplicar, mover, arquivar'; mais.classList.add('sm-so-ico'); }
+    const exc = $('.tf-excluir-cab', acoes); if (exc){ const sp = $('span', exc); if (sp) sp.remove(); exc.setAttribute('aria-label', 'Excluir'); exc.title = 'Excluir (vai para a lixeira por 30 dias)'; exc.classList.add('sm-so-ico'); acoes.appendChild(exc); }
+  }
+  const faixa = $('.aviso-faixa b', cab); if (faixa && /^(On Hold|Pausado)$/.test(faixa.textContent.trim())) faixa.textContent = 'Motivo da pausa:';
+  $$('.ops-arvore .rc-tudo .nome').forEach(n => { n.textContent = 'Tudo'; });
   smCompartilharJunto();
-  const exc = acoes && $('.tf-excluir-cab', acoes); if (exc) acoes.appendChild(exc);
 }
 // o botão Compartilhar chega um instante depois (multiusuario.js); vai para junto dos outros botões
 function smCompartilharJunto(){
   const tit = $('#m-operacoes .ops-titulo'), comp = tit && $(':scope > .mu-comp-box', tit), acoes = tit && $(':scope > .acoes', tit);
   if (!comp || !acoes) return;
   const b = $('.mu-compartilhar', comp); if (b) b.classList.remove('peq');
-  acoes.insertBefore(comp, $('.tf-mais-cab', acoes) || null);
+  acoes.insertBefore(comp, acoes.firstChild);
 }
 new MutationObserver(() => { if ($('#m-operacoes .ops-titulo > .mu-comp-box')) smCompartilharJunto(); }).observe(document.querySelector('.principal') || document.body, {childList:true, subtree:true});
 const _rOperacoesSmCab = rOperacoes;

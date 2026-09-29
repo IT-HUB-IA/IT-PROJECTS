@@ -133,26 +133,26 @@
 
   /* Operações: cabeçalho como capa escura */
   .ops-arvore{background:var(--branco)}
-  .ops-cab{background-color:var(--preto);background-image:linear-gradient(var(--carvao) 1px,transparent 1px),linear-gradient(90deg,var(--carvao) 1px,transparent 1px);background-size:64px 64px;color:var(--branco);border-bottom:0;position:relative}
-  .ops-cab .ops-trilha,.ops-cab .ops-trilha button{color:var(--nevoa)}
-  .ops-cab .ops-trilha button:hover{color:var(--branco)}
-  .ops-cab h1{color:var(--branco)}
-  .ops-cab h1 small{color:var(--nevoa);border-color:var(--grafite)}
-  .ops-cab .info{border-color:var(--grafite);color:var(--nevoa)}
-  .ops-cab .rotulo-mini{color:var(--nevoa)}
-  .ops-cab .sel{background:var(--carvao);color:var(--branco);border-color:var(--grafite)}
-  .ops-cab .btn{background:var(--branco);color:var(--preto);border-color:var(--branco)}
-  .ops-cab .btn.sec,.ops-cab .btn.fant{background:transparent;color:var(--branco);border-color:var(--grafite)}
-  .ops-cab .btn.sec:hover,.ops-cab .btn.fant:hover{background:var(--carvao)}
+  /* cabeçalho de Operações: claro e limpo, igual ao resto da tela */
+  .ops-cab{background:var(--branco);color:var(--preto);border-bottom:1px solid var(--linha);position:relative}
+  .ops-cab .ops-trilha,.ops-cab .ops-trilha button{color:var(--tinta-2)}
+  .ops-cab .ops-trilha button:hover{color:var(--preto);text-decoration:underline}
+  .ops-cab h1{color:var(--preto)}
+  .ops-cab .info{border-color:var(--linha-f);color:var(--tinta-3)}
+  .ops-cab .rotulo-mini{color:var(--tinta-2)}
+  .ops-cab .sel{background:var(--branco);color:var(--preto);border-color:var(--linha-f)}
+  .ops-cab .btn{background:var(--preto);color:var(--branco);border-color:var(--preto)}
+  .ops-cab .btn.sec,.ops-cab .btn.fant{background:var(--branco);color:var(--preto);border-color:var(--linha-f)}
+  .ops-cab .btn.sec:hover,.ops-cab .btn.fant:hover{border-color:var(--preto)}
   .ops-cab .btn.acento{background:var(--vermelho);border-color:var(--vermelho);color:var(--branco)}
-  .ops-cab .tag{background:var(--carvao);border-color:var(--grafite);color:var(--branco)}
-  .ops-cab .tag.sistema{background:transparent;color:var(--nevoa);border-style:dashed}
-  .ops-cab .tag button{color:var(--nevoa)}
-  .ops-cab .aviso-faixa{background:var(--carvao);border-color:var(--grafite);color:var(--branco)}
-  .ops-cab .views{margin-top:8px;border-top:1px solid var(--carvao)}
-  .ops-cab .view-b{color:var(--nevoa);height:44px}
-  .ops-cab .view-b:hover{color:var(--branco)}
-  .ops-cab .view-b[aria-selected="true"]{color:var(--branco);border-bottom-color:var(--vermelho);background:linear-gradient(transparent 60%,rgba(255,0,0,.08))}
+  .ops-cab .tag{background:var(--papel);border-color:var(--linha);color:var(--preto)}
+  .ops-cab .tag.sistema{background:transparent;color:var(--tinta-2);border-style:dashed}
+  .ops-cab .tag button{color:var(--tinta-2)}
+  .ops-cab .aviso-faixa{background:#FFF4E5;border-color:#F5C98A;color:#6B3E00}
+  .ops-cab .views{margin-top:4px;border-top:0}
+  .ops-cab .view-b{color:var(--tinta-2);height:44px}
+  .ops-cab .view-b:hover{color:var(--preto)}
+  .ops-cab .view-b[aria-selected="true"]{color:var(--preto);border-bottom-color:var(--vermelho);background:none}
   .ops-corpo{background:var(--papel)}
 
   /* board sobre o fundo cinza */
@@ -466,8 +466,8 @@
 /* "i" de cada view de Operações, ao lado do nome da aba */
 .view-casa{display:inline-flex;align-items:center}
 .view-casa .info{margin:0 8px 0 -8px;flex:none}
-.ops-cab .view-casa .info{border-color:var(--grafite);color:var(--nevoa)}
-.ops-cab .view-casa .info:hover,.ops-cab .view-casa .info:focus-visible{border-color:var(--nevoa);color:#fff}
+.ops-cab .view-casa .info{border-color:var(--linha-f);color:var(--tinta-3)}
+.ops-cab .view-casa .info:hover,.ops-cab .view-casa .info:focus-visible{border-color:var(--preto);color:var(--preto)}
 /* produtos da estrutura: nome em preto e negrito (as aplicações continuam como estão) */
 .no-arv[data-no^="product:"]:not(.escolhido) .nome{color:#000;font-weight:700}
 .no-arv[data-no^="product:"].pausado:not(.escolhido) .nome{color:#000;opacity:.55}

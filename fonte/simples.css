@@ -45,21 +45,34 @@
   }
 
   /* cabeçalho do ponto escolhido */
-  .ops-cab .ops-titulo{align-items:flex-start}
-  .ops-cab .titulo-esq{display:grid;gap:6px;min-width:0}
-  .ops-cab .titulo-esq h1 small{font-family:var(--font-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--nevoa);border:1px solid var(--grafite);padding:3px 8px;font-weight:500}
-  .sm-resumo-no{margin:0;font-size:14px;color:var(--nevoa)}
-  .sm-resumo-no .sm-ruim{color:#FF6B6B;font-weight:600}
-  .ops-cab .titulo-esq .tags{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0}
-  .sm-rot-tags{font-family:var(--font-mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--nevoa);margin-right:4px}
+  .ops-cab .ops-trilha.sm-escondida{display:none}
+  .ops-cab{padding-top:20px}
+  .ops-cab .ops-titulo{align-items:center;gap:16px}
+  .ops-cab .titulo-esq{display:grid;gap:4px;min-width:0}
+  .sm-onde{margin:0;font-size:13px;color:var(--tinta-2);display:flex;flex-wrap:wrap;align-items:center;gap:4px}
+  .sm-onde .sm-tipo{font-weight:600;color:var(--preto)}
+  .sm-onde button{border:0;background:none;padding:0;font:inherit;color:var(--tinta-2);cursor:pointer}
+  .sm-onde button:hover{color:var(--preto);text-decoration:underline}
+  .sm-onde .sm-sep{color:var(--tinta-3)}
+  .sm-linha{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;min-width:0}
+  .sm-linha h1{margin:0;font-size:30px;line-height:1.15;min-width:0;overflow-wrap:anywhere}
+  .sm-status{position:relative;display:inline-flex;align-items:center;height:28px;border-radius:999px;background:var(--sm-fundo,#E6F6EE);color:var(--sm-texto,#0B6B40)}
+  .sm-status .sm-bola{position:absolute;left:11px;width:8px;height:8px;border-radius:50%;background:currentColor;pointer-events:none}
+  .ops-cab .sm-status select{appearance:none;-webkit-appearance:none;height:28px;border:0;border-radius:999px;background:transparent;color:inherit;font:inherit;font-size:13px;font-weight:600;padding:0 26px 0 26px;cursor:pointer}
+  .sm-neutro select{padding-left:12px!important}
+  .sm-status::after{content:"";position:absolute;right:11px;top:10px;width:5px;height:5px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg);pointer-events:none}
+  .sm-status select:focus-visible{outline:2px solid var(--preto);outline-offset:2px}
+  .sm-status[data-est="active"]{--sm-fundo:#E6F6EE;--sm-texto:#0B6B40}
+  .sm-status[data-est="on_hold"]{--sm-fundo:#FFF1DE;--sm-texto:#8A4F00}
+  .sm-status[data-est="done"]{--sm-fundo:#E8EDFF;--sm-texto:#2F4BC4}
+  .sm-status[data-est="archived"]{--sm-fundo:#EEEEF0;--sm-texto:#55555C}
+  .sm-status.sm-neutro{--sm-fundo:#F1F1F3;--sm-texto:#3A3A40}
+  .ops-cab .sm-tags{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0}
+  .ops-cab .sm-add-tag{height:28px;border:1px dashed var(--linha-f)!important;background:none!important;color:var(--tinta-2)!important;font-size:12px;padding:0 10px}
+  .ops-cab .sm-add-tag:hover{color:var(--preto)!important;border-color:var(--preto)!important}
   .ops-cab .ops-titulo > .acoes{display:flex;flex-wrap:wrap;align-items:center;gap:8px;justify-content:flex-end}
-  .sm-situacao{display:flex;align-items:center;gap:8px}
-  .sm-bola{width:10px;height:10px;border-radius:50%;background:var(--sm-cor,#16B36B);box-shadow:0 0 0 3px rgba(255,255,255,.08);flex:none}
-  .sm-situacao[data-est="active"]{--sm-cor:#16B36B}
-  .sm-situacao[data-est="on_hold"]{--sm-cor:#E08600}
-  .sm-situacao[data-est="done"]{--sm-cor:#6D8BFF}
-  .sm-situacao[data-est="archived"]{--sm-cor:#8A8A92}
-  .ops-cab .tf-excluir-cab{color:#FF8A8A}
-  .ops-cab .tf-excluir-cab:hover{color:#fff;background:var(--vermelho);border-color:var(--vermelho)}
-  @media (max-width:760px){ .ops-cab .ops-titulo > .acoes{justify-content:flex-start} }
   .ops-cab .acoes > .mu-comp-box{display:contents}
+  .ops-cab .sm-so-ico{width:36px;padding:0;justify-content:center}
+  .ops-cab .tf-excluir-cab.sm-so-ico:hover{color:var(--branco);background:var(--vermelho);border-color:var(--vermelho)}
+  .ops-cab .aviso-faixa{margin-top:4px}
+  @media (max-width:760px){ .sm-linha h1{font-size:24px} .ops-cab .ops-titulo > .acoes{justify-content:flex-start} }

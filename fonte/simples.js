@@ -77,53 +77,65 @@ document.addEventListener('click', ev => {
 }, true);
 document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && $('.sm-abas-menu:not([hidden])')){ ev.stopPropagation(); smFecharMenuAbas(); const b = $('[data-sm-mais-abas]'); if (b) b.focus(); } }, true);
 
-/* ---------- cabeçalho do ponto escolhido: o que é, como está e o que dá para fazer ---------- */
-const SM_TIPO_NO = {Client:['Cliente','cliente'], Project:['Projeto','projeto'], Product:['Produto','produto'], Application:['Aplicação','aplicação'], Workstream:['Frente de trabalho','frente']};
+/* ---------- cabeçalho do ponto escolhido: só o nome, onde fica, a situação e os botões ---------- */
+const SM_TIPO_NO = {Client:'Cliente', Project:'Projeto', Product:'Produto', Application:'Aplicação', Workstream:'Frente de trabalho'};
+const SM_ICO_MAIS = '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>';
 function smCabecalho(){
-  const tit = $('.ops-cab .ops-titulo'); if (!tit || tit.dataset.sm) return; tit.dataset.sm = '1';
+  const cab = $('.ops-cab'), tit = cab && $('.ops-titulo', cab); if (!tit || tit.dataset.sm) return; tit.dataset.sm = '1';
   const esq = $('.titulo-esq', tit), acoes = $(':scope > .acoes', tit), h1 = esq && $('h1', esq); if (!h1) return;
-  const pequeno = $('small', h1), tipo = pequeno && SM_TIPO_NO[pequeno.textContent.trim()];
-  if (tipo) pequeno.textContent = tipo[0];
-  if (UI.sel === 'all'){
-    smTrocarTexto(h1, 'Tudo'); if (pequeno) pequeno.textContent = 'Todos os projetos';
-    smTrocarInfo(h1, 'Tudo: os itens de todos os clientes e projetos numa tela só, com as mesmas abas e filtros.');
-    $$('.ops-cab .ops-trilha [data-rc-tudo]').forEach(b => { b.textContent = 'Tudo'; });
+  // "Projeto em Blanco & Lisboa": o tipo e onde fica, numa linha só (no lugar da trilha, que repetia o nome)
+  const pequeno = $('small', h1), tipo = UI.sel === 'all' ? 'Todos os clientes e projetos' : (pequeno && (SM_TIPO_NO[pequeno.textContent.trim()] || pequeno.textContent.trim())) || '';
+  if (pequeno) pequeno.remove();
+  $$('button.info', h1).forEach(b => b.remove());
+  if (UI.sel === 'all') smTrocarTexto(h1, 'Tudo');
+  const trilha = $('.ops-trilha', cab), onde = document.createElement('p'); onde.className = 'sm-onde';
+  onde.innerHTML = '<span class="sm-tipo">' + esc(tipo) + '</span>';
+  if (trilha && UI.sel !== 'all'){
+    const bs = $$('button', trilha).slice(0, -1);   // o último é ele mesmo
+    if (bs.length){ onde.insertAdjacentHTML('beforeend', ' <span class="sm-em">em</span> '); bs.forEach((b, i) => { if (i) onde.insertAdjacentHTML('beforeend', '<span class="sm-sep" aria-hidden="true">›</span>'); onde.appendChild(b); }); }
   }
-  $$('.ops-arvore .rc-tudo .nome').forEach(n => { n.textContent = 'Tudo'; });
-  // uma linha que diz como está
-  if (UI.sel){
-    const its = issuesEm(UI.sel), abertos = its.filter(i => i.status !== 'done'), atr = abertos.filter(atrasado).length, trav = abertos.filter(i => i.status === 'blocked').length;
-    const partes = [its.length ? abertos.length + (abertos.length === 1 ? ' item em aberto' : ' itens em aberto') : 'Nenhum item ainda'];
-    if (its.length) partes.push(Math.round((its.length - abertos.length) / its.length * 100) + '% concluído');
-    if (atr) partes.push('<b class="sm-ruim">' + atr + (atr === 1 ? ' atrasado' : ' atrasados') + '</b>');
-    if (trav) partes.push('<b class="sm-ruim">' + trav + (trav === 1 ? ' travado' : ' travados') + '</b>');
-    h1.insertAdjacentHTML('afterend', '<p class="sm-resumo-no">' + partes.join('<span aria-hidden="true"> · </span>') + '</p>');
-  }
-  // etiquetas numa linha própria, com nome
-  const tags = $('.tags', esq);
-  if (tags){
-    tags.insertAdjacentHTML('afterbegin', '<span class="sm-rot-tags">Etiquetas</span>');
-    $$('.tag.sistema', tags).forEach(t => { t.title = 'Etiqueta automática: vem da ligação com o cliente e não pode ser apagada'; });
-    const add = $('[data-acao="por-tag"]', tags); if (add) smTrocarTexto(add, 'Etiqueta');
-    esq.appendChild(tags);
-  }
-  // situação: rótulo em português, nome curto e bolinha com a cor
+  if (trilha) trilha.classList.add('sm-escondida');
+  esq.insertBefore(onde, h1);
+  // linha do nome: nome, situação, etiquetas
+  const linha = document.createElement('div'); linha.className = 'sm-linha'; esq.insertBefore(linha, h1); linha.appendChild(h1);
   const sel = acoes && $('select[data-estado]', acoes);
   if (sel){
-    const lab = sel.closest('label'); if (lab){ smTrocarTexto(lab, 'Situação'); lab.classList.add('sm-situacao'); lab.dataset.est = sel.value; sel.insertAdjacentHTML('beforebegin', '<span class="sm-bola" aria-hidden="true"></span>'); }
+    const lab = sel.closest('label'), pilula = document.createElement('span');
+    pilula.className = 'sm-status'; pilula.dataset.est = sel.value; pilula.innerHTML = '<span class="sm-bola" aria-hidden="true"></span>';
+    sel.setAttribute('aria-label', 'Situação');
     $$('option', sel).forEach(o => { const [n, ...x] = o.textContent.split(' · '); if (x.length){ o.title = x.join(' · '); o.textContent = n; } });
-    sel.addEventListener('change', () => { if (lab) lab.dataset.est = sel.value; });
+    pilula.appendChild(sel); linha.appendChild(pilula); if (lab) lab.remove();
+    sel.addEventListener('change', () => { pilula.dataset.est = sel.value; });
   }
-  const faixa = $('.ops-cab .aviso-faixa b'); if (faixa && faixa.textContent.trim() === 'On Hold') faixa.textContent = 'Pausado';
+  const orig = acoes && $('select[data-rc-origem]', acoes);
+  if (orig){
+    const lab = orig.closest('label'), p2 = document.createElement('span'); p2.className = 'sm-status sm-neutro';
+    orig.setAttribute('aria-label', 'De quem é o código'); orig.title = 'Nosso: feito pela IT.IA. De terceiros: feito por outra empresa (o Discovery ganha itens a mais).';
+    $$('option', orig).forEach(o => { o.textContent = o.value === 'terceiros' ? 'Código de terceiros' : 'Código nosso'; });
+    p2.appendChild(orig); linha.appendChild(p2); if (lab) lab.remove();
+  }
+  const tags = $('.tags', esq);
+  if (tags){
+    $$('.tag.sistema', tags).forEach(t => t.remove());   // "Holding: ..." repete o que a linha de cima já diz
+    const add = $('[data-acao="por-tag"]', tags); if (add){ smTrocarTexto(add, 'Etiqueta'); add.classList.add('sm-add-tag'); add.title = 'Pôr uma etiqueta'; }
+    tags.classList.add('sm-tags'); linha.appendChild(tags);
+  }
+  // botões: Mover já está em "Mais"; Mais e Excluir viram só ícone
+  if (acoes){
+    const mover = $('[data-acao="mover-app"]', acoes); if (mover) mover.remove();
+    const mais = $('.tf-mais-cab', acoes); if (mais){ mais.innerHTML = SM_ICO_MAIS; mais.setAttribute('aria-label', 'Mais ações'); mais.title = 'Mais ações: criar dentro, duplicar, mover, arquivar'; mais.classList.add('sm-so-ico'); }
+    const exc = $('.tf-excluir-cab', acoes); if (exc){ const sp = $('span', exc); if (sp) sp.remove(); exc.setAttribute('aria-label', 'Excluir'); exc.title = 'Excluir (vai para a lixeira por 30 dias)'; exc.classList.add('sm-so-ico'); acoes.appendChild(exc); }
+  }
+  const faixa = $('.aviso-faixa b', cab); if (faixa && /^(On Hold|Pausado)$/.test(faixa.textContent.trim())) faixa.textContent = 'Motivo da pausa:';
+  $$('.ops-arvore .rc-tudo .nome').forEach(n => { n.textContent = 'Tudo'; });
   smCompartilharJunto();
-  const exc = acoes && $('.tf-excluir-cab', acoes); if (exc) acoes.appendChild(exc);
 }
 // o botão Compartilhar chega um instante depois (multiusuario.js); vai para junto dos outros botões
 function smCompartilharJunto(){
   const tit = $('#m-operacoes .ops-titulo'), comp = tit && $(':scope > .mu-comp-box', tit), acoes = tit && $(':scope > .acoes', tit);
   if (!comp || !acoes) return;
   const b = $('.mu-compartilhar', comp); if (b) b.classList.remove('peq');
-  acoes.insertBefore(comp, $('.tf-mais-cab', acoes) || null);
+  acoes.insertBefore(comp, acoes.firstChild);
 }
 new MutationObserver(() => { if ($('#m-operacoes .ops-titulo > .mu-comp-box')) smCompartilharJunto(); }).observe(document.querySelector('.principal') || document.body, {childList:true, subtree:true});
 const _rOperacoesSmCab = rOperacoes;
