@@ -213,7 +213,7 @@ begin
 end $$;
 
 -- ambiente com nome da gente: Production/prod -> producao; Preview/staging/homolog -> previa/homologacao
-create or replace function interno.codigo_ambiente(p text) returns text language sql immutable as $$
+create or replace function interno.codigo_ambiente(p text) returns text language sql immutable set search_path = pg_catalog, pg_temp as $$
   select case when p is null or btrim(p) = '' then 'producao'
               when p ~* '^(prod|production|produ)' then 'producao'
               when p ~* '(preview|previa)' then 'previa'
