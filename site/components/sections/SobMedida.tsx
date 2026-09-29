@@ -6,7 +6,7 @@ import { Botao } from "@/components/ui/Botao";
 const PASSOS = [
   { n: "01", nome: "Você apresenta o cenário atual", texto: "Por WhatsApp ou e-mail: o processo, as planilhas e os sistemas que limitam a operação." },
   { n: "02", nome: "Mapeamos o processo com você", texto: "Uma conversa para entender quem faz o quê, onde o tempo se perde e o que precisa mudar." },
-  { n: "03", nome: "Você recebe o plano", texto: "Uma proposta com escopo, etapas e as primeiras entregas." },
+  { n: "03", nome: "Definimos o caminho juntos", texto: "Escopo, etapas e as primeiras entregas, combinados com você." },
 ];
 
 export function SobMedida() {
@@ -21,7 +21,7 @@ export function SobMedida() {
           <p className="sm-texto">Você conversa diretamente com quem desenvolve. Compreendemos como o trabalho acontece hoje e indicamos o que automatizar, o que integrar e por onde começar.</p>
           <div className="sm-acoes">
             <Botao href={contato.whatsapp} estilo="claro" externo>Quero conversar sobre o meu sistema</Botao>
-            <p className="sm-micro">Conversa sem compromisso. Se preferir, escreva para <span className="sm-email">{contato.email}</span></p>
+            <p className="sm-micro">Se preferir, escreva para <span className="sm-email">{contato.email}</span></p>
           </div>
         </div>
         <ol className="sm-passos" aria-label="O que acontece depois">

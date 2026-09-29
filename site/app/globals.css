@@ -176,6 +176,7 @@ a { color: inherit; }
 .cat-ficha > div { background: var(--branco); padding: 20px; display: grid; gap: 8px; align-content: start; }
 .cat-ficha dd { margin: 0; font-size: 15px; color: var(--tinta-2); }
 .cat-ficha-ia { background: var(--preto) !important; grid-column: 1 / -1; }
+.cat-chegando { margin-left: 10px; padding: 3px 8px; border: 1px solid var(--vermelho); color: var(--branco); font-size: 10px; letter-spacing: .14em; }
 .cat-ficha > div:nth-child(3) { grid-column: 1 / -1; }
 .cat-papeis ul { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
 .cat-papeis li { font-family: var(--font-mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--branco); border: 1px solid var(--grafite); padding: 6px 10px; }

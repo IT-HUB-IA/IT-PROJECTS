@@ -49,11 +49,11 @@ export const frentes: Frente[] = [
 ];
 
 // o CicloDev no catálogo: só o essencial, o resto fica no site dele
-export const ciclodevFicha: { rot: string; texto: string; papeis?: string[]; destaque?: boolean }[] = [
+export const ciclodevFicha: { rot: string; texto: string; papeis?: string[]; destaque?: boolean; chegando?: boolean }[] = [
   { rot: "Estrutura", texto: "Moldada ao seu trabalho: cliente, projeto, produto, aplicação e frente." },
   { rot: "Visões", texto: "Painel, Board, Lista, Tabela, Calendário e Linha do tempo, sempre sincronizados." },
   { rot: "Governança", texto: "Etapas com trava: cada fase exige comprovação para avançar." },
-  { rot: "IA integrada", texto: "DevIT, o agente conectado ao código e ao banco de dados que acompanha o projeto do escopo à entrega.", papeis: ["Product Owner", "Arquiteto de software", "Segurança"], destaque: true },
+  { rot: "IA integrada", texto: "DevIT, o agente conectado ao código e ao banco de dados que acompanha o projeto do escopo à entrega.", papeis: ["Product Owner", "Arquiteto de software", "Segurança"], destaque: true, chegando: true },
 ];
 
 // regras da casa: valem para todo sistema que sai da IT.IA

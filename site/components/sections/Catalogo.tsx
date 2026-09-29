@@ -31,7 +31,7 @@ export function Catalogo() {
             <dl className="cat-ficha">
               {ciclodevFicha.map(f => (
                 <div key={f.rot} className={f.destaque ? "cat-ficha-ia" : undefined}>
-                  <dt className="rotulo com-ponto">{f.rot}</dt>
+                  <dt className="rotulo com-ponto">{f.rot}{f.chegando && <span className="cat-chegando">Chegando</span>}</dt>
                   <dd>{f.texto}</dd>
                   {f.papeis && <dd className="cat-papeis"><ul aria-label="Papéis do DevIT">{f.papeis.map(x => <li key={x}>{x}</li>)}</ul></dd>}
                 </div>
