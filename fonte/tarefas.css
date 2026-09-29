@@ -128,3 +128,8 @@
   .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
   .tf-editor[hidden],.tf-ver[hidden],.tf-area[hidden],.tf-previa-caixa[hidden],.tf-aviso[hidden]{display:none}
   .conteudo[hidden],.conteudo.sem-pad[hidden]{display:none}   /* igual ao site publicado, que já esconde todo [hidden] */
+  .tf-excluir-cab{color:var(--vermelho);gap:6px}
+  .tf-excluir-cab:hover{background:rgba(255,0,0,.08)}
+  .ops-cab .tf-excluir-cab{color:#FF6B6B}
+  .tf-rodape-item{display:flex;gap:6px;flex-wrap:wrap}
+  .tf-rodape-item .btn{gap:6px}

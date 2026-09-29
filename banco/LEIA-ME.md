@@ -34,6 +34,21 @@ Testada no Postgres local (`96_teste_tarefas_LOCAL.sql`: 37 de 37) e conferida n
 | `lixeira_mover`, `lixeira_restaurar`, `lixeira_apagar`, `lixeira_listar` | O que a tela chama. Confere quem pode: o que é do meu espaço, ou está dentro de algo compartilhado comigo como owner ou dev. O ponto compartilhado em si só o dono do espaço exclui |
 | Rotina `ciclodev_lixeira` (todo dia, 4h23) | Apaga de vez o que está na lixeira há mais de 30 dias, com tudo o que tinha dentro |
 
+## Parte 19: código, publicações e notas de versão (29/09/2026, AINDA NÃO APLICADA)
+
+Testada no Postgres local (`97_teste_codigo_LOCAL.sql`: 42 de 42; a parte 18 continua 37 de 37 com a 19 por cima). **Aplicar ANTES de publicar a tela nova**: a tela passa a gravar `marcos.notas`.
+
+| Peça | Para que serve |
+|---|---|
+| `repositorios` | Repositório do GitHub ou do GitLab ligado a um projeto ou a uma aplicação. Stakeholder não vê |
+| `interno.repositorios_segredos` | O segredo de cada repositório para o aviso automático (webhook). A tela não lê a tabela; `repositorio_segredo(p_repo, p_trocar)` mostra ou troca, só para quem pode editar o ponto |
+| `codigo_vinculos` | Branch, commit e pull request (merge request) de cada item |
+| `publicacoes` | O que foi para o ar: quando, ambiente, versão, de onde veio (manual, GitHub, GitLab) |
+| `marcos.notas` | Notas de versão (as versões são os marcos do tipo release) |
+| `git_receber(...)` | Recebe o aviso: confere a assinatura (GitHub: HMAC SHA-256 do corpo; GitLab: token), acha as chaves dos itens (ex.: BL-37) no branch, no commit e no título do PR, liga e anda o status (branch/commit: Em andamento; PR aberto: Em revisão; PR mesclado: Concluído; nunca volta). Release e deployment viram publicação; publicação em produção de uma versão de mesmo nome marca a versão como entregue. Só o papel `service_role` chama |
+
+Junto vai a Edge Function `supabase/functions/git-webhook` (implantar com **verify_jwt desligado**, porque quem chama é o GitHub ou o GitLab). Ela não abre o conteúdo: só repassa corpo e cabeçalhos para `git_receber`. Testes da lógica: `node --experimental-strip-types supabase/functions/git-webhook/logica.test.ts` (10 de 10).
+
 ## Como aplicar num banco novo (se um dia precisar)
 
 1. **Antes de tudo, olhar o banco.** O arquivo foi feito para um banco vazio.
@@ -60,6 +75,8 @@ Testada no Postgres local (`96_teste_tarefas_LOCAL.sql`: 37 de 37) e conferida n
 | `91_usuarios_teste_LOCAL.sql`, `92_carga_volume_LOCAL.sql` | Logins falsos e volume grande para medir desempenho | Não |
 | `18_tarefas_lixeira_modelos.sql` | Item que se repete, lembrete, histórico da descrição, lixeira (excluir e restaurar em 30 dias) e modelos de item e de estrutura | Sim (aplicada em 29/09/2026) |
 | `96_teste_tarefas_LOCAL.sql` | 37 testes da parte 18: repetição, lembrete, versões, lixeira, limpeza de 30 dias, modelos e quem pode o quê | Não |
+| `19_codigo_entregas.sql` | Código do GitHub e do GitLab ligado aos itens (status anda sozinho), registro das publicações e notas de versão | Sim (ainda não aplicada, ver abaixo) |
+| `97_teste_codigo_LOCAL.sql` | 42 testes da parte 19: avisos assinados do GitHub e do GitLab, status sozinho, publicações, versões e quem pode o quê | Não |
 
 ## Decisões de estrutura (e por quê)
 

@@ -693,6 +693,9 @@ document.addEventListener('click', e => {
   let b;
   if ((b = e.target.closest('[data-tf-acoes-item]'))){ e.preventDefault(); e.stopPropagation(); if ($('#tf-menu') && $('#tf-menu')._ancora === b){ tfFecharMenu(); return; } const i = byId('issues', b.dataset.tfAcoesItem); if (i) tfAcoesItem(i, b); return; }
   if ((b = e.target.closest('[data-tf-acoes-no]'))){ e.preventDefault(); e.stopPropagation(); if ($('#tf-menu') && $('#tf-menu')._ancora === b){ tfFecharMenu(); return; } tfAcoesNo(b.dataset.tfAcoesNo, b); return; }
+  if ((b = e.target.closest('[data-tf-excluir-no]'))){ e.stopPropagation(); tfExcluirNo(b.dataset.tfExcluirNo); return; }
+  if ((b = e.target.closest('[data-tf-excluir-item]'))){ e.stopPropagation(); const i = byId('issues', b.dataset.tfExcluirItem); if (i) tfExcluirItem(i); return; }
+  if ((b = e.target.closest('[data-tf-arquivar-item]'))){ e.stopPropagation(); const i = byId('issues', b.dataset.tfArquivarItem); if (i){ tfComDesfazer('Item arquivado.', () => { i.arquivado = true; registrar('arquivou', i); }); fecharItem(); } return; }
   if ((b = e.target.closest('[data-tf-lembrete]'))){ e.stopPropagation(); const i = byId('issues', b.dataset.tfLembrete); if (i) tfLembrete(i); return; }
   if ((b = e.target.closest('[data-tf-repetir]'))){ e.stopPropagation(); const i = byId('issues', b.dataset.tfRepetir); if (i) tfRepetir(i); return; }
 }, true);
@@ -710,7 +713,8 @@ rOperacoes = function(){
   _rOperacoesTf();
   if (!podeEditar() || !UI.sel || UI.sel === 'all' || !tfObjNo(UI.sel)) return;
   const ac = $('.ops-titulo .acoes'); if (!ac || ac.querySelector('[data-tf-acoes-no]')) return;
-  ac.insertAdjacentHTML('beforeend', '<button class="btn sec tf-mais-cab" type="button" data-tf-acoes-no="' + UI.sel + '" aria-haspopup="menu" aria-expanded="false">' + TF_ICO.mais + '<span>Mais</span></button>');
+  ac.insertAdjacentHTML('beforeend', '<button class="btn sec tf-mais-cab" type="button" data-tf-acoes-no="' + UI.sel + '" aria-haspopup="menu" aria-expanded="false">' + TF_ICO.mais + '<span>Mais</span></button>' +
+    '<button class="btn fant tf-excluir-cab" type="button" data-tf-excluir-no="' + UI.sel + '" title="Vai para a lixeira por 30 dias">' + TF_ICO.lixo + '<span>Excluir</span></button>');
 };
 
 /* ---------- a gaveta do item: ações, lembrete, repetição e descrição formatada ---------- */
@@ -741,7 +745,9 @@ abrirItem = function(id){
   const faixa = $('.g-faixa', g); if (faixa) faixa.insertAdjacentHTML('afterend', tfChipsItem(i, pode));
   const desc = $('textarea[data-g="desc"]', g); const sec = desc && desc.closest('.g-sec');
   if (sec){ sec.classList.add('tf-desc'); sec.innerHTML = tfDescHTML(i, pode); }
-  const arq = $('[data-acao="arquivar-item"]', g); if (arq) arq.remove();   // agora fica no menu ⋯
+  const arq = $('[data-acao="arquivar-item"]', g);
+  if (arq) arq.outerHTML = pode ? '<div class="tf-rodape-item"><button type="button" class="btn fant peq" data-tf-arquivar-item="' + i.id + '" title="Sai das telas e fica guardado">' + TF_ICO.arquivo + 'Arquivar</button>' +
+    '<button type="button" class="btn fant peq perigo" data-tf-excluir-item="' + i.id + '" title="Vai para a lixeira por 30 dias">' + TF_ICO.lixo + 'Excluir</button></div>' : '';
   const ptsDup = $('select[data-rc-g="pontos"]', g); if (ptsDup && $('select[data-bj-campo="pontos"]', g)) { const l = ptsDup.closest('.d-lin'); if (l) l.remove(); }   // Story points aparecia duas vezes
 };
 function tfAbrirEditor(g, focar){

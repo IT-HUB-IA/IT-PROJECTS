@@ -1768,6 +1768,99 @@ dialog.modal.modal-larga{max-width:min(960px,calc(100% - 32px))}
   .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
   .tf-editor[hidden],.tf-ver[hidden],.tf-area[hidden],.tf-previa-caixa[hidden],.tf-aviso[hidden]{display:none}
   .conteudo[hidden],.conteudo.sem-pad[hidden]{display:none}   /* igual ao site publicado, que já esconde todo [hidden] */
+  .tf-excluir-cab{color:var(--vermelho);gap:6px}
+  .tf-excluir-cab:hover{background:rgba(255,0,0,.08)}
+  .ops-cab .tf-excluir-cab{color:#FF6B6B}
+  .tf-rodape-item{display:flex;gap:6px;flex-wrap:wrap}
+  .tf-rodape-item .btn{gap:6px}
+/* ---------- Entregas: versões, publicações, repositórios e o código no item ---------- */
+  .en{display:grid;gap:28px}
+  .en-cab{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  .en-cab .lead{margin:0;max-width:640px}
+  .en-cab .acoes{display:flex;gap:8px;flex-wrap:wrap}
+  .en-cab .btn{gap:6px}
+  .en-sec{display:grid;gap:12px}
+  .en-sec > .sub{margin:0}
+  .en-mini{font-size:12px;margin:0}
+
+  .en-versoes{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+  .en-versao{border:1px solid var(--nevoa);box-shadow:inset 0 2px 0 var(--preto);background:var(--branco);padding:16px;display:grid;gap:10px;align-content:start}
+  .en-versao.entregue{box-shadow:inset 0 2px 0 #0E8A55}
+  .en-versao header{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .en-versao header b{font-family:var(--font-display);font-size:18px;font-weight:600;letter-spacing:-.01em}
+  .en-versao p{margin:0;font-size:13px}
+  .en-selo{margin-left:auto;font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:4px 8px;border:1px solid var(--nevoa);color:var(--grafite)}
+  .en-selo.ok{background:#0E8A55;border-color:#0E8A55;color:#fff}
+  .en-selo.atraso{background:var(--vermelho);border-color:var(--vermelho);color:#fff}
+  .en-prog{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--grafite)}
+  .en-prog .progresso{flex:1}
+  .en-versao footer{display:flex;flex-wrap:wrap;gap:6px;padding-top:4px;border-top:1px solid var(--preto-04)}
+  .en-versao footer .btn{gap:6px}
+
+  .en-tab td small{display:block;color:var(--grafite);font-size:12px}
+  .en-tab td svg{vertical-align:-3px;margin-right:6px}
+  .en-st{display:inline-flex;align-items:center;gap:6px;font-size:12px}
+  .en-st::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--nevoa)}
+  .en-st-sucesso::before{background:#0E8A55}.en-st-falha::before{background:var(--vermelho)}.en-st-em_andamento::before{background:#E08600}
+
+  .en-repos{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
+  .en-repo{border:1px solid var(--nevoa);background:var(--branco);padding:16px;display:grid;gap:10px}
+  .en-repo header{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .en-repo header a{color:var(--preto);text-decoration:none;min-width:0;overflow-wrap:anywhere}
+  .en-repo header a:hover{text-decoration:underline}
+  .en-repo header .en-mini{flex-basis:100%;padding-left:24px}
+  .en-aviso-rep{margin:0;font-size:13px;padding:8px 10px;background:var(--preto-04);border-left:2px solid var(--nevoa)}
+  .en-aviso-rep.ok{border-left-color:#0E8A55}
+  .en-aviso-rep.erro{border-left-color:var(--vermelho);color:var(--preto)}
+  .en-repo footer{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .en-liga{display:flex;gap:8px;align-items:center;font-size:13px;cursor:pointer}
+  .en-liga input{accent-color:var(--preto)}
+  .en-acoes{display:flex;gap:6px}
+
+  .en-feed{list-style:none;margin:0;padding:0;border:1px solid var(--nevoa);background:var(--branco)}
+  .en-feed li{display:flex;align-items:center;gap:12px;padding:10px 14px;border-top:1px solid var(--preto-04)}
+  .en-feed li:first-child{border-top:0}
+  .en-feed li > svg{flex:0 0 16px;color:var(--grafite)}
+  .en-feed-t{flex:1;min-width:0;font-size:14px;overflow-wrap:anywhere}
+  .en-feed-t small{display:block;font-size:12px;color:var(--grafite)}
+  .en-link-item{border:0;background:none;padding:0;font:inherit;color:var(--preto);text-decoration:underline;cursor:pointer}
+
+  /* no item */
+  .en-dev{display:grid;gap:8px}
+  .en-dev .en-g{margin:6px 0 0}
+  .en-ls{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+  .en-l{display:flex;align-items:center;gap:8px;font-size:13px;min-width:0}
+  .en-l > svg{flex:0 0 16px;color:var(--grafite)}
+  .en-l-t{flex:1;min-width:0;display:grid}
+  .en-l-t a,.en-l-t > span{color:var(--preto);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .en-l-t small{font-size:11px;color:var(--grafite)}
+  .en-est{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;padding:3px 6px;border:1px solid var(--nevoa);color:var(--grafite);white-space:nowrap}
+  .en-est-aberto{border-color:#3355E0;color:#3355E0}.en-est-mesclado{background:#6D4AFF;border-color:#6D4AFF;color:#fff}
+  .en-est-fechado,.en-est-excluido{opacity:.6}.en-est-rascunho{border-style:dashed}
+  .en-dev-acoes{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+  .en-dev-acoes .btn{gap:6px}
+  .en-colar[hidden]{display:none}
+
+  /* janelas */
+  .en-notas{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+  .en-notas-ed .tf-area{min-height:320px}
+  .en-notas-ver{border:1px solid var(--nevoa);padding:12px 14px;max-height:420px;overflow:auto}
+  .en-notas-ver .rotulo-mini{margin:0 0 8px}
+  .en-passos{margin:0 0 14px;padding-left:20px;display:grid;gap:8px;font-size:14px}
+  .en-copia{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;border:1px solid var(--nevoa);padding:8px 10px;margin-top:8px}
+  .en-copia code{font-family:var(--font-mono);font-size:12px;overflow-wrap:anywhere;user-select:all}
+  .en-copia .btn{gap:6px}
+  @media (max-width:760px){
+    .en-notas{grid-template-columns:1fr}
+    .en-copia{grid-template-columns:1fr}
+    .en-repos,.en-versoes{grid-template-columns:1fr}
+  }
+  /* celular: aviso de ponta a ponta e botões das janelas quebram linha em vez de sair da tela */
+  dialog.modal .modal-rod{flex-wrap:wrap}
+  @media (max-width:560px){
+    .tf-aviso{left:16px;right:16px;transform:none;flex-wrap:wrap;row-gap:4px}
+    .tf-aviso-txt{flex:1 1 100%}
+  }
 
   .conteudo.sem-pad{padding:0;display:flex;flex-direction:column;flex:1}
   .conteudo.sem-pad > div{flex:1;display:flex;flex-direction:column}
@@ -7710,6 +7803,9 @@ document.addEventListener('click', e => {
   let b;
   if ((b = e.target.closest('[data-tf-acoes-item]'))){ e.preventDefault(); e.stopPropagation(); if ($('#tf-menu') && $('#tf-menu')._ancora === b){ tfFecharMenu(); return; } const i = byId('issues', b.dataset.tfAcoesItem); if (i) tfAcoesItem(i, b); return; }
   if ((b = e.target.closest('[data-tf-acoes-no]'))){ e.preventDefault(); e.stopPropagation(); if ($('#tf-menu') && $('#tf-menu')._ancora === b){ tfFecharMenu(); return; } tfAcoesNo(b.dataset.tfAcoesNo, b); return; }
+  if ((b = e.target.closest('[data-tf-excluir-no]'))){ e.stopPropagation(); tfExcluirNo(b.dataset.tfExcluirNo); return; }
+  if ((b = e.target.closest('[data-tf-excluir-item]'))){ e.stopPropagation(); const i = byId('issues', b.dataset.tfExcluirItem); if (i) tfExcluirItem(i); return; }
+  if ((b = e.target.closest('[data-tf-arquivar-item]'))){ e.stopPropagation(); const i = byId('issues', b.dataset.tfArquivarItem); if (i){ tfComDesfazer('Item arquivado.', () => { i.arquivado = true; registrar('arquivou', i); }); fecharItem(); } return; }
   if ((b = e.target.closest('[data-tf-lembrete]'))){ e.stopPropagation(); const i = byId('issues', b.dataset.tfLembrete); if (i) tfLembrete(i); return; }
   if ((b = e.target.closest('[data-tf-repetir]'))){ e.stopPropagation(); const i = byId('issues', b.dataset.tfRepetir); if (i) tfRepetir(i); return; }
 }, true);
@@ -7727,7 +7823,8 @@ rOperacoes = function(){
   _rOperacoesTf();
   if (!podeEditar() || !UI.sel || UI.sel === 'all' || !tfObjNo(UI.sel)) return;
   const ac = $('.ops-titulo .acoes'); if (!ac || ac.querySelector('[data-tf-acoes-no]')) return;
-  ac.insertAdjacentHTML('beforeend', '<button class="btn sec tf-mais-cab" type="button" data-tf-acoes-no="' + UI.sel + '" aria-haspopup="menu" aria-expanded="false">' + TF_ICO.mais + '<span>Mais</span></button>');
+  ac.insertAdjacentHTML('beforeend', '<button class="btn sec tf-mais-cab" type="button" data-tf-acoes-no="' + UI.sel + '" aria-haspopup="menu" aria-expanded="false">' + TF_ICO.mais + '<span>Mais</span></button>' +
+    '<button class="btn fant tf-excluir-cab" type="button" data-tf-excluir-no="' + UI.sel + '" title="Vai para a lixeira por 30 dias">' + TF_ICO.lixo + '<span>Excluir</span></button>');
 };
 
 /* ---------- a gaveta do item: ações, lembrete, repetição e descrição formatada ---------- */
@@ -7758,7 +7855,9 @@ abrirItem = function(id){
   const faixa = $('.g-faixa', g); if (faixa) faixa.insertAdjacentHTML('afterend', tfChipsItem(i, pode));
   const desc = $('textarea[data-g="desc"]', g); const sec = desc && desc.closest('.g-sec');
   if (sec){ sec.classList.add('tf-desc'); sec.innerHTML = tfDescHTML(i, pode); }
-  const arq = $('[data-acao="arquivar-item"]', g); if (arq) arq.remove();   // agora fica no menu ⋯
+  const arq = $('[data-acao="arquivar-item"]', g);
+  if (arq) arq.outerHTML = pode ? '<div class="tf-rodape-item"><button type="button" class="btn fant peq" data-tf-arquivar-item="' + i.id + '" title="Sai das telas e fica guardado">' + TF_ICO.arquivo + 'Arquivar</button>' +
+    '<button type="button" class="btn fant peq perigo" data-tf-excluir-item="' + i.id + '" title="Vai para a lixeira por 30 dias">' + TF_ICO.lixo + 'Excluir</button></div>' : '';
   const ptsDup = $('select[data-rc-g="pontos"]', g); if (ptsDup && $('select[data-bj-campo="pontos"]', g)) { const l = ptsDup.closest('.d-lin'); if (l) l.remove(); }   // Story points aparecia duas vezes
 };
 function tfAbrirEditor(g, focar){
@@ -7841,6 +7940,430 @@ linhasDaTela = function(d){
 
 // só nos testes locais (arquivo aberto direto, file://): acesso aos dados para conferir o resultado
 if (location.protocol === 'file:') window.__tf = {get D(){ return D; }, get UI(){ return UI; }, get itemAberto(){ return itemAberto; }, byId, abrirItem, fecharItem, rOperacoes, abrirArvore, salvarUI, tfEu, tfChecarLembretes, tfMd};
+
+/* =====================================================================
+   Entregas: código (GitHub e GitLab) ligado aos itens, versões com notas geradas
+   dos itens concluídos e o registro das publicações. Tudo ligado a um projeto
+   (ou a uma aplicação dele). Camada nova, depois do tarefas.js. Prefixo en.
+   ===================================================================== */
+const EN = {repos:null, pubs:null, carregando:null, atividade:null};
+const EN_URL_PADRAO = 'https://tfcvoszeewmpghgxztuy.supabase.co';
+const enSb = () => COM_BANCO ? window.ciclodevBanco : null;
+const enLocal = () => { D.dev = D.dev || {repos:[], pubs:[], links:[]}; return D.dev; };
+const EN_LOCAL = {repositorios:'repos', publicacoes:'pubs', codigo_vinculos:'links'};
+const EN_AMB = {producao:'Produção', homologacao:'Homologação', previa:'Prévia'};
+const enAmb = a => EN_AMB[a] || a || 'Produção';
+const EN_ST_PUB = {sucesso:'Deu certo', falha:'Falhou', em_andamento:'Em andamento'};
+const EN_ORIGEM = {manual:'Registrada aqui', github:'GitHub', gitlab:'GitLab'};
+const EN_EST = {ativo:'Ativo', aberto:'Aberto', rascunho:'Rascunho', mesclado:'Mesclado', fechado:'Fechado', excluido:'Apagado'};
+const EN_ICO = {
+  github:'<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-3.2 19.5c.5.1.7-.2.7-.5v-1.7c-2.8.6-3.4-1.3-3.4-1.3-.5-1.1-1.1-1.4-1.1-1.4-.9-.6.1-.6.1-.6 1 .1 1.6 1 1.6 1 .9 1.6 2.4 1.1 3 .9.1-.7.4-1.1.6-1.4-2.2-.3-4.6-1.1-4.6-5a3.9 3.9 0 0 1 1-2.7c-.1-.3-.5-1.3.1-2.7 0 0 .8-.3 2.8 1a9.6 9.6 0 0 1 5 0c1.9-1.3 2.8-1 2.8-1 .5 1.4.2 2.4.1 2.7a3.9 3.9 0 0 1 1 2.7c0 3.9-2.4 4.7-4.6 5 .4.3.7.9.7 1.9V21c0 .3.2.6.7.5A10 10 0 0 0 12 2z"/></svg>',
+  gitlab:'<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 21.4 15.7 10H8.3L12 21.4zM3.1 10 2 13.4c-.1.3 0 .7.3.9L12 21.4 3.1 10zm0 0h5.2L6 3c-.1-.4-.7-.4-.8 0L3.1 10zm17.8 0 1.1 3.4c.1.3 0 .7-.3.9L12 21.4 20.9 10zm0 0h-5.2L18 3c.1-.4.7-.4.8 0l2.1 7z"/></svg>',
+  branch:TF_SV('<circle cx="6" cy="5" r="2"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="7" r="2"/><path d="M6 7v10M18 9c0 5-7 4-11 8"/>'),
+  commit:TF_SV('<circle cx="12" cy="12" r="3.5"/><path d="M2 12h6.5M15.5 12H22"/>'),
+  pr:TF_SV('<circle cx="6" cy="5" r="2"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="19" r="2"/><path d="M6 7v10M18 17V9a3 3 0 0 0-3-3h-4"/><path d="M13 3l-3 3 3 3"/>'),
+  versao:TF_SV('<path d="M4 4h9l7 7-9 9-7-7z"/><circle cx="8.5" cy="8.5" r="1.4" fill="currentColor"/>'),
+  foguete:TF_SV('<path d="M14 4c3 0 6 3 6 6-2 4-6 7-6 7l-4-4s3-4 4-9z"/><path d="M10 13l-3 1-2 4 4-2 1-3M15 9h.01"/>'),
+  copiar:TF_SV('<rect x="8" y="8" width="12" height="12"/><path d="M16 8V4H4v12h4"/>')
+};
+
+/* ---------- dados: banco (Supabase) ou, no modo de exemplo, o navegador ---------- */
+async function enLer(tabela, filtro){
+  const sb = enSb();
+  if (!sb){ const L = enLocal()[EN_LOCAL[tabela]]; return filtro && filtro.local ? L.filter(filtro.local) : L.slice(); }
+  let q = sb.from(tabela).select('*');
+  if (filtro && filtro.eq) q = q.eq(filtro.eq[0], filtro.eq[1]);
+  if (filtro && filtro.em) q = q.in(filtro.em[0], filtro.em[1]);
+  if (filtro && filtro.ordem) q = q.order(filtro.ordem, {ascending:false});
+  if (filtro && filtro.limite) q = q.limit(filtro.limite);
+  const {data, error} = await q;
+  if (error) throw error;
+  return data || [];
+}
+async function enInserir(tabela, linha){
+  const sb = enSb();
+  if (!sb){ const nova = Object.assign({id:uid('dv'), criado_em:new Date().toISOString()}, linha); enLocal()[EN_LOCAL[tabela]].unshift(nova); salvar(); return nova; }
+  const {data, error} = await sb.from(tabela).insert(linha).select('*');
+  if (error || !data || !data.length){ toast('Não deu para gravar: ' + tfErro(error || 'o banco não confirmou')); return null; }
+  return data[0];
+}
+async function enAlterar(tabela, id, campos){
+  const sb = enSb();
+  if (!sb){ const x = enLocal()[EN_LOCAL[tabela]].find(r => r.id === id); if (x) Object.assign(x, campos); salvar(); return !!x; }
+  const {data, error} = await sb.from(tabela).update(campos).eq('id', id).select('id');
+  if (error || !data || !data.length){ toast('Não deu para alterar: ' + tfErro(error || 'sem permissão')); return false; }
+  return true;
+}
+async function enApagar(tabela, id){
+  const sb = enSb();
+  if (!sb){ const L = enLocal(); L[EN_LOCAL[tabela]] = L[EN_LOCAL[tabela]].filter(r => r.id !== id); if (tabela === 'repositorios') L.links = L.links.filter(l => l.repositorio_id !== id); salvar(); return true; }
+  const {data, error} = await sb.from(tabela).delete().eq('id', id).select('id');
+  if (error || !data || !data.length){ toast('Não deu para excluir: ' + tfErro(error || 'sem permissão')); return false; }
+  return true;
+}
+async function enCarregar(forcar){
+  if (EN.repos && EN.pubs && !forcar) return;
+  if (EN.carregando && !forcar) return EN.carregando;
+  EN.carregando = (async () => {
+    try { const [r, p] = await Promise.all([enLer('repositorios', {ordem:'criado_em'}), enLer('publicacoes', {ordem:'publicado_em', limite:300})]); EN.repos = r; EN.pubs = p; EN.erro = null; }
+    catch(e){ EN.repos = EN.repos || []; EN.pubs = EN.pubs || []; EN.erro = tfErro(e); }
+    EN.carregando = null;
+  })();
+  return EN.carregando;
+}
+
+/* ---------- escopo: o ponto escolhido, o que está acima (até o projeto) e o que está dentro ---------- */
+function enNos(chave){
+  const s = new Set(caminho(chave).map(([k]) => k.split(':')[1]));
+  const d = tfDentro(chave); [...d.projs, ...d.prods, ...d.apps, ...d.ws].forEach(x => s.add(x));
+  return s;
+}
+const enProjeto = chave => { const p = cadeia(chave).project; return p ? 'project:' + p.id : chave; };
+const enVersoes = chave => marcosDoEscopo(chave).filter(m => m.tipo === 'release').sort((a, b) => String(b.entregue || b.data).localeCompare(String(a.entregue || a.data)));
+const enNomeNo = id => { const k = ['projects','products','apps','ws','clients'].map(l => byId(l, id) && ({projects:'project', products:'product', apps:'app', ws:'ws', clients:'client'}[l] + ':' + id)).find(Boolean); return k ? nomeDe(k) : 'Ponto excluído'; };
+const enUrlBanco = () => { const sb = enSb(); return (sb && sb.supabaseUrl) || EN_URL_PADRAO; };
+const enWebhook = r => enUrlBanco().replace(/\/$/, '') + '/functions/v1/git-webhook?r=' + r.id;
+function enHa(ts){ if (!ts) return ''; const m = Math.round((Date.now() - new Date(ts).getTime()) / 60000); if (m < 1) return 'agora'; if (m < 60) return 'há ' + m + ' min'; const h = Math.round(m / 60); if (h < 24) return 'há ' + h + ' h'; const d = Math.round(h / 24); return d === 1 ? 'ontem' : 'há ' + d + ' dias'; }
+const enData = ts => ts ? new Date(ts).toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'}) : '';
+function enCopiar(txt, botao){
+  const fim = ok => { if (botao){ const t = botao.textContent; botao.textContent = ok ? 'Copiado' : 'Selecione e copie'; setTimeout(() => { botao.textContent = t; }, 1600); } };
+  try { navigator.clipboard.writeText(txt).then(() => fim(true), () => fim(false)); } catch(e){ fim(false); }
+}
+// nome de branch com a chave do item (é assim que o GitHub e o GitLab ligam o código ao item)
+function enBranch(i){
+  const chave = (typeof chaveDe === 'function' ? chaveDe(i) : i.chave) || 'ITEM';
+  const slug = String(i.titulo || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 48).replace(/-$/, '');
+  return chave + (slug ? '-' + slug : '');
+}
+// link colado: descobre se é PR/MR, commit ou branch
+function enLerLink(url){
+  let u; try { u = new URL(url.trim()); } catch(e){ return null; }
+  if (!/^https?:$/.test(u.protocol)) return null;
+  const p = u.pathname.replace(/\/+$/, ''), gl = /gitlab/i.test(u.host) || p.includes('/-/');
+  let m;
+  if ((m = p.match(/^\/(.+?)\/pull\/(\d+)/)) || (m = p.match(/^\/(.+?)\/-\/merge_requests\/(\d+)/))) return {provedor:gl ? 'gitlab' : 'github', tipo:'pr', ref:m[2], repo:m[1], url:u.href};
+  if ((m = p.match(/^\/(.+?)\/(?:-\/)?commits?\/([0-9a-f]{7,40})/i))) return {provedor:gl ? 'gitlab' : 'github', tipo:'commit', ref:m[2], repo:m[1], url:u.href};
+  if ((m = p.match(/^\/(.+?)\/(?:-\/)?tree\/(.+)$/))) return {provedor:gl ? 'gitlab' : 'github', tipo:'branch', ref:decodeURIComponent(m[2]), repo:m[1], url:u.href};
+  return null;
+}
+function enLerRepo(url){
+  let u; try { u = new URL(url.trim().replace(/\.git$/, '')); } catch(e){ const m = String(url).trim().match(/^([A-Za-z0-9_.-]+(?:\/[A-Za-z0-9_.-]+)+)$/); return m ? {nome:m[1]} : null; }
+  const nome = u.pathname.replace(/^\/+|\/+$/g, '').replace(/\/-\/.*$/, '').replace(/\/(tree|blob|pulls?|issues|merge_requests)\/.*$/, '');
+  if (!/^[A-Za-z0-9_.-]+(\/[A-Za-z0-9_.-]+)+$/.test(nome)) return null;
+  return {nome, provedor:/gitlab/i.test(u.host) ? 'gitlab' : /github/i.test(u.host) ? 'github' : null, url:u.origin + '/' + nome};
+}
+
+/* ---------- notas de versão a partir dos itens concluídos ---------- */
+function enItensDaVersao(m){
+  const escopo = issuesEm(m.no || UI.sel);
+  const ligados = escopo.filter(i => i.marco === m.id);
+  if (ligados.length) return {itens:ligados.filter(i => i.status === 'done'), modo:'ligados', total:ligados.length};
+  const anteriores = enVersoes(m.no || UI.sel).filter(x => x.id !== m.id && x.entregue && (!m.entregue || x.entregue < m.entregue)).map(x => x.entregue).sort();
+  const desde = anteriores.length ? anteriores[anteriores.length - 1] : null;
+  const ate = m.entregue || null;
+  return {itens:escopo.filter(i => i.status === 'done' && i.feito && (!desde || i.feito > desde) && (!ate || i.feito <= ate)), modo:'periodo', desde, total:0};
+}
+function enGerarNotas(m, soCliente){
+  const r = enItensDaVersao(m);
+  const its = r.itens.filter(i => !soCliente || i.vis === 'cliente');
+  const grupo = {novidades:[], melhorias:[], correcoes:[]};
+  its.forEach(i => { (i.tipo === 'bug' ? grupo.correcoes : ['epic','story'].includes(i.tipo) ? grupo.novidades : grupo.melhorias).push(i); });
+  const linha = i => '- ' + i.titulo + ((typeof chaveDe === 'function' && chaveDe(i)) ? ' (' + chaveDe(i) + ')' : '');
+  let t = '## ' + m.nome + '\n\n' + (m.entregue ? 'Publicada em ' + fmtData(m.entregue) + '.' : 'Prevista para ' + fmtData(m.data) + '.') + '\n';
+  if (m.desc) t += '\n' + m.desc + '\n';
+  [['novidades','Novidades'], ['melhorias','Melhorias'], ['correcoes','Correções']].forEach(([k, n]) => { if (grupo[k].length) t += '\n### ' + n + '\n' + grupo[k].map(linha).join('\n') + '\n'; });
+  if (!its.length) t += '\nNenhum item concluído ' + (r.modo === 'ligados' ? 'entre os ligados a esta versão' : 'desde a última versão') + ' ainda.\n';
+  return {texto:t, n:its.length, modo:r.modo, desde:r.desde};
+}
+
+/* ---------- a aba Entregas ---------- */
+VIEWS.splice(Math.max(0, VIEWS.findIndex(v => v[0] === 'custos')), 0, ['entregas', 'Entregas', 'versões, publicações e código']);
+EXPL_VIEW.entregas = 'Entregas: as versões do projeto com as notas de versão, o registro de tudo o que foi para o ar (quando, onde e qual versão) e os repositórios do GitHub e do GitLab ligados. Com o repositório ligado, branch, commit e pull request aparecem sozinhos em cada item e mudam o status dele.';
+const _rViewEn = rView;
+rView = function(){
+  if (UI.view === 'entregas'){ const c = $('#ops-corpo'); if (!c) return; enView(c); return; }
+  _rViewEn();
+};
+const _rOperacoesEn = rOperacoes;
+rOperacoes = function(){
+  _rOperacoesEn();
+  const tipo = (UI.sel || '').split(':')[0];
+  if (!['project','product','app'].includes(tipo) || !podeEditar()){ const b = $('.view-b[data-view="entregas"]'); if (b) (b.closest('.view-casa') || b).remove(); if (UI.view === 'entregas'){ UI.view = 'dashboard'; rView(); } }
+};
+function enView(c){
+  if (!EN.repos || !EN.pubs){ c.innerHTML = '<p class="sec" style="padding:24px">Lendo as entregas...</p>'; enCarregar().then(() => { if (UI.view === 'entregas' && $('#ops-corpo')) enView($('#ops-corpo')); }); return; }
+  c.innerHTML = enHTML(UI.sel);
+  enCarregarAtividade(UI.sel);
+}
+function enHTML(chave){
+  const pode = podeEditar(), nos = enNos(chave);
+  const repos = EN.repos.filter(r => nos.has(r.no_id)), pubs = EN.pubs.filter(p => nos.has(p.no_id)), versoes = enVersoes(chave);
+  const versaoCard = m => {
+    const lig = issuesEm(m.no || chave).filter(i => i.marco === m.id), feitos = lig.filter(i => i.status === 'done').length;
+    const atr = !m.entregue && m.data && parse(m.data) < HOJE;
+    return '<article class="en-versao' + (m.entregue ? ' entregue' : '') + '"><header>' + EN_ICO.versao + '<b>' + esc(m.nome) + '</b>' +
+      '<span class="en-selo ' + (m.entregue ? 'ok' : atr ? 'atraso' : '') + '">' + (m.entregue ? 'Publicada em ' + fmtData(m.entregue) : (atr ? 'Atrasada · era ' : 'Prevista para ') + fmtData(m.data)) + '</span></header>' +
+      (m.desc ? '<p class="sec">' + esc(m.desc) + '</p>' : '') +
+      (lig.length ? '<div class="en-prog"><div class="progresso"><i style="width:' + (feitos / lig.length * 100) + '%"></i></div><span>' + feitos + ' de ' + lig.length + ' itens concluídos</span></div>' : '<p class="sec en-mini">Sem itens ligados: as notas usam o que foi concluído desde a versão anterior.</p>') +
+      '<footer><button type="button" class="btn sec peq" data-en-notas="' + m.id + '">' + (m.notas ? 'Ver notas de versão' : 'Gerar notas de versão') + '</button>' +
+      (pode && !m.entregue ? '<button type="button" class="btn sec peq" data-en-publicar="' + m.id + '">' + EN_ICO.foguete + 'Publicar</button>' : '') +
+      (pode ? '<button type="button" class="btn fant peq perigo" data-en-excluir-versao="' + m.id + '">Excluir</button>' : '') + '</footer></article>';
+  };
+  const linhaPub = p => '<tr><td>' + esc(enData(p.publicado_em)) + '</td><td><b>' + esc(p.versao || '-') + '</b></td><td>' + esc(enAmb(p.ambiente)) + '</td>' +
+    '<td><span class="en-st en-st-' + esc(p.status) + '">' + esc(EN_ST_PUB[p.status] || p.status) + '</span></td><td>' + (p.origem !== 'manual' ? EN_ICO[p.origem] || '' : '') + esc(EN_ORIGEM[p.origem] || p.origem) + '</td>' +
+    '<td>' + (p.url ? '<a href="' + esc(p.url) + '" target="_blank" rel="noopener noreferrer">' + esc(p.referencia ? String(p.referencia).slice(0, 12) : 'abrir') + '</a>' : esc(p.referencia ? String(p.referencia).slice(0, 12) : '')) + (p.observacao ? '<small>' + esc(p.observacao) + '</small>' : '') + '</td>' +
+    '<td>' + (pode ? '<button type="button" class="btn fant peq perigo" data-en-excluir-pub="' + p.id + '">Excluir</button>' : '') + '</td></tr>';
+  const cardRepo = r => '<article class="en-repo"><header>' + (EN_ICO[r.provedor] || '') + '<a href="' + esc(r.url || (r.provedor === 'gitlab' ? 'https://gitlab.com/' : 'https://github.com/') + r.nome) + '" target="_blank" rel="noopener noreferrer"><b>' + esc(r.nome) + '</b></a>' +
+      '<span class="en-mini sec">ligado a ' + esc(enNomeNo(r.no_id)) + '</span></header>' +
+    '<p class="en-aviso-rep ' + (r.ultimo_erro ? 'erro' : r.ultimo_evento_em ? 'ok' : '') + '">' + (r.ultimo_erro ? esc(r.ultimo_erro) + ' · ' + enHa(r.ultimo_evento_em) : r.ultimo_evento_em ? 'Último aviso recebido: ' + esc(r.ultimo_evento) + ', ' + enHa(r.ultimo_evento_em) : (COM_BANCO ? 'Ainda não recebeu nenhum aviso. Falta ligar no ' + (r.provedor === 'gitlab' ? 'GitLab' : 'GitHub') + ': veja em "Como ligar".' : 'No modo de exemplo, os avisos do GitHub e do GitLab não chegam.')) + '</p>' +
+    '<footer>' + (pode ? '<label class="en-liga"><input type="checkbox" data-en-mover="' + r.id + '"' + (r.mover_status ? ' checked' : '') + '> Mudar o status dos itens sozinho</label>' : '') +
+      '<span class="en-acoes"><button type="button" class="btn sec peq" data-en-como="' + r.id + '">Como ligar</button>' + (pode ? '<button type="button" class="btn fant peq perigo" data-en-excluir-repo="' + r.id + '">Excluir</button>' : '') + '</span></footer></article>';
+  return '<div class="en">' +
+    '<div class="en-cab"><p class="lead">Versões, o que foi para o ar e o código ligado a <b>' + esc(nomeDe(chave)) + '</b>.</p>' +
+      (pode ? '<div class="acoes"><button type="button" class="btn" data-en-nova-versao>' + ICO.mais + 'Nova versão</button><button type="button" class="btn sec" data-en-nova-pub>' + EN_ICO.foguete + 'Registrar publicação</button><button type="button" class="btn sec" data-en-novo-repo>' + EN_ICO.branch + 'Ligar repositório</button></div>' : '') + '</div>' +
+    (EN.erro ? '<p class="aviso-faixa">Não deu para ler tudo do banco: ' + esc(EN.erro) + '</p>' : '') +
+    '<section class="en-sec"><h2 class="sub">Versões' + I('Versões (releases): cada entrega com nome, como v1.2.0. Ligue os itens a uma versão (campo Milestone do item) ou deixe as notas pegarem o que foi concluído desde a versão anterior.') + '</h2>' +
+      (versoes.length ? '<div class="en-versoes">' + versoes.map(versaoCard).join('') + '</div>' : '<div class="tf-vazio"><b>Nenhuma versão ainda.</b><p>Crie a primeira em "Nova versão". As notas de versão saem dos itens concluídos.</p></div>') + '</section>' +
+    '<section class="en-sec"><h2 class="sub">Publicações' + I('Publicações: o registro de cada vez que algo foi para o ar, quando, em que ambiente e com qual versão. Chega sozinho do GitHub e do GitLab (release e deployment) ou é registrado aqui.') + '</h2>' +
+      (pubs.length ? '<div class="tabela-rolo"><table class="tabela en-tab"><thead><tr><th scope="col">Quando</th><th scope="col">Versão</th><th scope="col">Ambiente</th><th scope="col">Situação</th><th scope="col">De onde</th><th scope="col">Referência</th><th scope="col"><span class="sr-only">Ações</span></th></tr></thead><tbody>' + pubs.map(linhaPub).join('') + '</tbody></table></div>'
+        : '<div class="tf-vazio"><b>Nada publicado ainda.</b><p>Registre em "Registrar publicação" ou ligue um repositório para as publicações chegarem sozinhas.</p></div>') + '</section>' +
+    '<section class="en-sec"><h2 class="sub">Repositórios' + I('Repositórios: o código do GitHub ou do GitLab. Com o repositório ligado, cada branch, commit e pull request que tiver a chave do item (por exemplo BL-37) aparece no item, e o status anda sozinho: branch ou commit leva para Em andamento, PR aberto para Em revisão e PR mesclado para Concluído.') + '</h2>' +
+      (repos.length ? '<div class="en-repos">' + repos.map(cardRepo).join('') + '</div>' : '<div class="tf-vazio"><b>Nenhum repositório ligado.</b><p>Ligue o repositório do projeto em "Ligar repositório". Leva um minuto.</p></div>') + '</section>' +
+    '<section class="en-sec"><h2 class="sub">Atividade de código</h2><div id="en-atividade"><p class="sec">Lendo...</p></div></section>' +
+  '</div>';
+}
+async function enCarregarAtividade(chave){
+  const el = $('#en-atividade'); if (!el) return;
+  const nos = enNos(chave), repos = (EN.repos || []).filter(r => nos.has(r.no_id)).map(r => r.id);
+  const itensEscopo = new Set(issuesEm(chave).map(i => i.id));
+  let L = [];
+  try {
+    if (!COM_BANCO) L = enLocal().links.filter(l => itensEscopo.has(l.item_id));
+    else if (repos.length) L = await enLer('codigo_vinculos', {em:['repositorio_id', repos], ordem:'quando', limite:30});
+  } catch(e){ el.innerHTML = '<p class="sec">Não deu para ler a atividade: ' + esc(tfErro(e)) + '</p>'; return; }
+  if (!$('#en-atividade')) return;
+  L = L.slice().sort((a, b) => String(b.quando).localeCompare(String(a.quando))).slice(0, 30);
+  el.innerHTML = L.length ? '<ul class="en-feed">' + L.map(l => { const i = byId('issues', l.item_id);
+    return '<li>' + (EN_ICO[l.tipo] || '') + '<span class="en-feed-t"><b>' + esc(l.tipo === 'pr' ? (l.provedor === 'gitlab' ? 'MR !' : 'PR #') + l.ref : l.tipo === 'commit' ? String(l.ref).slice(0, 7) : l.ref) + '</b> ' + esc(l.titulo && l.titulo !== l.ref ? l.titulo : '') +
+      '<small>' + (i ? '<button type="button" class="en-link-item" data-abrir-item="' + i.id + '">' + esc((typeof chaveDe === 'function' && chaveDe(i)) || '') + ' ' + esc(i.titulo) + '</button> · ' : '') + esc(EN_EST[l.estado] || l.estado) + (l.autor ? ' · ' + esc(l.autor) : '') + ' · ' + esc(enHa(l.quando)) + '</small></span>' +
+      (l.url ? '<a class="btn fant peq" href="' + esc(l.url) + '" target="_blank" rel="noopener noreferrer">Abrir</a>' : '') + '</li>'; }).join('') + '</ul>'
+    : '<p class="sec">' + (repos.length || !COM_BANCO ? 'Nenhum branch, commit ou pull request ligado a itens ainda. Use a chave do item (por exemplo BL-37) no nome do branch, na mensagem do commit ou no título do PR.' : 'Ligue um repositório para ver aqui o código de cada item.') + '</p>';
+}
+
+/* ---------- versões ---------- */
+function enProximoNome(chave){
+  const v = enVersoes(chave).map(m => (m.nome.match(/(\d+)\.(\d+)(?:\.(\d+))?/) || null)).filter(Boolean).map(m => [+m[1], +m[2], +(m[3] || 0)]).sort((a, b) => b[0] - a[0] || b[1] - a[1] || b[2] - a[2])[0];
+  return v ? 'v' + v[0] + '.' + (v[1] + 1) + '.0' : 'v1.0.0';
+}
+function enNovaVersao(){
+  const chave = enProjeto(UI.sel);
+  const soltos = issuesEm(chave).filter(i => i.status === 'done' && !i.marco);
+  const ult = enVersoes(chave).filter(m => m.entregue).map(m => m.entregue).sort().pop();
+  const novosFeitos = soltos.filter(i => !ult || (i.feito && i.feito > ult));
+  const pendentes = issuesEm(chave).filter(i => i.status !== 'done' && !i.marco);
+  modal('Nova versão', '<p class="sec tf-nota" style="margin-top:0">Uma versão junta o que vai para o ar de uma vez. Dela saem as notas de versão.</p>' +
+    '<div class="grade-form"><label class="lb">Nome<input class="campo" id="en-v-n" value="' + esc(enProximoNome(chave)) + '"></label><label class="lb">Previsão<input class="campo" type="date" id="en-v-d" value="' + iso(dAdd(HOJE, 14)) + '"></label>' +
+    '<label class="lb largo">Resumo (opcional)<input class="campo" id="en-v-r" placeholder="Ex.: cadastro de clientes e painel do CEO"></label></div>' +
+    '<div class="tf-opcoes">' + (novosFeitos.length ? '<label><input type="checkbox" id="en-v-f" checked> Ligar os ' + novosFeitos.length + ' itens concluídos desde a última versão</label>' : '') +
+      (pendentes.length ? '<label><input type="checkbox" id="en-v-p"> Ligar também os ' + pendentes.length + ' itens em aberto sem versão</label>' : '') +
+      '<label><input type="checkbox" id="en-v-c" checked> O cliente vê esta versão</label></div>',
+    [{txt:'Cancelar', cls:'sec'}, {txt:'Criar versão', acao:dl => {
+      const nome = $('#en-v-n', dl).value.trim(); if (!nome){ toast('Dê um nome à versão'); return false; }
+      if (enVersoes(chave).some(m => m.nome.toLowerCase() === nome.toLowerCase())){ toast('Já existe uma versão com esse nome'); return false; }
+      const lig = [].concat($('#en-v-f', dl) && $('#en-v-f', dl).checked ? novosFeitos : [], $('#en-v-p', dl) && $('#en-v-p', dl).checked ? pendentes : []);
+      tfComDesfazer('Versão ' + nome + ' criada' + (lig.length ? ', com ' + lig.length + ' itens.' : '.'), () => {
+        const m = {id:uid('mc'), no:chave, tipo:'release', nome, desc:$('#en-v-r', dl).value.trim(), data:$('#en-v-d', dl).value || iso(dAdd(HOJE, 14)), vis:$('#en-v-c', dl).checked, entregue:null, notas:''};
+        D.marcos.push(m); lig.forEach(i => { i.marco = m.id; });
+      });
+      if (UI.view === 'entregas') rView();
+    }}]);
+}
+function enNotas(id){
+  const m = byId('marcos', id); if (!m) return;
+  const pode = podeEditar();
+  const inicial = m.notas || enGerarNotas(m, false).texto;
+  const dlg = modal('Notas de versão · ' + esc(m.nome), '<p class="sec tf-nota" style="margin-top:0">' + (m.notas ? 'Notas salvas. Dá para editar ou gerar de novo a partir dos itens.' : 'Geradas a partir dos itens concluídos. Ajuste o texto se quiser e salve.') + '</p>' +
+    (pode ? '<div class="tf-opcoes" style="margin:10px 0"><label><input type="checkbox" id="en-n-c"> Só os itens que o cliente vê</label></div>' : '') +
+    '<div class="en-notas"><div class="tf-editor en-notas-ed">' + (pode ? '<div class="tf-barra" role="toolbar" aria-label="Formatação do texto">' + TF_BARRA.map(([k, t, ic]) => '<button type="button" class="tf-bb" data-en-fmt="' + k + '" title="' + t + '" aria-label="' + t + '">' + ic + '</button>').join('') + '</div>' : '') +
+      '<textarea class="campo tf-area" id="en-n-t" rows="14"' + (pode ? '' : ' readonly') + ' aria-label="Texto das notas">' + esc(inicial) + '</textarea></div>' +
+      '<div class="en-notas-ver"><p class="rotulo-mini">Como fica</p><div class="tf-md" id="en-n-v">' + tfMd(inicial) + '</div></div></div>',
+    [pode ? {txt:'Gerar de novo', cls:'fant', acao:dl => { const g = enGerarNotas(m, $('#en-n-c', dl).checked); $('#en-n-t', dl).value = g.texto; $('#en-n-v', dl).innerHTML = tfMd(g.texto); toast(g.n + (g.n === 1 ? ' item' : ' itens') + ' nas notas'); return false; }} : null,
+     {txt:'Copiar o texto', cls:'sec', acao:dl => { enCopiar($('#en-n-t', dl).value); toast('Texto copiado'); return false; }},
+     pode ? {txt:'Salvar notas', acao:dl => { const t = $('#en-n-t', dl).value; tfComDesfazer('Notas de ' + m.nome + ' salvas.', () => { m.notas = t; }); if (UI.view === 'entregas') rView(); }} : {txt:'Fechar'}].filter(Boolean));
+  dlg.addEventListener('input', e => { if (e.target.id === 'en-n-t') $('#en-n-v', dlg).innerHTML = tfMd(e.target.value); });
+  dlg.addEventListener('click', e => { const b = e.target.closest('[data-en-fmt]'); if (b){ tfFormatar($('#en-n-t', dlg), b.dataset.enFmt); $('#en-n-v', dlg).innerHTML = tfMd($('#en-n-t', dlg).value); } });
+}
+function enExcluirVersao(id){
+  const m = byId('marcos', id); if (!m) return;
+  const n = D.issues.filter(i => i.marco === m.id).length;
+  tfExcluirPerguntaSimples('Excluir a versão ' + esc(m.nome) + '?', (n ? 'Os ' + n + ' itens ligados a ela ficam sem versão. ' : '') + 'As publicações registradas continuam no histórico.', () => {
+    tfComDesfazer('Versão ' + m.nome + ' excluída.', () => { D.marcos = D.marcos.filter(x => x.id !== m.id); D.issues.forEach(i => { if (i.marco === m.id) i.marco = null; }); });
+    if (UI.view === 'entregas') rView();
+  });
+}
+function tfExcluirPerguntaSimples(titulo, texto, fazer){
+  modal(titulo, '<p style="margin:0">' + texto + '</p>', [{txt:'Cancelar', cls:'sec'}, {txt:'Excluir', cls:'acento', acao:() => { fazer(); }}]);
+}
+
+/* ---------- publicações ---------- */
+function enNovaPublicacao(marcoId){
+  const chave = UI.sel, proj = enProjeto(chave), versoes = enVersoes(proj);
+  const m0 = marcoId ? byId('marcos', marcoId) : versoes.find(m => !m.entregue);
+  const onde = [[proj, nomeDe(proj)]].concat(D.apps.filter(a => 'project:' + a.project === proj).map(a => ['app:' + a.id, nomeDe('app:' + a.id)]));
+  const dlg = modal('Registrar publicação', '<p class="sec tf-nota" style="margin-top:0">Anote o que foi para o ar. Com o repositório ligado, as publicações do GitHub e do GitLab chegam sozinhas.</p>' +
+    '<div class="grade-form"><label class="lb">Versão<select class="sel" id="en-p-v"><option value="">Sem versão cadastrada</option>' + versoes.map(m => '<option value="' + m.id + '"' + (m0 && m0.id === m.id ? ' selected' : '') + '>' + esc(m.nome) + (m.entregue ? ' (já publicada)' : '') + '</option>').join('') + '</select></label>' +
+    '<label class="lb">Ou escreva a versão<input class="campo" id="en-p-t" placeholder="Ex.: v1.2.1 ou o commit"></label>' +
+    '<label class="lb">Ambiente<select class="sel" id="en-p-a"><option value="producao">Produção (no ar para todos)</option><option value="homologacao">Homologação (teste do cliente)</option><option value="previa">Prévia</option></select></label>' +
+    '<label class="lb">Situação<select class="sel" id="en-p-s"><option value="sucesso">Deu certo</option><option value="falha">Falhou</option><option value="em_andamento">Em andamento</option></select></label>' +
+    '<label class="lb">Quando<input class="campo" type="datetime-local" id="en-p-q" value="' + tfLocal(new Date()) + '"></label>' +
+    '<label class="lb">Onde<select class="sel" id="en-p-o">' + onde.map(([k, n]) => '<option value="' + k + '"' + (k === chave ? ' selected' : '') + '>' + esc(n) + '</option>').join('') + '</select></label>' +
+    '<label class="lb largo">Link (opcional)<input class="campo" id="en-p-l" placeholder="https://"></label><label class="lb largo">Observação (opcional)<input class="campo" id="en-p-ob"></label></div>' +
+    '<div class="tf-opcoes"><label id="en-p-ent-l"><input type="checkbox" id="en-p-ent" checked> Marcar a versão como publicada</label></div>',
+    [{txt:'Cancelar', cls:'sec'}, {txt:'Registrar', acao:dl => {
+      const mid = $('#en-p-v', dl).value, m = mid ? byId('marcos', mid) : null, livre = $('#en-p-t', dl).value.trim();
+      const versao = m ? m.nome : livre; if (!versao){ toast('Escolha a versão ou escreva qual foi'); return false; }
+      const url = $('#en-p-l', dl).value.trim(); if (url && !/^https?:\/\//.test(url)){ toast('O link precisa começar com https://'); return false; }
+      const q = new Date($('#en-p-q', dl).value); if (isNaN(q)){ toast('Escolha o dia e a hora'); return false; }
+      const amb = $('#en-p-a', dl).value, st = $('#en-p-s', dl).value, marcar = m && !m.entregue && $('#en-p-ent', dl).checked && amb === 'producao' && st === 'sucesso';
+      enInserir('publicacoes', {no_id:$('#en-p-o', dl).value.split(':')[1], marco_id:m ? m.id : null, versao, ambiente:amb, status:st, origem:'manual', url:url || null, observacao:$('#en-p-ob', dl).value.trim() || null, publicado_em:q.toISOString()}).then(p => {
+        if (!p) return; EN.pubs = [p].concat(EN.pubs || []);
+        if (marcar){ m.entregue = iso(q); salvar(); }
+        if (UI.view === 'entregas') rView();
+        tfAviso('Publicação de ' + versao + ' registrada' + (marcar ? ' e a versão marcada como publicada.' : '.'), [], 4000);
+      });
+    }}]);
+  const ver = () => { const m = byId('marcos', $('#en-p-v', dlg).value); $('#en-p-ent-l', dlg).hidden = !m || !!m.entregue || $('#en-p-a', dlg).value !== 'producao' || $('#en-p-s', dlg).value !== 'sucesso'; $('#en-p-t', dlg).disabled = !!m; };
+  dlg.addEventListener('change', ver); ver();
+}
+
+/* ---------- repositórios ---------- */
+function enNovoRepo(){
+  const proj = enProjeto(UI.sel);
+  const onde = [[proj, nomeDe(proj) + ' (projeto inteiro)']].concat(D.apps.filter(a => 'project:' + a.project === proj).map(a => ['app:' + a.id, nomeDe('app:' + a.id) + ' (só esta aplicação)']));
+  const dlg = modal('Ligar repositório', '<p class="sec tf-nota" style="margin-top:0">Cole o endereço do repositório. Depois é só colar um endereço e um segredo no GitHub ou no GitLab, e o código passa a aparecer nos itens.</p>' +
+    '<div class="grade-form"><label class="lb largo">Endereço do repositório<input class="campo" id="en-r-u" placeholder="https://github.com/empresa/projeto"></label>' +
+    '<label class="lb">Onde fica<select class="sel" id="en-r-p"><option value="github">GitHub</option><option value="gitlab">GitLab</option></select></label>' +
+    '<label class="lb">Ligar a<select class="sel" id="en-r-o">' + onde.map(([k, n]) => '<option value="' + k + '"' + (k === UI.sel ? ' selected' : '') + '>' + esc(n) + '</option>').join('') + '</select></label>' +
+    '<label class="lb">Branch principal<input class="campo" id="en-r-b" value="main"></label></div>' +
+    '<div class="tf-opcoes"><label><input type="checkbox" id="en-r-m" checked> Mudar o status dos itens sozinho (branch: Em andamento, PR: Em revisão, PR mesclado: Concluído)</label></div>' +
+    '<p class="tf-previa" id="en-r-v"></p>',
+    [{txt:'Cancelar', cls:'sec'}, {txt:'Ligar', acao:dl => {
+      const r = enLerRepo($('#en-r-u', dl).value); if (!r){ toast('Cole o endereço do repositório, como https://github.com/empresa/projeto'); return false; }
+      const provedor = $('#en-r-p', dl).value, no = $('#en-r-o', dl).value.split(':')[1];
+      if ((EN.repos || []).some(x => x.no_id === no && x.provedor === provedor && x.nome.toLowerCase() === r.nome.toLowerCase())){ toast('Esse repositório já está ligado aqui'); return false; }
+      enInserir('repositorios', {no_id:no, provedor, nome:r.nome, url:r.url || null, branch_principal:$('#en-r-b', dl).value.trim() || 'main', mover_status:$('#en-r-m', dl).checked}).then(novo => {
+        if (!novo) return; EN.repos = (EN.repos || []).concat(novo); if (UI.view === 'entregas') rView(); enComoLigar(novo.id, true);
+      });
+    }}]);
+  dlg.addEventListener('input', e => { if (e.target.id !== 'en-r-u') return; const r = enLerRepo(e.target.value); if (r && r.provedor) $('#en-r-p', dlg).value = r.provedor; $('#en-r-v', dlg).textContent = r ? 'Repositório: ' + r.nome : ''; });
+}
+async function enComoLigar(id, novo){
+  const r = (EN.repos || []).find(x => x.id === id); if (!r) return;
+  let seg = '';
+  if (COM_BANCO){ const {data, error} = await enSb().rpc('repositorio_segredo', {p_repo:id, p_trocar:false}); if (error){ toast('Não deu para ler o segredo: ' + tfErro(error)); return; } seg = data || ''; }
+  else seg = r._segredo || (r._segredo = Array.from({length:48}, () => '0123456789abcdef'[Math.floor(Math.random() * 16)]).join(''));
+  const url = enWebhook(r), gh = r.provedor === 'github';
+  const campo = (rot, val, k) => '<div class="en-copia"><span class="rotulo-mini">' + rot + '</span><code id="en-c-' + k + '">' + esc(val) + '</code><button type="button" class="btn sec peq" data-en-copiar="' + k + '">' + EN_ICO.copiar + 'Copiar</button></div>';
+  const passos = gh
+    ? ['No GitHub, abra o repositório <b>' + esc(r.nome) + '</b> e vá em <b>Settings › Webhooks › Add webhook</b>.', 'Em <b>Payload URL</b>, cole o endereço abaixo.', 'Em <b>Content type</b>, escolha <b>application/json</b>.', 'Em <b>Secret</b>, cole o segredo abaixo.',
+       'Em <b>Which events</b>, escolha <b>Let me select individual events</b> e marque: <b>Branch or tag creation</b>, <b>Branch or tag deletion</b>, <b>Pushes</b>, <b>Pull requests</b>, <b>Releases</b> e <b>Deployment statuses</b>.', 'Deixe <b>Active</b> marcado e clique em <b>Add webhook</b>. O GitHub manda um teste na hora: este cartão passa a mostrar "Último aviso recebido: ping".']
+    : ['No GitLab, abra o projeto <b>' + esc(r.nome) + '</b> e vá em <b>Settings › Webhooks › Add new webhook</b>.', 'Em <b>URL</b>, cole o endereço abaixo.', 'Em <b>Secret token</b>, cole o segredo abaixo.',
+       'Em <b>Trigger</b>, marque: <b>Push events</b> (todos os branches), <b>Merge request events</b>, <b>Releases events</b> e <b>Deployment events</b>.', 'Clique em <b>Add webhook</b>. Para testar, use <b>Test › Push events</b>: este cartão passa a mostrar o último aviso recebido.'];
+  const dlg = modal((novo ? 'Repositório ligado. ' : '') + 'Como ligar no ' + (gh ? 'GitHub' : 'GitLab'), '<ol class="en-passos">' + passos.map(p => '<li>' + p + '</li>').join('') + '</ol>' + campo('Endereço', url, 'u') + campo('Segredo', seg, 's') +
+    '<p class="sec tf-nota">Guarde o segredo só no ' + (gh ? 'GitHub' : 'GitLab') + '. Ele garante que só o seu repositório consegue mandar avisos para cá.' + (COM_BANCO ? '' : ' (No modo de exemplo nada chega de verdade.)') + '</p>' +
+    '<p class="sec tf-nota"><b>Como o código liga ao item:</b> use a chave do item (por exemplo <code>BL-37</code>) no nome do branch, na mensagem do commit ou no título do pull request. No item tem um botão que copia o nome do branch pronto.</p>',
+    [podeEditar() && COM_BANCO ? {txt:'Trocar o segredo', cls:'fant', acao:() => { enTrocarSegredo(r); }} : null, {txt:'Pronto'}].filter(Boolean));
+  dlg.addEventListener('click', e => { const b = e.target.closest('[data-en-copiar]'); if (!b) return; const el = $('#en-c-' + b.dataset.enCopiar, dlg); enCopiar(el.textContent, b); const s = document.createRange(); s.selectNodeContents(el); const w = getSelection(); w.removeAllRanges(); w.addRange(s); });
+}
+function enTrocarSegredo(r){
+  modal('Trocar o segredo de ' + esc(r.nome) + '?', '<p style="margin:0">O segredo atual para de valer na hora. Depois de trocar, cole o novo no ' + (r.provedor === 'gitlab' ? 'GitLab' : 'GitHub') + ', senão os avisos são recusados.</p>',
+    [{txt:'Cancelar', cls:'sec'}, {txt:'Trocar', cls:'acento', acao:() => { enSb().rpc('repositorio_segredo', {p_repo:r.id, p_trocar:true}).then(({error}) => { if (error){ toast('Não deu para trocar: ' + tfErro(error)); return; } enComoLigar(r.id); }); }}]);
+}
+function enExcluirRepo(id){
+  const r = (EN.repos || []).find(x => x.id === id); if (!r) return;
+  tfExcluirPerguntaSimples('Excluir o repositório ' + esc(r.nome) + '?', 'Os branches, commits e pull requests que vieram dele saem dos itens. As publicações registradas continuam no histórico. Lembre de apagar o webhook no ' + (r.provedor === 'gitlab' ? 'GitLab' : 'GitHub') + ' também.', () => {
+    enApagar('repositorios', id).then(ok => { if (!ok) return; EN.repos = EN.repos.filter(x => x.id !== id); if (UI.view === 'entregas') rView(); tfAviso('Repositório ' + r.nome + ' excluído.', [], 4000); });
+  });
+}
+
+/* ---------- no item: Desenvolvimento ---------- */
+function enCartaoItem(i, links, pode){
+  const temRepo = (EN.repos || []).some(r => enNos('ws:' + i.ws).has(r.no_id));
+  const grupos = [['pr', 'Pull requests'], ['branch', 'Branches'], ['commit', 'Commits']];
+  const linha = l => '<li class="en-l">' + (EN_ICO[l.tipo] || '') + '<span class="en-l-t">' + (l.url ? '<a href="' + esc(l.url) + '" target="_blank" rel="noopener noreferrer">' : '<span>') +
+      esc(l.tipo === 'pr' ? (l.provedor === 'gitlab' ? '!' : '#') + l.ref + (l.titulo ? ' ' + l.titulo : '') : l.tipo === 'commit' ? String(l.ref).slice(0, 7) + (l.titulo ? ' ' + l.titulo : '') : l.ref) + (l.url ? '</a>' : '</span>') +
+      '<small>' + esc([l.autor, enHa(l.quando)].filter(Boolean).join(' · ')) + '</small></span>' +
+      '<span class="en-est en-est-' + esc(l.estado) + '">' + esc(EN_EST[l.estado] || l.estado) + '</span>' +
+      (pode ? '<button type="button" class="ico-btn" data-en-tirar-link="' + l.id + '" aria-label="Excluir este link" title="Excluir este link">' + ICO.fechar + '</button>' : '') + '</li>';
+  const corpo = links.length ? grupos.map(([t, n]) => { const g = links.filter(l => l.tipo === t); if (!g.length) return '';
+      const mostra = t === 'commit' ? g.slice(0, 4) : g;
+      return '<p class="rotulo-mini en-g">' + n + ' · ' + g.length + '</p><ul class="en-ls">' + mostra.map(linha).join('') + (g.length > mostra.length ? '<li class="sec en-mini">e mais ' + (g.length - mostra.length) + '</li>' : '') + '</ul>'; }).join('')
+    : '<p class="sec en-mini">' + (temRepo ? 'Nada ainda. Use o nome de branch abaixo ou a chave ' + esc((typeof chaveDe === 'function' && chaveDe(i)) || '') + ' no commit ou no título do PR.' : 'Ligue o repositório na aba Entregas do projeto, ou cole aqui o link de um PR, commit ou branch.') + '</p>';
+  return '<section class="g-cartao en-dev"><h4>Desenvolvimento' + I('Desenvolvimento: os branches, commits e pull requests deste item no GitHub ou no GitLab. Com o repositório ligado, chegam sozinhos pela chave do item e o status anda sozinho.') + '</h4>' + corpo +
+    (pode ? '<div class="en-dev-acoes"><button type="button" class="btn sec peq" data-en-copiar-branch="' + i.id + '" title="' + esc(enBranch(i)) + '">' + EN_ICO.branch + 'Copiar nome do branch</button><button type="button" class="btn fant peq" data-en-colar-link="' + i.id + '">Colar link</button></div>' +
+      '<form class="g-add en-colar" data-en-form-link="' + i.id + '" hidden><input class="campo" name="u" placeholder="Link do PR, commit ou branch"><button class="btn sec peq" type="submit">Ligar</button></form>' : '') + '</section>';
+}
+const _abrirItemEn = abrirItem;
+abrirItem = function(id){
+  _abrirItemEn(id);
+  const i = byId('issues', id), g = $('#gaveta-wrap .gaveta'); if (!i || !g || !podeEditar()) return;
+  const lat = $('.g-lateral', g); if (!lat) return;
+  const ponto = document.createElement('div'); ponto.className = 'en-dev-lugar'; const prim = lat.querySelector('.g-cartao'); if (prim) prim.after(ponto); else lat.prepend(ponto);
+  const pinta = links => { if (itemAberto !== id || !ponto.isConnected) return; ponto.outerHTML = enCartaoItem(i, links, podeEditar()); };
+  const ler = COM_BANCO ? enLer('codigo_vinculos', {eq:['item_id', id], ordem:'quando'}) : Promise.resolve(enLocal().links.filter(l => l.item_id === id));
+  Promise.all([ler, enCarregar()]).then(([L]) => pinta(L), () => pinta([]));
+};
+async function enRedesenharItem(id){ if (itemAberto === id) abrirItem(id); if (UI.view === 'entregas') enCarregarAtividade(UI.sel); }
+
+/* ---------- cliques ---------- */
+document.addEventListener('click', e => {
+  let b;
+  if (e.target.closest('[data-en-nova-versao]')){ enNovaVersao(); return; }
+  if (e.target.closest('[data-en-nova-pub]')){ enNovaPublicacao(null); return; }
+  if (e.target.closest('[data-en-novo-repo]')){ enNovoRepo(); return; }
+  if ((b = e.target.closest('[data-en-notas]'))){ enNotas(b.dataset.enNotas); return; }
+  if ((b = e.target.closest('[data-en-publicar]'))){ enNovaPublicacao(b.dataset.enPublicar); return; }
+  if ((b = e.target.closest('[data-en-excluir-versao]'))){ enExcluirVersao(b.dataset.enExcluirVersao); return; }
+  if ((b = e.target.closest('[data-en-como]'))){ enComoLigar(b.dataset.enComo); return; }
+  if ((b = e.target.closest('[data-en-excluir-repo]'))){ enExcluirRepo(b.dataset.enExcluirRepo); return; }
+  if ((b = e.target.closest('[data-en-excluir-pub]'))){ const id = b.dataset.enExcluirPub, p = (EN.pubs || []).find(x => x.id === id); if (!p) return;
+    tfExcluirPerguntaSimples('Excluir o registro da publicação ' + esc(p.versao || '') + '?', 'Sai só do histórico do CicloDev. O que está no ar não muda.', () => {
+      enApagar('publicacoes', id).then(ok => { if (!ok) return; EN.pubs = EN.pubs.filter(x => x.id !== id); if (UI.view === 'entregas') rView(); tfAviso('Registro excluído.', [], 3000); }); }); return; }
+  if ((b = e.target.closest('[data-en-copiar-branch]'))){ const i = byId('issues', b.dataset.enCopiarBranch); if (!i) return; const n = enBranch(i); enCopiar(n, b); tfAviso('Nome do branch copiado: ' + n, [], 5000); return; }
+  if ((b = e.target.closest('[data-en-colar-link]'))){ const f = $('[data-en-form-link="' + b.dataset.enColarLink + '"]'); if (f){ f.hidden = !f.hidden; if (!f.hidden) $('input', f).focus(); } return; }
+  if ((b = e.target.closest('[data-en-tirar-link]'))){ const id = b.dataset.enTirarLink, item = itemAberto;
+    tfExcluirPerguntaSimples('Excluir este link do código?', 'Sai só do item. O branch, o commit ou o PR continuam no ' + 'repositório.', () => { enApagar('codigo_vinculos', id).then(ok => { if (ok){ enRedesenharItem(item); toast('Link excluído'); } }); }); return; }
+});
+document.addEventListener('submit', e => {
+  const f = e.target.closest('[data-en-form-link]'); if (!f) return; e.preventDefault();
+  const i = byId('issues', f.dataset.enFormLink), v = $('input', f).value, l = enLerLink(v);
+  if (!i) return; if (!l){ toast('Cole o link de um pull request, merge request, commit ou branch do GitHub ou do GitLab'); return; }
+  const repo = (EN.repos || []).find(r => r.nome.toLowerCase() === String(l.repo).toLowerCase());
+  enInserir('codigo_vinculos', {item_id:i.id, repositorio_id:repo ? repo.id : null, provedor:l.provedor, tipo:l.tipo, ref:l.ref, titulo:null, url:l.url, estado:l.tipo === 'pr' ? 'aberto' : 'ativo'}).then(x => { if (x){ enRedesenharItem(i.id); toast('Link ligado ao item'); } });
+});
+document.addEventListener('change', e => {
+  const t = e.target; if (!t.matches || !t.matches('[data-en-mover]')) return;
+  const r = (EN.repos || []).find(x => x.id === t.dataset.enMover); if (!r) return;
+  enAlterar('repositorios', r.id, {mover_status:t.checked}).then(ok => { if (ok){ r.mover_status = t.checked; toast(t.checked ? 'O status vai mudar sozinho' : 'O status não muda mais sozinho'); } else t.checked = !t.checked; });
+});
+
+/* ---------- banco: as notas da versão ---------- */
+const _montarDadosEn = montarDados;
+montarDados = function(T, eu){
+  const d = _montarDadosEn(T, eu);
+  const mT = new Map((T.marcos || []).map(m => [m.id, m]));
+  d.marcos.forEach(m => { const r = mT.get(m.id); m.notas = r && r.notas || ''; });
+  EN.repos = null; EN.pubs = null;
+  return d;
+};
+const _linhasDaTelaEn = linhasDaTela;
+linhasDaTela = function(d){
+  const L = _linhasDaTelaEn(d);
+  const mm = new Map(d.marcos.map(m => [m.id, m]));
+  (L.marcos || []).forEach(r => { const m = mm.get(r.id); r.notas = m && m.notas ? m.notas : null; });
+  return L;
+};
+if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {EN, enGerarNotas, enLerLink, enLerRepo, enBranch, abrirItem, rOperacoes});
 
 abrirModulo(UI.modulo);
 })();
