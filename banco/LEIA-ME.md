@@ -72,6 +72,18 @@ A função `portal-api` (pasta `supabase/functions/portal-api`, `verify_jwt` des
 
 `25_ia_permissoes_chat.sql` cria `ia_permissoes` (quem pode usar a IA; começa todo mundo desligado e só o dono do sistema muda, em Admin › Permissões de IA, pela função `admin_ia_definir`) e `ia_mensagens` (a conversa de cada usuário com o seu agente). Cada pessoa só lê a própria permissão e a própria conversa, só escreve na própria conversa, só como `usuario` e só com a IA ligada; ninguém muda nem apaga mensagem pela tela, e nem o dono do sistema lê a conversa dos outros. Ainda não existe agente respondendo. **Regra para quando existir:** o agente de um usuário só enxerga o que esse usuário enxerga no sistema (`interno.nos_visiveis()` dele) e nunca vê nem fala de projeto a que o dono dele não tem acesso. Testada no Postgres local (`99_teste_ia_LOCAL.sql`, 16 conferências; `testes/t_ia.js` pela tela) e conferida no Supabase depois de aplicar: RLS nas 2 tabelas, permissões e as 3 funções.
 
+## Parte 26: o DevIT de cada usuário, a conversa em .md e os anexos (aplicada em 29/09/2026 como `ciclodev_34_ia_agente_historico`)
+
+`26_ia_agente_historico.sql` cria `ia_agentes`: um por usuário, criado sozinho quando a conta nasce (gatilho `pessoas_ia_agente`, que também cria a permissão de IA, desligada). A coluna `historico_md` guarda a conversa inteira em Markdown, para o agente lembrar depois: cada mensagem nova entra no fim sozinha (gatilho `ia_mensagens_md`), com data, quem falou e os anexos. Ninguém muda nem apaga o .md pela tela; cada pessoa só lê o próprio. `ia_mensagens` ganhou `anexos` (lista de nome, tipo, tamanho e caminho), e uma mensagem pode ter só arquivo. Cada anexo precisa estar na pasta `<login>/ia/` da própria pessoa no depósito `anexos`. Desligar a IA só esconde o balão; ligar de novo traz a mesma conversa. Quem já tinha conta ganhou o agente com a conversa que já existia. Testada no Postgres local (`99_teste_ia_LOCAL.sql`, 26 conferências; `testes/t_ia.js`, 31) e conferida no Supabase: um agente para cada pessoa, os três gatilhos e a permissão só de leitura.
+
+## Parte 27: arquivos do chat no depósito (aplicada em 29/09/2026 como `ciclodev_35_ia_anexos_deposito`)
+
+`27_ia_anexos_SUPABASE.sql` (só no Supabase): cada pessoa lê os arquivos da própria pasta `<login>/ia/` (`anexos_ia_ver`), e a regra de apagar da parte 09 passou a não valer para essa pasta, para o histórico nunca perder arquivo. Não entra no `APLICAR_NO_SUPABASE.sql`.
+
+## Parte 28: aviso de mensagem nova do DevIT (aplicada em 29/09/2026 como `ciclodev_36_ia_avisos`)
+
+`28_ia_avisos.sql` põe `visto_ate` em `ia_agentes` (até quando a pessoa já viu a conversa) e as funções `ia_novidades()` (quantas mensagens do DevIT a pessoa ainda não viu) e `ia_marcar_visto()` (a pessoa abriu o chat). Com mensagem nova e o chat fechado, o balão fica com o robozinho animado e pulsa até a pessoa abrir. Testada pela tela (`testes/t_ia.js`) e conferida no Supabase: a coluna e as duas funções, só para `authenticated`.
+
 ## Parte 19: código, publicações e notas de versão (aplicada em 29/09/2026 como `ciclodev_26_codigo_entregas` + `ciclodev_27_ajuste_verificador`)
 
 Testada no Postgres local (`97_teste_codigo_LOCAL.sql`: 42 de 42; a parte 18 continua 37 de 37 com a 19 por cima) e conferida no Supabase depois de aplicar (tabelas com RLS e GRANT, segredos sem acesso de fora, `git_receber` só para `service_role`). A Edge Function `git-webhook` está implantada (versão 1, verify_jwt desligado). **Foi aplicada ANTES da tela nova, como precisa**: a tela passa a gravar `marcos.notas`.

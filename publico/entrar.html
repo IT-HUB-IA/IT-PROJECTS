@@ -1435,16 +1435,19 @@ dialog.modal.modal-ficha{max-width:min(1180px,calc(100% - 32px))}
 /* =================== Board no formato Jira + Trello =================== */
 .bj-board{min-width:0;flex-wrap:nowrap !important;align-items:flex-start}
 .board-rolo{overflow-x:auto;overflow-y:hidden}
-.bj-board > .coluna{flex:0 0 272px;min-width:272px;max-width:272px}
-@media (max-width:960px){ .bj-board{flex-wrap:nowrap !important} .bj-board > .coluna{flex:0 0 260px;min-width:260px} }
-.bj-coluna .coluna-cab{align-items:flex-start}
+/* as colunas dividem a largura da tela; só passam dela (e aparece a rolagem) quando não cabem nem com 150px cada,
+   por exemplo com a Estrutura ou o menu principal abertos mais largos */
+.bj-board > .coluna{flex:1 1 0;min-width:150px;max-width:none}
+@media (max-width:960px){ .bj-board{flex-wrap:nowrap !important} .bj-board > .coluna{flex:1 1 0;min-width:150px} }
+.bj-coluna .coluna-cab{align-items:flex-start;flex-wrap:nowrap;gap:6px}
+.bj-coluna .coluna-cab .bj-col-nome{flex:1 1 auto;flex-wrap:wrap;overflow-wrap:break-word}
 .bj-col-nome{display:flex;align-items:center;gap:4px;min-width:0}
 .bj-col-dir{display:flex;align-items:center;gap:6px;flex:none}
 .bj-soma{font-family:var(--font-mono);font-size:11px;color:var(--text-secondary);background:#fff;border:1px solid var(--nevoa);padding:1px 6px}
 .coluna.abaixo{box-shadow:inset 0 3px 0 #E0A800}
 .bj-aviso-col{font-size:11px;font-weight:600;color:var(--vermelho);padding:0 12px 6px}
 .bj-aviso-col.falta{color:#9A6B00}
-.bj-nova-col{flex:0 0 220px;align-self:flex-start;display:flex;align-items:center;gap:8px;padding:12px;border:1px dashed var(--grafite);background:rgba(5,5,6,.03);font:inherit;font-weight:600;cursor:pointer;color:var(--text-secondary)}
+.bj-nova-col{flex:0 0 36px;width:36px;height:36px;align-self:flex-start;display:flex;align-items:center;justify-content:center;padding:0;border:1px dashed var(--grafite);background:rgba(5,5,6,.03);font:inherit;font-weight:600;cursor:pointer;color:var(--text-secondary)}
 .bj-nova-col:hover{background:rgba(5,5,6,.07);color:var(--preto)}
 .bj-criar{display:flex;gap:6px;padding:0 8px 8px}
 .bj-criar .campo{flex:1;min-width:0;height:34px;border-style:dashed;background:transparent}
@@ -1453,7 +1456,10 @@ dialog.modal.modal-ficha{max-width:min(1180px,calc(100% - 32px))}
 /* cartão */
 .bj-cartao{display:flex;flex-direction:column;gap:6px;padding:10px 10px 8px;background:#fff;border:1px solid #DFE1E6;border-radius:3px;box-shadow:0 1px 1px rgba(9,30,66,.2);cursor:pointer}
 .bj-cartao:hover{background:#FAFBFC}
-.bj-cartao .tt{font-size:14px;line-height:1.35;font-weight:500;overflow-wrap:anywhere}
+.bj-cartao .tt{font-size:14px;line-height:1.35;font-weight:500;overflow-wrap:break-word;hyphens:auto;-webkit-hyphens:auto}
+/* coluna estreita (muitas colunas na tela): cartão e letra um pouco menores, para as palavras caberem inteiras */
+.bj-board > .coluna{container-type:inline-size}
+@container (max-width:170px){ .bj-cartao{padding:8px} .bj-cartao .tt{font-size:13px;line-height:1.3} .bj-coluna .coluna-cab{padding-left:8px;padding-right:8px} .bj-criar{padding:0 6px 6px} }
 .bj-cartao.sinalizado{background:#FFF4E5;border-color:#FFB366;box-shadow:inset 3px 0 0 #E05A00,0 1px 1px rgba(9,30,66,.2)}
 .bj-capa{height:120px;margin:-10px -10px 2px;background:#EBECF0 center/cover no-repeat;border-radius:3px 3px 0 0}
 .bj-tags{display:flex;flex-wrap:wrap;gap:4px}
@@ -1472,6 +1478,10 @@ dialog.modal.modal-ficha{max-width:min(1180px,calc(100% - 32px))}
 .bj-rod{display:flex;align-items:center;justify-content:space-between;gap:6px}
 .bj-rod-esq,.bj-rod-dir{display:flex;align-items:center;gap:6px;min-width:0}
 .bj-chave{font-family:var(--font-mono);font-size:11px;font-weight:600;color:#5E6C84;letter-spacing:.02em;white-space:nowrap}
+/* coluna estreita: o código do item e a prioridade não se sobrepõem, a linha de baixo quebra */
+.bj-rod{flex-wrap:wrap;row-gap:4px}
+.bj-rod-esq,.bj-rod-dir{flex:none}
+.bj-rod-dir{margin-left:auto}
 .bj-chave.feito{text-decoration:line-through}
 .bj-chave.forte{color:var(--preto)}
 .bj-band{display:inline-flex;color:#E05A00}
@@ -2404,6 +2414,22 @@ dialog.modal.lt-modal{width:min(1040px, calc(100vw - 32px));max-width:none}
 .lt-at:hover{border-color:var(--preto)}
 .lt-at:focus-visible{outline:2px solid var(--preto);outline-offset:1px}
 .lt-at-nova{border-style:dashed}
+
+/* Tabela: responsável em lote (tabela_lote.js), botão no cabeçalho da coluna Responsável */
+.rl-cab{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;flex-wrap:nowrap}
+.rl-col{display:inline-grid;place-items:center;width:22px;height:22px;padding:0;border:1px solid rgba(255,255,255,.45);background:transparent;color:inherit;cursor:pointer;flex:none}
+.rl-col:hover{border-color:#fff;background:rgba(255,255,255,.12)}
+.rl-col:focus-visible{outline:2px solid var(--vermelho);outline-offset:1px}
+.rl-col svg{width:14px;height:14px}
+.rl-form{display:grid;gap:14px;min-width:min(420px,100%)}
+.rl-alcance{border:0;margin:0;padding:0;display:grid;gap:8px}
+.rl-alcance legend{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--tinta-2);margin-bottom:6px;padding:0}
+.rl-op{display:flex;align-items:center;gap:10px;border:1px solid var(--linha);padding:10px 12px;cursor:pointer}
+.rl-op:has(input:checked){border-color:var(--preto);box-shadow:inset 3px 0 0 var(--vermelho)}
+.rl-op span{display:grid;gap:2px}
+.rl-op small{color:var(--tinta-3);font-size:12px}
+.rl-op.desl{opacity:.5;cursor:not-allowed}
+.rl-dica{margin:0;font-size:12.5px}
 /* Entregas: versões em tabela (versoes.js) */
 dialog.modal.vs-modal{width:min(1100px, calc(100vw - 32px));max-width:none}
 .vs-rolo{overflow-x:auto;border:1px solid var(--linha)}
@@ -2494,12 +2520,18 @@ dialog.modal.vs-modal{width:min(1100px, calc(100vw - 32px));max-width:none}
 .ia-balao{width:76px;height:76px;padding:0;border:0;background:none;cursor:pointer;display:block;transition:transform var(--dur,.15s)}
 .ia-balao img{display:block;width:100%;height:100%;object-fit:contain;user-select:none}
 .ia-balao:hover{transform:translateY(-2px)}
+/* mensagem nova do DevIT com o chat fechado: o balão pulsa até a pessoa abrir */
+.ia-balao.avisando{animation:ia-pulsar 1.4s ease-in-out infinite}
+@keyframes ia-pulsar{0%,100%{transform:scale(1);filter:drop-shadow(0 0 0 rgba(255,0,0,0))}50%{transform:scale(1.12);filter:drop-shadow(0 0 10px rgba(255,0,0,.55))}}
+@media (prefers-reduced-motion:reduce){ .ia-balao.avisando{animation:none;filter:drop-shadow(0 0 6px rgba(255,0,0,.6))} }
 .ia-balao:focus-visible{outline:2px solid var(--vermelho);outline-offset:2px}
 
-.ia-chat{width:min(380px,calc(100vw - 32px));height:min(560px,calc(100vh - 140px));display:flex;flex-direction:column;background:var(--branco);border:1px solid var(--preto);box-shadow:0 12px 32px rgba(5,5,6,.18)}
+.ia-chat{position:relative;width:min(380px,calc(100vw - 32px));height:min(560px,calc(100vh - 140px));display:flex;flex-direction:column;background:var(--branco);border:1px solid var(--preto);box-shadow:0 12px 32px rgba(5,5,6,.18)}
 .ia-chat[hidden]{display:none}
 .ia-cab{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;background:var(--preto);color:var(--branco);border-bottom:3px solid var(--vermelho)}
 .ia-cab b{display:block;font-size:14px}
+.ia-nome{display:inline-flex !important;align-items:baseline;font-size:16px !important;letter-spacing:-.01em}
+.ia-ponto{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--vermelho);margin-left:2px}
 .ia-cab small{display:block;font-size:11.5px;opacity:.75;margin-top:2px}
 .ia-fechar{border:0;background:none;color:inherit;padding:4px;cursor:pointer;display:grid;place-items:center}
 .ia-fechar:focus-visible{outline:2px solid var(--vermelho)}
@@ -2511,9 +2543,35 @@ dialog.modal.vs-modal{width:min(1100px, calc(100vw - 32px));max-width:none}
 .ia-usuario p{background:var(--preto);color:var(--branco)}
 .ia-agente{align-self:flex-start}
 .ia-agente p{background:var(--preto-04);border-left:2px solid var(--vermelho)}
+.ia-antigas{align-self:center;border:1px solid var(--linha);background:var(--branco);padding:5px 10px;font:inherit;font-size:12px;cursor:pointer;color:var(--tinta-2)}
+.ia-antigas:hover{border-color:var(--preto);color:var(--preto)}
 .ia-aviso{margin:0;font-size:12.5px;color:var(--tinta-3);text-align:center}
 .ia-aviso.erro{color:var(--vermelho)}
 .ia-escrever{display:flex;gap:8px;align-items:flex-end;padding:10px;border-top:1px solid var(--linha)}
+.ia-clipe{flex:none;width:36px;height:36px;display:grid;place-items:center;border:1px solid var(--linha);background:var(--branco);color:var(--tinta-2);cursor:pointer;padding:0}
+.ia-clipe:hover{border-color:var(--preto);color:var(--preto)}
+.ia-clipe:focus-visible{outline:2px solid var(--vermelho);outline-offset:1px}
+/* arquivos esperando para ir junto com a mensagem */
+.ia-pendentes{display:flex;flex-wrap:wrap;gap:6px;padding:8px 10px 0;max-height:120px;overflow-y:auto}
+.ia-pend{display:inline-flex;align-items:center;gap:6px;max-width:100%;border:1px solid var(--linha);background:var(--preto-04);padding:3px 4px 3px 6px;font-size:12px;min-width:0}
+.ia-pend img{width:26px;height:26px;object-fit:cover;flex:none}
+.ia-pend-nome{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px}
+.ia-pend small{color:var(--tinta-3);flex:none}
+.ia-pend button{border:0;background:none;font-size:16px;line-height:1;padding:0 4px;cursor:pointer;color:var(--tinta-2)}
+.ia-pend button:hover{color:var(--vermelho)}
+/* anexos dentro das mensagens */
+.ia-anexos{display:grid;gap:4px;justify-items:inherit}
+.ia-anexo{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:2px 8px;max-width:240px;border:1px solid var(--linha);background:var(--branco);padding:6px 8px;font:inherit;font-size:12.5px;text-align:left;cursor:pointer;color:var(--preto)}
+.ia-anexo:hover{border-color:var(--preto)}
+.ia-anexo img{grid-column:1 / -1;width:100%;max-height:160px;object-fit:contain;background:var(--preto-04)}
+.ia-anexo-nome{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.ia-anexo small{color:var(--tinta-3);display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.ia-ver{margin:0;display:grid;gap:8px;justify-items:center}
+.ia-ver img{max-width:100%;max-height:70vh;object-fit:contain;background:var(--preto-04)}
+.ia-ver figcaption{font-size:12px;color:var(--tinta-3)}
+dialog.modal.ia-ver-modal{width:min(960px,calc(100vw - 32px))}
+/* arrastar e soltar */
+.ia-soltar{position:absolute;inset:0;display:grid;place-items:center;background:rgba(255,255,255,.92);border:2px dashed var(--vermelho);z-index:2;pointer-events:none;text-align:center;padding:20px;font-weight:600}
 .ia-escrever textarea{flex:1;min-width:0;resize:none;max-height:140px;font-size:13.5px}
 html.tema-escuro .ia-chat{filter:invert(.92) hue-rotate(180deg)}
 @media (max-width:720px){ #ia-raiz{right:12px;bottom:12px} .ia-balao{width:64px;height:64px} .ia-chat{height:min(520px,calc(100vh - 110px))} }
@@ -6772,7 +6830,7 @@ vBoard = function(){
       '</section>';
   };
   const colunas = (lista, raia) => '<div class="board bj-board">' + cols.map(c => coluna(c, lista, raia)).join('') +
-    (!raia && souMaster() ? '<button type="button" class="bj-nova-col" data-bj-acao="config" title="Adicionar outra coluna">' + ICO.mais + '<span>Adicionar outra coluna</span></button>' : '') + '</div>';
+    (!raia && souMaster() ? '<button type="button" class="bj-nova-col" data-bj-acao="config" title="Adicionar outra coluna" aria-label="Adicionar outra coluna">' + ICO.mais + '</button>' : '') + '</div>';
   let corpo;
   if (UI.raias === 'nenhuma') corpo = colunas(l);
   else {
@@ -11295,12 +11353,13 @@ if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {PT
    Admin › Permissões de IA: o dono do sistema liga ou desliga a IA de cada usuário. Começa todo mundo desligado.
    Balão no canto de baixo, à direita: só aparece para quem tem a IA ligada. As imagens do balão são as que o William
    mandou, usadas como vieram (publico/agente-fechado.webp e publico/agente-aberto.webp), sem recorte nem ajuste.
-   A conversa de cada usuário vai para ia_mensagens, e cada pessoa só lê a própria.
+   A conversa de cada usuário vai para ia_mensagens, e cada pessoa só lê a própria. Nada se apaga: desligar a IA só
+   esconde o balão, e o banco também guarda a conversa inteira em .md no agente da pessoa (ia_agentes, parte 26).
    Ainda não existe agente respondendo: por enquanto o chat só guarda o que o usuário escreve.
    Regra para quando o agente existir: ele só enxerga o que o dono dele enxerga no sistema, e nunca fala de outro projeto. */
-const IA = {posso:false, aberto:false, msgs:null, carregando:false, enviando:false, erro:'', perm:null, permErro:'', busca:'', filtro:'todos', mudando:{}};
+const IA = {posso:false, aberto:false, novas:0, mouse:false, msgs:null, carregando:false, enviando:false, erro:'', perm:null, permErro:'', busca:'', filtro:'todos', mudando:{}};
 const iaBanco = () => (COM_BANCO && window.ciclodevBanco && typeof MU !== 'undefined' && MU.eu) ? window.ciclodevBanco : null;
-const IA_IMG = {fechado:'agente-fechado.webp', aberto:'agente-aberto.webp'};
+const IA_IMG = {fechado:'agente-fechado.webp', aberto:'agente-aberto.webp', animado:'agente-animado.webp'};   // animado: o robozinho que o William mandou, usado como veio
 
 /* ---------- Admin › Permissões de IA ---------- */
 async function iaPermCarregar(){
@@ -11320,7 +11379,7 @@ function iaAdminHTML(){
   const filtro = [['todos', 'Todos (' + todos.length + ')'], ['com', 'Com IA (' + n + ')'], ['sem', 'Sem IA (' + (todos.length - n) + ')']]
     .map(([k, t]) => '<option value="' + k + '"' + (IA.filtro === k ? ' selected' : '') + '>' + esc(t) + '</option>').join('');
   return '<div class="ia-adm">' +
-    '<p class="lead ia-adm-intro">Aqui você escolhe quem pode usar o agente de IA. Todo mundo começa sem IA; só quem estiver ligado aqui vê o balão do chat. O agente de cada pessoa só enxerga o que essa pessoa enxerga no CicloDev.</p>' +
+    '<p class="lead ia-adm-intro">Aqui você escolhe quem pode usar o DevIT, o agente de IA do CicloDev. Todo mundo começa sem IA; só quem estiver ligado aqui vê o balão do chat. O agente de cada pessoa só enxerga o que essa pessoa enxerga no CicloDev.</p>' +
     (IA.permErro ? '<p class="entrada-erro">Não foi possível ler as permissões: ' + esc(IA.permErro) + '</p>' : '') +
     '<div class="adm-filtros"><input class="campo" type="search" data-ia-busca placeholder="Buscar por nome, e-mail, ID, empresa…" value="' + esc(IA.busca) + '" aria-label="Buscar usuário"><select class="sel" data-ia-filtro aria-label="Mostrar">' + filtro + '</select></div>' +
     '<div class="tabela-rolo"><table class="tabela ia-tab"><thead><tr><th>Usuário</th><th>Empresa</th><th>IA</th><th>Última mudança</th></tr></thead><tbody>' +
@@ -11357,78 +11416,235 @@ document.addEventListener('input', e => {
 }
 
 /* ---------- balão e chat flutuante ---------- */
+const IA_NOME = 'DevIT';
+const IA_CLIPE = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square" aria-hidden="true"><path d="M20 11.5l-8.2 8.2a5 5 0 0 1-7.1-7.1l8.5-8.5a3.3 3.3 0 0 1 4.7 4.7l-8.5 8.5a1.7 1.7 0 0 1-2.4-2.4l7.8-7.8"></path></svg>';
+const IA_MAX_ANEXOS = 10;
+const IA_BAIXAR = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"></path></svg>';
 function iaMontar(){
   let r = $('#ia-raiz');
   if (!IA.posso){ if (r) r.remove(); IA.aberto = false; return; }
   if (!r){
     r = document.createElement('div'); r.id = 'ia-raiz';
-    r.innerHTML = '<section class="ia-chat" id="ia-chat" role="dialog" aria-label="Conversa com o agente de IA" hidden>' +
-      '<header class="ia-cab"><div><b>Agente de IA</b><small>Só enxerga o que você enxerga no CicloDev</small></div><button type="button" class="ia-fechar" data-ia-fechar aria-label="Fechar a conversa">' +
+    r.innerHTML = '<section class="ia-chat" id="ia-chat" role="dialog" aria-label="Conversa com o ' + IA_NOME + '" hidden>' +
+      '<header class="ia-cab"><div><b class="ia-nome">' + IA_NOME + '<i class="ia-ponto" aria-hidden="true"></i></b><small>Só enxerga o que você enxerga no CicloDev</small></div><button type="button" class="ia-fechar" data-ia-fechar aria-label="Fechar a conversa">' +
       '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19"></path></svg></button></header>' +
       '<div class="ia-msgs" data-ia-msgs aria-live="polite"></div>' +
-      '<form class="ia-escrever" data-ia-form><textarea class="campo" data-ia-texto rows="2" maxlength="8000" placeholder="Escreva sua mensagem…" aria-label="Mensagem para o agente"></textarea><button class="btn" type="submit" data-ia-enviar>Enviar</button></form>' +
+      '<div class="ia-pendentes" data-ia-pendentes hidden></div>' +
+      '<form class="ia-escrever" data-ia-form><button type="button" class="ia-clipe" data-ia-clipe title="Anexar arquivos (também dá para arrastar ou colar)" aria-label="Anexar arquivos">' + IA_CLIPE + '</button>' +
+      '<input type="file" data-ia-arquivo multiple hidden>' +
+      '<textarea class="campo" data-ia-texto rows="2" maxlength="8000" placeholder="Escreva, cole ou arraste arquivos…" aria-label="Mensagem para o ' + IA_NOME + '"></textarea><button class="btn" type="submit" data-ia-enviar>Enviar</button></form>' +
+      '<div class="ia-soltar" data-ia-soltar hidden><span>Solte os arquivos aqui para mandar ao ' + IA_NOME + '</span></div>' +
       '</section>' +
-      '<button type="button" class="ia-balao" data-ia-balao aria-expanded="false" aria-controls="ia-chat" aria-label="Abrir a conversa com o agente de IA"><img src="' + IA_IMG.fechado + '" alt="" width="1254" height="1254" draggable="false"></button>';
+      '<button type="button" class="ia-balao" data-ia-balao aria-expanded="false" aria-controls="ia-chat" aria-label="Abrir a conversa com o ' + IA_NOME + '"><img src="' + IA_IMG.fechado + '" alt="" width="1254" height="1254" draggable="false"></button>';
     document.body.appendChild(r);
-    new Image().src = IA_IMG.aberto;   // já deixa a imagem do chat aberto pronta, para não piscar
+    new Image().src = IA_IMG.aberto;   // já deixa as outras imagens prontas, para não piscar
+    new Image().src = IA_IMG.animado;
   }
   const chat = $('#ia-chat', r), bal = $('[data-ia-balao]', r), img = $('img', bal);
   chat.hidden = !IA.aberto;
   bal.setAttribute('aria-expanded', String(IA.aberto));
-  bal.setAttribute('aria-label', IA.aberto ? 'Fechar a conversa com o agente de IA' : 'Abrir a conversa com o agente de IA');
-  img.src = IA.aberto ? IA_IMG.aberto : IA_IMG.fechado;
+  bal.setAttribute('aria-label', (IA.aberto ? 'Fechar' : 'Abrir') + ' a conversa com o ' + IA_NOME);
+  iaImagemBalao();
   bal.classList.toggle('aberto', IA.aberto);
-  if (IA.aberto) iaDesenharMsgs();
+  if (IA.aberto){ iaDesenharMsgs(); iaDesenharPendentes(); }
 }
+// imagem do balão: aberto = olhos abertos; mouse em cima ou mensagem nova do DevIT = o robozinho se mexendo;
+// com mensagem nova e o chat fechado, o balão também pulsa até a pessoa abrir o chat
+function iaImagemBalao(){
+  const bal = $('#ia-raiz [data-ia-balao]'); if (!bal) return;
+  const img = $('img', bal), aviso = !IA.aberto && IA.novas > 0;
+  const src = IA.aberto ? IA_IMG.aberto : (IA.mouse || aviso) ? IA_IMG.animado : IA_IMG.fechado;
+  if (img.getAttribute('src') !== src) img.setAttribute('src', src);
+  bal.classList.toggle('avisando', aviso);
+  bal.setAttribute('aria-label', (IA.aberto ? 'Fechar' : 'Abrir') + ' a conversa com o ' + IA_NOME + (aviso ? ' (' + IA.novas + (IA.novas === 1 ? ' mensagem nova)' : ' mensagens novas)') : ''));
+}
+// mensagens novas do DevIT que a pessoa ainda não viu (o "visto" fica no banco, parte 28)
+async function iaNovidades(){
+  const sb = iaBanco(); if (!sb || !IA.posso) return;
+  const {data, error} = await sb.rpc('ia_novidades'); if (error) return;
+  const n = +data || 0;
+  if (IA.aberto){ if (n > 0){ await iaLerConversa(true); iaMarcarVisto(); } return; }
+  if (n !== IA.novas){ IA.novas = n; iaImagemBalao(); }
+}
+async function iaMarcarVisto(){ const sb = iaBanco(); IA.novas = 0; iaImagemBalao(); if (sb) await sb.rpc('ia_marcar_visto'); }
+setInterval(() => { if (document.visibilityState === 'visible') iaNovidades(); }, 30000);
+document.addEventListener('mouseover', e => { if (e.target.closest && e.target.closest('#ia-raiz [data-ia-balao]') && !IA.mouse){ IA.mouse = true; iaImagemBalao(); } });
+document.addEventListener('mouseout', e => { const b = e.target.closest && e.target.closest('#ia-raiz [data-ia-balao]'); if (b && !b.contains(e.relatedTarget) && IA.mouse){ IA.mouse = false; iaImagemBalao(); } });
 const iaHora = v => { const d = new Date(v), h = new Date(); return d.toDateString() === h.toDateString() ? d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}) : d.toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}); };
+const iaTam = n => n >= 1048576 ? num(n / 1048576, 1) + ' MB' : Math.max(1, Math.ceil(n / 1024)) + ' KB';
+const iaEhImagem = a => /^image\/(png|jpe?g|gif|webp|bmp|svg\+xml)$/i.test(a.tipo || '');
+
+/* ---------- anexos: botão, arrastar e soltar, colar ---------- */
+IA.pendentes = [];
+IA.urls = {};   // caminho no depósito -> endereço assinado (1 hora), para abrir e mostrar a miniatura
+function iaAnexar(lista){
+  const arqs = [...(lista || [])].filter(f => f && f.size != null);
+  if (!arqs.length) return;
+  for (const f of arqs){
+    if (IA.pendentes.length >= IA_MAX_ANEXOS){ toast('No máximo ' + IA_MAX_ANEXOS + ' arquivos por mensagem.'); break; }
+    if (f.size > AQ_LIMITE){ toast('O arquivo ' + (f.name || 'sem nome') + ' passa de 50 MB.'); continue; }
+    if (!f.size){ toast('O arquivo ' + (f.name || 'sem nome') + ' está vazio.'); continue; }
+    const nome = f.name || ('colado-' + new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-') + (f.type === 'image/png' ? '.png' : ''));
+    IA.pendentes.push({id:novoUuid(), arq:f, nome, tipo:f.type || '', tamanho:f.size, previa:/^image\//.test(f.type || '') ? URL.createObjectURL(f) : ''});
+  }
+  iaDesenharPendentes();
+  const t = $('#ia-raiz [data-ia-texto]'); if (t) t.focus();
+}
+function iaTirarPendente(id){
+  const i = IA.pendentes.findIndex(p => p.id === id); if (i < 0) return;
+  if (IA.pendentes[i].previa) URL.revokeObjectURL(IA.pendentes[i].previa);
+  IA.pendentes.splice(i, 1); iaDesenharPendentes();
+}
+function iaDesenharPendentes(){
+  const box = $('#ia-raiz [data-ia-pendentes]'); if (!box) return;
+  box.hidden = !IA.pendentes.length;
+  box.innerHTML = IA.pendentes.map(p => '<span class="ia-pend">' + (p.previa ? '<img src="' + esc(p.previa) + '" alt="">' : '') + '<span class="ia-pend-nome" title="' + esc(p.nome) + '">' + esc(p.nome) + '</span><small>' + iaTam(p.tamanho) + '</small>' +
+    (IA.enviando ? '' : '<button type="button" data-ia-tirar="' + esc(p.id) + '" aria-label="Tirar ' + esc(p.nome) + '">×</button>') + '</span>').join('');
+}
+async function iaLogin(sb){ try { const {data} = await sb.auth.getSession(); return data && data.session && data.session.user && data.session.user.id; } catch(e){ return null; } }
+// endereços para abrir os anexos (o depósito é fechado: cada endereço vale 1 hora)
+async function iaAssinar(caminhos){
+  const sb = iaBanco(), falta = [...new Set(caminhos)].filter(c => c && !(IA.urls[c] && IA.urls[c].ate > Date.now()));
+  if (!sb || !sb.storage || !falta.length) return;
+  const {data, error} = await sb.storage.from('anexos').createSignedUrls(falta, 3600);
+  if (error || !data) return;
+  data.forEach(d => { if (d && d.signedUrl) IA.urls[d.path] = {url:d.signedUrl, ate:Date.now() + 50 * 60000}; });
+}
+const iaAnexosDe = m => Array.isArray(m.anexos) ? m.anexos : [];
+function iaAnexosHTML(m){
+  const l = iaAnexosDe(m); if (!l.length) return '';
+  return '<div class="ia-anexos">' + l.map(a => { const u = IA.urls[a.caminho];
+    return '<button type="button" class="ia-anexo' + (iaEhImagem(a) && u ? ' com-foto' : '') + '" data-ia-abrir="' + esc(a.caminho) + '" title="' + (iaEhImagem(a) ? 'Ver ' : 'Baixar ') + esc(a.nome) + '">' +
+      (iaEhImagem(a) && u ? '<img src="' + esc(u.url) + '" alt="' + esc(a.nome) + '" loading="lazy">' : '') +
+      '<span class="ia-anexo-nome">' + esc(a.nome) + '</span><small>' + (iaEhImagem(a) ? '' : IA_BAIXAR) + iaTam(+a.tamanho || 0) + '</small></button>'; }).join('') + '</div>';
+}
+const iaAnexoPor = caminho => { for (const m of IA.msgs || []) for (const a of iaAnexosDe(m)) if (a.caminho === caminho) return a; return null; };
+// imagem: abre aqui mesmo, grande, com o botão de baixar; outro arquivo: baixa direto no computador
+async function iaAbrir(caminho){
+  const a = iaAnexoPor(caminho); if (!a) return;
+  if (!iaEhImagem(a)) return iaBaixar(a);
+  await iaAssinar([caminho]);
+  const u = IA.urls[caminho];
+  if (!u){ toast('Não deu para abrir a imagem agora. Tente de novo.'); return; }
+  const dlg = modal(esc(a.nome), '<figure class="ia-ver"><img src="' + esc(u.url) + '" alt="' + esc(a.nome) + '"><figcaption>' + esc(iaTam(+a.tamanho || 0)) + '</figcaption></figure>',
+    [{txt:'Fechar', cls:'sec'}, {txt:'Baixar', acao:() => { iaBaixar(a); return false; }}]);
+  dlg.classList.add('ia-ver-modal');
+}
+// baixa com o nome original: o depósito manda o arquivo como "baixar" (endereço de 1 minuto, só para isso)
+async function iaBaixar(a){
+  const sb = iaBanco(); if (!sb || !sb.storage) return;
+  const {data, error} = await sb.storage.from('anexos').createSignedUrl(a.caminho, 60, {download:a.nome});
+  const url = data && data.signedUrl;
+  if (error || !url){ toast('Não deu para baixar ' + a.nome + ' agora. Tente de novo.'); return; }
+  const l = document.createElement('a'); l.href = url; l.download = a.nome; l.rel = 'noopener'; l.style.display = 'none';
+  document.body.appendChild(l); l.click(); setTimeout(() => l.remove(), 500);
+  toast('Baixando ' + a.nome + '…');
+}
+
 function iaDesenharMsgs(){
   const box = $('#ia-raiz [data-ia-msgs]'); if (!box) return;
   let h = '';
   if (IA.carregando && !IA.msgs) h = '<p class="ia-aviso">Lendo a conversa…</p>';
-  else if (IA.msgs && !IA.msgs.length) h = '<p class="ia-aviso">Olá! Esta é a sua conversa com o agente de IA. Ela fica guardada só para você.</p>';
-  else if (IA.msgs) h = IA.msgs.map(m => '<div class="ia-msg ia-' + (m.autor === 'agente' ? 'agente' : 'usuario') + '"><p>' + esc(m.texto) + '</p><time datetime="' + esc(m.criado_em) + '">' + esc(iaHora(m.criado_em)) + '</time></div>').join('');
-  if (IA.msgs && IA.msgs.length && IA.msgs[IA.msgs.length - 1].autor === 'usuario') h += '<p class="ia-aviso">O agente ainda não está ligado. Sua mensagem ficou guardada.</p>';
+  else if (IA.msgs && !IA.msgs.length) h = '<p class="ia-aviso">Olá! Esta é a sua conversa com o ' + IA_NOME + '. Ela fica guardada só para você.</p>';
+  else if (IA.msgs) h = (IA.maisAntigas ? '<button type="button" class="ia-antigas" data-ia-antigas' + (IA.carregando ? ' disabled' : '') + '>' + (IA.carregando ? 'Lendo…' : 'Ver mensagens anteriores') + '</button>' : '') +
+    IA.msgs.map(m => '<div class="ia-msg ia-' + (m.autor === 'agente' ? 'agente' : 'usuario') + '">' + (String(m.texto || '').trim() ? '<p>' + esc(m.texto) + '</p>' : '') + iaAnexosHTML(m) + '<time datetime="' + esc(m.criado_em) + '">' + esc(iaHora(m.criado_em)) + '</time></div>').join('');
+  if (IA.msgs && IA.msgs.length && IA.msgs[IA.msgs.length - 1].autor === 'usuario') h += '<p class="ia-aviso">O ' + IA_NOME + ' ainda não está ligado. Sua mensagem ficou guardada.</p>';
   if (IA.erro) h += '<p class="ia-aviso erro">' + esc(IA.erro) + '</p>';
-  box.innerHTML = h; box.scrollTop = box.scrollHeight;
+  const antes = box.scrollHeight - box.scrollTop;
+  box.innerHTML = h; box.scrollTop = IA.manterRolagem ? box.scrollHeight - antes : box.scrollHeight; IA.manterRolagem = false;
   const bt = $('#ia-raiz [data-ia-enviar]'); if (bt){ bt.disabled = IA.enviando; bt.textContent = IA.enviando ? 'Enviando…' : 'Enviar'; }
+  // miniaturas das imagens que ainda não têm endereço: busca e desenha de novo
+  const semUrl = (IA.msgs || []).flatMap(iaAnexosDe).filter(a => iaEhImagem(a) && !IA.urls[a.caminho]).map(a => a.caminho);
+  if (semUrl.length && !IA.assinando){ IA.assinando = true; iaAssinar(semUrl).finally(() => { IA.assinando = false; if (semUrl.some(c => IA.urls[c])) iaDesenharMsgs(); }); }
 }
+const IA_CAMPOS = 'id, autor, texto, anexos, criado_em';
 async function iaLerConversa(){
   const sb = iaBanco(); if (!sb || IA.carregando) return;
   IA.carregando = true; iaDesenharMsgs();
-  const {data, error} = await sb.from('ia_mensagens').select('id, autor, texto, criado_em').order('criado_em', {ascending:false}).limit(200);
+  const {data, error} = await sb.from('ia_mensagens').select(IA_CAMPOS).order('criado_em', {ascending:false}).limit(200);
   IA.carregando = false;
   if (error){ IA.erro = 'Não deu para ler a conversa: ' + error.message; IA.msgs = IA.msgs || []; }
-  else { IA.erro = ''; IA.msgs = (data || []).slice().sort((a, b) => String(a.criado_em).localeCompare(String(b.criado_em))).slice(-200); }
+  else { IA.erro = ''; IA.msgs = iaOrdenar(data || []); IA.maisAntigas = (data || []).length >= 200; }
+  iaDesenharMsgs();
+}
+// a conversa inteira fica no banco; a tela mostra as últimas 200 e busca as anteriores quando a pessoa pede
+const iaOrdenar = l => { const vistos = new Set(); return l.filter(m => !vistos.has(m.id) && vistos.add(m.id)).sort((a, b) => String(a.criado_em).localeCompare(String(b.criado_em)) || String(a.id).localeCompare(String(b.id))); };
+async function iaAnteriores(){
+  const sb = iaBanco(); if (!sb || IA.carregando || !IA.msgs || !IA.msgs.length) return;
+  IA.carregando = true; iaDesenharMsgs();
+  const {data, error} = await sb.from('ia_mensagens').select(IA_CAMPOS).lt('criado_em', IA.msgs[0].criado_em).order('criado_em', {ascending:false}).limit(200);
+  IA.carregando = false;
+  if (error){ IA.erro = 'Não deu para ler as mensagens anteriores: ' + error.message; }
+  else { const antes = IA.msgs.length; IA.msgs = iaOrdenar((data || []).concat(IA.msgs)); IA.maisAntigas = (data || []).length >= 200 && IA.msgs.length > antes; IA.manterRolagem = true; }
   iaDesenharMsgs();
 }
 async function iaEnviar(){
   const sb = iaBanco(), t = $('#ia-raiz [data-ia-texto]'); if (!sb || !t || IA.enviando) return;
-  const texto = t.value.trim(); if (!texto) return;
-  IA.enviando = true; IA.erro = ''; iaDesenharMsgs();
-  const {data, error} = await sb.from('ia_mensagens').insert({autor:'usuario', texto}).select('id, autor, texto, criado_em');
+  const texto = t.value.trim(); if (!texto && !IA.pendentes.length) return;
+  IA.enviando = true; IA.erro = ''; iaDesenharMsgs(); iaDesenharPendentes();
+  // 1) os arquivos vão para o depósito, na pasta <login>/ia/ da pessoa
+  const anexos = [];
+  if (IA.pendentes.length){
+    const login = await iaLogin(sb);
+    if (!login || !sb.storage){ IA.enviando = false; IA.erro = 'Sem login, não deu para mandar os arquivos.'; iaDesenharMsgs(); iaDesenharPendentes(); return; }
+    for (const p of IA.pendentes){
+      if (p.caminho){ anexos.push({nome:p.nome, tipo:p.tipo, tamanho:p.tamanho, caminho:p.caminho}); continue; }   // já subiu numa tentativa anterior
+      const caminho = login + '/ia/' + p.id + '-' + aqNomeSeguro(p.nome);
+      const {error} = await sb.storage.from('anexos').upload(caminho, p.arq, {contentType:p.tipo || 'application/octet-stream', upsert:false});
+      if (error){ IA.enviando = false; IA.erro = 'Não deu para mandar o arquivo ' + p.nome + ': ' + (error.message || error) + '. Tente de novo.'; iaDesenharMsgs(); iaDesenharPendentes(); return; }
+      p.caminho = caminho; anexos.push({nome:p.nome, tipo:p.tipo, tamanho:p.tamanho, caminho});
+    }
+  }
+  // 2) a mensagem vai para o banco, com a lista dos arquivos
+  const {data, error} = await sb.from('ia_mensagens').insert({autor:'usuario', texto, anexos}).select(IA_CAMPOS);
   IA.enviando = false;
   const linha = Array.isArray(data) ? data[0] : data;
   if (error || !linha){ IA.erro = 'A mensagem não foi guardada' + (error ? ': ' + error.message : '') + '. Tente de novo.'; }
-  else { (IA.msgs = IA.msgs || []).push(linha); t.value = ''; }
-  iaDesenharMsgs(); t.focus();
+  else {
+    (IA.msgs = IA.msgs || []).push(linha); t.value = '';
+    IA.pendentes.forEach(p => { if (p.previa && p.caminho) IA.urls[p.caminho] = {url:p.previa, ate:Date.now() + 50 * 60000}; });
+    IA.pendentes = [];
+  }
+  iaDesenharMsgs(); iaDesenharPendentes(); t.focus();
 }
 function iaAlternar(abrir){
   IA.aberto = abrir === undefined ? !IA.aberto : !!abrir; iaMontar();
-  if (IA.aberto){ if (!IA.msgs) iaLerConversa(); setTimeout(() => { const t = $('#ia-raiz [data-ia-texto]'); if (t) t.focus(); }, 30); }
+  if (IA.aberto){ if (!IA.msgs || IA.novas > 0) iaLerConversa(); if (IA.novas > 0 || !IA.vistoMarcado){ IA.vistoMarcado = true; iaMarcarVisto(); } setTimeout(() => { const t = $('#ia-raiz [data-ia-texto]'); if (t) t.focus(); }, 30); }
   else { const b = $('#ia-raiz [data-ia-balao]'); if (b) b.focus(); }
 }
 async function iaConferir(){
   const sb = iaBanco(); if (!sb){ IA.posso = false; return iaMontar(); }
   const {data, error} = await sb.rpc('ia_posso');
   IA.posso = !error && data === true;
-  if (!IA.posso){ IA.msgs = null; IA.aberto = false; }
+  if (!IA.posso){ IA.msgs = null; IA.aberto = false; IA.novas = 0; }
   iaMontar();
+  if (IA.posso) iaNovidades();
 }
 document.addEventListener('click', e => {
   if (e.target.closest('#ia-raiz [data-ia-balao]')) return iaAlternar();
   if (e.target.closest('#ia-raiz [data-ia-fechar]')) return iaAlternar(false);
+  if (e.target.closest('#ia-raiz [data-ia-antigas]')) return iaAnteriores();
+  if (e.target.closest('#ia-raiz [data-ia-clipe]')) return $('#ia-raiz [data-ia-arquivo]').click();
+  const tira = e.target.closest('#ia-raiz [data-ia-tirar]'); if (tira) return iaTirarPendente(tira.dataset.iaTirar);
+  const ab = e.target.closest('#ia-raiz [data-ia-abrir]'); if (ab) return iaAbrir(ab.dataset.iaAbrir);
 });
 document.addEventListener('submit', e => { if (e.target.closest('#ia-raiz [data-ia-form]')){ e.preventDefault(); iaEnviar(); } });
+document.addEventListener('change', e => { const f = e.target.closest('#ia-raiz [data-ia-arquivo]'); if (f){ iaAnexar(f.files); f.value = ''; } });
+document.addEventListener('paste', e => {
+  if (!(e.target.closest && e.target.closest('#ia-chat'))) return;
+  const fs = e.clipboardData && e.clipboardData.files;
+  if (fs && fs.length){ e.preventDefault(); iaAnexar(fs); }
+});
+// arrastar e soltar em qualquer parte do chat aberto
+{
+  let prof = 0;
+  const temArquivo = e => e.dataTransfer && [...(e.dataTransfer.types || [])].includes('Files');
+  const aviso = v => { const s = $('#ia-raiz [data-ia-soltar]'); if (s) s.hidden = !v; };
+  document.addEventListener('dragenter', e => { if (!temArquivo(e) || !(e.target.closest && e.target.closest('#ia-chat'))) return; e.preventDefault(); prof++; aviso(true); });
+  document.addEventListener('dragover', e => { if (temArquivo(e) && e.target.closest && e.target.closest('#ia-chat')){ e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; } });
+  document.addEventListener('dragleave', e => { if (!(e.target.closest && e.target.closest('#ia-chat'))) return; prof = Math.max(0, prof - 1); if (!prof) aviso(false); });
+  document.addEventListener('drop', e => { if (!(e.target.closest && e.target.closest('#ia-chat'))) return; e.preventDefault(); prof = 0; aviso(false); if (e.dataTransfer && e.dataTransfer.files) iaAnexar(e.dataTransfer.files); });
+}
 document.addEventListener('keydown', e => {
   if (e.target.closest && e.target.closest('#ia-raiz [data-ia-texto]') && e.key === 'Enter' && !e.shiftKey && !e.isComposing){ e.preventDefault(); iaEnviar(); }
   else if (e.key === 'Escape' && IA.aberto && e.target.closest && e.target.closest('#ia-raiz')) iaAlternar(false);
@@ -11441,7 +11657,95 @@ if (COM_BANCO){
     return r;
   };
 }
-if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {iaAdminHTML, iaConferir, iaAlternar});
+if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {iaAdminHTML, iaConferir, iaAlternar, iaAnexar, iaAbrir, iaNovidades});
+
+/* ===== O status do épico (e de qualquer item com subitens) acompanha os subitens =====
+   - todos os subitens feitos: o item de cima vai sozinho para Feito;
+   - pelo menos um subitem andando (Fazendo, Em revisão ou Feito) e o de cima ainda na fila ou A fazer: vai para Fazendo;
+   - o de cima estava Feito e um subitem foi reaberto: volta para Fazendo.
+   Travado e Em revisão escolhidos à mão no item de cima não são trocados por "Fazendo".
+   A mudança passa por mudarStatus, então fica no histórico e vai para o banco como qualquer outra.
+   Ao abrir o sistema, acerta também os itens que já estavam fora da regra (por exemplo, épico com tudo feito ainda em A fazer). */
+const PS = {quieto:false};
+const psFilhos = p => D.issues.filter(x => x.pai === p.id && !x.arquivado);
+function psAlvo(p){
+  const f = psFilhos(p); if (!f.length || p.arquivado) return null;
+  if (f.every(x => x.status === 'done')) return p.status === 'done' ? null : 'done';
+  if (p.status === 'done') return 'doing';
+  if ((p.status === 'backlog' || p.status === 'todo') && f.some(x => x.status === 'doing' || x.status === 'review' || x.status === 'done')) return 'doing';
+  return null;
+}
+const psTipo = p => p.tipo === 'epic' ? 'O épico' : 'O item';
+const _mudarStatusPs = mudarStatus;
+mudarStatus = function(i, s){
+  const r = _mudarStatusPs.apply(this, arguments);
+  const p = i && i.pai && byId('issues', i.pai), alvo = p && podeEditar() ? psAlvo(p) : null;
+  if (alvo){
+    mudarStatus(p, alvo);   // passa por aqui de novo e sobe para o avô, se houver
+    if (!PS.quieto) toast('"' + i.titulo + '" foi para ' + stNome(i.status) + '. ' + psTipo(p) + ' "' + p.titulo + '" foi junto para ' + stNome(p.status) + '.');
+  }
+  return r;
+};
+// acerta de uma vez os itens que estão fora da regra; devolve quantos mudaram
+function psAcertarTodos(){
+  if (!podeEditar() || !D || !Array.isArray(D.issues)) return 0;
+  let n = 0;
+  const _toast = toast; PS.quieto = true; toast = () => {};
+  try {
+    // de baixo para cima: primeiro os pais mais fundos, para o avô já ver o pai certo
+    const prof = p => { let d = 0, x = p; while (x && x.pai && d < 20){ x = byId('issues', x.pai); d++; } return d; };
+    const pais = D.issues.filter(p => !p.arquivado && D.issues.some(x => x.pai === p.id && !x.arquivado)).sort((a, b) => prof(b) - prof(a));
+    for (const p of pais){ const alvo = psAlvo(p); if (alvo){ mudarStatus(p, alvo); n++; } }
+  } finally { toast = _toast; PS.quieto = false; }
+  if (n){ salvar(); if (typeof render === 'function') render(); toast(n === 1 ? '1 épico com os subitens já andando teve o status acertado sozinho.' : n + ' épicos e itens com subitens tiveram o status acertado sozinhos.'); }
+  return n;
+}
+if (COM_BANCO){
+  const _carregarPs = carregarDoBanco;
+  carregarDoBanco = async function(){ const r = await _carregarPs.apply(this, arguments); setTimeout(() => { if (BANCO.carregado) psAcertarTodos(); }, 300); return r; };
+  window.ciclodevCarregarBanco = carregarDoBanco;
+} else setTimeout(psAcertarTodos, 300);
+if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {psAcertarTodos, mudarStatus});
+
+/* ===== Tabela: responsável em lote =====
+   Botão no cabeçalho da coluna Responsável da Tabela (projeto, produto, aplicação, frente...): escolhe a pessoa e
+   se vale só para os itens marcados ou para todos os itens da lista que está na tela (com os filtros de agora).
+   A mudança passa pelo mesmo caminho da edição em massa: automações de "responsável mudou", histórico e banco. */
+const RL_ICO = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="square" aria-hidden="true"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20c.8-3.5 3.3-5.5 6.5-5.5s5.7 2 6.5 5.5"></path><path d="M17 8v6M14 11h6"></path></svg>';
+const _vTableRl = vTable;
+vTable = function(){
+  const h = _vTableRl.apply(this, arguments);
+  if (!podeEditar()) return h;
+  const bt = '<button class="rl-col" type="button" data-rl-abrir title="Responsável em lote: a mesma pessoa em vários itens de uma vez" aria-label="Responsável em lote">' + RL_ICO + '</button>';
+  // o botão fica dentro do cabeçalho da coluna Responsável
+  return h.replace(/(<th scope="col" class="ord" data-ordem="resp">)([^<]*)(<\/th>)/, '$1<span class="rl-cab">' + bt + '$2</span>$3');
+};
+function rlAbrir(){
+  const lista = listaFiltrada(), marcados = lista.filter(i => selItens.has(i.id));
+  if (!lista.length){ toast('Não há itens nesta lista.'); return; }
+  const equipe = D.people.filter(p => p.acesso !== 'stakeholder');
+  const alc = (v, txt, n, marcado, desl) => '<label class="rl-op' + (desl ? ' desl' : '') + '"><input type="radio" name="rl-alcance" value="' + v + '"' + (marcado ? ' checked' : '') + (desl ? ' disabled' : '') + '><span><b>' + txt + '</b><small>' + n + (n === 1 ? ' item' : ' itens') + '</small></span></label>';
+  const corpo = '<div class="rl-form"><label class="lb">Responsável<select class="sel" id="rl-pessoa"><option value="">Escolha a pessoa</option><option value="-">Sem responsável (tirar)</option>' +
+      equipe.map(p => '<option value="' + esc(p.id) + '">' + esc(p.nome) + '</option>').join('') + '</select></label>' +
+    '<fieldset class="rl-alcance"><legend>Para quais itens</legend>' +
+      alc('sel', 'Só os marcados na tabela', marcados.length, marcados.length > 0, !marcados.length) +
+      alc('todos', 'Todos os itens desta lista', lista.length, !marcados.length, false) +
+    '</fieldset>' + (marcados.length ? '' : '<p class="sec rl-dica">Para escolher só alguns, marque as caixinhas na primeira coluna da tabela.</p>') + '</div>';
+  modal('Responsável em lote', corpo, [{txt:'Cancelar', cls:'sec'}, {txt:'Aplicar', acao:d => {
+    const v = $('#rl-pessoa', d).value; if (!v){ toast('Escolha a pessoa'); return false; }
+    const todos = (d.querySelector('[name="rl-alcance"]:checked') || {}).value === 'todos';
+    const its = (todos ? lista : marcados).filter(i => byId('issues', i.id));
+    const resp = v === '-' ? null : v, nome = resp ? (pessoa(resp) || {nome:'?'}).nome : 'sem responsável';
+    let n = 0;
+    its.forEach(i => { if (i.resp !== resp){ i.resp = resp; n++; rodarAutomacoes(i, 'responsavel_mudou'); } });
+    registrar('status', null, 'Responsável ' + (resp ? nome : 'tirado') + ' em ' + its.length + (its.length === 1 ? ' item' : ' itens') + ' de uma vez');
+    salvar(); rView();
+    toast(n ? (resp ? nome + ' agora é responsável por ' : 'Tirado o responsável de ') + n + (n === 1 ? ' item' : ' itens') + (n < its.length ? ' (' + (its.length - n) + ' já estavam assim)' : '') + '.' : 'Nada mudou: todos já estavam assim.');
+  }}]);
+}
+// captura antes do clique de ordenar a coluna, para o botão não ordenar a tabela junto
+document.addEventListener('click', e => { if (e.target.closest && e.target.closest('[data-rl-abrir]')){ e.stopPropagation(); e.preventDefault(); rlAbrir(); } }, true);
+if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {rlAbrir, selItens});
 
 abrirModulo(UI.modulo);
 })();

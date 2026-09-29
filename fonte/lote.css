@@ -30,3 +30,19 @@ dialog.modal.lt-modal{width:min(1040px, calc(100vw - 32px));max-width:none}
 .lt-at:hover{border-color:var(--preto)}
 .lt-at:focus-visible{outline:2px solid var(--preto);outline-offset:1px}
 .lt-at-nova{border-style:dashed}
+
+/* Tabela: responsável em lote (tabela_lote.js), botão no cabeçalho da coluna Responsável */
+.rl-cab{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;flex-wrap:nowrap}
+.rl-col{display:inline-grid;place-items:center;width:22px;height:22px;padding:0;border:1px solid rgba(255,255,255,.45);background:transparent;color:inherit;cursor:pointer;flex:none}
+.rl-col:hover{border-color:#fff;background:rgba(255,255,255,.12)}
+.rl-col:focus-visible{outline:2px solid var(--vermelho);outline-offset:1px}
+.rl-col svg{width:14px;height:14px}
+.rl-form{display:grid;gap:14px;min-width:min(420px,100%)}
+.rl-alcance{border:0;margin:0;padding:0;display:grid;gap:8px}
+.rl-alcance legend{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--tinta-2);margin-bottom:6px;padding:0}
+.rl-op{display:flex;align-items:center;gap:10px;border:1px solid var(--linha);padding:10px 12px;cursor:pointer}
+.rl-op:has(input:checked){border-color:var(--preto);box-shadow:inset 3px 0 0 var(--vermelho)}
+.rl-op span{display:grid;gap:2px}
+.rl-op small{color:var(--tinta-3);font-size:12px}
+.rl-op.desl{opacity:.5;cursor:not-allowed}
+.rl-dica{margin:0;font-size:12.5px}

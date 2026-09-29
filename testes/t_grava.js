@@ -92,6 +92,8 @@ window.supabase = { createClient(){ let sess = {user:{id:'u1', email:'admin@it-i
   ok(conta("select count(*) from public.pessoas_custos c join public.pessoas p on p.id=c.pessoa_id where p.nome='Pessoa Teste' and c.valor_pj=7000") === '1', 'pessoa e custo dela gravados');
 
   // 3) alterar só o que mudou
+  // antes, deixa terminar o acerto automático do status dos épicos ao abrir (paistatus.js), que grava sozinho
+  await p.waitForTimeout(800); await espera();
   ops.length = 0;
   await p.evaluate(ids => { const D = window.ciclodevDados(); const i = D.issues.find(x => x.id === ids.it); i.titulo = 'História alterada'; i.status = 'doing'; i.check[0].f = true; window.ciclodevGravarAgora(); }, ids);
   await espera(); await semErro('alterar título, status e checklist sem erro');

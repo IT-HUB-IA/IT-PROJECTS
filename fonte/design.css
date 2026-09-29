@@ -513,16 +513,19 @@ dialog.modal.modal-ficha{max-width:min(1180px,calc(100% - 32px))}
 /* =================== Board no formato Jira + Trello =================== */
 .bj-board{min-width:0;flex-wrap:nowrap !important;align-items:flex-start}
 .board-rolo{overflow-x:auto;overflow-y:hidden}
-.bj-board > .coluna{flex:0 0 272px;min-width:272px;max-width:272px}
-@media (max-width:960px){ .bj-board{flex-wrap:nowrap !important} .bj-board > .coluna{flex:0 0 260px;min-width:260px} }
-.bj-coluna .coluna-cab{align-items:flex-start}
+/* as colunas dividem a largura da tela; só passam dela (e aparece a rolagem) quando não cabem nem com 150px cada,
+   por exemplo com a Estrutura ou o menu principal abertos mais largos */
+.bj-board > .coluna{flex:1 1 0;min-width:150px;max-width:none}
+@media (max-width:960px){ .bj-board{flex-wrap:nowrap !important} .bj-board > .coluna{flex:1 1 0;min-width:150px} }
+.bj-coluna .coluna-cab{align-items:flex-start;flex-wrap:nowrap;gap:6px}
+.bj-coluna .coluna-cab .bj-col-nome{flex:1 1 auto;flex-wrap:wrap;overflow-wrap:break-word}
 .bj-col-nome{display:flex;align-items:center;gap:4px;min-width:0}
 .bj-col-dir{display:flex;align-items:center;gap:6px;flex:none}
 .bj-soma{font-family:var(--font-mono);font-size:11px;color:var(--text-secondary);background:#fff;border:1px solid var(--nevoa);padding:1px 6px}
 .coluna.abaixo{box-shadow:inset 0 3px 0 #E0A800}
 .bj-aviso-col{font-size:11px;font-weight:600;color:var(--vermelho);padding:0 12px 6px}
 .bj-aviso-col.falta{color:#9A6B00}
-.bj-nova-col{flex:0 0 220px;align-self:flex-start;display:flex;align-items:center;gap:8px;padding:12px;border:1px dashed var(--grafite);background:rgba(5,5,6,.03);font:inherit;font-weight:600;cursor:pointer;color:var(--text-secondary)}
+.bj-nova-col{flex:0 0 36px;width:36px;height:36px;align-self:flex-start;display:flex;align-items:center;justify-content:center;padding:0;border:1px dashed var(--grafite);background:rgba(5,5,6,.03);font:inherit;font-weight:600;cursor:pointer;color:var(--text-secondary)}
 .bj-nova-col:hover{background:rgba(5,5,6,.07);color:var(--preto)}
 .bj-criar{display:flex;gap:6px;padding:0 8px 8px}
 .bj-criar .campo{flex:1;min-width:0;height:34px;border-style:dashed;background:transparent}
@@ -531,7 +534,10 @@ dialog.modal.modal-ficha{max-width:min(1180px,calc(100% - 32px))}
 /* cartão */
 .bj-cartao{display:flex;flex-direction:column;gap:6px;padding:10px 10px 8px;background:#fff;border:1px solid #DFE1E6;border-radius:3px;box-shadow:0 1px 1px rgba(9,30,66,.2);cursor:pointer}
 .bj-cartao:hover{background:#FAFBFC}
-.bj-cartao .tt{font-size:14px;line-height:1.35;font-weight:500;overflow-wrap:anywhere}
+.bj-cartao .tt{font-size:14px;line-height:1.35;font-weight:500;overflow-wrap:break-word;hyphens:auto;-webkit-hyphens:auto}
+/* coluna estreita (muitas colunas na tela): cartão e letra um pouco menores, para as palavras caberem inteiras */
+.bj-board > .coluna{container-type:inline-size}
+@container (max-width:170px){ .bj-cartao{padding:8px} .bj-cartao .tt{font-size:13px;line-height:1.3} .bj-coluna .coluna-cab{padding-left:8px;padding-right:8px} .bj-criar{padding:0 6px 6px} }
 .bj-cartao.sinalizado{background:#FFF4E5;border-color:#FFB366;box-shadow:inset 3px 0 0 #E05A00,0 1px 1px rgba(9,30,66,.2)}
 .bj-capa{height:120px;margin:-10px -10px 2px;background:#EBECF0 center/cover no-repeat;border-radius:3px 3px 0 0}
 .bj-tags{display:flex;flex-wrap:wrap;gap:4px}
@@ -550,6 +556,10 @@ dialog.modal.modal-ficha{max-width:min(1180px,calc(100% - 32px))}
 .bj-rod{display:flex;align-items:center;justify-content:space-between;gap:6px}
 .bj-rod-esq,.bj-rod-dir{display:flex;align-items:center;gap:6px;min-width:0}
 .bj-chave{font-family:var(--font-mono);font-size:11px;font-weight:600;color:#5E6C84;letter-spacing:.02em;white-space:nowrap}
+/* coluna estreita: o código do item e a prioridade não se sobrepõem, a linha de baixo quebra */
+.bj-rod{flex-wrap:wrap;row-gap:4px}
+.bj-rod-esq,.bj-rod-dir{flex:none}
+.bj-rod-dir{margin-left:auto}
 .bj-chave.feito{text-decoration:line-through}
 .bj-chave.forte{color:var(--preto)}
 .bj-band{display:inline-flex;color:#E05A00}

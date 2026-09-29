@@ -1,4 +1,4 @@
--- SOMENTE TESTE LOCAL: parte 25 (permissões de IA e conversa). Roda depois das partes 00 a 20, 22, 23, 25 e dos usuários de teste (91).
+-- SOMENTE TESTE LOCAL: partes 25 e 26 (permissões de IA, conversa, agente de cada usuário e .md). Roda depois das partes 00 a 20, 22, 23, 25, 26 e dos usuários de teste (91).
 \set ON_ERROR_STOP 1
 \pset tuples_only on
 create or replace function pg_temp.como(p uuid) returns void language plpgsql as $$
@@ -52,5 +52,23 @@ select pg_temp.ok(ia_posso() = false, 'desligada, Bruno perde a IA');
 do $$ begin insert into ia_mensagens (autor, texto) values ('usuario', 'de novo'); raise exception 'escreveu'; exception when insufficient_privilege then null; end $$;
 select pg_temp.ok(true, 'desligada, Bruno não escreve mais');
 select pg_temp.ok((select count(*) from ia_mensagens) = 1, 'a conversa antiga do Bruno continua guardada');
+reset role;
+-- ---------- parte 26: o agente nasce com a conta, a conversa também vai para o .md, anexos só da própria pasta ----------
+select pg_temp.ok((select count(*) from ia_agentes) = (select count(*) from pessoas), 'quem já tinha conta ganhou o seu agente');
+insert into pessoas (nome, email, papel, ativo) values ('Nova Pessoa', 'nova@teste', 'dev', true);
+select pg_temp.ok(exists (select 1 from ia_agentes a join pessoas p on p.id = a.pessoa_id where p.email = 'nova@teste' and a.historico_md like '# Conversa com o DevIT%Nova Pessoa%'), 'conta nova já nasce com o agente');
+select pg_temp.ok(exists (select 1 from ia_permissoes a join pessoas p on p.id = a.pessoa_id where p.email = 'nova@teste' and not a.ativo and a.alterado_em is null), 'conta nova nasce com a IA desligada (sem "última mudança")');
+select pg_temp.ok((select historico_md like '%· Usuário%mensagem do William%' from ia_agentes where pessoa_id = (select william from t)), 'a conversa do William está no .md do agente dele');
+select pg_temp.ok((select mensagens from ia_agentes where pessoa_id = (select william from t)) = 1, 'o agente conta as mensagens');
+select pg_temp.como('00000000-0000-0000-0000-00000000000a'); set role authenticated;
+insert into ia_mensagens (autor, texto, anexos) values ('usuario', '', '[{"nome":"foto.png","tipo":"image/png","tamanho":2048,"caminho":"00000000-0000-0000-0000-00000000000a/ia/1-foto.png"}]');
+select pg_temp.ok((select historico_md like '%Anexos:%- foto.png (image/png, 2 KB)%' from ia_agentes), 'mensagem só com arquivo entra no .md com o anexo');
+do $$ begin insert into ia_mensagens (autor, texto, anexos) values ('usuario', 'olha', '[{"nome":"x.pdf","tipo":"application/pdf","tamanho":10,"caminho":"00000000-0000-0000-0000-00000000000d/ia/x.pdf"}]'); raise exception 'aceitou'; exception when others then if sqlerrm = 'aceitou' then raise; end if; end $$;
+select pg_temp.ok(true, 'anexo da pasta de outra pessoa é recusado');
+do $$ begin insert into ia_mensagens (autor, texto) values ('usuario', '   '); raise exception 'aceitou'; exception when others then if sqlerrm = 'aceitou' then raise; end if; end $$;
+select pg_temp.ok(true, 'mensagem vazia sem arquivo é recusada');
+do $$ begin update ia_agentes set historico_md = ''; raise exception 'mudou'; exception when insufficient_privilege then null; end $$;
+select pg_temp.ok(true, 'ninguém muda o .md pela tela');
+select pg_temp.ok((select count(*) from ia_agentes) = 1, 'cada pessoa só enxerga o próprio agente');
 reset role;
 select 'FIM DO TESTE DA IA';

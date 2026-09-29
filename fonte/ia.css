@@ -17,12 +17,18 @@
 .ia-balao{width:76px;height:76px;padding:0;border:0;background:none;cursor:pointer;display:block;transition:transform var(--dur,.15s)}
 .ia-balao img{display:block;width:100%;height:100%;object-fit:contain;user-select:none}
 .ia-balao:hover{transform:translateY(-2px)}
+/* mensagem nova do DevIT com o chat fechado: o balão pulsa até a pessoa abrir */
+.ia-balao.avisando{animation:ia-pulsar 1.4s ease-in-out infinite}
+@keyframes ia-pulsar{0%,100%{transform:scale(1);filter:drop-shadow(0 0 0 rgba(255,0,0,0))}50%{transform:scale(1.12);filter:drop-shadow(0 0 10px rgba(255,0,0,.55))}}
+@media (prefers-reduced-motion:reduce){ .ia-balao.avisando{animation:none;filter:drop-shadow(0 0 6px rgba(255,0,0,.6))} }
 .ia-balao:focus-visible{outline:2px solid var(--vermelho);outline-offset:2px}
 
-.ia-chat{width:min(380px,calc(100vw - 32px));height:min(560px,calc(100vh - 140px));display:flex;flex-direction:column;background:var(--branco);border:1px solid var(--preto);box-shadow:0 12px 32px rgba(5,5,6,.18)}
+.ia-chat{position:relative;width:min(380px,calc(100vw - 32px));height:min(560px,calc(100vh - 140px));display:flex;flex-direction:column;background:var(--branco);border:1px solid var(--preto);box-shadow:0 12px 32px rgba(5,5,6,.18)}
 .ia-chat[hidden]{display:none}
 .ia-cab{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;background:var(--preto);color:var(--branco);border-bottom:3px solid var(--vermelho)}
 .ia-cab b{display:block;font-size:14px}
+.ia-nome{display:inline-flex !important;align-items:baseline;font-size:16px !important;letter-spacing:-.01em}
+.ia-ponto{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--vermelho);margin-left:2px}
 .ia-cab small{display:block;font-size:11.5px;opacity:.75;margin-top:2px}
 .ia-fechar{border:0;background:none;color:inherit;padding:4px;cursor:pointer;display:grid;place-items:center}
 .ia-fechar:focus-visible{outline:2px solid var(--vermelho)}
@@ -34,9 +40,35 @@
 .ia-usuario p{background:var(--preto);color:var(--branco)}
 .ia-agente{align-self:flex-start}
 .ia-agente p{background:var(--preto-04);border-left:2px solid var(--vermelho)}
+.ia-antigas{align-self:center;border:1px solid var(--linha);background:var(--branco);padding:5px 10px;font:inherit;font-size:12px;cursor:pointer;color:var(--tinta-2)}
+.ia-antigas:hover{border-color:var(--preto);color:var(--preto)}
 .ia-aviso{margin:0;font-size:12.5px;color:var(--tinta-3);text-align:center}
 .ia-aviso.erro{color:var(--vermelho)}
 .ia-escrever{display:flex;gap:8px;align-items:flex-end;padding:10px;border-top:1px solid var(--linha)}
+.ia-clipe{flex:none;width:36px;height:36px;display:grid;place-items:center;border:1px solid var(--linha);background:var(--branco);color:var(--tinta-2);cursor:pointer;padding:0}
+.ia-clipe:hover{border-color:var(--preto);color:var(--preto)}
+.ia-clipe:focus-visible{outline:2px solid var(--vermelho);outline-offset:1px}
+/* arquivos esperando para ir junto com a mensagem */
+.ia-pendentes{display:flex;flex-wrap:wrap;gap:6px;padding:8px 10px 0;max-height:120px;overflow-y:auto}
+.ia-pend{display:inline-flex;align-items:center;gap:6px;max-width:100%;border:1px solid var(--linha);background:var(--preto-04);padding:3px 4px 3px 6px;font-size:12px;min-width:0}
+.ia-pend img{width:26px;height:26px;object-fit:cover;flex:none}
+.ia-pend-nome{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px}
+.ia-pend small{color:var(--tinta-3);flex:none}
+.ia-pend button{border:0;background:none;font-size:16px;line-height:1;padding:0 4px;cursor:pointer;color:var(--tinta-2)}
+.ia-pend button:hover{color:var(--vermelho)}
+/* anexos dentro das mensagens */
+.ia-anexos{display:grid;gap:4px;justify-items:inherit}
+.ia-anexo{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:2px 8px;max-width:240px;border:1px solid var(--linha);background:var(--branco);padding:6px 8px;font:inherit;font-size:12.5px;text-align:left;cursor:pointer;color:var(--preto)}
+.ia-anexo:hover{border-color:var(--preto)}
+.ia-anexo img{grid-column:1 / -1;width:100%;max-height:160px;object-fit:contain;background:var(--preto-04)}
+.ia-anexo-nome{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.ia-anexo small{color:var(--tinta-3);display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.ia-ver{margin:0;display:grid;gap:8px;justify-items:center}
+.ia-ver img{max-width:100%;max-height:70vh;object-fit:contain;background:var(--preto-04)}
+.ia-ver figcaption{font-size:12px;color:var(--tinta-3)}
+dialog.modal.ia-ver-modal{width:min(960px,calc(100vw - 32px))}
+/* arrastar e soltar */
+.ia-soltar{position:absolute;inset:0;display:grid;place-items:center;background:rgba(255,255,255,.92);border:2px dashed var(--vermelho);z-index:2;pointer-events:none;text-align:center;padding:20px;font-weight:600}
 .ia-escrever textarea{flex:1;min-width:0;resize:none;max-height:140px;font-size:13.5px}
 html.tema-escuro .ia-chat{filter:invert(.92) hue-rotate(180deg)}
 @media (max-width:720px){ #ia-raiz{right:12px;bottom:12px} .ia-balao{width:64px;height:64px} .ia-chat{height:min(520px,calc(100vh - 110px))} }

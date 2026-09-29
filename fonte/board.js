@@ -166,7 +166,7 @@ vBoard = function(){
       '</section>';
   };
   const colunas = (lista, raia) => '<div class="board bj-board">' + cols.map(c => coluna(c, lista, raia)).join('') +
-    (!raia && souMaster() ? '<button type="button" class="bj-nova-col" data-bj-acao="config" title="Adicionar outra coluna">' + ICO.mais + '<span>Adicionar outra coluna</span></button>' : '') + '</div>';
+    (!raia && souMaster() ? '<button type="button" class="bj-nova-col" data-bj-acao="config" title="Adicionar outra coluna" aria-label="Adicionar outra coluna">' + ICO.mais + '</button>' : '') + '</div>';
   let corpo;
   if (UI.raias === 'nenhuma') corpo = colunas(l);
   else {
