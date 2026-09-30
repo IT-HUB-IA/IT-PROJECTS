@@ -7,7 +7,7 @@ import { createRequire } from 'node:module';
 import { execFileSync } from 'node:child_process';
 import { createReadStream, mkdirSync, writeFileSync } from 'node:fs';
 import { Readable } from 'node:stream';
-import { estruturaMysql, lerTarGz, gerarDoCodigo, gerarSoftware, gerarInfra, gerarRotas, gerarPrisma, gerarDer, gerarAcesso, gerarDoBanco, resumoEstrutura, interessa, CONSULTA_BANCO } from './gerar.ts';
+import { estruturaMysql, fichaDoCodigo, fichaDoBanco, lerTarGz, gerarDoCodigo, gerarSoftware, gerarInfra, gerarRotas, gerarPrisma, gerarDer, gerarAcesso, gerarDoBanco, resumoEstrutura, interessa, CONSULTA_BANCO } from './gerar.ts';
 import type { Estrutura, Desenho } from './gerar.ts';
 
 const req = createRequire(import.meta.url);
@@ -187,7 +187,7 @@ ok(/Table "auth"\."users" \[headercolor: #9AA0A6/.test(der.fonte) && /Ref: "publ
 ok(!/resumo/.test(der.fonte) && der.lacunas.some(l => /resumo/.test(l)), 'banco: visão fica fora do DER e é avisada');
 const ac = gerarAcesso(est, ['public'])!;
 ok(ac && ac.aba === 'seguranca' && /^digraph acesso/.test(ac.fonte), 'banco: mapa de acesso em Graphviz na sub-aba Segurança');
-ok(/label="clientes\\nRLS ligado · 1 regra"/.test(ac.fonte) && /label="pedidos\\nRLS desligado"/.test(ac.fonte) && /fillcolor="#fde8e8"/.test(ac.fonte), 'banco: RLS ligado e desligado (desligado com acesso fica em vermelho)');
+ok(/label="clientes\\nRLS ligado · 1 regra"/.test(ac.fonte) && /label="pedidos\\nRLS desligado"/.test(ac.fonte) && /fillcolor="#FEF2F2", color="#B91C1C"/.test(ac.fonte), 'banco: RLS ligado e desligado (desligado com acesso fica em vermelho)');
 ok(/service_role\\nignora o RLS/.test(ac.fonte) && /label="ler"/.test(ac.fonte) && /label="ler, criar, mudar, apagar"/.test(ac.fonte), 'banco: papéis e o que cada um pode');
 ok(ac.lacunas.some(l => /public\.pedidos/.test(l)) && ac.evidencias.some(e => /dono = auth\.uid\(\)/.test(e.trecho)), 'banco: avisa a tabela sem RLS e mostra o texto da regra');
 ok(gerarDoBanco(est, ['public', 'auth']).map(d => d.tipo).join(',') === 'der:auth,der:public,acesso', 'banco: um DER por esquema e um mapa de acesso');
@@ -210,6 +210,49 @@ const my = estruturaMysql(
   [{ ESQUEMA: 'loja', TABELA: 'clientes', NOME: 'PRIMARY', TIPO: 'PRIMARY KEY', COLUNA: 'id' }, { ESQUEMA: 'loja', TABELA: 'clientes', NOME: 'email_uq', TIPO: 'UNIQUE', COLUNA: 'email' },
    { ESQUEMA: 'loja', TABELA: 'pedidos', NOME: 'PRIMARY', TIPO: 'PRIMARY KEY', COLUNA: 'id' }, { ESQUEMA: 'loja', TABELA: 'pedidos', NOME: 'fk_cliente', TIPO: 'FOREIGN KEY', COLUNA: 'cliente_id', REF_ESQUEMA: 'loja', REF_TABELA: 'clientes', REF_COLUNA: 'id' }]);
 const myD = gerarDoBanco(my, ['loja'], { nome: 'Relatórios', motor: 'mysql', provedor: 'aws' });
+/* ---------- ficha técnica automática ---------- */
+{
+  const fc = new Map<string, string>([...bl.entries(),
+    ['bl-sistema-java/pom.xml', '<project><parent><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-parent</artifactId><version>3.3.2</version></parent><artifactId>bl-sistema</artifactId><version>0.1.0</version><properties><java.version>21</java.version></properties><dependencies>' +
+      '<dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-web</artifactId></dependency><dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-security</artifactId></dependency>' +
+      '<dependency><groupId>io.jsonwebtoken</groupId><artifactId>jjwt-api</artifactId><version>0.12.5</version></dependency><dependency><groupId>org.springdoc</groupId><artifactId>springdoc-openapi-starter-webmvc-ui</artifactId><version>2.5.0</version></dependency>' +
+      '<dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter</artifactId></dependency></dependencies></project>'],
+    ['bl-sistema-java/src/main/resources/application-prod.properties', 'spring.datasource.password=${DB_PASSWORD}\nasaas.key=${ASAAS_API_KEY}'],
+    ['bl-sistema-java/src/main/java/br/bl/Rotina.java', 'package br.bl;\nclass Rotina { @Scheduled(cron = "0 0 3 * * *") public void limparSessoes(){} String k = System.getenv("JWT_SECRET"); }'],
+    ['bl-sistema-java/src/main/java/br/bl/Empresa.java', 'package br.bl;\n@Entity\n@Table(name = "empresas")\nclass Empresa {}'],
+    ['.env.example', 'DB_URL=postgresql://postgres:SENHA-NAO-PODE-APARECER@db.abc.supabase.co:5432/postgres\nSUPABASE_URL=https://abc.supabase.co\nSUPABASE_SERVICE_ROLE_KEY=eyJ-segredo-de-verdade'],
+    ['README.md', '# B-L'], ['.github/workflows/deploy.yml', 'on: push\njobs:\n  d:\n    environment: production\n    steps:\n      - run: echo ${{ secrets.FLY_API_TOKEN }}']]);
+  const cam = [...fc.keys(), 'supabase/migrations/001.sql', 'bl-sistema-java/mvnw'].sort();
+  const des = gerarDoCodigo({ arquivos: fc, caminhos: cam }, 'Blanco-Lisboa/B-L', yaml).desenhos;
+  const f = fichaDoCodigo({ arquivos: fc, caminhos: cam }, { nome: 'Blanco-Lisboa/B-L', branch: 'main' }, des);
+  const v = (sc: string, cp: string) => (f.find(x => x.secao === sc && x.campo === cp) || { valor: '' }).valor;
+  const tudo = JSON.stringify(f);
+  ok(/^Java 21 \(\d+ arquivos?\)/.test(v('Stack', 'Linguagens e versões')), 'ficha: a linguagem e a versão saem do pom.xml (' + v('Stack', 'Linguagens e versões') + ')');
+  ok(/Spring Boot 3\.3\.2/.test(v('Stack', 'Frameworks')), 'ficha: o framework com a versão (Spring Boot do parent do pom)');
+  ok(/jjwt-api 0\.12\.5/.test(v('Stack', 'Bibliotecas principais')) && !/junit/.test(v('Stack', 'Bibliotecas principais')), 'ficha: as bibliotecas principais, sem as de teste');
+  ok(/Maven \(com mvnw\)/.test(v('Stack', 'Ferramenta de build')), 'ficha: a ferramenta de build');
+  ok(/Docker/.test(v('Stack', 'Plataformas')) && /Supabase/.test(v('Stack', 'Plataformas')) && /GitHub Actions/.test(v('Stack', 'Plataformas')), 'ficha: as plataformas (Docker, Supabase, GitHub Actions)');
+  ok(v('Repositories', 'Repositório e branch principal') === 'Blanco-Lisboa/B-L · branch principal main' && /README\.md/.test(v('Repositories', 'Documentação técnica')), 'ficha: o repositório, o branch e a documentação');
+  ok(/produção \(bl-sistema-java\/src\/main\/resources\/application-prod\.properties\)/.test(v('Environments', 'Desenvolvimento, homologação e produção')) && /production \(GitHub Actions\)/.test(v('Environments', 'Desenvolvimento, homologação e produção')), 'ficha: os ambientes (perfil prod do Spring e o ambiente do GitHub Actions)');
+  ok(/supabase/.test(v('Database', 'Banco e schema')) && /1 migração/.test(v('Database', 'Banco e schema')), 'ficha: o banco escrito no código e as migrações');
+  ok(/empresas/.test(v('Database', 'Tabelas principais')), 'ficha: as tabelas das entidades (@Table)');
+  ok(/limparSessoes \(@Scheduled cron = "0 0 3 \* \* \*"\)/.test(v('Database', 'Rotinas agendadas e gatilhos')), 'ficha: as rotinas agendadas (@Scheduled)');
+  ok(/^3 rotas: /.test(v('APIs', 'APIs próprias')) && /POST \/api\/empresas/.test(v('APIs', 'APIs próprias')), 'ficha: as APIs próprias, lidas das rotas');
+  ok(/api\.asaas\.com/.test(v('APIs', 'APIs de terceiros')), 'ficha: as APIs de fora que o código chama');
+  ok(/Spring Security/.test(v('APIs', 'Tipo de autenticação')) && /JWT/.test(v('APIs', 'Tipo de autenticação')), 'ficha: o tipo de autenticação (Spring Security e JWT)');
+  ok(/swagger-ui/.test(v('APIs', 'Links da documentação')), 'ficha: a documentação da API (springdoc)');
+  const sg = v('Secrets catalog', 'Nome de cada segredo e onde fica');
+  ok(['DB_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'DB_PASSWORD', 'ASAAS_API_KEY', 'JWT_SECRET', 'FLY_API_TOKEN'].every(n => sg.includes(n)), 'ficha: o catálogo de segredos tem os nomes (do .env, do Spring, do código e do GitHub Actions)');
+  ok(!/SENHA-NAO-PODE-APARECER|eyJ-segredo|postgres:SENHA/.test(tudo), 'ficha: NUNCA leva o valor de um segredo nem a senha do endereço do banco');
+  ok(/bl-sistema 0\.1\.0/.test(v('Identificação', 'Nome e código')), 'ficha: o nome e a versão do sistema');
+  ok(f.every(x => x.valor.length <= 3900 && x.secao && x.campo), 'ficha: todo campo tem seção, nome e tamanho dentro do limite');
+  const fb = fichaDoBanco(est, ['public', 'auth'], { nome: 'Produção', motor: 'postgres', provedor: 'supabase' });
+  const vb = (cp: string) => (fb.find(x => x.campo === cp) || { valor: '' }).valor;
+  ok(/^Supabase · PostgreSQL · esquemas public, auth · \d+ tabelas?/.test(vb('Banco e schema')), 'ficha do banco: o banco, os esquemas e quantas tabelas (' + vb('Banco e schema') + ')');
+  ok(/RLS ligada em \d+ de \d+ tabelas?/.test(vb('Regras de acesso (RLS)')), 'ficha do banco: quantas tabelas têm RLS e quantas regras');
+  ok(vb('Tabelas principais').length > 0 && fb.every(x => x.secao === 'Database'), 'ficha do banco: as tabelas principais, tudo na seção Banco de dados');
+  ok(!(fichaDoBanco(my, ['loja'], { motor: 'mysql', provedor: 'aws' }).some(x => x.campo === 'Regras de acesso (RLS)')) && /^AWS · MySQL · bancos loja/.test((fichaDoBanco(my, ['loja'], { motor: 'mysql', provedor: 'aws' })[0] || { valor: '' }).valor), 'ficha do banco: MySQL na AWS, sem RLS (o MySQL não tem)');
+}
 ok(myD.length === 1 && myD[0].nome === 'DER · Relatórios · banco loja', 'MySQL: sai só o DER (sem mapa de RLS, que é do Postgres), com o nome do banco');
 ok(/Ref: "loja"\."pedidos"\."cliente_id" > "loja"\."clientes"\."id"/.test(myD[0].fonte) && /"email" "varchar\(200\)" \[unique, not null\]/.test(myD[0].fonte), 'MySQL: chave estrangeira, único e tipos');
 ok(myD[0].modelo.ligacoes.some(l => l.de === 't:loja.pedidos' && l.deLinha === 'cliente_id' && l.fim === 'zeroum') && /AWS · MySQL/.test(myD[0].modelo.resumo || ''), 'MySQL: no quadro, a ligação sai da coluna (aceita vazio: zero ou um) e o resumo diz AWS · MySQL');

@@ -125,6 +125,11 @@ const pedir = (headers: Record<string, string> = {}, metodo = 'POST') => new Req
   const der = t.de('infra_auto_quadro').find(x => x.args.p_chave === 'banco:b1:der:public')!.args.p_doc;
   ok(der.nodes.some((n: any) => n.tipo === 'tabela' && n.titulo === 'clientes' && n.linhas.some((l: any) => l.nome === 'id' && l.chave === 'pk')), 'o quadro do DER tem a tabela com a coluna PK');
   ok(c.p_status === 'pronto' && c.p_prefixos.join() === 'github:it-hub/loja:,gitlab:it-hub/grupo/app:,banco:b1:', 'fecha pronto, com as três famílias');
+  const fi = t.de('infra_ficha_gravar');
+  ok(fi.length === 3 && fi.some(x => x.args.p_repositorio === 'r1' && x.args.p_banco === null && x.args.p_rotulo === 'it-hub/loja' && x.args.p_no === 'prod' && Array.isArray(x.args.p_campos) && x.args.p_campos.some((k: any) => k.secao === 'Repositories'))
+    && fi.some(x => x.args.p_repositorio === 'r2') && fi.some(x => x.args.p_banco === 'b1' && x.args.p_repositorio === null && x.args.p_campos.some((k: any) => k.secao === 'Database')), 'a ficha técnica é gravada para cada repositório e para o banco (' + fi.length + ' gravações)');
+  ok(!JSON.stringify(fi).includes('senha'), 'e a ficha não leva o endereço do banco com a senha');
+  ok((c.p_resumo as any[]).some(x => x.repositorio === 'it-hub/loja' && /campos?/.test(x.ficha)), 'o resumo do pedido diz quantos campos da ficha saíram');
 }
 
 // ---------- dois bancos no mesmo ponto: Supabase e MySQL na AWS ----------

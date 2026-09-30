@@ -274,8 +274,16 @@ export function gerarSoftware(arq: Arquivos, repo: string): Desenho | null {
   const ligLibs = topLibs.reduce((s, [, l]) => s + l.modulos.size, 0);
   const pacotes = ordena([...new Set(lista.map(m => m.pacote))], x => x);
   const varios = pacotes.length > 1;
+  // padrão UML de componentes, com as cores com significado: azul é o código do próprio sistema, cinza é biblioteca de fora
   const L: string[] = ['@startuml', 'left to right direction', 'skinparam componentStyle rectangle', 'skinparam shadowing false', 'skinparam packageStyle rectangle',
-    'title Arquitetura de Software · ' + aspasPuml(repo)];
+    'skinparam defaultFontName Helvetica', 'skinparam defaultFontSize 12', 'skinparam backgroundColor #FFFFFF', 'skinparam roundCorner 10', 'skinparam nodesep 40', 'skinparam ranksep 60',
+    'skinparam titleFontSize 18', 'skinparam titleFontColor #0F172A', 'skinparam captionFontColor #64748B', 'skinparam captionFontSize 11',
+    'skinparam ArrowColor #475569', 'skinparam ArrowFontColor #334155', 'skinparam ArrowFontSize 11', 'skinparam ArrowThickness 1.2',
+    'skinparam component {', '  BackgroundColor #EFF6FF', '  BorderColor #2563EB', '  BorderThickness 1.3', '  FontColor #0F172A',
+    '  BackgroundColor<<biblioteca>> #F8FAFC', '  BorderColor<<biblioteca>> #94A3B8', '  FontColor<<biblioteca>> #334155', '}',
+    'skinparam package {', '  BackgroundColor #FFFFFF', '  BorderColor #CBD5E1', '  FontColor #334155', '  FontStyle bold', '}',
+    'skinparam legend {', '  BackgroundColor #FFFFFF', '  BorderColor #CBD5E1', '  FontSize 11', '}', 'hide stereotype',
+    'title Arquitetura de Software · ' + aspasPuml(repo), 'caption Gerado do código pelo CicloDev: cada módulo é uma pasta do código; a seta mostra quem importa quem'];
   for (const pc of pacotes) {
     const doPacote = lista.filter(m => m.pacote === pc);
     if (varios) L.push('package "' + aspasPuml(pc) + '" {');
@@ -284,14 +292,15 @@ export function gerarSoftware(arq: Arquivos, repo: string): Desenho | null {
   }
   if (topLibs.length) {
     L.push('package "Bibliotecas de fora" {');
-    topLibs.forEach(([n], i) => L.push('  component "' + aspasPuml(n) + '" as L' + (i + 1)));
+    topLibs.forEach(([n], i) => L.push('  component "' + aspasPuml(n) + '" as L' + (i + 1) + ' <<biblioteca>>'));
     L.push('}');
   }
   const ligs = ordena([...ligacoes.values()], l => idPuml.get(l.de)! + idPuml.get(l.para)!);
   for (const l of ligs) L.push(idPuml.get(l.de) + ' --> ' + idPuml.get(l.para) + ' : ' + l.n);
   if (topLibs.length && ligLibs <= 40) topLibs.forEach(([, l], i) => ordena([...l.modulos], x => idPuml.get(x)!).forEach(m => L.push(idPuml.get(m) + ' ..> L' + (i + 1))));
   else if (topLibs.length) L.push('note bottom of L1', '  As ligações com as bibliotecas foram omitidas (são muitas).', 'end note');
-  L.push('@enduml');
+  L.push('legend right', '  <b>Legenda</b>', '  <color:#2563EB>▭</color> módulo do sistema (pasta do código), com o número de arquivos', '  <color:#94A3B8>▭</color> biblioteca de fora',
+    '  ——> importa (o número é quantas importações)', '  - - -> usa a biblioteca', 'endlegend', '@enduml');
   const evid: Evidencia[] = [{ fonte: repo, trecho: fontes.length + ' arquivos de código lidos em ' + plural(lista.length, 'módulo', 'módulos') + (agrupado ? ' (juntados por pacote: eram mais de 45 pastas)' : '') }];
   ligs.slice().sort((a, b) => b.n - a.n).slice(0, 30).forEach(l => evid.push({ fonte: l.exemplo.fonte, trecho: l.exemplo.trecho }));
   topLibs.slice(0, 10).forEach(([n, l]) => evid.push({ fonte: l.exemplo.fonte, trecho: n + ': usado em ' + plural(l.modulos.size, 'módulo', 'módulos') }));
@@ -349,6 +358,27 @@ const ALVOS_ACAO: [RegExp, string][] = [
   [/appleboy\/(ssh|scp)-action|\b(ssh|rsync|scp)\s+[^\n]*@/i, 'Servidor (SSH)'], [/netlify\/actions|\bnetlify\s+deploy/i, 'Netlify'], [/render-deploy|api\.render\.com\/deploy/i, 'Render'],
   [/\bkubectl\s+(apply|set|rollout)|azure\/k8s-deploy|helm\s+upgrade/i, 'Kubernetes'], [/\bnpm\s+publish\b|JS-DevTools\/npm-publish/i, 'npm']];
 
+/* estilo profissional dos desenhos em Graphviz: fonte, cores por provedor (a cor diz de quem é o recurso), título com
+   subtítulo e legenda. As cores seguem a marca de cada provedor, em tom claro no fundo do grupo e forte na borda. */
+const FONTE_DOT = 'Helvetica,Arial,sans-serif';
+const PALETA_DOT: [RegExp, string, string][] = [
+  [/^AWS|Terraform · AWS/, '#FFF7ED', '#C2410C'], [/^Supabase/, '#ECFDF5', '#047857'], [/^Vercel/, '#F8FAFC', '#111827'], [/^Docker/, '#EFF6FF', '#1D4ED8'],
+  [/^Kubernetes/, '#EEF2FF', '#4338CA'], [/^GitHub Actions/, '#F5F3FF', '#6D28D9'], [/^Terraform · Google|^Google/, '#EFF6FF', '#1A73E8'], [/Azure/, '#EFF6FF', '#0369A1'],
+  [/Cloudflare/, '#FFF7ED', '#EA580C'], [/^Terraform/, '#F5F3FF', '#7C3AED'], [/^Aplicações/, '#EFF6FF', '#2563EB'], [/^Bancos de dados/, '#ECFEFF', '#0E7490'],
+  [/^Serviços de fora/, '#F8FAFC', '#64748B'], [/^(Netlify|Fly\.io|Render)/, '#F0FDFA', '#0F766E'], [/^Destinos/, '#F8FAFC', '#475569']];
+const corDot = (g: string): [string, string] => { const x = PALETA_DOT.find(([re]) => re.test(g)); return x ? [x[1], x[2]] : ['#F8FAFC', '#64748B']; };
+const htmlDot = (s: string) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const tituloDot = (titulo: string, sub: string) => '<<FONT POINT-SIZE="17" COLOR="#0F172A"><B>' + htmlDot(titulo) + '</B></FONT><BR/><FONT POINT-SIZE="10" COLOR="#64748B">' + htmlDot(sub) + '</FONT><BR/> >';
+const legendaDot = (linhas: [string, string][]) => '  legenda [shape=plain, label=<<TABLE BORDER="1" COLOR="#CBD5E1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#FFFFFF"><TR><TD ALIGN="LEFT" COLSPAN="2"><FONT POINT-SIZE="10"><B>Legenda</B></FONT></TD></TR>' +
+  linhas.map(([sinal, txt]) => '<TR><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#334155">' + sinal + '</FONT></TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#334155">' + htmlDot(txt) + '</FONT></TD></TR>').join('') + '</TABLE>>];';
+const cabDot = (nome: string, titulo: string, sub: string, extra = '') => ['digraph ' + nome + ' {',
+  '  graph [rankdir=LR, fontname="' + FONTE_DOT + '", label=' + tituloDot(titulo, sub) + ', labelloc=t, labeljust=l, compound=true, newrank=true, nodesep=0.45, ranksep=0.9, pad=0.4, bgcolor="#FFFFFF"' + extra + '];',
+  '  node [shape=box, style="rounded,filled", fillcolor="#FFFFFF", color="#94A3B8", penwidth=1.2, fontname="' + FONTE_DOT + '", fontsize=10, fontcolor="#0F172A", margin="0.18,0.10"];',
+  '  edge [fontname="' + FONTE_DOT + '", fontsize=9, color="#64748B", fontcolor="#334155", arrowsize=0.7, penwidth=1.1];'];
+const FORMAS_CAIXA = new Set(['', 'box', 'folder', 'component', 'box3d', 'note', 'tab']);
+
+const tipoLig = (r: string) => /^(chama|usa|repassa)/.test(r) ? 'fora' : /lê e grava|grava em/.test(r) ? 'banco' : /publica|dispara/.test(r) ? 'publica' : 'estrutura';
+const estiloLig = (r: string) => ({ fora: ', style=dashed', banco: ', color="#0E7490", fontcolor="#0E7490"', publica: ', color="#6D28D9", fontcolor="#6D28D9"', estrutura: '' } as Record<string, string>)[tipoLig(r)];
 export function gerarInfra(arq: Arquivos, caminhos: string[], repo: string, yaml: LerYaml): Desenho | null {
   const nos = new Map<string, NoInfra>(), ligs: LigInfra[] = [], evid: Evidencia[] = [], lac: string[] = [];
   const no = (id: string, rotulo: string, grupo: string, forma?: string, cor?: string) => { if (!nos.has(id)) nos.set(id, { id, rotulo, grupo, forma, cor }); return id; };
@@ -538,20 +568,24 @@ export function gerarInfra(arq: Arquivos, caminhos: string[], repo: string, yaml
   // DOT
   const ids = new Map([...nos.keys()].sort().map((k, i) => [k, 'n' + (i + 1)]));
   const grupos = ordena([...new Set([...nos.values()].map(n => n.grupo))], x => x);
-  const L = ['digraph infraestrutura {', '  graph [rankdir=LR, fontname="Helvetica", fontsize=12, label="Arquitetura de Infraestrutura · ' + aspasDot(repo) + '", labelloc=t, compound=true, nodesep=0.35, ranksep=0.7];',
-    '  node [shape=box, style="rounded", fontname="Helvetica", fontsize=10];', '  edge [fontname="Helvetica", fontsize=9, color="#555555"];'];
-  const noDot = (n: NoInfra, ind: string) => ind + ids.get(n.id) + ' [label="' + n.rotulo.split('\n').map(aspasDot).join('\\n') + '"' + (n.forma ? ', shape=' + n.forma : '') + '];';
+  const L = cabDot('infraestrutura', 'Arquitetura de Infraestrutura · ' + repo, 'Gerado do código pelo CicloDev: onde cada parte roda, o que ela usa e como é publicada');
+  const noDot = (n: NoInfra, ind: string) => { const [, borda] = n.grupo ? corDot(n.grupo) : ['', '#334155'];
+    return ind + ids.get(n.id) + ' [label="' + n.rotulo.split('\n').map(aspasDot).join('\\n') + '"' + (n.forma ? ', shape=' + n.forma : '') + (FORMAS_CAIXA.has(n.forma || '') ? '' : ', style="filled"') + ', color="' + borda + '"' + (n.id === 'repo' ? ', penwidth=1.6' : '') + '];'; };
   grupos.forEach((g, i) => {
     const doGrupo = ordena([...nos.values()].filter(n => n.grupo === g), n => n.id);
     if (!g) { doGrupo.forEach(n => L.push(noDot(n, '  '))); return; }
-    L.push('  subgraph cluster_' + (i + 1) + ' {', '    label="' + aspasDot(g) + '"; style="rounded,dashed"; color="#999999";');
+    const [fundo, borda] = corDot(g);
+    L.push('  subgraph cluster_' + (i + 1) + ' {', '    label="' + aspasDot(g) + '"; style="rounded,filled"; fillcolor="' + fundo + '"; color="' + borda + '"; penwidth=1.2; fontcolor="' + borda + '"; fontsize=11; labeljust=l; margin=14;');
     doGrupo.forEach(n => L.push(noDot(n, '    ')));
     L.push('  }');
   });
   // seta para um grupo inteiro (ex.: publica no Supabase): aponta para o primeiro do grupo e a ponta encosta na caixa do grupo
   const alvoDe = (k: string) => { if (!k.startsWith('grupo:')) return { id: ids.get(k), extra: '' }; const g = k.slice(6), i = grupos.indexOf(g), n1 = ordena([...nos.values()].filter(n => n.grupo === g), n => n.id)[0]; return { id: n1 && ids.get(n1.id), extra: g ? ', lhead=cluster_' + (i + 1) : '' }; };
   for (const x of ordena(ligs.map(l => ({ l, a: ids.get(l.de), b: alvoDe(l.para) })).filter(x => x.a && x.b.id), x => x.a! + '>' + x.b.id! + x.l.rotulo))
-    L.push('  ' + x.a + ' -> ' + x.b.id + ' [label="' + aspasDot(x.l.rotulo) + '"' + x.b.extra + '];');
+    L.push('  ' + x.a + ' -> ' + x.b.id + ' [label="' + aspasDot(x.l.rotulo) + '"' + x.b.extra + estiloLig(x.l.rotulo) + '];');
+  const usados = new Set<string>(ligs.map(l => tipoLig(l.rotulo)));
+  L.push(legendaDot(([['<B>——</B>', 'contém, empacota, hospeda, depende de', 'estrutura'], ['<B>- - -</B>', 'chama ou usa um serviço de fora', 'fora'], ['<FONT COLOR="#0E7490"><B>——</B></FONT>', 'lê e grava no banco', 'banco'], ['<FONT COLOR="#6D28D9"><B>——</B></FONT>', 'publica (GitHub Actions)', 'publica']] as [string, string, string][])
+    .filter(([, , k]) => usados.has(k)).map(([a, b]) => [a, b] as [string, string]).concat([['<B>▭</B>', 'cor do grupo = provedor (AWS, Supabase, Docker...)']])));
   L.push('}');
   // no quadro: cada provedor ou arquivo é um grupo; cada recurso um card com o tipo dele (como o nó do Terraform graph ou do Compose)
   const cardInfra = (n: NoInfra): CardQ => {
@@ -676,7 +710,15 @@ export function gerarRotas(arq: Arquivos, caminhos: string[], repo: string): Des
   }
   for (const [de, para] of navega) if (listaT.includes(de) && listaT.includes(para)) L.push('  ' + id(de) + ' -.->|vai para| ' + id(para));
   for (const [de, a] of chama) if (listaT.includes(de) && listaA.includes(a)) L.push('  ' + id(de) + ' -->|chama| ' + id('api ' + a));
-  L.push('  classDef pasta fill:#f4f4f4,stroke:#bbbbbb,color:#666666');
+  // cores com significado: azul é tela, lilás é rota de API, cinza tracejado é só parte do caminho; as setas seguem a mesma cor
+  L.push('  classDef pasta fill:#F8FAFC,stroke:#CBD5E1,color:#64748B,stroke-dasharray:3 3', '  classDef tela fill:#EFF6FF,stroke:#2563EB,color:#0F172A,stroke-width:1.3px', '  classDef rotaApi fill:#F5F3FF,stroke:#7C3AED,color:#1E1B4B,stroke-width:1.3px');
+  if (listaT.length) L.push('  class ' + listaT.map(r => id(r)).join(',') + ' tela', '  style telas fill:#FFFFFF,stroke:#BFDBFE,color:#1D4ED8');
+  if (listaA.length) L.push('  class ' + listaA.map(a => id('api ' + a)).join(',') + ' rotaApi', '  style api fill:#FFFFFF,stroke:#DDD6FE,color:#6D28D9');
+  { let k = 0; const vai: number[] = [], cha: number[] = [];
+    for (const l of L) { if (/ -\.->\|vai para\| /.test(l)) vai.push(k); else if (/ -->\|chama\| /.test(l)) cha.push(k); if (/ -->| -\.->/.test(l)) k++; }
+    if (k) L.push('  linkStyle default stroke:#94A3B8,stroke-width:1.2px');
+    if (vai.length) L.push('  linkStyle ' + vai.join(',') + ' stroke:#2563EB,stroke-width:1.4px');
+    if (cha.length) L.push('  linkStyle ' + cha.join(',') + ' stroke:#7C3AED,stroke-width:1.4px'); }
   for (const r of listaT.slice(0, 20)) evid.push({ fonte: repo + '/' + telas.get(r)!, trecho: 'tela ' + r });
   for (const a of listaA.slice(0, 20)) evid.push({ fonte: repo + '/' + apis.get(a)!, trecho: 'rota ' + a });
   if (telas.size > 80) lac.push('Há ' + telas.size + ' telas; o desenho mostra as 80 primeiras.');
@@ -978,19 +1020,18 @@ export function gerarAcesso(e: Estrutura, esquemas: string[]): Desenho | null {
   const papeis = ordena([...new Set(tabs.flatMap(t => t.permissoes.map(p => p.papel)))], x => x);
   const ignora = new Set(e.papeis.filter(p => p.ignora_rls).map(p => p.nome));
   const idT = new Map(tabs.map((t, i) => [t.esquema + '.' + t.nome, 't' + (i + 1)])), idP = new Map(papeis.map((p, i) => [p, 'p' + (i + 1)]));
-  const L = ['digraph acesso {', '  graph [rankdir=LR, fontname="Helvetica", fontsize=12, label="Acesso ao banco: quem lê e grava cada tabela, e onde o RLS está ligado", labelloc=t, compound=true, nodesep=0.2, ranksep=1.2];',
-    '  node [fontname="Helvetica", fontsize=10];', '  edge [fontname="Helvetica", fontsize=9, color="#666666"];'];
-  L.push('  subgraph cluster_papeis {', '    label="Papéis"; style="rounded"; color="#999999";');
-  for (const p of papeis) L.push('    ' + idP.get(p) + ' [shape=ellipse, label="' + aspasDot(p) + (ignora.has(p) ? '\\nignora o RLS' : '') + '"' + (ignora.has(p) ? ', style=filled, fillcolor="#fff4e0"' : '') + '];');
+  const L = cabDot('acesso', 'Acesso ao banco', 'Quem lê e grava cada tabela, e onde a RLS (regra por linha) está ligada. Lido do catálogo do banco pelo CicloDev', ', nodesep=0.25, ranksep=1.3');
+  L.push('  subgraph cluster_papeis {', '    label="Papéis do banco"; style="rounded,filled"; fillcolor="#F8FAFC"; color="#64748B"; fontcolor="#334155"; fontsize=11; labeljust=l; margin=14;');
+  for (const p of papeis) L.push('    ' + idP.get(p) + ' [shape=ellipse, label="' + aspasDot(p) + (ignora.has(p) ? '\\nignora o RLS' : '') + '"' + (ignora.has(p) ? ', style=filled, fillcolor="#FFF7ED", color="#C2410C"' : ', style=filled, color="#475569"') + '];');
   L.push('  }');
   const semRls = tabs.filter(t => ['r', 'p'].includes(t.tipo) && !t.rls && t.permissoes.some(p => !ignora.has(p.papel)));
   const esqs = ordena([...new Set(tabs.map(t => t.esquema))], x => x);
   esqs.forEach((s, i) => {
-    L.push('  subgraph cluster_e' + (i + 1) + ' {', '    label="esquema ' + aspasDot(s) + '"; style="rounded,dashed"; color="#999999";');
+    L.push('  subgraph cluster_e' + (i + 1) + ' {', '    label="esquema ' + aspasDot(s) + '"; style="rounded,filled"; fillcolor="#ECFEFF"; color="#0E7490"; fontcolor="#0E7490"; fontsize=11; labeljust=l; margin=14;');
     for (const t of tabs.filter(x => x.esquema === s)) {
       const visao = ['v', 'm'].includes(t.tipo), rls = t.rls ? 'RLS ligado · ' + plural(t.regras.length, 'regra', 'regras') : visao ? 'visão' : 'RLS desligado';
       const perigo = !visao && !t.rls && t.permissoes.some(p => !ignora.has(p.papel));
-      L.push('    ' + idT.get(t.esquema + '.' + t.nome) + ' [shape=box, style="rounded' + (perigo ? ',filled' : '') + '"' + (perigo ? ', fillcolor="#fde8e8", color="#c0392b"' : t.rls ? ', color="#1e8449"' : '') +
+      L.push('    ' + idT.get(t.esquema + '.' + t.nome) + ' [shape=box, style="rounded,filled"' + (perigo ? ', fillcolor="#FEF2F2", color="#B91C1C", penwidth=1.6' : t.rls ? ', color="#15803D"' : ', color="#64748B"') +
         ', label="' + aspasDot(t.nome) + '\\n' + aspasDot(rls) + '"];');
     }
     L.push('  }');
@@ -1008,7 +1049,8 @@ export function gerarAcesso(e: Estrutura, esquemas: string[]): Desenho | null {
       else for (const x of com) setas.push('  ' + idP.get(p) + ' -> ' + idT.get(x.t.esquema + '.' + x.t.nome) + ' [label="' + aspasDot(x.privs) + '"];');
     }
   });
-  L.push(...setas, '}');
+  L.push(...setas, legendaDot([['<FONT COLOR="#15803D"><B>▭</B></FONT>', 'tabela com RLS ligada'], ['<FONT COLOR="#B91C1C"><B>▭</B></FONT>', 'tabela sem RLS com acesso de algum papel (conferir)'],
+    ['<FONT COLOR="#C2410C"><B>◯</B></FONT>', 'papel que passa por cima da RLS'], ['<B>——</B>', 'o que o papel pode fazer: ler, criar, mudar, apagar']]), '}');
   const evid: Evidencia[] = [{ fonte: 'banco', trecho: plural(tabs.length, 'tabela', 'tabelas') + ' em ' + esqs.join(', ') + '; ' + plural(tabs.filter(t => t.rls).length, 'com RLS ligado', 'com RLS ligado') + '; papéis: ' + papeis.join(', ') }];
   for (const t of tabs.filter(t => t.regras.length).slice(0, 40)) evid.push({ fonte: 'banco · ' + t.esquema + '.' + t.nome, trecho: curto(t.regras.map(r => r.nome + ' (' + (CMD_PT[r.comando] || r.comando) + ', ' + r.papeis.join('/') + (r.permissiva ? '' : ', restritiva') + ')' + (r.usando ? ': ' + r.usando : '') + (r.checa ? ' · confere: ' + r.checa : '')).join('; '), 600) });
   const lac: string[] = [];
@@ -1084,4 +1126,209 @@ export function estruturaMysql(tabelas: LinhaMysql[], colunas: LinhaMysql[], res
     x.cols.push(String(v(r, 'coluna'))); if (tp === 'f' && v(r, 'ref_coluna') != null) x.ref_cols!.push(String(v(r, 'ref_coluna')));
   }
   return { tabelas: out, papeis: [] };
+}
+
+/* ================= ficha técnica automática =================
+   O que dá para a ficha técnica sair sozinha do código e do banco. Cada campo vai com a seção e o nome iguais aos da
+   ficha do CicloDev (FICHA em fonte/app.js). Nunca entra valor de segredo: dos arquivos .env* e das variáveis só o NOME. */
+export type CampoFicha = { secao: string; campo: string; valor: string };
+export type InfoRepo = { nome: string; branch?: string | null };
+const LINGUAS: Record<string, string> = { ts: 'TypeScript', tsx: 'TypeScript', mts: 'TypeScript', cts: 'TypeScript', js: 'JavaScript', jsx: 'JavaScript', mjs: 'JavaScript', cjs: 'JavaScript',
+  vue: 'Vue', svelte: 'Svelte', py: 'Python', go: 'Go', java: 'Java', kt: 'Kotlin', kts: 'Kotlin', cs: 'C#', rb: 'Ruby', php: 'PHP', rs: 'Rust', swift: 'Swift', dart: 'Dart', scala: 'Scala', sql: 'SQL', html: 'HTML', css: 'CSS', scss: 'CSS' };
+const semVersao = (v: unknown) => String(v ?? '').replace(/^[\^~>=<\s]+/, '').split(/\s|\|\|/)[0];
+const listaFicha = (xs: string[], max = 25) => { const u = [...new Set(xs.filter(Boolean))]; return u.slice(0, max).join(', ') + (u.length > max ? ' e mais ' + (u.length - max) : ''); };
+const SERVICOS_SDK: [RegExp, string][] = [
+  [/^stripe$|stripe-java|com\.stripe/, 'Stripe'], [/^@sendgrid\/|sendgrid/, 'SendGrid'], [/^aws-sdk$|^@aws-sdk\/|software\.amazon\.awssdk|com\.amazonaws/, 'AWS'],
+  [/^twilio$|com\.twilio/, 'Twilio'], [/^openai$|com\.theokanning|openai-java/, 'OpenAI'], [/^@anthropic-ai\/sdk$|anthropic/, 'Anthropic (Claude)'],
+  [/^firebase(-admin)?$|com\.google\.firebase/, 'Firebase'], [/^googleapis$|^@google-cloud\/|com\.google\.cloud/, 'Google Cloud'], [/^@supabase\/supabase-js$|^@supabase\/ssr$|io\.github\.jan-tennert\.supabase/, 'Supabase'],
+  [/^mercadopago$|com\.mercadopago/, 'Mercado Pago'], [/^asaas|asaas/, 'Asaas'], [/^resend$/, 'Resend'], [/^nodemailer$|spring-boot-starter-mail|javax\.mail|jakarta\.mail/, 'E-mail (SMTP)'],
+  [/^@sentry\/|io\.sentry/, 'Sentry'], [/^redis$|^ioredis$|spring-boot-starter-data-redis|jedis|lettuce/, 'Redis'], [/^kafkajs$|spring-kafka|kafka-clients/, 'Kafka'],
+  [/^amqplib$|spring-boot-starter-amqp/, 'RabbitMQ'], [/^@slack\/|slack-api/, 'Slack'], [/^discord\.js$/, 'Discord'], [/^whatsapp|baileys|whatsgw/i, 'WhatsApp'],
+  [/^@vercel\/|^vercel$/, 'Vercel'], [/^cloudinary$|com\.cloudinary/, 'Cloudinary'], [/^pusher$|pusher-java/, 'Pusher'], [/^algoliasearch$/, 'Algolia']];
+const AUTENTICACAO: [RegExp, string][] = [
+  [/spring-boot-starter-security/, 'Spring Security'], [/spring-boot-starter-oauth2-(client|resource-server)|oauth2/, 'OAuth 2'], [/jjwt|java-jwt|^jsonwebtoken$|^jose$|nimbus-jose-jwt/, 'JWT'],
+  [/^next-auth$|^@auth\//, 'Auth.js (NextAuth)'], [/^@supabase\/supabase-js$|^@supabase\/ssr$|^@supabase\/auth/, 'Supabase Auth'], [/^passport/, 'Passport'], [/^firebase(-admin)?$/, 'Firebase Auth'],
+  [/keycloak/, 'Keycloak'], [/^@clerk\//, 'Clerk'], [/^@auth0\/|auth0/, 'Auth0'], [/^bcrypt(js)?$|spring-security-crypto/, 'senha com hash (bcrypt)']];
+
+export function fichaDoCodigo(pac: Pick<Pacote, 'arquivos' | 'caminhos'>, repo: InfoRepo, desenhos: Desenho[] = []): CampoFicha[] {
+  const arq = pac.arquivos, caminhos = pac.caminhos.filter(p => !PASTAS_FORA.test(p)), out: CampoFicha[] = [];
+  const pos = (secao: string, campo: string, valor: string) => { const v = String(valor || '').trim(); if (v) out.push({ secao, campo, valor: v.slice(0, 3900) }); };
+  const tem = (re: RegExp) => caminhos.some(p => re.test(p));
+  const raizes = raizesDePacote(arq);
+  // ---------- linguagens (quantos arquivos) e versões ----------
+  const cont = new Map<string, number>();
+  for (const p of caminhos) { const lg = LINGUAS[(p.split('.').pop() || '').toLowerCase()]; if (lg && !/\.(d\.ts|min\.js)$/.test(p)) cont.set(lg, (cont.get(lg) || 0) + 1); }
+  const versao = new Map<string, string>();
+  const libs: string[] = [], quadros: string[] = [], build: string[] = [], deps: string[] = [], nomes: string[] = [];
+  for (const r of raizes) {
+    const pom = arq.get(juntar(r, 'pom.xml'));
+    if (pom) {
+      const semPai = pom.replace(/<parent>[\s\S]*?<\/parent>/, ''), pai = (pom.match(/<parent>([\s\S]*?)<\/parent>/) || [])[1] || '';
+      const jv = (pom.match(/<(java\.version|maven\.compiler\.release|maven\.compiler\.source)>([^<]+)</) || [])[2];
+      if (jv) versao.set('Java', jv.trim());
+      const nome = (semPai.match(/<artifactId>([^<]+)<\/artifactId>/) || [])[1], ver = (semPai.match(/<version>([^<]+)<\/version>/) || [])[1];
+      if (nome) nomes.push(nome + (ver ? ' ' + ver : '') + ' (' + juntar(r, 'pom.xml') + ')');
+      if (/spring-boot-starter-parent/.test(pai)) quadros.push('Spring Boot ' + ((pai.match(/<version>([^<]+)</) || [])[1] || '').trim());
+      else if (/spring-boot/.test(pom)) quadros.push('Spring Boot');
+      if (/quarkus/.test(pom)) quadros.push('Quarkus'); if (/micronaut/.test(pom)) quadros.push('Micronaut');
+      for (const m of semPai.matchAll(/<dependency>\s*<groupId>([^<]+)<\/groupId>\s*<artifactId>([^<]+)<\/artifactId>(?:\s*<version>([^<]+)<\/version>)?/g)) {
+        deps.push(m[1] + ':' + m[2]);
+        if (!/-test$|junit|mockito|assertj/.test(m[2])) libs.push(m[2] + (m[3] && !m[3].startsWith('$') ? ' ' + m[3] : ''));
+      }
+      if (/thymeleaf/.test(pom)) quadros.push('Thymeleaf');
+      build.push(arq.has(juntar(r, 'mvnw')) || caminhos.includes(juntar(r, 'mvnw')) ? 'Maven (com mvnw)' : 'Maven');
+    }
+    const gr = arq.get(juntar(r, 'build.gradle')) || arq.get(juntar(r, 'build.gradle.kts'));
+    if (gr) {
+      const jv = (gr.match(/JavaLanguageVersion\.of\((\d+)\)|sourceCompatibility\s*=\s*['"]?(?:JavaVersion\.VERSION_)?([\d._]+)/) || []);
+      if (jv[1] || jv[2]) versao.set('Java', (jv[1] || jv[2]).replace(/_/g, '.'));
+      const sb = gr.match(/org\.springframework\.boot['"]?\)?\s*version\s*['"]([^'"]+)/); if (sb) quadros.push('Spring Boot ' + sb[1]); else if (/spring-boot/.test(gr)) quadros.push('Spring Boot');
+      for (const m of gr.matchAll(/(?:implementation|api|compileOnly|runtimeOnly)\s*\(?\s*['"]([^:'"]+):([^:'"]+)(?::([^'"]+))?['"]/g)) { deps.push(m[1] + ':' + m[2]); libs.push(m[2] + (m[3] ? ' ' + m[3] : '')); }
+      build.push('Gradle');
+    }
+    const pj = lerJson(arq.get(juntar(r, 'package.json')));
+    if (pj) {
+      const d = { ...(pj.dependencies || {}) }, dd = { ...(pj.devDependencies || {}) }, todos = { ...dd, ...d };
+      if (pj.name) nomes.push(pj.name + (pj.version ? ' ' + pj.version : '') + ' (' + juntar(r, 'package.json') + ')');
+      if (pj.engines && pj.engines.node) versao.set('Node', String(pj.engines.node));
+      if (todos.typescript) versao.set('TypeScript', semVersao(todos.typescript));
+      const fw: [string, string][] = [['next', 'Next.js'], ['nuxt', 'Nuxt'], ['@sveltejs/kit', 'SvelteKit'], ['svelte', 'Svelte'], ['react', 'React'], ['vue', 'Vue'], ['@angular/core', 'Angular'], ['@remix-run/react', 'Remix'],
+        ['astro', 'Astro'], ['@nestjs/core', 'NestJS'], ['express', 'Express'], ['fastify', 'Fastify'], ['hono', 'Hono'], ['koa', 'Koa'], ['react-native', 'React Native'], ['expo', 'Expo'], ['electron', 'Electron'], ['tailwindcss', 'Tailwind CSS']];
+      for (const [k, n] of fw) if (todos[k]) quadros.push(n + ' ' + semVersao(todos[k]));
+      for (const [k, v] of Object.entries(d)) { deps.push(k); libs.push(k + ' ' + semVersao(v)); }
+      for (const k of Object.keys(dd)) deps.push(k);
+      const lock = (n: string) => caminhos.includes(juntar(r, n));
+      build.push(lock('pnpm-lock.yaml') ? 'pnpm' : lock('yarn.lock') ? 'Yarn' : lock('bun.lockb') || lock('bun.lock') ? 'Bun' : 'npm');
+      for (const [k, n] of [['vite', 'Vite'], ['webpack', 'webpack'], ['esbuild', 'esbuild'], ['turbo', 'Turborepo'], ['@angular/cli', 'Angular CLI'], ['parcel', 'Parcel'], ['rollup', 'Rollup']] as [string, string][]) if (todos[k]) build.push(n);
+    }
+    const gm = arq.get(juntar(r, 'go.mod'));
+    if (gm) {
+      const gv = (gm.match(/^go\s+([\d.]+)/m) || [])[1]; if (gv) versao.set('Go', gv);
+      for (const m of gm.matchAll(/^\s*([\w.\-/]+\.[\w.\-/]+)\s+v([\w.\-+]+)/gm)) { deps.push(m[1]); libs.push(m[1].split('/').slice(-2).join('/') + ' ' + m[2]); if (/gin-gonic\/gin|labstack\/echo|gofiber\/fiber|go-chi\/chi/.test(m[1])) quadros.push(({ gin: 'Gin', echo: 'Echo', fiber: 'Fiber', chi: 'chi' } as Record<string, string>)[m[1].split('/').pop()!.replace(/\/v\d+$/, '')] || m[1]); }
+      build.push('go build');
+    }
+    const py = arq.get(juntar(r, 'pyproject.toml')), rq = arq.get(juntar(r, 'requirements.txt'));
+    if (py || rq) {
+      const rp = py && (py.match(/requires-python\s*=\s*["']([^"']+)/) || py.match(/^\s*python\s*=\s*["']([^"']+)/m) || [])[1]; if (rp) versao.set('Python', rp);
+      const txt = (py || '') + '\n' + (rq || '');
+      for (const [k, n] of [['fastapi', 'FastAPI'], ['django', 'Django'], ['flask', 'Flask'], ['streamlit', 'Streamlit'], ['celery', 'Celery']] as [string, string][]) { const m = txt.match(new RegExp('\\b' + k + '\\b\\s*[=~><]*\\s*["\']?([\\d.]*)', 'i')); if (m) quadros.push(n + (m[1] ? ' ' + m[1] : '')); }
+      for (const m of (rq || '').matchAll(/^\s*([A-Za-z0-9_.\-\[\]]+)\s*(?:[=~><!]=?\s*([\w.]+))?/gm)) if (m[1] && !m[1].startsWith('-')) { deps.push(m[1].toLowerCase()); libs.push(m[1] + (m[2] ? ' ' + m[2] : '')); }
+      build.push(py && /\[tool\.poetry\]/.test(py) ? 'Poetry' : py && /\[tool\.uv\]|uv\.lock/.test(py) ? 'uv' : 'pip');
+    }
+    for (const [p, c] of arq) if (/\.csproj$/.test(p) && (r === '' || p.startsWith(r + '/')) && dirDe(p) === r) { const tf = (c.match(/<TargetFramework>([^<]+)</) || [])[1]; if (tf) versao.set('.NET', tf); if (/Microsoft\.AspNetCore|Sdk="Microsoft\.NET\.Sdk\.Web"/.test(c)) quadros.push('ASP.NET Core'); build.push('dotnet'); }
+  }
+  for (const [f, lg] of [['.nvmrc', 'Node'], ['.node-version', 'Node'], ['.python-version', 'Python'], ['.java-version', 'Java']] as [string, string][]) { const c = arq.get(f); if (c && c.trim() && !versao.has(lg)) versao.set(lg, c.trim().split('\n')[0]); }
+  const linguas = [...cont.entries()].filter(([lg]) => !['HTML', 'CSS', 'SQL'].includes(lg) || cont.size <= 3).sort((a, b) => b[1] - a[1]);
+  pos('Stack', 'Linguagens e versões', [...linguas.map(([lg, n]) => lg + (versao.get(lg) ? ' ' + versao.get(lg) : '') + ' (' + plural(n, 'arquivo', 'arquivos') + ')'),
+    ...[...versao.entries()].filter(([lg]) => !cont.has(lg)).map(([lg, v]) => lg + ' ' + v)].join(' · '));
+  pos('Stack', 'Frameworks', listaFicha(quadros.map(x => x.trim())));
+  pos('Stack', 'Bibliotecas principais', listaFicha(libs, 30));
+  pos('Stack', 'Ferramenta de build', listaFicha(build));
+  pos('Identificação', 'Nome e código', listaFicha(nomes, 6));
+  // ---------- plataformas (onde roda e como publica) ----------
+  const plat: string[] = [];
+  if (tem(/(^|\/)(Dockerfile[^/]*|[^/]+\.Dockerfile)$/i)) plat.push('Docker'); if (tem(/(^|\/)(docker-)?compose[^/]*\.ya?ml$/i)) plat.push('Docker Compose');
+  if (tem(/(^|\/)vercel\.json$/)) plat.push('Vercel'); if (tem(/(^|\/)netlify\.toml$/)) plat.push('Netlify'); if (tem(/(^|\/)fly\.toml$/)) plat.push('Fly.io'); if (tem(/(^|\/)render\.ya?ml$/)) plat.push('Render');
+  if (tem(/(^|\/)supabase\/(config\.toml|migrations\/|functions\/)/)) plat.push('Supabase'); if (tem(/\.tf$/)) plat.push('Terraform'); if (tem(YAML_K8S)) plat.push('Kubernetes');
+  if (tem(WORKFLOW)) plat.push('GitHub Actions'); if (tem(/(^|\/)\.gitlab-ci\.ya?ml$/)) plat.push('GitLab CI'); if (tem(/(^|\/)(serverless\.ya?ml|template\.ya?ml|samconfig\.toml|cdk\.json)$/)) plat.push('AWS (serverless/CDK)');
+  if (tem(/(^|\/)(app\.yaml|cloudbuild\.ya?ml)$/)) plat.push('Google Cloud'); if (tem(/(^|\/)(Procfile)$/)) plat.push('Heroku (Procfile)');
+  const tfs = [...arq.entries()].filter(([p]) => p.endsWith('.tf')).map(([, c]) => c).join('\n');
+  for (const [re, n] of PROVEDORES_TF) if (n !== 'Módulos' && n !== 'Terraform' && new RegExp('resource\\s+"' + re.source.replace(/^\^\(data\\\.\)\?/, '')).test(tfs)) plat.push(n + ' (Terraform)');
+  pos('Stack', 'Plataformas', listaFicha(plat));
+  // ---------- repositório e documentação ----------
+  pos('Repositories', 'Repositório e branch principal', repo.nome + (repo.branch ? ' · branch principal ' + repo.branch : ''));
+  const docs = caminhos.filter(p => /(^|\/)(README|CHANGELOG|CONTRIBUTING|ARCHITECTURE|SECURITY)(\.[a-z]+)?$/i.test(p) || /^docs?\//i.test(p) && /\.(md|mdx|adoc|rst|txt)$/i.test(p));
+  const openapi = caminhos.filter(p => /(^|\/)(openapi|swagger)[^/]*\.(ya?ml|json)$/i.test(p));
+  pos('Repositories', 'Documentação técnica', listaFicha([...docs.filter(p => !p.includes('/')), ...(docs.some(p => /^docs?\//i.test(p)) ? [plural(docs.filter(p => /^docs?\//i.test(p)).length, 'documento em docs/', 'documentos em docs/')] : []), ...openapi.map(p => 'OpenAPI: ' + p)], 12));
+  const conv: string[] = [];
+  if (tem(/(^|\/)(\.commitlintrc[^/]*|commitlint\.config\.[a-z]+)$/)) conv.push('commits no padrão Conventional Commits (commitlint)');
+  if (tem(/(^|\/)\.husky\//)) conv.push('Husky (confere antes do commit)');
+  if (tem(/(^|\/)\.github\/PULL_REQUEST_TEMPLATE|(^|\/)pull_request_template\.md$/i)) conv.push('modelo de PR');
+  if (tem(/(^|\/)CODEOWNERS$/)) conv.push('CODEOWNERS');
+  pos('Repositories', 'Convenção de branch e de commit', conv.join(' · '));
+  // ---------- ambientes ----------
+  const amb = new Set<string>(); const NOME_AMB: Record<string, string> = { dev: 'desenvolvimento', development: 'desenvolvimento', local: 'desenvolvimento (local)', hml: 'homologação', homolog: 'homologação', staging: 'homologação (staging)', stage: 'homologação (staging)', qa: 'teste (QA)', test: 'teste', prod: 'produção', production: 'produção' };
+  for (const p of caminhos) { const m = p.match(/(?:^|\/)(?:application|bootstrap)-([a-z]+)\.(?:properties|ya?ml)$/) || p.match(/(?:^|\/)\.env\.([a-z]+)(?:\.(?:example|sample|template))?$/); if (m && NOME_AMB[m[1]]) amb.add(NOME_AMB[m[1]] + ' (' + p + ')'); }
+  for (const [p, c] of arq) if (WORKFLOW.test(p)) for (const m of c.matchAll(/^\s*environment:\s*(?:\n\s*name:\s*)?["']?([\w-]+)/gm)) amb.add(m[1] + ' (GitHub Actions)');
+  pos('Environments', 'Desenvolvimento, homologação e produção', listaFicha([...amb], 12));
+  // ---------- banco (do que está escrito no código) ----------
+  const bancos: string[] = [];
+  const semSenha = (u: string) => u.replace(/\/\/[^@/]*@/, '//').replace(/([?&](password|pass|pwd)=)[^&]*/gi, '$1***');
+  for (const [p, c] of arq) if (/src\/main\/resources\/(application|bootstrap)[^/]*\.(properties|ya?ml)$/.test(p)) {
+    for (const m of c.matchAll(/(?:spring\.datasource\.url|url)\s*[=:]\s*["']?(jdbc:[^\s"']+|\$\{[^}]+\})/g)) bancos.push(semSenha(m[1]).replace(/^jdbc:/, '') + ' (' + p + ')');
+  }
+  for (const [p, c] of arq) if (/\.prisma$/.test(p)) { const pr = (c.match(/datasource\s+\w+\s*\{[^}]*provider\s*=\s*"([^"]+)"/) || [])[1]; if (pr) bancos.push('Prisma · ' + pr + ' (' + p + ')'); }
+  const migr = caminhos.filter(p => /(^|\/)supabase\/migrations\/[^/]+\.sql$/.test(p));
+  if (migr.length) bancos.push('Supabase · PostgreSQL (' + plural(migr.length, 'migração', 'migrações') + ' em supabase/migrations)');
+  const flyway = caminhos.filter(p => /db\/migration\/V[^/]+\.sql$/.test(p)); if (flyway.length) bancos.push('Flyway (' + plural(flyway.length, 'migração', 'migrações') + ')');
+  if (deps.some(d => /liquibase/.test(d))) bancos.push('Liquibase');
+  pos('Database', 'Banco e schema', listaFicha(bancos, 8));
+  const tabelas: string[] = [];
+  for (const [p, c] of arq) {
+    if (/\.prisma$/.test(p)) for (const m of c.matchAll(/^model\s+(\w+)/gm)) tabelas.push(m[1]);
+    if (/\.(java|kt)$/.test(p) && /@Entity\b/.test(c)) { const t = (c.match(/@Table\s*\(\s*(?:name\s*=\s*)?"([^"]+)"/) || [])[1]; const cl = (c.match(/\bclass\s+(\w+)/) || [])[1]; if (t || cl) tabelas.push(t || cl!); }
+    if (/\.sql$/.test(p) && /(migrations?|schema|db)\//i.test(p)) for (const m of c.matchAll(/create\s+table\s+(?:if\s+not\s+exists\s+)?([\w."]+)/gi)) tabelas.push(m[1].replace(/"/g, ''));
+  }
+  pos('Database', 'Tabelas principais', listaFicha(tabelas.sort(), 40));
+  const rotinas: string[] = [];
+  for (const [p, c] of arq) {
+    if (/\.(java|kt)$/.test(p)) for (const m of c.matchAll(/@Scheduled\s*\(([^)]*)\)\s*(?:public\s+)?\w+\s+(\w+)\s*\(/g)) rotinas.push(m[2] + ' (@Scheduled ' + curto(m[1], 40) + ')');
+    if (/\.sql$/.test(p)) { for (const m of c.matchAll(/cron\.schedule\(\s*'([^']+)'\s*,\s*'([^']+)'/g)) rotinas.push(m[1] + ' (pg_cron ' + m[2] + ')'); for (const m of c.matchAll(/create\s+(?:or\s+replace\s+)?(?:constraint\s+)?trigger\s+(\w+)/gi)) rotinas.push('gatilho ' + m[1]); }
+    if (/(^|\/)vercel\.json$/.test(p)) for (const cr of (lerJson(c) || {}).crons || []) rotinas.push(cr.path + ' (Vercel cron ' + cr.schedule + ')');
+    if (WORKFLOW.test(p)) for (const m of c.matchAll(/cron:\s*['"]([^'"]+)['"]/g)) rotinas.push(p.split('/').pop() + ' (GitHub Actions ' + m[1] + ')');
+  }
+  pos('Database', 'Rotinas agendadas e gatilhos', listaFicha(rotinas, 30));
+  // ---------- APIs e integrações ----------
+  const rotas = desenhos.find(d => d.tipo === 'rotas'), apis = rotas ? rotas.modelo.cards.filter(c => String(c.id).startsWith('api:')).flatMap(c => c.topicos || []) : [];
+  if (apis.length) pos('APIs', 'APIs próprias', plural(apis.length, 'rota', 'rotas') + ': ' + listaFicha(apis, 40));
+  const hosts = new Set<string>();
+  for (const [p, c] of arq) {
+    if (!/\.(ts|tsx|js|jsx|mjs|java|kt|py|go|php|rb|cs)$/.test(p) || /(^|\/)(tests?|__tests__|spec)\//.test(p)) continue;
+    for (const m of c.matchAll(/(?:fetch|axios(?:\.\w+)?|requests\.\w+|httpx\.\w+|getForObject|postForObject|getForEntity|postForEntity|exchange|WebClient\.create|baseUrl|URI\.create|http\.(?:get|post|request)|NewRequest\([^,]*,)\(?\s*[`'"]https?:\/\/([^/`'"$\s:]+)/g)) {
+      const h = m[1].toLowerCase(); if (!/^(localhost|127\.|0\.0\.0\.0)/.test(h) && !/\.(local|test|example)$/.test(h)) hosts.add(h);
+    }
+  }
+  const servicos = [...new Set(SERVICOS_SDK.filter(([re]) => deps.some(d => re.test(d))).map(([, n]) => n))];
+  pos('APIs', 'APIs de terceiros', listaFicha([...[...hosts].sort(), ...servicos.map(s => s + ' (biblioteca)')], 30));
+  pos('APIs', 'Tipo de autenticação', listaFicha([...new Set(AUTENTICACAO.filter(([re]) => deps.some(d => re.test(d))).map(([, n]) => n))]));
+  const docApi: string[] = [];
+  if (deps.some(d => /springdoc-openapi/.test(d))) docApi.push('Swagger UI em /swagger-ui.html (springdoc)'); if (deps.some(d => /springfox/.test(d))) docApi.push('Swagger (springfox)');
+  if (deps.some(d => /^@nestjs\/swagger$|^swagger-ui-express$|^@fastify\/swagger/.test(d))) docApi.push('Swagger (no próprio servidor Node)'); if (deps.some(d => d === 'fastapi')) docApi.push('/docs e /redoc (FastAPI)');
+  openapi.forEach(p => docApi.push(p));
+  pos('APIs', 'Links da documentação', listaFicha(docApi, 10));
+  pos('Integrations', 'Sistemas ligados', listaFicha([...servicos, ...[...hosts].sort()], 30));
+  const ganchos = [...apis.filter(a => /webhook|callback|notif/i.test(a)).map(a => 'recebe: ' + a), ...[...hosts].filter(h => /hooks\.|webhook/i.test(h)).map(h => 'envia: ' + h)];
+  pos('Integrations', 'Webhooks recebidos e enviados', listaFicha(ganchos, 20));
+  // ---------- segredos: só o NOME e onde aparece ----------
+  const segredos = new Map<string, Set<string>>(); const SEGREDO = /(KEY|SECRET|TOKEN|PASSWORD|PASSWD|PASS|PWD|DSN|CREDENTIAL|PRIVATE|_URL$|URI$|WEBHOOK|CLIENT_ID|APP_ID)/i;
+  const guarda = (nome: string, onde: string) => { if (!/^[A-Z][A-Z0-9_]{2,60}$/.test(nome) || !SEGREDO.test(nome) || /^(NODE_ENV|PORT|HOST)$/.test(nome)) return; (segredos.get(nome) || segredos.set(nome, new Set()).get(nome)!).add(onde); };
+  for (const [p, c] of arq) {
+    if (/(^|\/)\.env(\.[a-z]+)*$/i.test(p)) for (const m of c.matchAll(/^\s*(?:export\s+)?([A-Z][A-Z0-9_]*)\s*=/gm)) guarda(m[1], p);
+    if (/src\/main\/resources\/[^/]+\.(properties|ya?ml)$/.test(p)) for (const m of c.matchAll(/\$\{([A-Z][A-Z0-9_]*)(?::[^}]*)?\}/g)) guarda(m[1], p);
+    if (/\.(ts|tsx|js|jsx|mjs|cjs|java|kt|py|go|cs)$/.test(p) && !/(^|\/)(tests?|__tests__|spec)\//.test(p))
+      for (const m of c.matchAll(/process\.env\.([A-Z][A-Z0-9_]*)|process\.env\[['"]([A-Z][A-Z0-9_]*)['"]\]|Deno\.env\.get\(\s*['"]([A-Z][A-Z0-9_]*)['"]|import\.meta\.env\.([A-Z][A-Z0-9_]*)|System\.getenv\(\s*"([A-Z][A-Z0-9_]*)"|os\.(?:environ(?:\.get)?\(?\[?|getenv\()\s*['"]([A-Z][A-Z0-9_]*)['"]|os\.Getenv\(\s*"([A-Z][A-Z0-9_]*)"/g))
+        guarda(m.slice(1).find(Boolean)!, dirDe(p) || p);
+    if (WORKFLOW.test(p)) for (const m of c.matchAll(/secrets\.([A-Z][A-Z0-9_]*)/g)) guarda(m[1], 'GitHub Actions (' + p.split('/').pop() + ')');
+  }
+  pos('Secrets catalog', 'Nome de cada segredo e onde fica', [...segredos.keys()].sort().slice(0, 60).map(n => n + ' (' + listaFicha([...segredos.get(n)!], 3) + ')').join('\n') + (segredos.size > 60 ? '\ne mais ' + (segredos.size - 60) : ''));
+  return out;
+}
+
+// do banco: o que a estrutura lida diz (tabelas, RLS, regras). Nunca leva endereço, usuário ou senha.
+export function fichaDoBanco(e: Estrutura, esquemas: string[], info: InfoBanco = {}): CampoFicha[] {
+  const out: CampoFicha[] = [], pos = (campo: string, valor: string) => { if (valor.trim()) out.push({ secao: 'Database', campo, valor: valor.slice(0, 3900) }); };
+  const tabs = e.tabelas.filter(t => ['r', 'p', 'f'].includes(t.tipo)), visoes = e.tabelas.filter(t => ['v', 'm'].includes(t.tipo));
+  const motor = info.motor === 'mysql' ? 'MySQL' : 'PostgreSQL', prov = info.provedor === 'supabase' ? 'Supabase' : info.provedor === 'aws' ? 'AWS' : '';
+  pos('Banco e schema', [prov, motor].filter(Boolean).join(' · ') + ' · ' + (info.motor === 'mysql' ? 'bancos ' : 'esquemas ') + esquemas.join(', ') + ' · ' + plural(tabs.length, 'tabela', 'tabelas') + (visoes.length ? ' e ' + plural(visoes.length, 'visão', 'visões') : ''));
+  // as principais: as mais apontadas por chave estrangeira e, depois, as com mais colunas
+  const apontada = new Map<string, number>(); tabs.forEach(t => t.restricoes.filter(r => r.tipo === 'f' && r.ref_tabela).forEach(r => { const k = r.ref_esquema + '.' + r.ref_tabela; apontada.set(k, (apontada.get(k) || 0) + 1); }));
+  const nomeT = (t: Tabela) => (esquemas.length > 1 ? t.esquema + '.' : '') + t.nome;
+  const principais = tabs.slice().sort((a, b) => (apontada.get(b.esquema + '.' + b.nome) || 0) - (apontada.get(a.esquema + '.' + a.nome) || 0) || b.colunas.length - a.colunas.length || a.nome.localeCompare(b.nome));
+  pos('Tabelas principais', principais.slice(0, 30).map(t => nomeT(t) + ' (' + plural(t.colunas.length, 'coluna', 'colunas') + ((apontada.get(t.esquema + '.' + t.nome) || 0) ? ', ' + plural(apontada.get(t.esquema + '.' + t.nome)!, 'tabela aponta', 'tabelas apontam') + ' para ela' : '') + ')').join(', ') + (tabs.length > 30 ? ' e mais ' + (tabs.length - 30) : ''));
+  if (info.motor !== 'mysql' && tabs.length) {
+    const com = tabs.filter(t => t.rls), sem = tabs.filter(t => !t.rls), regras = tabs.reduce((s, t) => s + (t.regras || []).length, 0);
+    pos('Regras de acesso (RLS)', 'RLS ligada em ' + com.length + ' de ' + plural(tabs.length, 'tabela', 'tabelas') + ', com ' + plural(regras, 'regra', 'regras') + '.' + (sem.length ? ' Sem RLS: ' + listaFicha(sem.map(nomeT), 20) + '.' : ' Todas com RLS.') +
+      (e.papeis.some(p => p.ignora_rls) ? ' Papéis que passam por cima da RLS: ' + listaFicha(e.papeis.filter(p => p.ignora_rls).map(p => p.nome), 10) + '.' : ''));
+  }
+  return out;
 }
