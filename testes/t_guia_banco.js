@@ -70,6 +70,13 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   // o bloco Bancos de dados tem o botão do guia
   const bloco = await p.evaluate(() => { const T = window.__tf; T.IFR_AUTO.repos = []; T.IFR_AUTO.bancos = []; T.IFR_AUTO.pedidos = []; return T.ifrAutoHTML(); });
   ok(/data-ifr-guia>Guia passo a passo</.test(bloco), 'o bloco Bancos de dados tem o botão Guia passo a passo');
+  // lista estreita (a lateral da Infraestrutura): o nome do banco não pode virar uma letra por linha
+  const alt = await p.evaluate(() => { const T = window.__tf; T.IFR_AUTO.bancos = [{id:'b1', nome:'Banco de produção', provedor:'supabase', motor:'postgres', esquemas:['public'], servidor:'aws-1-sa-east-1.pooler.supabase.com', ativo:true, ultimo_erro:'password authentication failed for user "leitura_ciclodev"'}];
+    const d = document.createElement('div'); d.className = 'ifr-lado-teste'; d.style.cssText = 'position:fixed;left:0;top:0;width:260px;background:#fff;z-index:99999;padding:12px'; d.innerHTML = T.ifrAutoHTML(); document.body.appendChild(d);
+    const sp = [...d.querySelectorAll('.ifr-auto-lista li > span')].find(x => /Banco de produção/.test(x.textContent)); return sp.getBoundingClientRect().height; });
+  if (FOTOS) await p.locator('.ifr-lado-teste').screenshot({path: FOTOS + '/lista_bancos.png'});
+  ok(alt < 40, 'na lateral estreita o nome do banco fica numa linha só (' + Math.round(alt) + ' px de altura)');
+  await p.evaluate(() => { document.querySelector('.ifr-lado-teste').remove(); window.__tf.IFR_AUTO.bancos = []; });
   // abre o guia do Supabase
   await p.evaluate(() => window.__tf.ifrGuiaAbrir('supabase')); await p.waitForTimeout(300);
   const g1 = await p.evaluate(() => { const d = document.querySelector('dialog.ifr-gp-dlg'); return d && {t:d.textContent, passos:d.querySelectorAll('.ifr-gp-passo').length, aba:d.querySelector('[data-ifr-gp].sel').textContent}; });

@@ -163,6 +163,12 @@ function ifrGuiaAbrir(provInicial){
   pintar();
   return dlg;
 }
+// senha com símbolos (@ # / : ? espaço) quebra o endereço: codifica só a senha, entre o primeiro : do usuário e o ÚLTIMO @
+function ifrCodificarSenha(url){
+  const m = String(url).match(/^([a-z][a-z0-9+.-]*:\/\/)([^:@\/]+):(.*)@([^@]+)$/i); if (!m) return url;
+  const jaCodificada = /%[0-9a-f]{2}/i.test(m[3]) && !/[@#?\/:\s\[\]]/.test(m[3]);
+  return m[1] + m[2] + ':' + (jaCodificada ? m[3] : encodeURIComponent(m[3])) + '@' + m[4];
+}
 // confere o endereço colado do Supabase antes de salvar (os erros mais comuns do passo a passo)
 function ifrConferirSupabase(url){
   if (/\[YOUR-PASSWORD\]/i.test(url)) return 'Troque [YOUR-PASSWORD] pela senha do usuário leitura_ciclodev (sem os colchetes).';
@@ -192,6 +198,7 @@ function ifrBancoModal(id, provInicial){
     if (url && motor === 'postgres' && !/^postgres(ql)?:\/\//.test(url)){ toast('O endereço precisa começar com postgresql://'); return false; }
     if (url && motor === 'mysql' && !/^mysql:\/\//.test(url)){ toast('O endereço precisa começar com mysql://'); return false; }
     if (url && prov === 'supabase'){ const erro = ifrConferirSupabase(url); if (erro){ toast(erro); return false; } }
+    if (url && prov !== 'aws') url = ifrCodificarSenha(url);
     const esq = $('#ifr-b-esq', dl).value.split(',').map(s => s.trim()).filter(Boolean);
     if (!esq.length){ toast(motor === 'mysql' ? 'Diga qual banco (database) ler.' : 'Diga quais esquemas ler.'); return false; }
     const args = {p_no:IFR.no, p_id:b ? b.id : null, p_nome:$('#ifr-b-nome', dl).value.trim(), p_provedor:prov, p_motor:motor, p_esquemas:esq, p_conexao:url || null, p_ativo:true};

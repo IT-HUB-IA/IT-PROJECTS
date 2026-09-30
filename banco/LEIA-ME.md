@@ -135,6 +135,10 @@ Na tela: Entregas, **Ligar repositório** (conectar a conta, escolher o reposit�
 - **`ciclodev_44_infra_na_aplicacao`** (30/09/2026): a aplicação também tem a aba Infraestrutura (`infra_no_ok`), com os desenhos do código ligado a ela. Publicar pelo repositório de uma aplicação pede os desenhos dela e do produto em que ela está (`infra_publicou`); "Atualizar agora" da aplicação lê só os repositórios dela, o do produto lê os dele e os das aplicações dele (`infra_auto_proximos`). A frente continua sem aba própria.
 - Regra da tela no mesmo dia: cada ponto vê só o que é dele e o que está dentro dele (versões, repositórios, publicações, ficha técnica); o projeto junta tudo. As 6 versões do projeto BL que eram do app MK - Plataformas (dentro de 40% (MK)) foram movidas para ele, com os itens ligados como estavam.
 
+## Parte 36: o servidor mostrado na tela nunca leva pedaço da senha (aplicada em 30/09/2026 como `36_servidor_sem_senha`)
+
+`36_servidor_sem_senha.sql`: `infra_banco_salvar` (mesma assinatura) pega o servidor depois do ÚLTIMO `@` do endereço. Antes pegava o primeiro, e uma senha com `@` fazia um pedaço dela aparecer como "servidor" na lista de bancos (aconteceu no primeiro banco ligado em produção). Os bancos já ligados foram corrigidos na mesma migração. A tela passou a codificar sozinha a senha com símbolos antes de salvar.
+
 ## Parte 35: a seção Database da ficha só vem do banco ligado (aplicada em 30/09/2026 como `35_ficha_database_so_banco`)
 
 `35_ficha_database_so_banco.sql`: `infra_ficha_gravar` (mesma assinatura) ignora os campos da seção Database quando quem grava é um repositório, e os campos de Database que já tinham vindo do código foram apagados. Banco e schema, tabelas principais e regras de acesso aparecem só depois de ligar um banco no ponto (Infraestrutura, lado, Bancos de dados). O gerador (`fichaDoCodigo`) também parou de montar esses campos. Testada no Postgres local (`99_teste_ficha_auto_LOCAL.sql`, 23 conferências).
