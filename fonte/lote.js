@@ -106,7 +106,9 @@ function ltAbrir(){
     ltAtalhosHTML() +
     '<textarea class="campo lt-texto" id="lt-t" rows="16" spellcheck="false" placeholder="' + esc(LT_EXEMPLO) + '"></textarea>' +
     '<div class="lt-regras"><p><b>Linha sem traço</b> vira épico.</p><p><b>Linha com - na frente</b> vira item dentro do épico de cima.</p><p>Para escolher a <b>frente</b> e a <b>versão</b>, clique na linha e depois no botão dela, em cima da caixa. O item fica na frente e na versão do épico, se não disser outra. Uma versão que ainda não existe é criada junto.</p>' +
-    '<button type="button" class="btn fant peq" data-lt-exemplo>Usar o exemplo</button></div></div>' +
+    '<div class="lt-ia"><button type="button" class="btn fant peq" data-lt-exemplo>Usar o exemplo</button></div>' +
+    '<div class="lt-ia"><b>Montar com um agente de IA</b><p>Baixe ou copie as instruções do formato, cole num chat com o agente, converse com ele e cole aqui o texto que ele devolver. As instruções já levam as frentes, versões e épicos deste projeto.</p>' +
+    '<span><button type="button" class="btn sec peq" data-lt-ia-baixar>Baixar instruções</button><button type="button" class="btn sec peq" data-lt-ia-copiar>Copiar instruções</button></span></div></div></div>' +
     '<div class="lt-dir"><span class="lb">Prévia</span><div class="lt-previa" aria-live="polite">' + ltPreviaHTML({grupos:[], avisos:[]}) + '</div></div></div>',
     [{txt:'Cancelar', cls:'sec'}, {txt:'Criar tudo', acao:dl => {
       const r = ltLer($('#lt-t', dl).value); const nItens = r.grupos.reduce((s, g) => s + g.itens.length, 0);
@@ -128,19 +130,14 @@ function ltAbrir(){
   const atualizar = () => { pv.innerHTML = ltPreviaHTML(ltLer(ta.value)); };
   ta.addEventListener('input', atualizar);
   $('[data-lt-exemplo]', dl).addEventListener('click', () => { ta.value = LT_EXEMPLO; atualizar(); ta.focus(); });
+  $('[data-lt-ia-baixar]', dl).addEventListener('click', () => exBaixar('CicloDev - criar em lote - instrucoes para IA - ' + (nomeDe(UI.sel) || 'geral'), '# Criar em lote no CicloDev: instruções para um agente de IA\n\n' + ciLoteMd()));
+  $('[data-lt-ia-copiar]', dl).addEventListener('click', e => enCopiar('# Criar em lote no CicloDev: instruções para um agente de IA\n\n' + ciLoteMd(), e.currentTarget));
   // os botões de atalho não tiram o cursor da caixa: o clique não rouba o foco
   dl.addEventListener('mousedown', e => { if (e.target.closest('[data-lt-por]')) e.preventDefault(); });
   dl.addEventListener('click', e => { const b = e.target.closest('[data-lt-por]'); if (!b) return; ltPor(ta, b.dataset.ltPor, b.dataset.ltValor || ''); atualizar(); });
   ta.focus();
 }
 
-// o botão fica no painel Épicos da Fila, logo abaixo de Criar épico
-const _rViewLt = rView;
-rView = function(){
-  _rViewLt();
-  if (UI.view !== 'backlog' || !podeEditar()) return;
-  const b = $('#ops-corpo [data-bj-acao="novo-epic"]');
-  if (b && !$('#ops-corpo [data-lt-abrir]')) b.insertAdjacentHTML('afterend', '<button type="button" class="btn fant peq" data-lt-abrir>' + ICO.mais + 'Criar em lote</button>');
-};
+// o botão Criar em lote fica na barra Criar, no topo de todas as abas de itens (criar.js)
 document.addEventListener('click', e => { if (e.target.closest && e.target.closest('[data-lt-abrir]')){ e.preventDefault(); ltAbrir(); } });
 if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {ltLer, ltAbrir});

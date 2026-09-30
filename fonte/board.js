@@ -182,7 +182,7 @@ function ferramentasBoard(l, tipoB){
   const extra = avataresFiltro(issuesEm(UI.sel)) + raiasSel +
     '<span class="bj-tipo-board" title="Tipo deste Board">' + ({scrum:'Scrum', kanban:'Kanban', simples:'Simples'}[tipoB] || 'Kanban') + '</span>' +
     (souMaster() && UI.sel !== 'all' ? '<button class="btn sec peq" type="button" data-bj-acao="config" title="Configurar o Board">⋯ Configurar</button>' : '') +
-    (podeEditar() ? '<button class="btn" type="button" data-acao="novo-item">' + ICO.mais + 'Criar</button>' : '');
+    '';   // criar fica na barra Criar, no topo (criar.js)
   return ferramentasHTML(extra);
 }
 
@@ -339,7 +339,7 @@ function vBacklog(){
     epics.map(e => { const filhos = D.issues.filter(x => epicDe(x) && epicDe(x).id === e.id); const f = filhos.filter(x => x.status === 'done').length; const p = filhos.length ? Math.round(f / filhos.length * 100) : 0;
       return '<button type="button" class="bj-ep' + (UI.bjEpic === e.id ? ' ligado' : '') + '" data-bj-epic="' + e.id + '" style="--c:' + corEpic(e) + '"><span class="bj-ep-nome">' + esc(e.titulo) + '</span><span class="bj-ep-bar"><i style="width:' + p + '%"></i></span><small>' + f + ' de ' + filhos.length + ' concluídos</small></button>'; }).join('') +
     '<button type="button" class="bj-ep' + (UI.bjEpic === 'sem' ? ' ligado' : '') + '" data-bj-epic="sem">Itens sem épico</button>' +
-    (pode ? '<button type="button" class="btn fant peq" data-bj-acao="novo-epic">' + ICO.mais + 'Criar épico</button>' : '') + '</aside>';
+    '</aside>';   // criar épico e em lote ficam na barra Criar, no topo de todas as abas (criar.js)
   const extra = avataresFiltro(issuesEm(UI.sel)) + (UI.bjEpicos === false ? '<button class="btn sec peq" type="button" data-bj-acao="epicos">Épicos</button>' : '') +
     (souMaster() ? '<button class="btn sec peq" type="button" data-bj-acao="config" title="Colunas do quadro, forma de trabalhar (com ou sem sprints) e estimativa">⋯ Configurar o quadro</button>' : '');
   const intro = '<div class="bj-intro"><b>Fila de ' + esc(pj.nome) + '</b><span>' + (tipoB === 'scrum' ? 'Tudo o que ainda não está em nenhum sprint. Arraste um item para um sprint para planejar.' : 'Tudo o que foi pedido e ainda não começou. Para começar, marque os itens e clique em <b>Começar</b>: eles vão para a coluna A fazer do Quadro.') + '</span></div>';

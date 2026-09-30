@@ -785,7 +785,7 @@ function vBoard(){
   }).join('') + '</div>';
   const raiasSel = '<label class="rotulo-mini" style="display:flex;gap:8px;align-items:center">Swimlanes' + I('Swimlanes (faixas horizontais que agrupam o quadro)') + '<select class="sel peq" id="raias">' + [['nenhuma','Nenhuma'],['resp','Responsável'],['prio','Prioridade'],['app','Aplicação']].map(([k, n]) => '<option value="' + k + '"' + (UI.raias === k ? ' selected' : '') + '>' + n + '</option>').join('') + '</select></label>' +
     (wip ? '<span class="rotulo-mini">WIP limit' + I('WIP limit (limite de cartões em andamento: a coluna fica vermelha se passar)') + ' ' + wip + '</span>' : '') +
-    (podeEditar() ? '<button class="btn" type="button" data-acao="novo-item">' + ICO.mais + 'Novo item</button>' : '');
+    (podeEditar() ? '' : '');
   let corpo;
   if (UI.raias === 'nenhuma') corpo = colunas(l);
   else {
@@ -801,7 +801,7 @@ function vTable(){
   l.sort((a, b) => (val(a) > val(b) ? 1 : val(a) < val(b) ? -1 : 0) * o.dir);
   const th = (campo, nome) => '<th scope="col" class="ord" data-ordem="' + campo + '">' + nome + (o.campo === campo ? (o.dir > 0 ? ' ↑' : ' ↓') : '') + '</th>';
   const dis = podeEditar() ? '' : ' disabled';
-  return ferramentasHTML(podeEditar() ? '<button class="btn" type="button" data-acao="novo-item">' + ICO.mais + 'Novo item</button>' : '') +
+  return ferramentasHTML(podeEditar() ? '' : '') +
     '<div class="tabela-rolo"><table class="tabela itens"><colgroup><col style="width:24%"><col style="width:8%"><col style="width:15%"><col style="width:11%"><col style="width:9%"><col style="width:13%"><col style="width:10%"><col style="width:10%"></colgroup><thead><tr>' +
     th('titulo','Título') + th('tipo','Tipo') + '<th scope="col">Onde</th>' + th('status','Status') + th('prio','Prioridade') + th('resp','Responsável') + th('ini','Início') + th('fim','Prazo') + '</tr></thead><tbody>' +
     l.map(i => '<tr data-linha="' + i.id + '"><th scope="row"><input class="campo" data-editar="titulo" value="' + esc(i.titulo) + '"' + dis + ' aria-label="Título"></th>' +
@@ -816,7 +816,7 @@ function vTable(){
 }
 function vList(){
   const l = listaFiltrada();
-  return ferramentasHTML(podeEditar() ? '<button class="btn" type="button" data-acao="novo-item">' + ICO.mais + 'Novo item</button>' : '') + STATUS.map(s => {
+  return ferramentasHTML(podeEditar() ? '' : '') + STATUS.map(s => {
     const its = l.filter(i => i.status === s.id); if (!its.length) return '';
     return '<div class="grupo-lista"><h3>' + stHTML(s.id) + '<span class="rotulo-mini">' + its.length + '</span></h3><ul>' + its.map(i => '<li data-abrir-item="' + i.id + '"><span style="display:flex;gap:8px;align-items:center">' + tipoHTML(i.tipo) + prioHTML(i.prio) + esc(i.titulo) + '</span><span class="sec" style="font-size:12px">' + esc(caminhoTexto(i)) + '</span><span style="display:flex;gap:6px;align-items:center">' + avatar(i.resp) + '<span style="font-size:12px">' + esc((pessoa(i.resp) || {nome:''}).nome) + '</span></span><span class="' + (atrasado(i) ? 'atrasado' : '') + '">' + fmt(i.fim) + '</span></li>').join('') + '</ul></div>';
   }).join('');

@@ -187,7 +187,7 @@ vBoard = function(){
   }).join('') + '</div>';
   const raiasSel = '<label class="rotulo-mini" style="display:flex;gap:8px;align-items:center">Swimlanes' + I('Swimlanes (faixas horizontais que agrupam o quadro)') + '<select class="sel peq" id="raias">' + [['nenhuma','Nenhuma'],['resp','Responsável'],['prio','Prioridade'],['app','Aplicação'],['epic','Epic'],['sprint','Sprint']].map(([k, n]) => '<option value="' + k + '"' + (UI.raias === k ? ' selected' : '') + '>' + n + '</option>').join('') + '</select></label>' +
     (wip ? '<span class="rotulo-mini">WIP limit' + I('WIP limit (limite de cartões em andamento: a coluna fica vermelha se passar)') + ' ' + wip + '</span>' : '') +
-    (podeEditar() ? '<button class="btn" type="button" data-acao="novo-item">' + ICO.mais + 'Novo item</button>' : '');
+    (podeEditar() ? '' : '');
   let corpo;
   if (UI.raias === 'nenhuma') corpo = colunas(l);
   else {
@@ -217,7 +217,7 @@ vTable = function(){
     '<select class="sel peq" data-rc-massa="resp"><option value="">Responsável…</option><option value="-">Sem responsável</option>' + equipe.map(p => '<option value="' + p.id + '">' + esc(p.nome) + '</option>').join('') + '</select>' +
     '<select class="sel peq" data-rc-massa="sprint"><option value="">Sprint…</option><option value="-">Tirar do sprint</option>' + sprintsProj.map(s => '<option value="' + s.id + '">' + esc(s.nome) + '</option>').join('') + '</select>' +
     '<button class="btn fant peq" type="button" data-rc-acao="massa-arquivar">Arquivar</button><button class="btn fant peq" type="button" data-rc-acao="massa-limpar">Limpar seleção</button></div>' : '';
-  return ferramentasHTML(pode ? '<button class="btn" type="button" data-acao="novo-item">' + ICO.mais + 'Novo item</button>' : '') + barra +
+  return ferramentasHTML(pode ? '' : '') + barra +
     '<div class="tabela-rolo"><table class="tabela itens"><colgroup>' + (pode ? '<col style="width:3%">' : '') + '<col style="width:' + (pode ? 21 : 24) + '%"><col style="width:8%"><col style="width:14%"><col style="width:12%"><col style="width:9%"><col style="width:12%"><col style="width:10%"><col style="width:10%"></colgroup><thead><tr>' +
     (pode ? '<th scope="col"><input type="checkbox" data-rc-sel-todos aria-label="Selecionar todos"' + (l.length && selItens.size === l.length ? ' checked' : '') + '></th>' : '') +
     th('titulo','Título') + th('tipo','Tipo') + '<th scope="col">Onde</th>' + th('status','Status') + th('prio','Prioridade') + th('resp','Responsável') + th('ini','Início') + th('fim','Prazo') + '</tr></thead><tbody>' +
