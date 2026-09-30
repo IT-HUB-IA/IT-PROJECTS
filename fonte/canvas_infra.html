@@ -875,6 +875,7 @@ function aplicarRemotoPendente(){
 }
 
 const STATUS = {carregando:'Carregando', pendente:'Alterações não salvas', salvando:'Salvando', salvo:'Salvo', local:'Salvo só neste navegador', erro:'Não salvou. Tentando de novo', ro:'Somente leitura'};
+if (window.__PONTE && window.__PONTE.init && window.__PONTE.init.rotuloRo) STATUS.ro = String(window.__PONTE.init.rotuloRo);
 function status(e){
   if (semPermissao) e = 'ro';
   else if ((cfg.leitura || (window.__PONTE && window.__PONTE.init.ro)) && (e === 'salvo' || e === 'local')) e = 'ro';

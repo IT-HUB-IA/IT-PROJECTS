@@ -174,3 +174,9 @@ textarea[data-ficha].fa-escondido{display:none}
 .ifr-fonte-cab{display:grid;justify-items:start;gap:4px}
 .ifr-fonte-cab b{width:100%}
 .ifr-selo-aviso{color:#B45309}
+/* desenho completo x editar o quadro (infra_visao.js) */
+.ifv-modo{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:0 0 10px}
+.ifv-b{border:1px solid var(--linha);background:var(--branco);padding:6px 12px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;color:var(--tinta-2)}
+.ifv-b.sel{background:var(--preto);border-color:var(--preto);color:var(--branco)}
+.ifv-b:focus-visible{outline:2px solid var(--vermelho);outline-offset:2px}
+.ifv-dica{font-size:12px;color:var(--tinta-3)}
