@@ -36,31 +36,60 @@ const ifrQuando = ts => { if (!ts) return ''; const m = Math.round((Date.now() -
 const IFR_ORIGEM = {github:'publicação em produção', gitlab:'publicação em produção', banco:'mudança no banco', manual:'Atualizar agora'};
 const IFR_STATUS = {pendente:'na fila', rodando:'montando agora', pronto:'pronto', erro:'com erro'};
 
+// erro técnico do banco em português, com o que fazer (o texto original fica embaixo, pequeno)
+function ifrErroAmigavel(m){
+  const t = String(m || '').toLowerCase();
+  if (/password authentication|access denied/.test(t)) return 'A senha do usuário do CicloDev não confere. Crie uma senha nova (só letras e números) e use Trocar.';
+  if (/tenant or user not found/.test(t)) return 'Falta o código do projeto no usuário: o certo é leitura_ciclodev.codigodoprojeto.';
+  if (/timeout|timed out|etimedout|econnrefused|enotfound|getaddrinfo|could not connect|connection refused/.test(t)) return 'O CicloDev não conseguiu alcançar o banco pela internet.';
+  if (/permission denied/.test(t)) return 'O usuário do CicloDev não tem permissão para ler a estrutura.';
+  if (/does not exist|não existe/.test(t)) return 'O banco ou o esquema informado não existe.';
+  return 'Não deu para ler o banco.';
+}
+const ifrSelo = (tipo, txt) => '<span class="ifr-selo ifr-selo-' + tipo + '">' + esc(txt) + '</span>';
 function ifrAutoHTML(){
-  const pode = podeEditar(), fonte = IFR_AUTO_FONTE[IFR.aba], repos = IFR_AUTO.repos, ult = IFR_AUTO.pedidos[0];
+  const pode = podeEditar(), fonte = IFR_AUTO_FONTE[IFR.aba], repos = IFR_AUTO.repos, bs = IFR_AUTO.bancos, ult = IFR_AUTO.pedidos[0];
   const eProd = /^product:/.test(UI.sel || '');
+  const resumo = (ult && ult.resumo) || [];
+  const erroRepo = nome => (resumo.find(x => x.repositorio === nome && x.erro) || {}).erro;
   let h = '<section class="ifr-auto" aria-label="Desenhos automáticos"><div class="ifr-auto-cab"><h3>Automático</h3>' +
     (pode ? '<button type="button" class="btn sec peq" data-ifr-atualizar' + (IFR_AUTO.atualizando ? ' disabled' : '') + '>' + (IFR_AUTO.atualizando ? 'Atualizando…' : 'Atualizar agora') + '</button>' : '') + '</div>';
-  h += '<p class="ifr-auto-como">' + (fonte === 'codigo' ? 'Esta parte sai <b>sozinha do código</b> a cada publicação em produção no GitHub. O DevIT completa o que precisa de interpretação.'
-    : fonte === 'banco' ? 'Esta parte sai <b>sozinha do banco de dados</b> ligado (e do Prisma, no código): quando a estrutura muda, o desenho é refeito.'
-    : 'Esta parte depende de interpretação: é feita pelo <b>DevIT</b>, que usa os desenhos automáticos como evidência.') + '</p>';
-  h += '<div class="ifr-auto-bloco"><b>Código (GitHub e GitLab)</b>' + (repos.length
-    ? '<ul class="ifr-auto-lista">' + repos.map(r => '<li><span>' + esc(r.nome) + '</span><small>' + esc((r.provedor === 'gitlab' ? 'GitLab' : 'GitHub') + ' · branch ' + (r.branch_principal || 'main')) + '</small>' +
-        (pode ? '<span class="ifr-repo-b"><button type="button" class="ifr-lnk" data-ifr-repo-trocar="' + r.id + '">Trocar</button><button type="button" class="ifr-lnk" data-ifr-repo-tirar="' + r.id + '">Desligar</button></span>' : '') + '</li>').join('') + '</ul>'
+  h += '<p class="ifr-auto-como">' + (fonte === 'codigo' ? 'Esta parte sai <b>sozinha do código</b> a cada publicação em produção.'
+    : fonte === 'banco' ? 'Esta parte sai <b>sozinha do banco de dados</b> ligado: quando a estrutura muda, o desenho é refeito.'
+    : 'Esta parte é feita pelo <b>DevIT</b>, usando os desenhos automáticos como base.') + '</p>';
+  // código
+  h += '<div class="ifr-auto-bloco"><h4 class="ifr-auto-tit">Código</h4>' + (repos.length
+    ? repos.map(r => { const er = erroRepo(r.nome);
+        return '<div class="ifr-fonte' + (er ? ' com-erro' : '') + '"><div class="ifr-fonte-cab"><b>' + esc(r.nome) + '</b>' + (er ? ifrSelo('erro', 'Com problema') : ifrSelo('ok', 'Ligado')) + '</div>' +
+          '<p class="ifr-fonte-meta">' + esc((r.provedor === 'gitlab' ? 'GitLab' : 'GitHub') + ' · branch ' + (r.branch_principal || 'main')) + '</p>' +
+          (er ? '<p class="ifr-fonte-erro">' + esc(er) + '</p>' : '') +
+          (pode ? '<div class="ifr-fonte-acoes"><button type="button" class="ifr-lnk" data-ifr-repo-trocar="' + r.id + '">Trocar</button><button type="button" class="ifr-lnk" data-ifr-repo-tirar="' + r.id + '">Desligar</button></div>' : '') + '</div>'; }).join('')
     : '<p class="ifr-vazio">Nenhum repositório ligado ' + (/^app:/.test(UI.sel || '') ? 'a esta aplicação' : eProd ? 'a este produto' : 'direto neste projeto') + '.</p>') +
-    (pode ? '<button type="button" class="ifr-lnk" data-ifr-repo>' + (repos.length ? 'Ligar outro repositório' : 'Ligar repositório') + '</button>' : '') + '</div>';
-  const bs = IFR_AUTO.bancos, qual = x => (IFR_PROV[x.provedor] || 'Outro') + ' · ' + (x.motor === 'mysql' ? 'MySQL' : 'PostgreSQL');
-  h += '<div class="ifr-auto-bloco"><b>Bancos de dados</b>' + (bs.length
-    ? '<ul class="ifr-auto-lista">' + bs.map(x => '<li><span>' + esc(x.nome) + '</span><small>' + esc(qual(x) + ' · ' + (x.motor === 'mysql' ? 'bancos ' : 'esquemas ') + (x.esquemas || []).join(', ') + (x.servidor ? ' · ' + x.servidor : '')) + '</small>' +
-        '<small class="ifr-meta">' + (x.ultima_leitura_em ? 'Lido ' + esc(ifrQuando(x.ultima_leitura_em)) : 'Ainda não lido') + (x.ultima_mudanca_em ? ' · estrutura mudou ' + esc(ifrQuando(x.ultima_mudanca_em)) : '') + (x.ativo ? '' : ' · desligado') + '</small>' +
-        (x.ultimo_erro ? '<small class="ifr-auto-erro">' + esc(x.ultimo_erro) + '</small>' : '') +
-        (pode ? '<span class="ifr-repo-b"><button type="button" class="ifr-lnk" data-ifr-banco="' + x.id + '">Trocar</button><button type="button" class="ifr-lnk" data-ifr-banco-tirar="' + x.id + '">Desligar</button></span>' : '') + '</li>').join('') + '</ul>'
+    (pode ? '<div class="ifr-auto-add"><button type="button" class="btn sec peq" data-ifr-repo>+ ' + (repos.length ? 'Ligar outro repositório' : 'Ligar repositório') + '</button></div>' : '') + '</div>';
+  // bancos
+  const qual = x => (IFR_PROV[x.provedor] || 'Outro') + ' · ' + (x.motor === 'mysql' ? 'MySQL' : 'PostgreSQL') + ' · ' + (x.motor === 'mysql' ? 'banco ' : 'esquema' + ((x.esquemas || []).length > 1 ? 's ' : ' ')) + (x.esquemas || []).join(', ');
+  h += '<div class="ifr-auto-bloco"><h4 class="ifr-auto-tit">Bancos de dados</h4>' + (bs.length
+    ? bs.map(x => {
+        const selo = !x.ativo ? ifrSelo('cinza', 'Desligado') : x.ultimo_erro ? ifrSelo('erro', 'Não conectou') : x.ultima_leitura_em ? ifrSelo('ok', 'Lido ' + ifrQuando(x.ultima_leitura_em)) : ifrSelo('cinza', 'Aguardando leitura');
+        return '<div class="ifr-fonte' + (x.ultimo_erro ? ' com-erro' : '') + '"><div class="ifr-fonte-cab"><b>' + esc(x.nome) + '</b>' + selo + '</div>' +
+          '<p class="ifr-fonte-meta">' + esc(qual(x)) + '</p>' + (x.servidor ? '<p class="ifr-fonte-host" title="Servidor">' + esc(x.servidor) + '</p>' : '') +
+          (x.ultimo_erro ? '<div class="ifr-fonte-erro"><b>' + esc(ifrErroAmigavel(x.ultimo_erro)) + '</b><small>' + esc(x.ultimo_erro) + (x.ultima_leitura_em ? ' · tentativa ' + esc(ifrQuando(x.ultima_leitura_em)) : '') + '</small>' +
+            '<button type="button" class="btn peq" data-ifr-guia>Resolver com o DevIT</button></div>'
+            : x.ultima_mudanca_em ? '<p class="ifr-fonte-meta">Estrutura mudou ' + esc(ifrQuando(x.ultima_mudanca_em)) + '</p>' : '') +
+          (pode ? '<div class="ifr-fonte-acoes"><button type="button" class="ifr-lnk" data-ifr-banco="' + x.id + '">Trocar</button><button type="button" class="ifr-lnk" data-ifr-banco-tirar="' + x.id + '">Desligar</button></div>' : '') + '</div>'; }).join('')
     : '<p class="ifr-vazio">' + (pode ? 'Nenhum banco ligado.' : 'Só quem pode editar vê os bancos ligados.') + '</p>') +
-    '<span class="ifr-repo-b">' + (pode ? '<button type="button" class="ifr-lnk" data-ifr-banco="">' + (bs.length ? 'Ligar outro banco' : 'Ligar banco') + '</button>' : '') + '<button type="button" class="ifr-lnk" data-ifr-guia>Guia passo a passo</button></span></div>';
+    '<div class="ifr-auto-add">' + (pode ? '<button type="button" class="btn sec peq" data-ifr-banco="">+ ' + (bs.length ? 'Ligar outro banco' : 'Ligar banco') + '</button>' : '') + '<button type="button" class="ifr-lnk" data-ifr-guia>Guia passo a passo</button></div></div>';
+  // última atualização: uma linha; os erros já aparecem na fonte de cada um
   if (ult){
-    const res = (ult.resumo || []).map(x => x.erro ? (x.repositorio || 'banco') + ': ' + x.erro : x.aviso ? (x.repositorio ? x.repositorio + ': ' : '') + x.aviso : '').filter(Boolean);
-    h += '<div class="ifr-auto-bloco"><b>Última atualização</b><p class="ifr-auto-linha ifr-st-' + esc(ult.status) + '">' + esc(IFR_STATUS[ult.status] || ult.status) + ' · ' + esc(IFR_ORIGEM[ult.origem] || ult.origem) + (ult.referencia && (ult.origem === 'github' || ult.origem === 'gitlab') ? ' · commit ' + esc(String(ult.referencia).slice(0, 7)) : '') + '</p><p class="ifr-meta">' + esc(ifrQuando(ult.concluido_em || ult.criado_em)) + ((ult.diagramas || []).length ? ' · ' + ult.diagramas.length + (ult.diagramas.length === 1 ? ' desenho' : ' desenhos') : '') + '</p>' +
-      (ult.erro ? '<p class="ifr-auto-erro">' + esc(ult.erro) + '</p>' : '') + (res.length && !ult.erro ? '<ul class="ifr-auto-avisos">' + res.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>' : '') + '</div>';
+    let ST = {pendente:['cinza', 'Na fila'], rodando:['cinza', 'Montando agora'], pronto:['ok', 'Concluída'], erro:['erro', 'Falhou']}[ult.status] || ['cinza', ult.status];
+    const porque = ult.origem === 'manual' ? 'pedida pelo botão Atualizar agora' : ult.origem === 'banco' ? 'porque a estrutura do banco mudou' : (ult.origem === 'github' || ult.origem === 'gitlab') ? 'depois da publicação' + (ult.referencia ? ' do commit ' + String(ult.referencia).slice(0, 7) : '') : '';
+    const nd = (ult.diagramas || []).length, nErros = resumo.filter(x => x.erro).length;
+    if (ult.status === 'pronto' && nErros) ST[0] = 'aviso', ST[1] = 'Concluída com problema';
+    const avisos = resumo.filter(x => x.aviso && !x.erro).map(x => (x.repositorio ? x.repositorio + ': ' : '') + x.aviso);
+    h += '<div class="ifr-auto-bloco"><h4 class="ifr-auto-tit">Última atualização</h4><div class="ifr-ult">' + ifrSelo(ST[0], ST[1]) + '<span>' + esc(ifrQuando(ult.concluido_em || ult.criado_em)) + (nd ? ' · ' + nd + (nd === 1 ? ' desenho' : ' desenhos') : '') + '</span></div>' +
+      (porque ? '<p class="ifr-fonte-meta">' + esc(porque.charAt(0).toUpperCase() + porque.slice(1)) + '</p>' : '') +
+      (nErros ? '<p class="ifr-fonte-meta ifr-ult-erro">' + (nErros === 1 ? '1 fonte com problema' : nErros + ' fontes com problema') + ': veja acima.</p>' : ult.erro ? '<p class="ifr-fonte-erro">' + esc(ult.erro) + '</p>' : '') +
+      (avisos.length ? '<ul class="ifr-auto-avisos">' + avisos.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>' : '') + '</div>';
   }
   return h + '</section>';
 }

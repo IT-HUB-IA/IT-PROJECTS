@@ -225,6 +225,13 @@ function ifrItemHTML(d, deOutro){
     (d.quadro && !deOutro ? '<button type="button" class="btn peq" data-ifr-quadro="' + esc(d.quadro) + '" title="Abrir o quadro deste desenho no canvas">Abrir</button>' : '') +
     (podeEditar() && !d.quadro ? '<button type="button" class="btn sec peq" data-ifr-por="' + esc(d.id) + '" title="Pôr este desenho no quadro' + (deOutro ? ' do projeto' : '') + '">No quadro</button>' : '') + '</li>';
 }
+// serviços que os desenhos usam: um resumo recolhido ("3 de 5 ligados"); aberto, mostra o que falta e onde configurar
+function ifrServicosHTML(cf){
+  const l = [[cf.conversor, 'Conversor de imagens', 'variável RENDER_URL da função diagramas'], [cf.devit, 'DevIT (inteligência artificial)', 'variável ANTHROPIC_API_KEY'], [cf.github, 'GitHub', 'app do CicloDev, em Admin'], [cf.gitlab, 'GitLab', 'em Admin'], [cf.figma, 'Figma', 'variável FIGMA_TOKEN']];
+  const n = l.filter(x => x[0]).length;
+  return '<details class="ifr-serv"><summary><span>Serviços</span><span class="ifr-serv-n">' + n + ' de ' + l.length + ' ligados</span></summary><ul>' +
+    l.map(([ok, nome, onde]) => '<li class="' + (ok ? 'ok' : 'falta') + '"><span>' + esc(nome) + '</span><small>' + (ok ? 'ligado' : 'falta configurar: ' + esc(onde)) + '</small></li>').join('') + '</ul></details>';
+}
 function ifrLado(){
   const el = $('#ops-corpo [data-ifr-lado]'); if (!el) return;
   const pode = podeEditar(), meus = IFR.diagramas.filter(d => d.no_id === IFR.no && d.aba === IFR.aba);
@@ -240,7 +247,7 @@ function ifrLado(){
       return '<div class="ifr-prod"><div class="ifr-prod-cab"><b>' + esc(p.nome) + '</b><button type="button" class="ifr-lnk" data-ifr-ir="product:' + esc(p.id) + '">Abrir no produto</button></div>' + (l.length ? '<ul class="ifr-lista">' + l.map(d => ifrItemHTML(d, true)).join('') + '</ul>' : '<p class="ifr-vazio">Sem desenho nesta parte.</p>') + '</div>'; }).join('');
   }
   h += '<div class="ifr-rodape"><button type="button" class="btn sec peq" data-ifr-zip>Baixar tudo (docs/diagrams)</button>' +
-    (cf.erro ? '<p class="ifr-cfg">' + esc(cf.erro) + '</p>' : IFR.config ? '<ul class="ifr-cfg">' + chave(cf.conversor, 'conversor de desenhos (RENDER_URL)') + chave(cf.devit, 'DevIT (ANTHROPIC_API_KEY)') + chave(cf.github, 'GitHub, para ler o código (app do CicloDev, em Admin)') + chave(cf.gitlab, 'GitLab, para ler o código (em Admin)') + chave(cf.figma, 'Figma, para ler os protótipos (FIGMA_TOKEN)') + '</ul>' : '') + '</div>';
+    (cf.erro ? '<p class="ifr-cfg">' + esc(cf.erro) + '</p>' : IFR.config ? ifrServicosHTML(cf) : '') + '</div>';
   el.innerHTML = h;
 }
 

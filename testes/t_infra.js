@@ -103,7 +103,7 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   // DevIT sem chave: avisa qual falta
   await p.click('[data-ifr-gerar]'); await p.waitForTimeout(1500);
   ok(/ANTHROPIC_API_KEY/.test(await p.evaluate(() => (document.querySelector('#toast') || {}).textContent || '')), 'Gerar com o DevIT sem a chave avisa qual chave falta');
-  ok(await p.evaluate(() => /Falta a chave: DevIT/.test(document.querySelector('[data-ifr-lado]').textContent) && /Pronto: conversor/.test(document.querySelector('[data-ifr-lado]').textContent)), 'o lado mostra quais chaves já estão prontas e quais faltam');
+  ok(await p.evaluate(() => /DevIT \(inteligência artificial\)falta configurar/.test(document.querySelector('[data-ifr-lado]').textContent) && /Conversor de imagensligado/.test(document.querySelector('[data-ifr-lado]').textContent) && /de 5 ligados/.test(document.querySelector('[data-ifr-lado]').textContent)), 'o lado mostra quais chaves já estão prontas e quais faltam');
   // recarregar: tudo volta do banco
   await abrir();
   await p.waitForTimeout(1000);
@@ -204,7 +204,7 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   ok(conta("select count(*) from public.infra_automacoes where no_id = '" + pj + "' and origem = 'manual' and status = 'pendente'") === '1', 'Atualizar agora põe o pedido na fila do robô');
   psql("update public.infra_automacoes set status = 'pronto', concluido_em = now(), diagramas = array[(select id from public.infra_diagramas where chave_auto = 'github:it-hub/bl:software')] where origem = 'manual'");
   await p.waitForTimeout(7000);
-  ok(/Pronto: 1 desenho atualizado/.test(await p.evaluate(() => (document.querySelector('#toast') || {}).textContent || '')) && /Última atualização[\s\S]*pronto · Atualizar agora/.test(await lado()), 'quando o robô termina, a tela avisa e mostra a última atualização');
+  ok(/Pronto: 1 desenho atualizado/.test(await p.evaluate(() => (document.querySelector('#toast') || {}).textContent || '')) && /Última atualização[\s\S]*Concluída[\s\S]*Pedida pelo botão Atualizar agora/.test(await lado()), 'quando o robô termina, a tela avisa e mostra a última atualização');
   // ligar o banco do sistema
   await p.click('[data-ifr-banco]'); await p.waitForTimeout(600);
   await p.fill('#ifr-b-url', 'mysql://errado'); await p.click('dialog.modal[open] .modal-rod .btn:not(.sec)'); await p.waitForTimeout(400);
@@ -212,7 +212,7 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   await p.fill('#ifr-b-url', 'postgresql://leitura_ciclodev:senha-de-teste@db.exemplo:5432/postgres'); await p.fill('#ifr-b-esq', 'public, app');
   await p.click('dialog.modal[open] .modal-rod .btn:not(.sec)'); await p.waitForTimeout(2500);
   ok(conta("select count(*) || '/' || max(array_to_string(esquemas, ',')) from public.infra_bancos where no_id = '" + pj + "'") === '1/app,public' && conta("select count(*) from interno.infra_bancos_conexao where conexao like 'postgresql://leitura_ciclodev:%'") === '1', 'ligar o banco guarda o endereço na área protegida do banco');
-  ok(/Banco de produção[\s\S]*Supabase · PostgreSQL · esquemas app, public · db\.exemplo/.test(await lado()) && !/senha-de-teste/.test(await p.evaluate(() => document.body.innerHTML)), 'a tela mostra o banco ligado (Supabase, esquemas e servidor) e nunca mostra a senha');
+  ok(/Banco de produção[\s\S]*Supabase · PostgreSQL · esquemas app, public[\s\S]*db\.exemplo/.test(await lado()) && !/senha-de-teste/.test(await p.evaluate(() => document.body.innerHTML)), 'a tela mostra o banco ligado (Supabase, esquemas e servidor) e nunca mostra a senha');
   // um segundo banco: MySQL na AWS, pelos campos (endpoint, banco, usuário e senha)
   await p.click('[data-ifr-banco=""]'); await p.waitForTimeout(600);
   await p.click('dialog.modal[open] input[name="ifr-b-prov"][value="aws"]'); await p.waitForTimeout(200);
@@ -223,7 +223,7 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   await p.click('dialog.modal[open] .modal-rod .btn:not(.sec)'); await p.waitForTimeout(2500);
   ok(conta("select count(*) from public.infra_bancos where no_id = '" + pj + "'") === '2' && conta("select provedor || '/' || motor || '/' || servidor from public.infra_bancos where nome = 'Relatórios'") === 'aws/mysql/rel.abc123.us-east-1.rds.amazonaws.com', 'o segundo banco (MySQL na AWS) fica ligado junto com o primeiro');
   ok(conta("select c.conexao from interno.infra_bancos_conexao c join public.infra_bancos b on b.id = c.banco_id where b.nome = 'Relatórios'") === 'mysql://leitura_ciclodev:s3nh%40%20de%20teste@rel.abc123.us-east-1.rds.amazonaws.com:3306/relatorios', 'o endereço é montado dos campos, com a senha protegida (caracteres especiais escapados)');
-  ok(/Relatórios[\s\S]*AWS · MySQL · bancos relatorios/.test(await lado()), 'a lista mostra os dois bancos');
+  ok(/Relatórios[\s\S]*AWS · MySQL · banco relatorios/.test(await lado()), 'a lista mostra os dois bancos');
   await p.click('[data-ifr-banco-tirar]'); await p.waitForTimeout(400); await p.click('dialog.modal[open] .modal-rod .btn.perigo'); await p.waitForTimeout(1500);
   ok(conta("select count(*) from public.infra_bancos where no_id = '" + pj + "'") === '1', 'Desligar tira só aquele banco');
   // no cliente não há aba Infraestrutura

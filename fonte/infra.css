@@ -140,3 +140,37 @@ textarea[data-ficha].fa-escondido{display:none}
 .ifr-gp-erros dt{font-family:var(--font-mono);font-size:12px;font-weight:600;overflow-wrap:anywhere}
 .ifr-gp-erros dd{margin:0}
 @media (max-width:640px){ .ifr-gp-erros dl{grid-template-columns:minmax(0,1fr)} .ifr-gp-erros dd{margin-bottom:6px} .ifr-gp-cmd{grid-template-columns:minmax(0,1fr)} }
+/* painel Automático: um cartão por fonte, com selo de estado e o erro explicado uma vez só */
+.ifr-auto-tit{margin:0 0 2px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--tinta-2)}
+.ifr-fonte{display:grid;gap:3px;background:var(--branco);border:1px solid var(--linha);padding:9px 10px;min-width:0}
+.ifr-fonte.com-erro{border-left:3px solid var(--vermelho)}
+.ifr-fonte-cab{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;min-width:0}
+.ifr-fonte-cab b{font-size:13.5px;min-width:0;overflow-wrap:anywhere}
+.ifr-fonte-meta{margin:0;font-size:12px;color:var(--tinta-2);overflow-wrap:anywhere}
+.ifr-fonte-host{margin:0;font-family:var(--font-mono);font-size:11px;color:var(--tinta-3);overflow-wrap:anywhere}
+.ifr-fonte-erro{margin:4px 0 0;display:grid;gap:4px;justify-items:start;background:var(--preto-04);padding:7px 8px;font-size:12px;line-height:1.45;color:var(--preto)}
+.ifr-fonte-erro b{font-weight:600}
+.ifr-fonte-erro small{color:var(--tinta-3);font-family:var(--font-mono);font-size:10.5px;overflow-wrap:anywhere}
+.ifr-fonte-acoes{display:flex;gap:14px;margin-top:3px}
+.ifr-auto-add{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin-top:4px}
+.ifr-selo{flex:none;display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:2px 7px;white-space:nowrap;border:1px solid currentColor}
+.ifr-selo::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.ifr-selo-ok{color:#1F7A3A}
+.ifr-selo-erro{color:var(--vermelho)}
+.ifr-selo-cinza{color:var(--tinta-3)}
+.ifr-ult{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;font-size:12.5px}
+.ifr-ult-erro{color:var(--vermelho)}
+.ifr-auto-bloco{gap:6px}
+/* serviços dos desenhos, recolhidos */
+.ifr-serv{border:1px solid var(--linha);background:var(--branco);font-size:12px}
+.ifr-serv summary{display:flex;justify-content:space-between;gap:8px;padding:7px 10px;cursor:pointer;font-weight:600}
+.ifr-serv-n{font-weight:400;color:var(--tinta-2)}
+.ifr-serv ul{list-style:none;margin:0;padding:0 10px 8px;display:grid;gap:5px}
+.ifr-serv li{display:grid;gap:1px;padding-left:12px;position:relative}
+.ifr-serv li::before{content:"";position:absolute;left:0;top:6px;width:6px;height:6px;border-radius:50%;background:#1F7A3A}
+.ifr-serv li.falta::before{background:#D97706}
+.ifr-serv small{color:var(--tinta-3)}
+.ifr-auto-cab{flex-wrap:wrap}
+.ifr-fonte-cab{display:grid;justify-items:start;gap:4px}
+.ifr-fonte-cab b{width:100%}
+.ifr-selo-aviso{color:#B45309}
