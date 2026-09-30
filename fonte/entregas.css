@@ -150,3 +150,25 @@
     .en2-acoes{justify-content:flex-start;flex-wrap:wrap}
   }
   .en2-v-nome > div{min-width:0}
+
+/* ---------- contas conectadas (git.js): Ligar repositório e Admin, aba GitHub e GitLab ---------- */
+.gc-modal{width:min(760px,calc(100vw - 32px))}
+.gc-t{font-size:14px;margin:16px 0 8px;display:flex;align-items:center;gap:6px}
+.gc-contas{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.gc-conta{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 10px;align-items:center;padding:10px 12px;border:1px solid var(--linha);background:var(--branco);min-width:0}
+.gc-conta img{border-radius:50%;display:block}
+.gc-conta small{display:block;font-size:12px;color:var(--tinta-3);overflow-wrap:anywhere}
+.gc-conta-a{grid-column:1 / -1;display:flex;gap:6px;flex-wrap:wrap}
+.gc-repos{grid-column:1 / -1;display:grid;gap:8px;min-width:0}
+.gc-lista{list-style:none;margin:0;padding:0;max-height:300px;overflow:auto;border:1px solid var(--preto-04)}
+.gc-lista > li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border-bottom:1px solid var(--preto-04);min-width:0}
+.gc-lista > li:last-child{border-bottom:0}
+.gc-lista > li > span{min-width:0;overflow-wrap:anywhere}
+.gc-lista small{display:block;font-size:12px;color:var(--tinta-3)}
+.gc-ok{color:var(--grafite)!important}
+.gc-botoes{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.gc-botoes svg,.gc-adm h3 svg,.gc-conta > svg{vertical-align:-3px;margin-right:6px}
+.gc-nao{display:inline-flex;align-items:center;font-size:13px;color:var(--tinta-3);padding:6px 0}
+.gc-adm p{margin:0 0 10px}
+.gc-adm code{font-family:var(--font-mono);font-size:12px;overflow-wrap:anywhere}
+.gc-lista-adm{margin:0 0 12px;padding-left:18px;font-size:13px}

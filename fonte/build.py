@@ -4,7 +4,7 @@ pb=open('parte_playbook.html',encoding='utf-8').read().replace('class="conteudo"
 js=open('app.js',encoding='utf-8').read()
 _fim='\nabrirModulo(UI.modulo);\n})();'
 assert js.rstrip().endswith(_fim.strip()), 'final do app.js mudou'
-js=js.rstrip()[:-len(_fim.strip())]+'\n'+open('recursos.js',encoding='utf-8').read()+'\n'+open('board.js',encoding='utf-8').read()+'\n'+open('multiusuario.js',encoding='utf-8').read()+'\n'+open('admin.js',encoding='utf-8').read()+'\n'+open('studio.js',encoding='utf-8').read()+'\n'+open('tarefas.js',encoding='utf-8').read()+'\n'+open('entregas.js',encoding='utf-8').read()+'\n'+open('simples.js',encoding='utf-8').read()+'\n'+open('produtividade.js',encoding='utf-8').read()+'\n'+open('comunicacao.js',encoding='utf-8').read()+'\n'+open('relatorios.js',encoding='utf-8').read()+'\n'+open('janelas.js',encoding='utf-8').read()+'\n'+open('estrutura.js',encoding='utf-8').read()+'\n'+open('ajustes.js',encoding='utf-8').read()+'\n'+open('lote.js',encoding='utf-8').read()+'\n'+open('versoes.js',encoding='utf-8').read()+'\n'+open('navegar.js',encoding='utf-8').read()+'\n'+open('decisoes.js',encoding='utf-8').read()+'\n'+open('exportar.js',encoding='utf-8').read()+'\n'+open('persistir.js',encoding='utf-8').read()+'\n'+open('arquivos.js',encoding='utf-8').read()+'\n'+open('prefs.js',encoding='utf-8').read()+'\n'+open('portal.js',encoding='utf-8').read()+'\n'+open('ia.js',encoding='utf-8').read()+'\n'+open('paistatus.js',encoding='utf-8').read()+'\n'+open('tabela_lote.js',encoding='utf-8').read()+'\n'+open('infra.js',encoding='utf-8').read()+'\n'+open('infra_auto.js',encoding='utf-8').read()+'\n'+_fim.strip()+'\n'
+js=js.rstrip()[:-len(_fim.strip())]+'\n'+open('recursos.js',encoding='utf-8').read()+'\n'+open('board.js',encoding='utf-8').read()+'\n'+open('multiusuario.js',encoding='utf-8').read()+'\n'+open('admin.js',encoding='utf-8').read()+'\n'+open('studio.js',encoding='utf-8').read()+'\n'+open('tarefas.js',encoding='utf-8').read()+'\n'+open('entregas.js',encoding='utf-8').read()+'\n'+open('git.js',encoding='utf-8').read()+'\n'+open('simples.js',encoding='utf-8').read()+'\n'+open('produtividade.js',encoding='utf-8').read()+'\n'+open('comunicacao.js',encoding='utf-8').read()+'\n'+open('relatorios.js',encoding='utf-8').read()+'\n'+open('janelas.js',encoding='utf-8').read()+'\n'+open('estrutura.js',encoding='utf-8').read()+'\n'+open('ajustes.js',encoding='utf-8').read()+'\n'+open('lote.js',encoding='utf-8').read()+'\n'+open('versoes.js',encoding='utf-8').read()+'\n'+open('navegar.js',encoding='utf-8').read()+'\n'+open('decisoes.js',encoding='utf-8').read()+'\n'+open('exportar.js',encoding='utf-8').read()+'\n'+open('persistir.js',encoding='utf-8').read()+'\n'+open('arquivos.js',encoding='utf-8').read()+'\n'+open('prefs.js',encoding='utf-8').read()+'\n'+open('portal.js',encoding='utf-8').read()+'\n'+open('ia.js',encoding='utf-8').read()+'\n'+open('paistatus.js',encoding='utf-8').read()+'\n'+open('tabela_lote.js',encoding='utf-8').read()+'\n'+open('infra.js',encoding='utf-8').read()+'\n'+open('infra_auto.js',encoding='utf-8').read()+'\n'+_fim.strip()+'\n'
 import json, html as _h
 from explicacoes import EXPL
 js='window.EXPL = '+json.dumps(EXPL, ensure_ascii=False)+';\n'+js
@@ -156,6 +156,24 @@ open('sistema.html','w',encoding='utf-8').write(html)
 print(len(html))
 
 # versão publicada (Vercel): mesma página, com a tela de login na frente
+# a volta da janelinha do GitHub ou do GitLab (fonte/git.js): quando a página abre com ?git=..., avisa a janela
+# principal (BroadcastChannel e localStorage) e fecha. No GitHub, quando o app já estava instalado a volta vem sem
+# código: pede a confirmação da conta (OAuth) na mesma janelinha.
+_volta_git = r"""(function(){
+  var q = new URLSearchParams(location.search), g = q.get('git'); if (!g) return;
+  var e = null; try { e = JSON.parse(localStorage.getItem('ciclodev-git-espera') || 'null'); } catch(x){}
+  if (!e || Date.now() - (e.t || 0) > 1800000) return;
+  if (g === 'github' && !q.get('code') && !q.get('error') && e.client_id){
+    location.replace('https://github.com/login/oauth/authorize?client_id=' + encodeURIComponent(e.client_id) + '&state=' + encodeURIComponent(q.get('state') || e.estado)); return;
+  }
+  var d = {}; q.forEach(function(v, k){ d[k] = v; });
+  try { localStorage.setItem('ciclodev-git-volta', JSON.stringify({dados:d, t:Date.now()})); } catch(x){}
+  try { new BroadcastChannel('ciclodev-git').postMessage(d); } catch(x){}
+  try { window.stop(); } catch(x){}
+  document.documentElement.innerHTML = '<head><meta charset="utf-8"><title>CicloDev</title></head><body style="margin:0;background:#0b0b0c;color:#e8e6e3;font:16px system-ui,sans-serif;display:grid;place-items:center;height:100vh"><p>Pronto. Pode fechar esta janela e voltar ao CicloDev.</p></body>';
+  setTimeout(function(){ window.close(); }, 400);
+  throw new Error('volta do git');
+})();"""
 _login_css = open('login.css', encoding='utf-8').read()
 _login_html = open('login.html', encoding='utf-8').read()
 _login_js = open('login.js', encoding='utf-8').read()
@@ -164,7 +182,7 @@ _os.makedirs('vercel', exist_ok=True)
 _v = html.replace('</style>', _login_css + '\n</style>', 1)
 _v = _v.replace('<div class="dica" id="dica" hidden></div>', _login_html + '<div class="dica" id="dica" hidden></div>', 1)
 _v = _v + '<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>\n<script>\n' + _login_js + '\n</script>\n'
-_v = '<!doctype html>\n<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png"><link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest"><meta name="theme-color" content="#0B0B0C"><style>[hidden]{display:none!important}html,body{height:100%}</style></head><body>\n<script>document.body.classList.add("com-login")</script>\n' + _v + '\n</body></html>\n'
+_v = '<!doctype html>\n<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png"><link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest"><meta name="theme-color" content="#0B0B0C"><style>[hidden]{display:none!important}html,body{height:100%}</style></head><body>\n<script>' + _volta_git + '</script>\n<script>document.body.classList.add("com-login")</script>\n' + _v + '\n</body></html>\n'
 assert _login_html[:20] in _v and 'com-login' in _v
 open('vercel/index.html', 'w', encoding='utf-8').write(_v)
 print('vercel/index.html', len(_v))

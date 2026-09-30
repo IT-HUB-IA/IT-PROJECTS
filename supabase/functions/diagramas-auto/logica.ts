@@ -2,14 +2,16 @@
 // "Atualizar agora" e de hora em hora (pg_cron), com o segredo do Vault no cabeçalho x-diagramas-segredo.
 // Ela não recebe nada no corpo: lê a fila (infra_automacoes) e os bancos ligados (infra_bancos) pelas funções do banco
 // que só o papel service_role chama, e monta os desenhos sem IA (gerar.ts).
-//   Do código: baixa o pacote do commit publicado (ou do branch principal, no "Atualizar agora") pela API do GitHub.
+//   Do código: baixa o pacote do commit publicado (ou do branch principal, no "Atualizar agora") pelo GitHub ou pelo GitLab,
+//   com a chave da conta conectada do espaço (parte 32): a chave temporária do app no GitHub, a chave OAuth no GitLab.
 //   Do banco: conecta só para ler (sessão read only e tempo máximo por consulta) e lê o catálogo.
-// Segredos (variáveis da função, nunca no código): GITHUB_TOKEN (ler o código), RENDER_URL e RENDER_TOKEN (o conversor).
+// Segredos (variáveis da função, nunca no código): RENDER_URL e RENDER_TOKEN (o conversor). O acesso ao código vem da conta conectada.
 // O endereço de cada banco fica em interno.infra_bancos_conexao e só chega aqui pela função infra_auto_proximos.
 import { renderizar, KROKI } from '../diagramas/logica.ts';
 import { lerTarGz, gerarDoCodigo, gerarDoBanco, resumoEstrutura } from './gerar.ts';
 import type { Desenho, Estrutura, LerYaml, Pacote } from './gerar.ts';
 import { montarQuadro, manterPosicoes } from '../_shared/quadro.ts';
+import { acessoDaConexao, cabecalhos, urlPacote } from '../_shared/git.ts';
 
 export type Rpc = (nome: string, args: Record<string, unknown>) => Promise<{ data: any; error: { message?: string } | null }>;
 export interface DepsAuto {
@@ -22,8 +24,8 @@ export interface DepsAuto {
   agora?: () => number;
   orcamentoMs?: number;                       // depois disso não começa pedido novo (o resto fica para a próxima chamada)
 }
-type Repo = { id: string; nome: string; branch: string; provedor: string };
-type Pedido = { id: string; no_id: string; origem: 'github' | 'banco' | 'manual'; referencia: string | null; repositorios: Repo[]; banco: { esquemas: string[]; conexao: string } | null };
+type Repo = { id: string; nome: string; branch: string; provedor: 'github' | 'gitlab'; conexao_id: string; externo_id: string | null };
+type Pedido = { id: string; no_id: string; origem: 'github' | 'gitlab' | 'banco' | 'manual'; referencia: string | null; repositorios: Repo[]; banco: { esquemas: string[]; conexao: string } | null };
 
 const resposta = (corpo: unknown, status = 200) => new Response(JSON.stringify(corpo), { status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' } });
 // a mensagem de erro nunca leva o endereço do banco (com a senha)
@@ -38,17 +40,16 @@ async function chamar(d: DepsAuto, nome: string, args: Record<string, unknown>) 
   return r.data;
 }
 
-export async function baixarRepo(d: DepsAuto, nome: string, ref: string): Promise<Pacote> {
-  const tk = d.env('GITHUB_TOKEN');
-  if (!tk) throw new Error('Falta a chave GITHUB_TOKEN da função diagramas-auto para baixar o código');
-  const r = await d.buscar('https://api.github.com/repos/' + nome.split('/').map(encodeURIComponent).join('/') + '/tarball/' + encodeURIComponent(ref), {
-    headers: { authorization: 'Bearer ' + tk, accept: 'application/vnd.github+json', 'x-github-api-version': '2022-11-28', 'user-agent': 'CicloDev-diagramas' }, redirect: 'follow' });
-  if (!r.ok || !r.body) throw new Error('O GitHub respondeu ' + r.status + ' ao baixar ' + nome + (r.status === 404 ? ' (o repositório ou o commit não existe, ou a chave não tem acesso)' : ''));
+export async function baixarRepo(d: DepsAuto, repo: Repo, ref: string): Promise<Pacote> {
+  const a = await acessoDaConexao(d, repo.conexao_id);
+  const r = await d.buscar(urlPacote(a, repo, ref), { headers: cabecalhos(a), redirect: 'follow' });
+  const onde = repo.provedor === 'gitlab' ? 'O GitLab' : 'O GitHub';
+  if (!r.ok || !r.body) throw new Error(onde + ' respondeu ' + r.status + ' ao baixar ' + repo.nome + (r.status === 404 ? ' (o repositório ou o commit não existe, ou a conta não dá mais acesso a ele)' : ''));
   return await lerTarGz(r.body);
 }
 
 // grava cada desenho (a próxima rodada atualiza o mesmo, pela chave), monta o quadro dele no canvas e gera a imagem quando o texto mudou
-export async function gravarTodos(d: DepsAuto, no: string, desenhos: Desenho[], prefixo: string, origem: 'github' | 'banco', referencia: string): Promise<string[]> {
+export async function gravarTodos(d: DepsAuto, no: string, desenhos: Desenho[], prefixo: string, origem: 'github' | 'gitlab' | 'banco', referencia: string): Promise<string[]> {
   const ids: string[] = [];
   for (const des of desenhos) {
     const chave = prefixo + des.tipo;
@@ -57,7 +58,7 @@ export async function gravarTodos(d: DepsAuto, no: string, desenhos: Desenho[], 
     ids.push(r.id);
     // o quadro: o jeito como o desenho aparece no CicloDev (cards, grupos e ligações do canvas)
     const antigo = await chamar(d, 'infra_auto_quadro_ler', { p_no: no, p_aba: des.aba, p_chave: chave }).catch(() => null);
-    const aviso = origem === 'github' ? 'Montado sozinho do código publicado em produção' + (referencia ? ' (commit ' + referencia.slice(0, 7) + ')' : '') + '. A próxima publicação refaz este quadro.'
+    const aviso = origem !== 'banco' ? 'Montado sozinho do código publicado em produção' + (referencia ? ' (commit ' + referencia.slice(0, 7) + ')' : '') + '. A próxima publicação refaz este quadro.'
       : 'Montado sozinho da estrutura do banco. Quando a estrutura mudar, este quadro é refeito.';
     const doc = manterPosicoes(montarQuadro(des.modelo, { nome: des.nome, aviso }), antigo);
     await chamar(d, 'infra_auto_quadro', { p_no: no, p_aba: des.aba, p_chave: chave, p_nome: des.nome, p_doc: doc, p_diagrama: r.id });
@@ -76,14 +77,14 @@ export async function processar(d: DepsAuto, p: Pedido): Promise<void> {
   let feitos = 0, erros = 0;
   try {
     for (const repo of p.repositorios || []) {
-      if (repo.provedor !== 'github') { resumo.push({ repositorio: repo.nome, aviso: 'Repositório do GitLab: o robô ainda não lê. Os desenhos dele não saem sozinhos.' }); continue; }
       try {
-        const ref = p.origem === 'github' && p.referencia ? p.referencia : repo.branch || 'main';
-        const pac = await baixarRepo(d, repo.nome, ref);
+        const doCommit = p.origem === repo.provedor && p.referencia ? p.referencia : null;
+        const pac = await baixarRepo(d, repo, doCommit || repo.branch || 'main');
         const { desenhos, avisos } = gerarDoCodigo(pac, repo.nome, d.yaml);
-        const commit = commitDe(pac, p.origem === 'github' ? p.referencia : null);
-        ids.push(...await gravarTodos(d, p.no_id, desenhos, 'github:' + repo.nome + ':', 'github', commit));
-        prefixos.push('github:' + repo.nome + ':');
+        const commit = commitDe(pac, doCommit);
+        const prefixo = repo.provedor + ':' + repo.nome + ':';
+        ids.push(...await gravarTodos(d, p.no_id, desenhos, prefixo, repo.provedor, commit));
+        prefixos.push(prefixo);
         resumo.push({ repositorio: repo.nome, commit, arquivos: pac.caminhos.length, desenhos: desenhos.map(x => x.nome), avisos, cortado: pac.cortado || undefined });
         feitos++;
       } catch (e) { erros++; resumo.push({ repositorio: repo.nome, erro: limparErro(e) }); }

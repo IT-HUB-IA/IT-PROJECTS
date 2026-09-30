@@ -1,6 +1,6 @@
 // Edge Function diagramas (verify_jwt: true). A lógica está em logica.ts; aqui só se ligam o banco, o DevIT e o segundo plano.
 // Segredos: SUPABASE_URL, SUPABASE_ANON_KEY e SUPABASE_SERVICE_ROLE_KEY (o Supabase já dá), RENDER_URL e RENDER_TOKEN
-// (o conversor da VPS), ANTHROPIC_API_KEY (o DevIT), GITHUB_TOKEN e FIGMA_TOKEN. Opcional: DEVIT_MODELO (padrão claude-opus-5-5).
+// (o conversor da VPS), ANTHROPIC_API_KEY (o DevIT) e FIGMA_TOKEN. O código se lê pela conta conectada (parte 32). Opcional: DEVIT_MODELO (padrão claude-opus-5-5).
 import { createClient } from "npm:@supabase/supabase-js@2";
 import Anthropic from "npm:@anthropic-ai/sdk";
 import { tratar } from "./logica.ts";

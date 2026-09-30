@@ -5,10 +5,11 @@
 //                                   Figma) e escreve os desenhos daquela sub-aba; roda em segundo plano (infra_geracoes)
 // Tudo que é lido do banco é lido COMO a pessoa (as regras de acesso valem): o DevIT nunca vê o que ela não vê.
 // Segredos (variáveis da função, nunca no código): RENDER_URL e RENDER_TOKEN (conversor), ANTHROPIC_API_KEY (DevIT),
-// GITHUB_TOKEN (ler o código dos repositórios ligados) e FIGMA_TOKEN (ler os arquivos do Figma). Faltando um, a parte
-// que depende dele avisa qual chave falta, e o resto funciona.
+// e FIGMA_TOKEN (ler os arquivos do Figma). O código dos repositórios é lido pela conta conectada do espaço (GitHub ou
+// GitLab, parte 32), nunca com chave de pessoa. Faltando uma chave, a parte que depende dela avisa qual falta, e o resto funciona.
 import { ESQUEMA_QUADRO, limparModelo, montarQuadro } from '../_shared/quadro.ts';
 import type { Modelo } from '../_shared/quadro.ts';
+import { acessoDaConexao, listarCaminhos, lerArquivo } from '../_shared/git.ts';
 
 export type Resultado<T> = { data: T | null; error: { message?: string; code?: string } | null };
 export interface Consulta { select(c: string): Consulta; eq(c: string, v: unknown): Consulta; in(c: string, v: unknown[]): Consulta; is(c: string, v: null): Consulta; limit(n: number): Consulta; order(c: string, o?: Record<string, unknown>): Consulta; insert(v: unknown): Consulta; update(v: unknown): Consulta; single(): Consulta; maybeSingle(): Consulta; then<R>(f: (r: Resultado<any>) => R): Promise<R>; }
@@ -16,7 +17,7 @@ export interface Banco { from(t: string): Consulta; rpc?(nome: string, args: Rec
 export interface Deps {
   env: (nome: string) => string | undefined;
   usuario: Banco;              // cliente com o login da pessoa (regras de acesso valem)
-  servico: Banco;              // cliente de serviço, só para marcar o andamento do pedido (infra_geracoes)
+  servico: Banco;              // cliente de serviço: marcar o andamento do pedido (infra_geracoes) e pedir o acesso à conta conectada
   buscar: typeof fetch;
   devit: (sistema: string, pedido: string, esquema: Record<string, unknown>) => Promise<unknown>;
   emSegundoPlano: (p: Promise<unknown>) => void;
@@ -177,32 +178,29 @@ export async function juntarEvidencias(no: string, aba: string, d: Deps): Promis
   // macro: no projeto, os desenhos que já existem nos produtos dele entram como evidência
   const outros = await d.usuario.from('infra_diagramas').select('no_id, aba, nome, formato, fonte, origem, arquivado_em').in('no_id', ids);
   // os desenhos que saíram sozinhos do código publicado e do banco são a leitura mais exata que existe: entram primeiro
-  ((outros.data as any[]) || []).filter(x => x.no_id === no && !x.arquivado_em && (x.origem === 'github' || x.origem === 'banco')).slice(0, 10)
+  ((outros.data as any[]) || []).filter(x => x.no_id === no && !x.arquivado_em && (x.origem === 'github' || x.origem === 'gitlab' || x.origem === 'banco')).slice(0, 10)
     .forEach(x => add('Desenho automático (' + (x.origem === 'banco' ? 'lido do banco' : 'lido do código publicado') + '): ' + x.nome + ' (' + x.formato + ')', corta(x.fonte, 20000)));
   const ol = ((outros.data as any[]) || []).filter(x => ids.includes(x.no_id) && x.no_id !== no && !x.arquivado_em && (x.aba === aba || aba === 'solucao'));
   ol.slice(0, 12).forEach(x => add('Desenho que já existe em ' + nomeDe(x.no_id) + ': ' + x.nome + ' (' + x.formato + ')', corta(x.fonte, 12000)));
-  // repositórios ligados: a árvore de arquivos e os arquivos que importam para esta parte
-  const rp = await d.usuario.from('repositorios').select('no_id, provedor, nome, branch_principal, ativo').in('no_id', ids);
-  const repos = ((rp.data as any[]) || []).filter(x => ids.includes(x.no_id) && x.ativo !== false && x.provedor === 'github').slice(0, 3);
-  const gh = d.env('GITHUB_TOKEN');
+  // repositórios ligados: a árvore de arquivos e os arquivos que importam para esta parte (GitHub ou GitLab, pela conta conectada)
+  const rp = await d.usuario.from('repositorios').select('no_id, provedor, nome, branch_principal, ativo, conexao_id, externo_id').in('no_id', ids);
+  const repos = ((rp.data as any[]) || []).filter(x => ids.includes(x.no_id) && x.ativo !== false && x.conexao_id).slice(0, 3);
+  const dg = { rpc: (n: string, a: Record<string, unknown>) => Promise.resolve(d.servico.rpc ? d.servico.rpc(n, a) : { data: null, error: { message: 'sem acesso' } }) as any, buscar: d.buscar };
   for (const r of repos) {
-    if (!gh) { add('Repositório ' + r.nome, 'Repositório ligado, mas a função ainda não tem a chave GITHUB_TOKEN para ler o código.'); continue; }
-    const H = { authorization: 'Bearer ' + gh, accept: 'application/vnd.github+json', 'x-github-api-version': '2022-11-28', 'user-agent': 'CicloDev-DevIT' };
+    const repo = { nome: r.nome, externo_id: r.externo_id }, ref = r.branch_principal || 'main';
     try {
-      const t = await d.buscar('https://api.github.com/repos/' + r.nome + '/git/trees/' + encodeURIComponent(r.branch_principal || 'main') + '?recursive=1', { headers: H });
-      if (!t.ok) { add('Repositório ' + r.nome, 'Não deu para ler a árvore de arquivos (GitHub respondeu ' + t.status + ').'); continue; }
-      const arv = await t.json() as { tree?: { path: string; type: string; size?: number }[] };
-      const caminhos = (arv.tree || []).filter(x => x.type === 'blob').map(x => x.path);
+      const a = await acessoDaConexao(dg, r.conexao_id);
+      const caminhos = await listarCaminhos(dg, a, repo, ref);
       add('Árvore de arquivos de ' + r.nome, corta(caminhos.filter(c => !/(^|\/)(node_modules|dist|build|vendor|\.git)\//.test(c)).slice(0, 600).join('\n'), 20000));
       let total = 0;
       for (const c of escolherArquivos(caminhos, aba)) {
         if (total > 160000) break;
-        const f = await d.buscar('https://api.github.com/repos/' + r.nome + '/contents/' + c.split('/').map(encodeURIComponent).join('/') + '?ref=' + encodeURIComponent(r.branch_principal || 'main'), { headers: { ...H, accept: 'application/vnd.github.raw+json' } });
-        if (!f.ok) continue;
-        const txt = corta(await f.text(), 30000); total += txt.length;
+        const bruto = await lerArquivo(dg, a, repo, c, ref);
+        if (bruto == null) continue;
+        const txt = corta(bruto, 30000); total += txt.length;
         add(r.nome + '/' + c, txt);
       }
-    } catch (e) { add('Repositório ' + r.nome, 'Erro ao ler: ' + (e as Error).message); }
+    } catch (e) { add('Repositório ' + r.nome, 'Não deu para ler o código: ' + (e as Error).message); }
   }
   // Figma: os links que aparecem na ficha técnica e nos itens
   if (aba === 'prototipos' || aba === 'ux') {
@@ -265,7 +263,10 @@ export async function tratar(req: Request, d: Deps): Promise<Response> {
   let corpo: Record<string, unknown> = {};
   try { corpo = await req.json(); } catch { return erro(400, 'O corpo precisa ser JSON'); }
   const acao = corpo.acao;
-  if (acao === 'config') return resposta({ ok: true, conversor: !!d.env('RENDER_URL'), devit: !!d.env('ANTHROPIC_API_KEY'), github: !!d.env('GITHUB_TOKEN'), figma: !!d.env('FIGMA_TOKEN') });
+  if (acao === 'config') {
+    const st = d.servico.rpc ? ((await d.servico.rpc('git_apps_status', {})).data || {}) : {};
+    return resposta({ ok: true, conversor: !!d.env('RENDER_URL'), devit: !!d.env('ANTHROPIC_API_KEY'), github: !!st.github?.pronto, gitlab: !!st.gitlab?.pronto, figma: !!d.env('FIGMA_TOKEN') });
+  }
   if (acao === 'renderizar') {
     const id = String(corpo.id || ''); if (!UUID.test(id)) return erro(400, 'Id do desenho inválido');
     const r = await d.usuario.from('infra_diagramas').select('id, fonte, formato').eq('id', id).maybeSingle();

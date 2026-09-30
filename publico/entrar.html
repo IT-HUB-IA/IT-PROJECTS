@@ -1,5 +1,20 @@
 <!doctype html>
 <html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png"><link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest"><meta name="theme-color" content="#0B0B0C"><style>[hidden]{display:none!important}html,body{height:100%}</style></head><body>
+<script>(function(){
+  var q = new URLSearchParams(location.search), g = q.get('git'); if (!g) return;
+  var e = null; try { e = JSON.parse(localStorage.getItem('ciclodev-git-espera') || 'null'); } catch(x){}
+  if (!e || Date.now() - (e.t || 0) > 1800000) return;
+  if (g === 'github' && !q.get('code') && !q.get('error') && e.client_id){
+    location.replace('https://github.com/login/oauth/authorize?client_id=' + encodeURIComponent(e.client_id) + '&state=' + encodeURIComponent(q.get('state') || e.estado)); return;
+  }
+  var d = {}; q.forEach(function(v, k){ d[k] = v; });
+  try { localStorage.setItem('ciclodev-git-volta', JSON.stringify({dados:d, t:Date.now()})); } catch(x){}
+  try { new BroadcastChannel('ciclodev-git').postMessage(d); } catch(x){}
+  try { window.stop(); } catch(x){}
+  document.documentElement.innerHTML = '<head><meta charset="utf-8"><title>CicloDev</title></head><body style="margin:0;background:#0b0b0c;color:#e8e6e3;font:16px system-ui,sans-serif;display:grid;place-items:center;height:100vh"><p>Pronto. Pode fechar esta janela e voltar ao CicloDev.</p></body>';
+  setTimeout(function(){ window.close(); }, 400);
+  throw new Error('volta do git');
+})();</script>
 <script>document.body.classList.add("com-login")</script>
 <title>CicloDev</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1936,6 +1951,28 @@ dialog.modal.modal-larga{max-width:min(960px,calc(100% - 32px))}
     .en2-acoes{justify-content:flex-start;flex-wrap:wrap}
   }
   .en2-v-nome > div{min-width:0}
+
+/* ---------- contas conectadas (git.js): Ligar repositório e Admin, aba GitHub e GitLab ---------- */
+.gc-modal{width:min(760px,calc(100vw - 32px))}
+.gc-t{font-size:14px;margin:16px 0 8px;display:flex;align-items:center;gap:6px}
+.gc-contas{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.gc-conta{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 10px;align-items:center;padding:10px 12px;border:1px solid var(--linha);background:var(--branco);min-width:0}
+.gc-conta img{border-radius:50%;display:block}
+.gc-conta small{display:block;font-size:12px;color:var(--tinta-3);overflow-wrap:anywhere}
+.gc-conta-a{grid-column:1 / -1;display:flex;gap:6px;flex-wrap:wrap}
+.gc-repos{grid-column:1 / -1;display:grid;gap:8px;min-width:0}
+.gc-lista{list-style:none;margin:0;padding:0;max-height:300px;overflow:auto;border:1px solid var(--preto-04)}
+.gc-lista > li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border-bottom:1px solid var(--preto-04);min-width:0}
+.gc-lista > li:last-child{border-bottom:0}
+.gc-lista > li > span{min-width:0;overflow-wrap:anywhere}
+.gc-lista small{display:block;font-size:12px;color:var(--tinta-3)}
+.gc-ok{color:var(--grafite)!important}
+.gc-botoes{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.gc-botoes svg,.gc-adm h3 svg,.gc-conta > svg{vertical-align:-3px;margin-right:6px}
+.gc-nao{display:inline-flex;align-items:center;font-size:13px;color:var(--tinta-3);padding:6px 0}
+.gc-adm p{margin:0 0 10px}
+.gc-adm code{font-family:var(--font-mono);font-size:12px;overflow-wrap:anywhere}
+.gc-lista-adm{margin:0 0 12px;padding-left:18px;font-size:13px}
 /* ---------- Simplificar: abas agrupadas e tela do item ---------- */
   .ops-cab .views > .view-casa .info{display:none}
   .sm-mais-casa{position:relative;display:inline-flex}
@@ -7613,7 +7650,7 @@ function rAdmin(){
   if (!ADM.dono){ el.innerHTML = '<p class="vazio-linha">Só o dono do sistema abre este módulo.</p>'; return; }
   const topo = '<div class="topo-tela"><div><h1><span>Admin</span>' + I('Admin: painel do dono do sistema. Mostra quem usa, quanto usa e como o sistema está respondendo. Não mostra o conteúdo dos projetos de ninguém.') + '</h1><p class="lead">Usuários, cadastro, uso e desempenho do CicloDev.</p></div>' +
     '<div class="acoes"><label class="adm-per">Período <select class="sel peq" data-adm-dias>' + [7, 30, 90].map(d => '<option value="' + d + '"' + (ADM.dias === d ? ' selected' : '') + '>Últimos ' + d + ' dias</option>').join('') + '</select></label><button class="btn sec" type="button" data-adm-atualizar' + (ADM.carregando ? ' disabled' : '') + '>' + (ADM.carregando ? 'Atualizando…' : 'Atualizar') + '</button></div></div>';
-  const abas = '<div class="adm-abas" role="tablist">' + [['visao','Visão geral'],['usuarios','Usuários' + (ADM.usuarios ? ' (' + ADM.usuarios.length + ')' : '')],['ia','Permissões de IA'],['desempenho','Desempenho']].map(([k, n]) => '<button type="button" role="tab" aria-selected="' + (ADM.aba === k) + '" data-adm-aba="' + k + '">' + esc(n) + '</button>').join('') + '</div>';
+  const abas = '<div class="adm-abas" role="tablist">' + [['visao','Visão geral'],['usuarios','Usuários' + (ADM.usuarios ? ' (' + ADM.usuarios.length + ')' : '')],['ia','Permissões de IA'],['git','GitHub e GitLab'],['desempenho','Desempenho']].map(([k, n]) => '<button type="button" role="tab" aria-selected="' + (ADM.aba === k) + '" data-adm-aba="' + k + '">' + esc(n) + '</button>').join('') + '</div>';
   if (!ADM.resumo){
     el.innerHTML = topo + (ADM.erro ? '<p class="entrada-erro">Não foi possível ler os números: ' + esc(ADM.erro) + '</p>' : '<p class="vazio-linha">Lendo os números do banco…</p>');
     if (!ADM.carregando && !ADM.erro) admCarregar();
@@ -7634,6 +7671,8 @@ function rAdmin(){
     corpo = admTabelaUsuarios();
   } else if (ADM.aba === 'ia' && typeof iaAdminHTML === 'function'){
     corpo = iaAdminHTML();
+  } else if (ADM.aba === 'git' && typeof gcAdminHTML === 'function'){
+    corpo = gcAdminHTML();
   } else {
     corpo = '<div class="kpis">' + admKpi(admMs(R.carregar_ms_mediana), 'Carregar (tempo típico)') + admKpi(admMs(R.carregar_ms_p95), 'Carregar (95% abaixo de)', R.carregar_ms_p95 > 5000) + admKpi(admMs(R.salvar_ms_mediana), 'Salvar (tempo típico)') + admKpi(num(R.salvamentos_7d, 0), 'Salvamentos em 7 dias') + admKpi(num(R.erros_7d, 0), 'Erros em 7 dias', R.erros_7d > 0) + admKpi(num(R.banco_mb, 1) + ' MB', 'Tamanho do banco') + '</div>' +
       '<div class="graficos"><section class="grafico"><h3>Erros por dia</h3>' + admBarras(ADM.diario, 'erros', 'Erros') + '</section><section class="grafico"><h3>Tempo típico para carregar, por dia (ms)</h3>' + admBarras(ADM.diario, 'carregar_ms', 'Tempo para carregar') + '</section></div>' +
@@ -8772,7 +8811,6 @@ if (location.protocol === 'file:') window.__tf = {get D(){ return D; }, get UI()
    (ou a uma aplicação dele). Camada nova, depois do tarefas.js. Prefixo en.
    ===================================================================== */
 const EN = {repos:null, pubs:null, carregando:null, atividade:null};
-const EN_URL_PADRAO = 'https://tfcvoszeewmpghgxztuy.supabase.co';
 const enSb = () => COM_BANCO ? window.ciclodevBanco : null;
 const enLocal = () => { D.dev = D.dev || {repos:[], pubs:[], links:[]}; return D.dev; };
 const EN_LOCAL = {repositorios:'repos', publicacoes:'pubs', codigo_vinculos:'links'};
@@ -8846,8 +8884,6 @@ function enNos(chave){
 const enProjeto = chave => { const p = cadeia(chave).project; return p ? 'project:' + p.id : chave; };
 const enVersoes = chave => marcosDoEscopo(chave).filter(m => m.tipo === 'release').sort((a, b) => String(b.entregue || b.data).localeCompare(String(a.entregue || a.data)));
 const enNomeNo = id => { const k = ['projects','products','apps','ws','clients'].map(l => byId(l, id) && ({projects:'project', products:'product', apps:'app', ws:'ws', clients:'client'}[l] + ':' + id)).find(Boolean); return k ? nomeDe(k) : 'Ponto excluído'; };
-const enUrlBanco = () => { const sb = enSb(); return (sb && sb.supabaseUrl) || EN_URL_PADRAO; };
-const enWebhook = r => enUrlBanco().replace(/\/$/, '') + '/functions/v1/git-webhook?r=' + r.id;
 function enHa(ts){ if (!ts) return ''; const m = Math.round((Date.now() - new Date(ts).getTime()) / 60000); if (m < 1) return 'agora'; if (m < 60) return 'há ' + m + ' min'; const h = Math.round(m / 60); if (h < 24) return 'há ' + h + ' h'; const d = Math.round(h / 24); return d === 1 ? 'ontem' : 'há ' + d + ' dias'; }
 const enData = ts => ts ? new Date(ts).toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'}) : '';
 function enCopiar(txt, botao){
@@ -8870,12 +8906,6 @@ function enLerLink(url){
   if ((m = p.match(/^\/(.+?)\/(?:-\/)?commits?\/([0-9a-f]{7,40})/i))) return {provedor:gl ? 'gitlab' : 'github', tipo:'commit', ref:m[2], repo:m[1], url:u.href};
   if ((m = p.match(/^\/(.+?)\/(?:-\/)?tree\/(.+)$/))) return {provedor:gl ? 'gitlab' : 'github', tipo:'branch', ref:decodeURIComponent(m[2]), repo:m[1], url:u.href};
   return null;
-}
-function enLerRepo(url){
-  let u; try { u = new URL(url.trim().replace(/\.git$/, '')); } catch(e){ const m = String(url).trim().match(/^([A-Za-z0-9_.-]+(?:\/[A-Za-z0-9_.-]+)+)$/); return m ? {nome:m[1]} : null; }
-  const nome = u.pathname.replace(/^\/+|\/+$/g, '').replace(/\/-\/.*$/, '').replace(/\/(tree|blob|pulls?|issues|merge_requests)\/.*$/, '');
-  if (!/^[A-Za-z0-9_.-]+(\/[A-Za-z0-9_.-]+)+$/.test(nome)) return null;
-  return {nome, provedor:/gitlab/i.test(u.host) ? 'gitlab' : /github/i.test(u.host) ? 'github' : null, url:u.origin + '/' + nome};
 }
 
 /* ---------- notas de versão a partir dos itens concluídos ---------- */
@@ -8952,8 +8982,8 @@ function enHTML(chave){
     '<small>' + esc(enData(p.publicado_em)) + ' · ' + esc(EN_ORIGEM[p.origem] || p.origem) + (p.url ? ' · <a href="' + esc(p.url) + '" target="_blank" rel="noopener noreferrer">abrir</a>' : '') + (p.observacao ? '<br>' + esc(p.observacao) : '') + '</small></div>' + lixo('data-en-excluir-pub', p.id, 'a publicação ' + (p.versao || '')) + '</li>';
   // repositórios: uma linha por repositório
   const linhaR = r => '<li class="en2-repo"><div class="en2-repo-t">' + (EN_ICO[r.provedor] || '') + '<div><a href="' + esc(r.url || (r.provedor === 'gitlab' ? 'https://gitlab.com/' : 'https://github.com/') + r.nome) + '" target="_blank" rel="noopener noreferrer"><b>' + esc(r.nome) + '</b></a>' +
-      '<small class="' + (r.ultimo_erro ? 'en2-erro' : '') + '">' + (r.ultimo_erro ? esc(r.ultimo_erro) : r.ultimo_evento_em ? 'Último aviso: ' + esc(r.ultimo_evento) + ', ' + esc(enHa(r.ultimo_evento_em)) : 'Ainda sem avisos. Veja "Como ligar"') + '</small></div>' + lixo('data-en-excluir-repo', r.id, r.nome) + '</div>' +
-    '<div class="en2-repo-a">' + (pode ? '<label class="en-liga"><input type="checkbox" data-en-mover="' + r.id + '"' + (r.mover_status ? ' checked' : '') + '> Status anda sozinho</label>' : '') + '<button type="button" class="btn fant peq" data-en-como="' + r.id + '">Como ligar</button></div></li>';
+      '<small class="' + (r.ultimo_erro ? 'en2-erro' : '') + '">' + (r.ultimo_erro ? esc(r.ultimo_erro) : r.ultimo_evento_em ? 'Último aviso: ' + esc(r.ultimo_evento) + ', ' + esc(enHa(r.ultimo_evento_em)) : 'Ainda sem avisos. Eles chegam sozinhos a cada push, pull request ou publicação') + '</small></div>' + lixo('data-en-excluir-repo', r.id, r.nome) + '</div>' +
+    '<div class="en2-repo-a">' + (pode ? '<label class="en-liga"><input type="checkbox" data-en-mover="' + r.id + '"' + (r.mover_status ? ' checked' : '') + '> Status anda sozinho</label>' : '') + '</div></li>';
   const caixa = (tit, ajuda, corpo, vazio) => '<section class="en2-caixa"><header><h3>' + tit + '</h3><p>' + ajuda + '</p></header>' + (corpo || '<p class="en2-vazio">' + vazio + '</p>') + '</section>';
   return '<div class="en2">' + (EN.erro ? '<p class="aviso-faixa">Não deu para ler tudo do banco: ' + esc(EN.erro) + '</p>' : '') + trilho +
     '<div class="en2-grade"><div class="en2-col">' +
@@ -8961,7 +8991,7 @@ function enHTML(chave){
       '<section class="en2-caixa"><header><h3>Atividade de código</h3><p>O que chegou do repositório, com o item de cada um.</p></header><div id="en-atividade"><p class="en2-vazio">Lendo...</p></div></section>' +
     '</div><div class="en2-col">' +
       caixa('No ar', 'Cada vez que algo foi publicado: qual versão, onde e quando.', pubs.length ? '<ul class="en2-lista">' + pubs.slice(0, 12).map(linhaP).join('') + '</ul>' : '', 'Nada publicado ainda.') +
-      caixa('Repositórios', 'O código no GitHub ou no GitLab.', repos.length ? '<ul class="en2-lista">' + repos.map(linhaR).join('') + '</ul>' : '', 'Nenhum repositório ligado. Leva um minuto em "Ligar repositório".') +
+      caixa('Repositórios', 'O código no GitHub ou no GitLab.', repos.length ? '<ul class="en2-lista">' + repos.map(linhaR).join('') + '</ul>' : '', 'Nenhum repositório ligado. Em "Ligar repositório", conecte a conta do GitHub ou do GitLab e escolha o repositório.') +
     '</div></div></div>';
 }
 async function enCarregarAtividade(chave){
@@ -9068,59 +9098,7 @@ function enNovaPublicacao(marcoId){
   dlg.addEventListener('change', ver); ver();
 }
 
-/* ---------- repositórios ---------- */
-function enNovoRepo(){
-  const proj = enProjeto(UI.sel);
-  // cada produto tem a própria ligação com o GitHub: os desenhos automáticos do produto saem só dos repositórios dele
-  const onde = [[proj, nomeDe(proj) + ' (projeto inteiro)']]
-    .concat(D.products.filter(p => 'project:' + p.project === proj).map(p => ['product:' + p.id, nomeDe('product:' + p.id) + ' (só este produto)']))
-    .concat(D.apps.filter(a => 'project:' + a.project === proj).map(a => ['app:' + a.id, nomeDe('app:' + a.id) + ' (só esta aplicação)']));
-  const dlg = modal('Ligar repositório', '<p class="sec tf-nota" style="margin-top:0">Cole o endereço do repositório. Depois é só colar um endereço e um segredo no GitHub ou no GitLab, e o código passa a aparecer nos itens.</p>' +
-    '<div class="grade-form"><label class="lb largo">Endereço do repositório<input class="campo" id="en-r-u" placeholder="https://github.com/empresa/projeto"></label>' +
-    '<label class="lb">Onde fica<select class="sel" id="en-r-p"><option value="github">GitHub</option><option value="gitlab">GitLab</option></select></label>' +
-    '<label class="lb">Ligar a<select class="sel" id="en-r-o">' + onde.map(([k, n]) => '<option value="' + k + '"' + (k === UI.sel ? ' selected' : '') + '>' + esc(n) + '</option>').join('') + '</select></label>' +
-    '<label class="lb">Branch principal<input class="campo" id="en-r-b" value="main"></label></div>' +
-    '<div class="tf-opcoes"><label><input type="checkbox" id="en-r-m" checked> Mudar o status dos itens sozinho (branch: Em andamento, PR: Em revisão, PR mesclado: Concluído)</label></div>' +
-    '<p class="tf-previa" id="en-r-v"></p>',
-    [{txt:'Cancelar', cls:'sec'}, {txt:'Ligar', acao:dl => {
-      const r = enLerRepo($('#en-r-u', dl).value); if (!r){ toast('Cole o endereço do repositório, como https://github.com/empresa/projeto'); return false; }
-      const provedor = $('#en-r-p', dl).value, no = $('#en-r-o', dl).value.split(':')[1];
-      if ((EN.repos || []).some(x => x.no_id === no && x.provedor === provedor && x.nome.toLowerCase() === r.nome.toLowerCase())){ toast('Esse repositório já está ligado aqui'); return false; }
-      enInserir('repositorios', {no_id:no, provedor, nome:r.nome, url:r.url || null, branch_principal:$('#en-r-b', dl).value.trim() || 'main', mover_status:$('#en-r-m', dl).checked}).then(novo => {
-        if (!novo) return; EN.repos = (EN.repos || []).concat(novo); if (UI.view === 'entregas') rView(); enComoLigar(novo.id, true);
-      });
-    }}]);
-  dlg.addEventListener('input', e => { if (e.target.id !== 'en-r-u') return; const r = enLerRepo(e.target.value); if (r && r.provedor) $('#en-r-p', dlg).value = r.provedor; $('#en-r-v', dlg).textContent = r ? 'Repositório: ' + r.nome : ''; });
-}
-async function enComoLigar(id, novo){
-  const r = (EN.repos || []).find(x => x.id === id); if (!r) return;
-  let seg = '';
-  if (COM_BANCO){ const {data, error} = await enSb().rpc('repositorio_segredo', {p_repo:id, p_trocar:false}); if (error){ toast('Não deu para ler o segredo: ' + tfErro(error)); return; } seg = data || ''; }
-  else seg = r._segredo || (r._segredo = Array.from({length:48}, () => '0123456789abcdef'[Math.floor(Math.random() * 16)]).join(''));
-  const url = enWebhook(r), gh = r.provedor === 'github';
-  const campo = (rot, val, k) => '<div class="en-copia"><span class="rotulo-mini">' + rot + '</span><code id="en-c-' + k + '">' + esc(val) + '</code><button type="button" class="btn sec peq" data-en-copiar="' + k + '">' + EN_ICO.copiar + 'Copiar</button></div>';
-  const passos = gh
-    ? ['No GitHub, abra o repositório <b>' + esc(r.nome) + '</b> e vá em <b>Settings › Webhooks › Add webhook</b>.', 'Em <b>Payload URL</b>, cole o endereço abaixo.', 'Em <b>Content type</b>, escolha <b>application/json</b>.', 'Em <b>Secret</b>, cole o segredo abaixo.',
-       'Em <b>Which events</b>, escolha <b>Let me select individual events</b> e marque: <b>Branch or tag creation</b>, <b>Branch or tag deletion</b>, <b>Pushes</b>, <b>Pull requests</b>, <b>Releases</b> e <b>Deployment statuses</b>.', 'Deixe <b>Active</b> marcado e clique em <b>Add webhook</b>. O GitHub manda um teste na hora: este cartão passa a mostrar "Último aviso recebido: ping".']
-    : ['No GitLab, abra o projeto <b>' + esc(r.nome) + '</b> e vá em <b>Settings › Webhooks › Add new webhook</b>.', 'Em <b>URL</b>, cole o endereço abaixo.', 'Em <b>Secret token</b>, cole o segredo abaixo.',
-       'Em <b>Trigger</b>, marque: <b>Push events</b> (todos os branches), <b>Merge request events</b>, <b>Releases events</b> e <b>Deployment events</b>.', 'Clique em <b>Add webhook</b>. Para testar, use <b>Test › Push events</b>: este cartão passa a mostrar o último aviso recebido.'];
-  const dlg = modal((novo ? 'Repositório ligado. ' : '') + 'Como ligar no ' + (gh ? 'GitHub' : 'GitLab'), '<ol class="en-passos">' + passos.map(p => '<li>' + p + '</li>').join('') + '</ol>' + campo('Endereço', url, 'u') + campo('Segredo', seg, 's') +
-    '<p class="sec tf-nota">Guarde o segredo só no ' + (gh ? 'GitHub' : 'GitLab') + '. Ele garante que só o seu repositório consegue mandar avisos para cá.' + (COM_BANCO ? '' : ' (No modo de exemplo nada chega de verdade.)') + '</p>' +
-    '<p class="sec tf-nota"><b>Como o código liga ao item:</b> use a chave do item (por exemplo <code>BL-37</code>) no nome do branch, na mensagem do commit ou no título do pull request. No item tem um botão que copia o nome do branch pronto.</p>',
-    [podeEditar() && COM_BANCO ? {txt:'Trocar o segredo', cls:'fant', acao:() => { enTrocarSegredo(r); }} : null, {txt:'Pronto'}].filter(Boolean));
-  dlg.addEventListener('click', e => { const b = e.target.closest('[data-en-copiar]'); if (!b) return; const el = $('#en-c-' + b.dataset.enCopiar, dlg); enCopiar(el.textContent, b); const s = document.createRange(); s.selectNodeContents(el); const w = getSelection(); w.removeAllRanges(); w.addRange(s); });
-}
-function enTrocarSegredo(r){
-  modal('Trocar o segredo de ' + esc(r.nome) + '?', '<p style="margin:0">O segredo atual para de valer na hora. Depois de trocar, cole o novo no ' + (r.provedor === 'gitlab' ? 'GitLab' : 'GitHub') + ', senão os avisos são recusados.</p>',
-    [{txt:'Cancelar', cls:'sec'}, {txt:'Trocar', cls:'acento', acao:() => { enSb().rpc('repositorio_segredo', {p_repo:r.id, p_trocar:true}).then(({error}) => { if (error){ toast('Não deu para trocar: ' + tfErro(error)); return; } enComoLigar(r.id); }); }}]);
-}
-function enExcluirRepo(id){
-  const r = (EN.repos || []).find(x => x.id === id); if (!r) return;
-  tfExcluirPerguntaSimples('Excluir o repositório ' + esc(r.nome) + '?', 'Os branches, commits e pull requests que vieram dele saem dos itens. As publicações registradas continuam no histórico. Lembre de apagar o webhook no ' + (r.provedor === 'gitlab' ? 'GitLab' : 'GitHub') + ' também.', () => {
-    enApagar('repositorios', id).then(ok => { if (!ok) return; EN.repos = EN.repos.filter(x => x.id !== id); if (UI.view === 'entregas') rView(); tfAviso('Repositório ' + r.nome + ' excluído.', [], 4000); });
-  });
-}
-
+/* ---------- repositórios: ligar e desligar ficam em git.js (contas conectadas do GitHub e do GitLab) ---------- */
 /* ---------- no item: Desenvolvimento ---------- */
 function enCartaoItem(i, links, pode){
   const temRepo = (EN.repos || []).some(r => enNos('ws:' + i.ws).has(r.no_id));
@@ -9155,12 +9133,11 @@ document.addEventListener('click', e => {
   let b;
   if (e.target.closest('[data-en-nova-versao]')){ enNovaVersao(); return; }
   if (e.target.closest('[data-en-nova-pub]')){ enNovaPublicacao(null); return; }
-  if (e.target.closest('[data-en-novo-repo]')){ enNovoRepo(); return; }
+  if (e.target.closest('[data-en-novo-repo]')){ gcLigarRepo(); return; }
   if ((b = e.target.closest('[data-en-notas]'))){ enNotas(b.dataset.enNotas); return; }
   if ((b = e.target.closest('[data-en-publicar]'))){ enNovaPublicacao(b.dataset.enPublicar); return; }
   if ((b = e.target.closest('[data-en-excluir-versao]'))){ enExcluirVersao(b.dataset.enExcluirVersao); return; }
-  if ((b = e.target.closest('[data-en-como]'))){ enComoLigar(b.dataset.enComo); return; }
-  if ((b = e.target.closest('[data-en-excluir-repo]'))){ enExcluirRepo(b.dataset.enExcluirRepo); return; }
+  if ((b = e.target.closest('[data-en-excluir-repo]'))){ gcDesligarRepo(b.dataset.enExcluirRepo); return; }
   if ((b = e.target.closest('[data-en-excluir-pub]'))){ const id = b.dataset.enExcluirPub, p = (EN.pubs || []).find(x => x.id === id); if (!p) return;
     tfExcluirPerguntaSimples('Excluir o registro da publicação ' + esc(p.versao || '') + '?', 'Sai só do histórico do CicloDev. O que está no ar não muda.', () => {
       enApagar('publicacoes', id).then(ok => { if (!ok) return; EN.pubs = EN.pubs.filter(x => x.id !== id); if (UI.view === 'entregas') rView(); tfAviso('Registro excluído.', [], 3000); }); }); return; }
@@ -9198,7 +9175,247 @@ linhasDaTela = function(d){
   (L.marcos || []).forEach(r => { const m = mm.get(r.id); r.notas = m && m.notas ? m.notas : null; });
   return L;
 };
-if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {EN, enGerarNotas, enLerLink, enLerRepo, enBranch, abrirItem, rOperacoes});
+if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {EN, enGerarNotas, enLerLink, enBranch, abrirItem, rOperacoes});
+
+/* =====================================================================
+   Contas conectadas: GitHub e GitLab com um clique (parte 32 do banco, função git-conectar).
+   - Cada empresa (espaço) conecta a própria conta numa janelinha do GitHub ou do GitLab e
+     escolhe qual repositório é de cada projeto, produto ou aplicação.
+   - GitHub: pelo app do CicloDev (os avisos chegam sozinhos). GitLab: pelo OAuth (o CicloDev cria o aviso no projeto).
+   - O dono do sistema cria o app do GitHub e configura o GitLab uma vez, na tela Admin (aba GitHub e GitLab).
+   A janelinha volta para esta mesma página com ?git=...; o script do começo da página (build.py) avisa a janela
+   principal pelo BroadcastChannel e pelo localStorage, e a janela principal termina aqui. Prefixo gc.
+   ===================================================================== */
+const GC = {status:null, conexoes:null, repos:{}, aoConectar:null, feitos:new Set()};
+const GC_NOME = {github:'GitHub', gitlab:'GitLab'};
+const GC_ESPERA = 'ciclodev-git-espera', GC_VOLTA = 'ciclodev-git-volta';
+const gcSb = () => COM_BANCO ? window.ciclodevBanco : null;
+const gcRetorno = git => location.origin + location.pathname + '?git=' + git;
+
+async function gcFuncao(corpo){
+  const sb = gcSb();
+  if (!sb || !sb.functions) return {ok:false, erro:'Conectar o GitHub e o GitLab só funciona no CicloDev com login'};
+  try {
+    const {data, error} = await sb.functions.invoke('git-conectar', {body:corpo});
+    if (error){
+      let msg = error.message || String(error);
+      try { const j = error.context && typeof error.context.json === 'function' ? await error.context.json() : null; if (j && j.erro) msg = j.erro; } catch(e){}
+      return {ok:false, erro:msg};
+    }
+    return data || {};
+  } catch(e){ return {ok:false, erro:e.message || String(e)}; }
+}
+async function gcCarregar(forcar){
+  const sb = gcSb(); if (!sb) { GC.status = {github:{pronto:false}, gitlab:{pronto:false}}; GC.conexoes = []; return; }
+  if (GC.status && GC.conexoes && !forcar) return;
+  const [s, c] = await Promise.all([sb.rpc('git_apps_status'), sb.from('git_conexoes').select('*').order('criado_em')]);
+  GC.status = s.data || {github:{pronto:false}, gitlab:{pronto:false}};
+  GC.conexoes = (c.data || []).filter(x => !x.removida_em);
+  if (s.error || c.error) GC.erro = tfErro(s.error || c.error); else GC.erro = null;
+}
+function gcGuardar(k, v){ try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
+function gcLer(k){ try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch(e){ return null; } }
+function gcJanela(url){
+  const w = window.open(url, 'ciclodev-git', 'width=1020,height=780');
+  if (!w){ toast('O navegador bloqueou a janelinha. Permita janelas deste site e clique de novo.'); return null; }
+  try { w.focus(); } catch(e){}
+  return w;
+}
+
+/* ---------- conectar uma conta (abre a janelinha) ---------- */
+async function gcConectar(provedor, aoTerminar){
+  await gcCarregar();
+  const st = GC.status[provedor] || {};
+  if (!st.pronto){ toast(provedor === 'github' ? 'O app do GitHub ainda não foi criado. O dono do sistema cria em Admin, aba GitHub e GitLab.' : 'O GitLab ainda não foi configurado. O dono do sistema configura em Admin, aba GitHub e GitLab.'); return; }
+  const {data:estado, error} = await gcSb().rpc('git_estado_novo', {p_provedor:provedor});
+  if (error){ toast('Não deu para começar: ' + tfErro(error)); return; }
+  gcGuardar(GC_ESPERA, {provedor, estado, client_id:provedor === 'github' ? st.client_id : null, t:Date.now()});
+  GC.aoConectar = aoTerminar || null;
+  const url = provedor === 'github'
+    ? 'https://github.com/apps/' + encodeURIComponent(st.slug) + '/installations/new?state=' + encodeURIComponent(estado)
+    : st.base + '/oauth/authorize?' + new URLSearchParams({client_id:st.client_id, redirect_uri:st.retorno, response_type:'code', state:estado, scope:'api'}).toString();
+  gcJanela(url);
+}
+
+/* ---------- a volta da janelinha ---------- */
+async function gcVolta(d){
+  if (!d || !d.git) return;
+  const chave = (d.code || '') + '|' + (d.state || '') + '|' + (d.installation_id || '') + '|' + (d.error || '');
+  if (GC.feitos.has(chave)) return; GC.feitos.add(chave);
+  const espera = gcLer(GC_ESPERA);
+  gcGuardar(GC_VOLTA, null);
+  if (!espera || Date.now() - (espera.t || 0) > 30 * 60000) return;
+  if (d.error){ gcGuardar(GC_ESPERA, null); toast((d.git === 'gitlab' ? 'O GitLab' : 'O GitHub') + ' não conectou: ' + (d.error_description || d.error)); return; }
+  if (!d.code) return;
+  gcGuardar(GC_ESPERA, null);
+  if (d.git === 'app'){
+    const r = await gcFuncao({acao:'app_concluir', code:d.code, estado:d.state || espera.estado, retorno:espera.retorno});
+    if (!r.ok){ toast('Não deu para criar o app: ' + r.erro); return; }
+    GC.status = null; await gcCarregar(true);
+    tfAviso('App do GitHub criado: ' + (r.app && r.app.slug) + '. Agora cada empresa conecta a conta dela em Entregas, Ligar repositório.', [], 7000);
+    if (UI.modulo === 'admin') rAdmin();
+    return;
+  }
+  const r = await gcFuncao({acao:'concluir', provedor:d.git, code:d.code, estado:d.state || espera.estado});
+  if (!r.ok){ toast('Não deu para conectar: ' + r.erro); return; }
+  await gcCarregar(true);
+  if (r.instalar){ tfAviso('A conta foi confirmada, mas o app do CicloDev ainda não está instalado nela. Clique em Conectar ao GitHub de novo e escolha a conta.', [], 7000); }
+  else tfAviso((d.git === 'gitlab' ? 'GitLab' : 'GitHub') + ' conectado.', [], 3000);
+  if (GC.aoConectar) GC.aoConectar();
+}
+try { const bc = new BroadcastChannel('ciclodev-git'); bc.onmessage = e => gcVolta(e.data); } catch(e){}
+window.addEventListener('storage', e => { if (e.key === GC_VOLTA && e.newValue){ try { gcVolta(JSON.parse(e.newValue).dados); } catch(x){} } });
+
+/* ---------- Ligar repositório (aba Entregas) ---------- */
+function gcOnde(){
+  const proj = enProjeto(UI.sel);
+  // cada produto tem a própria ligação: os desenhos automáticos do produto saem só dos repositórios dele
+  return [[proj, nomeDe(proj) + ' (projeto inteiro)']]
+    .concat(D.products.filter(p => 'project:' + p.project === proj).map(p => ['product:' + p.id, nomeDe('product:' + p.id) + ' (só este produto)']))
+    .concat(D.apps.filter(a => 'project:' + a.project === proj).map(a => ['app:' + a.id, nomeDe('app:' + a.id) + ' (só esta aplicação)']));
+}
+function gcLigarRepo(){
+  if (!COM_BANCO){ modal('Ligar repositório', '<p style="margin:0">No modo de exemplo não dá para conectar o GitHub ou o GitLab. Entre no CicloDev com login para ligar os repositórios.</p>', [{txt:'Entendi'}]); return; }
+  const onde = gcOnde();
+  const dlg = modal('Ligar repositório', '<div class="grade-form"><label class="lb largo">Ligar a<select class="sel" id="gc-onde">' + onde.map(([k, n]) => '<option value="' + k + '"' + (k === UI.sel ? ' selected' : '') + '>' + esc(n) + '</option>').join('') + '</select></label></div>' +
+    '<div class="tf-opcoes"><label><input type="checkbox" id="gc-mover" checked> Mudar o status dos itens sozinho (branch: Em andamento, PR: Em revisão, PR mesclado: Concluído)</label></div>' +
+    '<div id="gc-corpo"><p class="sec">Lendo as contas conectadas…</p></div>', [{txt:'Fechar', cls:'sec'}]);
+  dlg.classList.add('gc-modal');
+  const pintar = async forcar => { await gcCarregar(forcar); if (dlg.isConnected) $('#gc-corpo', dlg).innerHTML = gcContasHTML(); };
+  pintar(true);
+  dlg.addEventListener('click', async e => {
+    let b;
+    if ((b = e.target.closest('[data-gc-conectar]'))){ gcConectar(b.dataset.gcConectar, () => pintar(true)); return; }
+    if ((b = e.target.closest('[data-gc-ver]'))){ gcMostrarRepos(dlg, b.dataset.gcVer); return; }
+    if ((b = e.target.closest('[data-gc-desconectar]'))){ gcDesconectar(b.dataset.gcDesconectar, () => pintar(true)); return; }
+    if ((b = e.target.closest('[data-gc-ligar]'))){
+      const [con, ext] = b.dataset.gcLigar.split('|'), no = $('#gc-onde', dlg).value.split(':')[1];
+      b.disabled = true; b.textContent = 'Ligando…';
+      const r = await gcFuncao({acao:'ligar', no_id:no, conexao_id:con, externo_id:ext, mover:$('#gc-mover', dlg).checked});
+      if (!r.ok){ b.disabled = false; b.textContent = 'Ligar'; toast('Não deu para ligar: ' + r.erro); return; }
+      EN.repos = (EN.repos || []).filter(x => x.id !== r.repositorio.id).concat(r.repositorio);
+      b.textContent = 'Ligado'; b.classList.add('gc-ok');
+      if (UI.view === 'entregas') rView();
+      if (typeof ifrAutoCarregar === 'function' && UI.view === 'infra'){ await ifrAutoCarregar(); ifrLado(); }
+      tfAviso('Repositório ' + r.repositorio.nome + ' ligado. Os desenhos do código já foram pedidos.', [], 5000);
+    }
+  });
+  dlg.addEventListener('input', e => { if (e.target.matches('[data-gc-busca]')) gcFiltrar(dlg, e.target.value); });
+  dlg.addEventListener('change', e => { if (e.target.id === 'gc-onde') $$('[data-gc-lista] [data-gc-ligar]', dlg).forEach(x => gcMarcarLigado(x, dlg)); });
+}
+function gcContasHTML(){
+  const st = GC.status || {}, cs = GC.conexoes || [];
+  const botao = p => st[p] && st[p].pronto
+    ? '<button type="button" class="btn ' + (cs.some(c => c.provedor === p) ? 'sec' : 'acento') + '" data-gc-conectar="' + p + '">' + EN_ICO[p] + (cs.some(c => c.provedor === p) ? 'Conectar outra conta do ' : 'Conectar ao ') + GC_NOME[p] + '</button>'
+    : '<span class="gc-nao">' + EN_ICO[p] + GC_NOME[p] + ': ainda não ativado pelo dono do sistema</span>';
+  const conta = c => '<li class="gc-conta">' + (c.avatar_url ? '<img src="' + esc(c.avatar_url) + '" alt="" width="28" height="28">' : EN_ICO[c.provedor]) +
+    '<div><b>' + esc(c.conta) + '</b><small>' + GC_NOME[c.provedor] + (c.conta_tipo === 'Organization' ? ' · organização' : '') + (c.ultimo_erro ? ' · <span class="en2-erro">' + esc(c.ultimo_erro) + '</span>' : '') + '</small></div>' +
+    '<div class="gc-conta-a"><button type="button" class="btn peq" data-gc-ver="' + c.id + '">Escolher repositório</button>' +
+    (c.provedor === 'github' && c.url ? '<a class="btn fant peq" href="' + esc(c.url) + '" target="_blank" rel="noopener noreferrer" title="Escolher no GitHub quais repositórios o CicloDev vê">Mudar acesso no GitHub</a>' : '') +
+    '<button type="button" class="btn fant peq" data-gc-desconectar="' + c.id + '">Desconectar</button></div>' +
+    '<div class="gc-repos" data-gc-repos="' + c.id + '" hidden></div></li>';
+  return (GC.erro ? '<p class="entrada-erro">' + esc(GC.erro) + '</p>' : '') +
+    '<h3 class="gc-t">Contas conectadas' + I('Contas conectadas: as contas do GitHub e do GitLab que a sua empresa ligou ao CicloDev. Valem para todos os projetos do espaço. Cada repositório escolhido fica ligado só ao ponto que você escolher acima.') + '</h3>' +
+    (cs.length ? '<ul class="gc-contas">' + cs.map(conta).join('') + '</ul>' : '<p class="sec">Nenhuma conta conectada ainda. Clique abaixo: abre uma janelinha do GitHub ou do GitLab para você autorizar e escolher os repositórios.</p>') +
+    '<div class="gc-botoes">' + botao('github') + botao('gitlab') + '</div>';
+}
+async function gcMostrarRepos(dlg, conexao){
+  const alvo = $('[data-gc-repos="' + conexao + '"]', dlg); if (!alvo) return;
+  if (!alvo.hidden && alvo.dataset.cheio){ alvo.hidden = true; return; }
+  alvo.hidden = false; alvo.innerHTML = '<p class="sec">Lendo os repositórios…</p>';
+  const r = await gcFuncao({acao:'repos', conexao_id:conexao});
+  if (!r.ok){ alvo.innerHTML = '<p class="entrada-erro">' + esc(r.erro) + '</p>'; return; }
+  alvo.dataset.cheio = '1';
+  const lista = r.repos || [];
+  alvo.innerHTML = lista.length
+    ? (lista.length > 6 ? '<input class="campo" data-gc-busca placeholder="Procurar repositório" aria-label="Procurar repositório">' : '') +
+      '<ul class="gc-lista" data-gc-lista>' + lista.map(x => '<li data-gc-nome="' + esc(x.nome.toLowerCase()) + '"><span><b>' + esc(x.nome) + '</b><small>' + (x.privado ? 'privado · ' : '') + 'branch ' + esc(x.branch) + '</small></span>' +
+        '<button type="button" class="btn sec peq" data-gc-ligar="' + conexao + '|' + esc(x.externo_id) + '" data-gc-repo-nome="' + esc(x.nome) + '">Ligar</button></li>').join('') + '</ul>'
+    : '<p class="sec">Esta conta não deixou o CicloDev ver nenhum repositório.' + ((GC.conexoes || []).find(c => c.id === conexao && c.provedor === 'github') ? ' Use "Mudar acesso no GitHub" para escolher quais.' : ' No GitLab, a conta precisa ser Maintainer do projeto.') + '</p>';
+  $$('[data-gc-ligar]', alvo).forEach(x => gcMarcarLigado(x, dlg));
+}
+function gcMarcarLigado(b, dlg){
+  const no = $('#gc-onde', dlg).value.split(':')[1], nome = b.dataset.gcRepoNome;
+  const ja = (EN.repos || []).some(r => r.no_id === no && r.nome.toLowerCase() === String(nome).toLowerCase());
+  b.textContent = ja ? 'Ligado' : 'Ligar'; b.classList.toggle('gc-ok', ja); b.disabled = false;
+}
+function gcFiltrar(dlg, txt){ const t = txt.trim().toLowerCase(); $$('[data-gc-lista] li', dlg).forEach(li => { li.hidden = !!t && !li.dataset.gcNome.includes(t); }); }
+function gcDesconectar(id, depois){
+  const c = (GC.conexoes || []).find(x => x.id === id); if (!c) return;
+  tfExcluirPerguntaSimples('Desconectar a conta ' + esc(c.conta) + ' do ' + GC_NOME[c.provedor] + '?', 'Ela sai do espaço. Desligue antes os repositórios que vieram dela.' + (c.provedor === 'github' ? ' Para tirar o app do CicloDev da conta, use também "Mudar acesso no GitHub".' : ' A chave do GitLab é devolvida.'), async () => {
+    const r = await gcFuncao({acao:'desconectar', conexao_id:id});
+    if (!r.ok){ toast('Não deu para desconectar: ' + r.erro); return; }
+    if (depois) depois(); tfAviso('Conta ' + c.conta + ' desconectada.', [], 3000);
+  });
+}
+function gcDesligarRepo(id){
+  const r = (EN.repos || []).find(x => x.id === id); if (!r) return;
+  tfExcluirPerguntaSimples('Desligar o repositório ' + esc(r.nome) + '?', 'Os branches, commits e pull requests que vieram dele saem dos itens. As publicações registradas continuam no histórico.' + (r.provedor === 'gitlab' ? ' O aviso que o CicloDev criou no projeto do GitLab sai junto.' : ''), async () => {
+    const res = COM_BANCO ? await gcFuncao({acao:'desligar', repo_id:id}) : {ok:await enApagar('repositorios', id)};
+    if (!res.ok){ toast('Não deu para desligar: ' + (res.erro || 'sem permissão')); return; }
+    EN.repos = EN.repos.filter(x => x.id !== id); if (UI.view === 'entregas') rView();
+    tfAviso('Repositório ' + r.nome + ' desligado.' + (res.aviso ? ' ' + res.aviso : ''), [], res.aviso ? 8000 : 4000);
+  });
+}
+
+/* ---------- Admin: o app do GitHub e o GitLab (só o dono do sistema) ---------- */
+function gcAdminHTML(){
+  if (!GC.status){ gcCarregar(true).then(() => { if (UI.modulo === 'admin' && ADM.aba === 'git') rAdmin(); }); return '<p class="vazio-linha">Lendo…</p>'; }
+  const gh = GC.status.github || {}, gl = GC.status.gitlab || {};
+  const hook = (window.ciclodevBanco && window.ciclodevBanco.supabaseUrl || '').replace(/\/$/, '') + '/functions/v1/git-webhook';
+  return '<div class="graficos"><section class="grafico gc-adm"><h3>' + EN_ICO.github + 'App do GitHub</h3>' +
+    (gh.pronto
+      ? '<p>Pronto: <a href="' + esc(gh.html_url || '') + '" target="_blank" rel="noopener noreferrer"><b>' + esc(gh.nome || gh.slug) + '</b></a>' + (gh.dono ? ' (da conta ' + esc(gh.dono) + ')' : '') + '. As empresas conectam a conta delas em Entregas, Ligar repositório.</p>' +
+        '<p class="sec">Os avisos chegam em <code>' + esc(hook) + '</code>. A volta das janelinhas vai para <code>' + esc(gh.retorno || '') + '</code>: o app só funciona neste endereço do CicloDev.</p>'
+      : '<p>Cria, com um clique, o app do CicloDev no GitHub. Ele é o que as empresas instalam para ligar os repositórios delas. As chaves do app ficam guardadas no banco; ninguém precisa copiar nada.</p>' +
+        '<div class="grade-form"><label class="lb">Nome do app<input class="campo" id="gc-app-nome" value="CicloDev"></label><label class="lb">Organização no GitHub (opcional)<input class="campo" id="gc-app-org" placeholder="deixe vazio para a sua conta"></label></div>' +
+        '<p class="sec">Crie a partir do endereço principal do CicloDev (' + esc(location.origin) + '): é para ele que o GitHub devolve as janelinhas. O nome do app precisa ser único no GitHub; se já existir, troque na tela do GitHub.</p>' +
+        '<button type="button" class="btn acento" data-gc-criar-app>' + EN_ICO.github + 'Criar o app do GitHub</button>') +
+    '</section><section class="grafico gc-adm"><h3>' + EN_ICO.gitlab + 'GitLab</h3>' +
+    '<p>No GitLab, em <b>Preferences, Applications</b> (ou no grupo, em <b>Settings, Applications</b>), crie um aplicativo com:</p>' +
+    '<ul class="gc-lista-adm"><li>Redirect URI: <code>' + esc(gcRetorno('gitlab')) + '</code></li><li>Confidential: marcado</li><li>Scopes: <b>api</b></li></ul>' +
+    '<div class="grade-form"><label class="lb">Application ID<input class="campo" id="gc-gl-id" value="' + esc(gl.client_id || '') + '" autocomplete="off"></label>' +
+    '<label class="lb">Secret<input class="campo" id="gc-gl-seg" type="password" autocomplete="off" placeholder="' + (gl.pronto ? 'deixe vazio para manter' : '') + '"></label>' +
+    '<label class="lb largo">Endereço do GitLab<input class="campo" id="gc-gl-base" value="' + esc(gl.base || 'https://gitlab.com') + '"></label></div>' +
+    '<p class="sec">' + (gl.pronto ? 'Pronto. As empresas conectam a conta delas em Entregas, Ligar repositório.' : 'Ainda não configurado.') + '</p>' +
+    '<button type="button" class="btn ' + (gl.pronto ? 'sec' : 'acento') + '" data-gc-gitlab>' + (gl.pronto ? 'Salvar mudanças' : 'Salvar o GitLab') + '</button></section></div>';
+}
+async function gcCriarApp(){
+  const nome = ($('#gc-app-nome') || {}).value || 'CicloDev', org = (($('#gc-app-org') || {}).value || '').trim();
+  if (org && !/^[A-Za-z0-9-]{1,39}$/.test(org)){ toast('Nome de organização inválido'); return; }
+  const sb = gcSb();
+  const {data:estado, error} = await sb.rpc('git_estado_novo', {p_provedor:'github-app'});
+  if (error){ toast('Não deu para começar: ' + tfErro(error)); return; }
+  const hook = (sb.supabaseUrl || '').replace(/\/$/, '') + '/functions/v1/git-webhook';
+  const manifesto = {
+    name:nome.trim().slice(0, 34) || 'CicloDev', url:location.origin, description:'Liga os repositórios ao CicloDev: branches, commits e pull requests nos itens, publicações e os desenhos do sistema.',
+    hook_attributes:{url:hook, active:true}, redirect_url:gcRetorno('app'), callback_urls:[gcRetorno('github')], setup_url:gcRetorno('github'),
+    setup_on_update:true, request_oauth_on_install:true, public:true,
+    default_permissions:{contents:'read', metadata:'read', pull_requests:'read', deployments:'read'},
+    default_events:['push', 'create', 'delete', 'pull_request', 'release', 'deployment_status'],
+  };
+  gcGuardar(GC_ESPERA, {provedor:'app', estado, retorno:gcRetorno('github'), t:Date.now()});
+  const f = document.createElement('form');
+  f.method = 'post'; f.target = 'ciclodev-git';
+  f.action = (org ? 'https://github.com/organizations/' + encodeURIComponent(org) + '/settings/apps/new' : 'https://github.com/settings/apps/new') + '?state=' + encodeURIComponent(estado);
+  const i = document.createElement('input'); i.type = 'hidden'; i.name = 'manifest'; i.value = JSON.stringify(manifesto); f.appendChild(i);
+  document.body.appendChild(f);
+  if (!gcJanela('about:blank')){ f.remove(); return; }
+  f.submit(); f.remove();
+}
+async function gcSalvarGitlab(){
+  const d = {client_id:$('#gc-gl-id').value.trim(), client_secret:$('#gc-gl-seg').value.trim(), base:$('#gc-gl-base').value.trim(), retorno:gcRetorno('gitlab')};
+  const {error} = await gcSb().rpc('git_app_gravar', {p_provedor:'gitlab', p_dados:d});
+  if (error){ toast('Não deu para salvar: ' + tfErro(error)); return; }
+  GC.status = null; await gcCarregar(true); rAdmin(); tfAviso('GitLab configurado.', [], 3000);
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('#m-admin')) return;
+  if (e.target.closest('[data-gc-criar-app]')){ gcCriarApp(); return; }
+  if (e.target.closest('[data-gc-gitlab]')){ gcSalvarGitlab(); return; }
+});
+// voltou da janelinha com a janela principal fechada (ou recarregada): termina agora
+(function(){ const v = gcLer(GC_VOLTA); if (v && v.dados && Date.now() - (v.t || 0) < 10 * 60000) setTimeout(() => gcVolta(v.dados), 1500); })();
 
 /* ================= Simplificar: nomes em português, abas agrupadas e a tela do item organizada =================
    Carrega por último: só troca nomes e reorganiza o que as camadas anteriores montaram, sem mudar dado nenhum. */
@@ -12028,7 +12245,7 @@ function ifrMapaDiagramas(){
 }
 const ifrAvisarCanvas = () => ifrFalar({tipo:'diagramas', dados:ifrMapaDiagramas()});
 
-const IFR_DE_ONDE = {github:'automático do código', banco:'automático do banco', devit:'DevIT', manual:'feito à mão'};
+const IFR_DE_ONDE = {github:'automático do código', gitlab:'automático do código', banco:'automático do banco', devit:'DevIT', manual:'feito à mão'};
 // o desenho do DevIT ficou para trás quando o robô atualizou os automáticos depois dele
 const ifrDesatualizado = d => d.origem === 'devit' && typeof IFR_AUTO !== 'undefined' && IFR_AUTO.pedidos.some(p => p.status === 'pronto' && p.concluido_em && d.atualizado_em && p.concluido_em > d.atualizado_em && (p.diagramas || []).length);
 function ifrItemHTML(d, deOutro){
@@ -12054,7 +12271,7 @@ function ifrLado(){
       return '<div class="ifr-prod"><div class="ifr-prod-cab"><b>' + esc(p.nome) + '</b><button type="button" class="ifr-lnk" data-ifr-ir="product:' + esc(p.id) + '">Abrir no produto</button></div>' + (l.length ? '<ul class="ifr-lista">' + l.map(d => ifrItemHTML(d, true)).join('') + '</ul>' : '<p class="ifr-vazio">Sem desenho nesta parte.</p>') + '</div>'; }).join('');
   }
   h += '<div class="ifr-rodape"><button type="button" class="btn sec peq" data-ifr-zip>Baixar tudo (docs/diagrams)</button>' +
-    (cf.erro ? '<p class="ifr-cfg">' + esc(cf.erro) + '</p>' : IFR.config ? '<ul class="ifr-cfg">' + chave(cf.conversor, 'conversor de desenhos (RENDER_URL)') + chave(cf.devit, 'DevIT (ANTHROPIC_API_KEY)') + chave(cf.github, 'GitHub, para ler o código (GITHUB_TOKEN)') + chave(cf.figma, 'Figma, para ler os protótipos (FIGMA_TOKEN)') + '</ul>' : '') + '</div>';
+    (cf.erro ? '<p class="ifr-cfg">' + esc(cf.erro) + '</p>' : IFR.config ? '<ul class="ifr-cfg">' + chave(cf.conversor, 'conversor de desenhos (RENDER_URL)') + chave(cf.devit, 'DevIT (ANTHROPIC_API_KEY)') + chave(cf.github, 'GitHub, para ler o código (app do CicloDev, em Admin)') + chave(cf.gitlab, 'GitLab, para ler o código (em Admin)') + chave(cf.figma, 'Figma, para ler os protótipos (FIGMA_TOKEN)') + '</ul>' : '') + '</div>';
   el.innerHTML = h;
 }
 
@@ -12070,7 +12287,7 @@ async function ifrAbrir(id){
   const corpo = '<div class="ifr-ed">' +
     '<div class="ifr-ed-linha"><label class="lb">Nome<input class="campo" id="ifr-nome" value="' + esc(d.nome) + '"' + (pode ? '' : ' disabled') + '></label>' +
     '<label class="lb">Formato<select class="sel" id="ifr-formato"' + (pode ? '' : ' disabled') + '>' + IFR_FORMATOS.map(f => '<option value="' + f[0] + '"' + (f[0] === d.formato ? ' selected' : '') + '>' + esc(f[1]) + '</option>').join('') + '</select></label></div>' +
-    '<p class="ifr-meta">' + esc(ifrNomeNo(d.no_id)) + ' · ' + esc(ifrAba(d.aba).nome) + ' · versão ' + esc(d.versao) + ' · ' + esc(IFR_DE_ONDE[d.origem] || d.origem) + (d.referencia && d.origem === 'github' ? ' (commit ' + esc(String(d.referencia).slice(0, 7)) + ')' : '') + (d.renderizado_em ? ' · imagem de ' + esc(new Date(d.renderizado_em).toLocaleString('pt-BR')) : '') + '</p>' +
+    '<p class="ifr-meta">' + esc(ifrNomeNo(d.no_id)) + ' · ' + esc(ifrAba(d.aba).nome) + ' · versão ' + esc(d.versao) + ' · ' + esc(IFR_DE_ONDE[d.origem] || d.origem) + (d.referencia && (d.origem === 'github' || d.origem === 'gitlab') ? ' (commit ' + esc(String(d.referencia).slice(0, 7)) + ')' : '') + (d.renderizado_em ? ' · imagem de ' + esc(new Date(d.renderizado_em).toLocaleString('pt-BR')) : '') + '</p>' +
     (auto ? '<p class="ifr-aviso-auto">Este desenho sai sozinho ' + (d.origem === 'banco' ? 'da estrutura do banco' : 'do código publicado em produção') + ' e é refeito a cada mudança. Para ajustar à mão, faça uma cópia.</p>' : '') +
     (d.quadro ? '<p class="ifr-meta"><button type="button" class="btn peq" data-ifr-quadro="' + esc(d.quadro) + '">Abrir o quadro deste desenho</button> O quadro é o desenho montado no canvas, com os cards e as ligações.</p>' : '') +
     '<label class="lb">Código do desenho (a fonte de verdade)<textarea class="campo ifr-codigo" id="ifr-fonte" spellcheck="false"' + (pode ? '' : ' readonly') + '>' + esc(d.fonte || '') + '</textarea></label>' +
@@ -12319,7 +12536,7 @@ async function ifrAutoCarregar(){
   IFR_AUTO.carregado = true;
 }
 const ifrQuando = ts => { if (!ts) return ''; const m = Math.round((Date.now() - new Date(ts).getTime()) / 60000); if (m < 1) return 'agora'; if (m < 60) return 'há ' + m + ' min'; const h = Math.round(m / 60); if (h < 24) return 'há ' + h + ' h'; const d = Math.round(h / 24); return d === 1 ? 'ontem' : 'há ' + d + ' dias'; };
-const IFR_ORIGEM = {github:'publicação em produção', banco:'mudança no banco', manual:'Atualizar agora'};
+const IFR_ORIGEM = {github:'publicação em produção', gitlab:'publicação em produção', banco:'mudança no banco', manual:'Atualizar agora'};
 const IFR_STATUS = {pendente:'na fila', rodando:'montando agora', pronto:'pronto', erro:'com erro'};
 
 function ifrAutoHTML(){
@@ -12330,8 +12547,8 @@ function ifrAutoHTML(){
   h += '<p class="ifr-auto-como">' + (fonte === 'codigo' ? 'Esta parte sai <b>sozinha do código</b> a cada publicação em produção no GitHub. O DevIT completa o que precisa de interpretação.'
     : fonte === 'banco' ? 'Esta parte sai <b>sozinha do banco de dados</b> ligado (e do Prisma, no código): quando a estrutura muda, o desenho é refeito.'
     : 'Esta parte depende de interpretação: é feita pelo <b>DevIT</b>, que usa os desenhos automáticos como evidência.') + '</p>';
-  h += '<div class="ifr-auto-bloco"><b>Código (GitHub)</b>' + (repos.length
-    ? '<ul class="ifr-auto-lista">' + repos.map(r => '<li><span>' + esc(r.nome) + '</span><small>' + esc(r.provedor === 'github' ? 'branch ' + (r.branch_principal || 'main') : 'GitLab: ainda não é lido') + '</small></li>').join('') + '</ul>'
+  h += '<div class="ifr-auto-bloco"><b>Código (GitHub e GitLab)</b>' + (repos.length
+    ? '<ul class="ifr-auto-lista">' + repos.map(r => '<li><span>' + esc(r.nome) + '</span><small>' + esc((r.provedor === 'gitlab' ? 'GitLab' : 'GitHub') + ' · branch ' + (r.branch_principal || 'main')) + '</small></li>').join('') + '</ul>'
     : '<p class="ifr-vazio">Nenhum repositório ligado ' + (eProd ? 'a este produto' : 'direto neste projeto') + '.</p>') +
     (pode ? '<button type="button" class="ifr-lnk" data-ifr-repo>' + (repos.length ? 'Ligar outro repositório' : 'Ligar repositório') + '</button>' : '') + '</div>';
   h += '<div class="ifr-auto-bloco"><b>Banco de dados</b>' + (b
@@ -12340,7 +12557,7 @@ function ifrAutoHTML(){
     (pode ? '<div class="ifr-auto-acoes"><button type="button" class="ifr-lnk" data-ifr-banco>' + (b ? 'Trocar' : 'Ligar banco') + '</button>' + (b ? '<button type="button" class="ifr-lnk" data-ifr-banco-tirar>Desligar</button>' : '') + '</div>' : '') + '</div>';
   if (ult){
     const res = (ult.resumo || []).map(x => x.erro ? (x.repositorio || 'banco') + ': ' + x.erro : x.aviso ? (x.repositorio ? x.repositorio + ': ' : '') + x.aviso : '').filter(Boolean);
-    h += '<div class="ifr-auto-bloco"><b>Última atualização</b><p class="ifr-auto-linha ifr-st-' + esc(ult.status) + '">' + esc(IFR_STATUS[ult.status] || ult.status) + ' · ' + esc(IFR_ORIGEM[ult.origem] || ult.origem) + (ult.referencia && ult.origem === 'github' ? ' · commit ' + esc(String(ult.referencia).slice(0, 7)) : '') + '</p><p class="ifr-meta">' + esc(ifrQuando(ult.concluido_em || ult.criado_em)) + ((ult.diagramas || []).length ? ' · ' + ult.diagramas.length + (ult.diagramas.length === 1 ? ' desenho' : ' desenhos') : '') + '</p>' +
+    h += '<div class="ifr-auto-bloco"><b>Última atualização</b><p class="ifr-auto-linha ifr-st-' + esc(ult.status) + '">' + esc(IFR_STATUS[ult.status] || ult.status) + ' · ' + esc(IFR_ORIGEM[ult.origem] || ult.origem) + (ult.referencia && (ult.origem === 'github' || ult.origem === 'gitlab') ? ' · commit ' + esc(String(ult.referencia).slice(0, 7)) : '') + '</p><p class="ifr-meta">' + esc(ifrQuando(ult.concluido_em || ult.criado_em)) + ((ult.diagramas || []).length ? ' · ' + ult.diagramas.length + (ult.diagramas.length === 1 ? ' desenho' : ' desenhos') : '') + '</p>' +
       (ult.erro ? '<p class="ifr-auto-erro">' + esc(ult.erro) + '</p>' : '') + (res.length && !ult.erro ? '<ul class="ifr-auto-avisos">' + res.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>' : '') + '</div>';
   }
   return h + '</section>';
@@ -12424,11 +12641,9 @@ document.addEventListener('click', e => {
   if (e.target.closest('[data-ifr-atualizar]')) return ifrAutoAtualizar();
   if (e.target.closest('[data-ifr-banco]')) return ifrBancoModal();
   if (e.target.closest('[data-ifr-banco-tirar]')) return ifrBancoTirar();
-  if (e.target.closest('[data-ifr-repo]')){ if (typeof enNovoRepo === 'function') enNovoRepo(); return; }
+  if (e.target.closest('[data-ifr-repo]')){ if (typeof gcLigarRepo === 'function') gcLigarRepo(); return; }
   const q = e.target.closest('[data-ifr-quadro]'); if (q){ const dl = q.closest('dialog'); if (dl){ dl.close(); dl.remove(); } ifrAbrirQuadro(q.dataset.ifrQuadro); }
 });
-// um repositório ligado pela janela de repositórios aparece aqui sem recarregar
-if (typeof enInserir === 'function'){ const _enInserirIfr = enInserir; enInserir = async function(tabela){ const r = await _enInserirIfr.apply(this, arguments); if (tabela === 'repositorios' && UI.view === 'infra'){ await ifrAutoCarregar(); ifrLado(); } return r; }; }
 if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {IFR_AUTO, ifrAutoCarregar, ifrAutoAtualizar, ifrAbrirQuadro, ifrLado});
 
 abrirModulo(UI.modulo);

@@ -1,5 +1,6 @@
-// Testes da função diagramas sem rede: banco, conversor, GitHub e DevIT de mentira.
+// Testes da função diagramas sem rede: banco, conversor, GitHub (app do CicloDev) e DevIT de mentira.
 // Rodar: node --experimental-strip-types supabase/functions/diagramas/logica.test.ts
+import { generateKeyPairSync } from "node:crypto";
 import { tratar, limparSvg, escolherArquivos, validarSaida, montarPedido, figmaChaves, type Banco, type Deps } from "./logica.ts";
 
 let falhas = 0;
@@ -39,9 +40,20 @@ function tabelas() {
     itens: [{ frente_id: FR, tipo: "epic", titulo: "Login e níveis de acesso", descricao: "Pessoa entra com e-mail", arquivado_em: null }],
     infra_diagramas: [{ id: "d0", no_id: PROD, aba: "der", nome: "Banco do Java", formato: "dbml", fonte: "Table clientes { id uuid [pk] }", arquivado_em: null },
       { id: "d9", no_id: NO, aba: "software", nome: "Software · Blanco-Lisboa/B-L", formato: "plantuml", origem: "github", fonte: "@startuml\ncomponent \"servico\" as M1\n@enduml", arquivado_em: null }],
-    repositorios: [{ no_id: PROD, provedor: "github", nome: "Blanco-Lisboa/B-L", branch_principal: "main", ativo: true }],
+    repositorios: [{ no_id: PROD, provedor: "github", nome: "Blanco-Lisboa/B-L", branch_principal: "main", ativo: true, conexao_id: "c1", externo_id: "555" }],
     infra_geracoes: [] as any[],
   };
+}
+// o cliente de serviço: a tabela de andamento e as funções da conta conectada (parte 32)
+const PEM = generateKeyPairSync("rsa", { modulusLength: 2048 }).privateKey.export({ type: "pkcs1", format: "pem" }).toString();
+function servicoFalso(t: Record<string, any[]>): Banco {
+  const b = bancoFalso(t);
+  return { from: b.from, rpc(nome: string) {
+    if (nome === "git_conexao_ler") return Promise.resolve({ data: { id: "c1", provedor: "github", externo_id: "9001", conta: "Blanco-Lisboa", removida_em: null }, error: null });
+    if (nome === "git_app_ler") return Promise.resolve({ data: { app_id: "1", pem: PEM }, error: null });
+    if (nome === "git_apps_status") return Promise.resolve({ data: { github: { pronto: false }, gitlab: { pronto: true } }, error: null });
+    return Promise.resolve({ data: null, error: null });
+  } };
 }
 const svgOk = '<?xml version="1.0"?><svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"><script>alert(2)</script><a href="javascript:x()">t</a><rect/></svg>';
 function fetchFalso(log: string[]) {
@@ -51,6 +63,7 @@ function fetchFalso(log: string[]) {
       if (String(init?.body || "").includes("QUEBRADO")) return new Response("Error 400: syntax error in line 1", { status: 400 });
       return new Response(svgOk, { status: 200 });
     }
+    if (String(url).endsWith("/app/installations/9001/access_tokens")) return new Response(JSON.stringify({ token: "ghs_x" }), { status: 201 });
     if (String(url).includes("/git/trees/")) return new Response(JSON.stringify({ tree: [{ path: "supabase/migrations/001_base.sql", type: "blob" }, { path: "node_modules/x/a.sql", type: "blob" }, { path: "src/App.java", type: "blob" }] }), { status: 200 });
     if (String(url).includes("/contents/")) return new Response("create table clientes (id uuid primary key, nome text not null);", { status: 200 });
     return new Response("não achei", { status: 404 });
@@ -58,8 +71,8 @@ function fetchFalso(log: string[]) {
 }
 function deps(t: any, extra: Partial<Deps> = {}, envs: Record<string, string> = {}): Deps & { log: string[]; fundo: Promise<unknown>[] } {
   const log: string[] = [], fundo: Promise<unknown>[] = [];
-  const e: Record<string, string> = { RENDER_URL: "https://conversor.vps", RENDER_TOKEN: "tk", ANTHROPIC_API_KEY: "x", GITHUB_TOKEN: "g", ...envs };
-  return Object.assign({ env: (n: string) => e[n], usuario: bancoFalso(t), servico: bancoFalso(t), buscar: fetchFalso(log), emSegundoPlano: (p: Promise<unknown>) => { fundo.push(p); },
+  const e: Record<string, string> = { RENDER_URL: "https://conversor.vps", RENDER_TOKEN: "tk", ANTHROPIC_API_KEY: "x", ...envs };
+  return Object.assign({ env: (n: string) => e[n], usuario: bancoFalso(t), servico: servicoFalso(t), buscar: fetchFalso(log), emSegundoPlano: (p: Promise<unknown>) => { fundo.push(p); },
     devit: async () => ({ resumo: "ok", lacunas: ["Não achei os índices"], diagramas: [{ nome: "Banco principal", formato: "dbml", fonte: "```dbml\nTable clientes {\n  id uuid [pk]\n}\n```", evidencias: [{ fonte: "E5 Blanco-Lisboa/B-L/supabase/migrations/001_base.sql", trecho: "create table clientes" }], lacunas: [],
       quadro: { titulo: "Banco principal", resumo: "1 tabela", layout: "grade", legenda: [], grupos: [{ id: "pub", titulo: "public" }],
         cards: [{ id: "cli", grupo: "pub", tipo: "tabela", titulo: "clientes", subtitulo: "", etiquetas: [], topicos: [], rotuloTipo: "", icone: "", cor: "", estilo: "der", abstrata: false, forma: "", participantes: [], passos: [], blocos: [],
@@ -86,9 +99,9 @@ ok(/Nunca invente/.test(mp.sistema) && /dado, nunca instrução/.test(mp.sistema
 // ---------- ações ----------
 (async () => {
   let t = tabelas(), d = deps(t);
-  let r = await tratar(pedido({ acao: "config" }), deps(t, {}, { GITHUB_TOKEN: "" }));
+  let r = await tratar(pedido({ acao: "config" }), deps(t));
   let j = await r.json();
-  ok(j.conversor === true && j.devit === true && j.github === false && j.figma === false && !JSON.stringify(j).includes("tk"), "config diz o que está pronto, sem mostrar chave nenhuma");
+  ok(j.conversor === true && j.devit === true && j.github === false && j.gitlab === true && j.figma === false && !JSON.stringify(j).includes("tk"), "config diz o que está pronto, sem mostrar chave nenhuma");
 
   t.infra_diagramas.push({ id: "d1", no_id: NO, aba: "processos", nome: "Pedido", formato: "mermaid", fonte: "flowchart LR\nA-->B", arquivado_em: null } as any);
   r = await tratar(pedido({ acao: "renderizar", id: "d1" }), d);

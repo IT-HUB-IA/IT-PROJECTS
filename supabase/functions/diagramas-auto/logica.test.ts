@@ -1,9 +1,10 @@
-// Testes da função diagramas-auto com GitHub, conversor e banco de mentira. Rodar da raiz do repositório:
+// Testes da função diagramas-auto com GitHub, GitLab, conversor e banco de mentira. Rodar da raiz do repositório:
 //   NODE_PATH=<pasta com o pacote yaml> node --experimental-strip-types supabase/functions/diagramas-auto/logica.test.ts
 import { createRequire } from 'node:module';
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { generateKeyPairSync } from 'node:crypto';
 import { tratar, rodar, limparErro } from './logica.ts';
 import type { DepsAuto } from './logica.ts';
 import type { Estrutura } from './gerar.ts';
@@ -25,6 +26,15 @@ const arquivos: Record<string, string> = {
 for (const [k, v] of Object.entries(arquivos)) { mkdirSync((raiz + '/' + k).replace(/\/[^/]+$/, ''), { recursive: true }); writeFileSync(raiz + '/' + k, v); }
 execFileSync('tar', ['-czf', pasta + '/pacote.tgz', '-C', pasta, 'it-hub-loja-abc1234']);
 const pacote = readFileSync(pasta + '/pacote.tgz');
+// as contas conectadas (parte 32): uma instalação do app do GitHub e uma conta do GitLab
+const PEM = generateKeyPairSync('rsa', { modulusLength: 2048 }).privateKey.export({ type: 'pkcs1', format: 'pem' }).toString();
+const CONTAS: Record<string, any> = {
+  cgh: { id: 'cgh', provedor: 'github', externo_id: '9001', conta: 'it-hub', removida_em: null },
+  cgl: { id: 'cgl', provedor: 'gitlab', externo_id: '77', conta: 'william', removida_em: null, tokens: { acesso: 'gl-acesso', renovacao: null, expira_em: null } },
+  fora: { id: 'fora', provedor: 'github', externo_id: '1', conta: 'antiga', removida_em: '2026-09-01' },
+};
+const APPS: Record<string, any> = { github: { app_id: '123', pem: PEM }, gitlab: { base: 'https://gitlab.com' } };
+const GH = (nome = 'it-hub/loja', branch = 'main') => ({ id: 'r', nome, branch, provedor: 'github', conexao_id: 'cgh', externo_id: '555' });
 
 const ESTR: Estrutura = { papeis: [{ nome: 'authenticated', ignora_rls: false }], tabelas: [
   { esquema: 'public', nome: 'clientes', tipo: 'r', rls: true, rls_forcado: false, nota: null, colunas: [{ nome: 'id', tipo: 'uuid', nao_nulo: true, padrao: null, nota: null }],
@@ -36,11 +46,13 @@ type Chamada = { nome: string; args: any };
 function montar(o: { fila?: any[][]; devidos?: any[]; env?: Record<string, string>; banco?: () => Promise<Estrutura>; render?: (u: string) => Response; hashAnterior?: string; agora?: () => number; orcamentoMs?: number } = {}) {
   const chamadas: Chamada[] = [], buscas: string[] = [], fundo: Promise<unknown>[] = [];
   const fila = (o.fila || []).slice(); let n = 0, hash = o.hashAnterior || null;
-  const env = Object.assign({ GITHUB_TOKEN: 'gh-teste', RENDER_URL: 'https://conversor.exemplo' }, o.env || {});
+  const env = Object.assign({ RENDER_URL: 'https://conversor.exemplo' }, o.env || {});
   const d: DepsAuto = {
     env: k => env[k as keyof typeof env],
     rpc: async (nome, args) => {
       chamadas.push({ nome, args });
+      if (nome === 'git_conexao_ler') return { data: CONTAS[args.p_id] || null, error: null };
+      if (nome === 'git_app_ler') return { data: APPS[args.p_provedor] || null, error: null };
       if (nome === 'infra_auto_confere') return { data: args.p_segredo === SEGREDO, error: null };
       if (nome === 'infra_auto_proximos') return { data: fila.shift() || [], error: null };
       if (nome === 'infra_auto_bancos_devidos') return { data: o.devidos || [], error: null };
@@ -51,8 +63,9 @@ function montar(o: { fila?: any[][]; devidos?: any[]; env?: Record<string, strin
       return { data: null, error: null };
     },
     buscar: (async (u: string, init?: RequestInit) => {
+      if (String(u).endsWith('/access_tokens')) return new Response(JSON.stringify({ token: 'ghs_x' }), { status: 201 });
       buscas.push(String(u));
-      if (String(u).startsWith('https://api.github.com/')) return new Response(new Blob([pacote]).stream(), { status: 200 });
+      if (String(u).startsWith('https://api.github.com/') || String(u).startsWith('https://gitlab.com/api/v4/')) return new Response(new Blob([pacote]).stream(), { status: 200 });
       if (o.render) return o.render(String(u));
       return new Response('<svg xmlns="http://www.w3.org/2000/svg"><script>x</script><text>ok</text></svg>', { status: 200 });
     }) as typeof fetch,
@@ -75,7 +88,7 @@ const pedir = (headers: Record<string, string> = {}, metodo = 'POST') => new Req
   ok(t.fundo.length === 0 && !t.de('infra_auto_proximos').length, 'sem autorização, nada roda');
 }
 {
-  const t = montar({ fila: [[{ id: 'p1', no_id: 'prod', origem: 'github', referencia: 'abc1234def', repositorios: [{ id: 'r', nome: 'it-hub/loja', branch: 'main', provedor: 'github' }], banco: null }]] });
+  const t = montar({ fila: [[{ id: 'p1', no_id: 'prod', origem: 'github', referencia: 'abc1234def', repositorios: [GH()], banco: null }]] });
   const r = await tratar(pedir({ 'x-diagramas-segredo': SEGREDO }), t.d);
   ok(r.status === 202, 'segredo certo: responde 202 na hora e trabalha em segundo plano');
   await Promise.all(t.fundo);
@@ -100,25 +113,25 @@ const pedir = (headers: Record<string, string> = {}, metodo = 'POST') => new Req
 // ---------- "Atualizar agora": branch principal, GitLab avisado, banco lido junto ----------
 {
   const t = montar({ fila: [[{ id: 'm1', no_id: 'prod', origem: 'manual', referencia: null, repositorios: [
-    { id: 'r1', nome: 'it-hub/loja', branch: 'producao', provedor: 'github' }, { id: 'r2', nome: 'it-hub/antigo', branch: 'main', provedor: 'gitlab' }], banco: { esquemas: ['public'], conexao: CONEXAO } }]] });
+    { ...GH('it-hub/loja', 'producao'), id: 'r1' }, { id: 'r2', nome: 'it-hub/grupo/app', branch: 'main', provedor: 'gitlab', conexao_id: 'cgl', externo_id: '888' }], banco: { esquemas: ['public'], conexao: CONEXAO } }]] });
   const r = await rodar(t.d);
   ok(r.pedidos === 1 && t.buscas[0].endsWith('/tarball/producao'), 'Atualizar agora baixa o branch principal do repositório');
   ok(t.de('infra_auto_gravar').find(x => x.args.p_chave === 'github:it-hub/loja:software')!.args.p_referencia === 'abc1234', 'e guarda o commit que veio no pacote');
   const c = t.de('infra_auto_concluir')[0].args;
-  ok(c.p_resumo.some((x: any) => x.repositorio === 'it-hub/antigo' && /GitLab/.test(x.aviso)) && !t.buscas.some(u => /antigo/.test(u)), 'repositório do GitLab é avisado e não é baixado');
+  ok(t.buscas.includes('https://gitlab.com/api/v4/projects/888/repository/archive.tar.gz?sha=main') && t.de('infra_auto_gravar').some(x => x.args.p_chave === 'gitlab:it-hub/grupo/app:software' && x.args.p_origem === 'gitlab'), 'o GitLab também é lido: baixa o pacote pelo número do projeto e grava com a origem gitlab');
   ok(t.de('infra_auto_banco_lido')[0].args.p_abrir === false, 'o banco lido dentro do pedido não abre outro pedido');
   ok(t.de('infra_auto_gravar').some(x => x.args.p_chave === 'banco:der:public' && x.args.p_aba === 'der' && x.args.p_origem === 'banco') && t.de('infra_auto_gravar').some(x => x.args.p_chave === 'banco:acesso' && x.args.p_aba === 'seguranca'), 'o banco dá o DER e o mapa de acesso');
   const der = t.de('infra_auto_quadro').find(x => x.args.p_chave === 'banco:der:public')!.args.p_doc;
   ok(der.nodes.some((n: any) => n.tipo === 'tabela' && n.titulo === 'clientes' && n.linhas.some((l: any) => l.nome === 'id' && l.chave === 'pk')), 'o quadro do DER tem a tabela com a coluna PK');
-  ok(c.p_status === 'pronto' && c.p_prefixos.join() === 'github:it-hub/loja:,banco:', 'fecha pronto, com as duas famílias');
+  ok(c.p_status === 'pronto' && c.p_prefixos.join() === 'github:it-hub/loja:,gitlab:it-hub/grupo/app:,banco:', 'fecha pronto, com as três famílias');
 }
 
 // ---------- erros: sem chave, banco fora do ar (a senha nunca aparece), conversor fora ----------
 {
-  const t = montar({ env: { GITHUB_TOKEN: '' }, fila: [[{ id: 'p2', no_id: 'prod', origem: 'github', referencia: 'x', repositorios: [{ id: 'r', nome: 'it-hub/loja', branch: 'main', provedor: 'github' }], banco: null }]] });
+  const t = montar({ fila: [[{ id: 'p2', no_id: 'prod', origem: 'github', referencia: 'x', repositorios: [{ ...GH(), conexao_id: 'fora' }], banco: null }]] });
   await rodar(t.d);
   const c = t.de('infra_auto_concluir')[0].args;
-  ok(c.p_status === 'erro' && /GITHUB_TOKEN/.test(c.p_erro) && !t.buscas.length, 'sem a chave do GitHub: o pedido fecha com erro dizendo qual chave falta');
+  ok(c.p_status === 'erro' && /desconectada/.test(c.p_erro) && !t.buscas.length, 'conta desconectada: o pedido fecha com erro dizendo o motivo, sem baixar nada');
 }
 {
   const t = montar({ banco: async () => { throw new Error('connection to ' + CONEXAO + ' failed: password authentication failed'); },
@@ -130,13 +143,13 @@ const pedir = (headers: Record<string, string> = {}, metodo = 'POST') => new Req
 }
 ok(limparErro(new Error('falhou em postgres://u:p@h/db agora')) === 'falhou em [endereço do banco] agora', 'qualquer endereço postgres:// sai da mensagem');
 {
-  const t = montar({ env: { RENDER_URL: '' }, fila: [[{ id: 'p3', no_id: 'prod', origem: 'github', referencia: 'abc', repositorios: [{ id: 'r', nome: 'it-hub/loja', branch: 'main', provedor: 'github' }], banco: null }]] });
+  const t = montar({ env: { RENDER_URL: '' }, fila: [[{ id: 'p3', no_id: 'prod', origem: 'github', referencia: 'abc', repositorios: [GH()], banco: null }]] });
   await rodar(t.d);
   const im = t.de('infra_auto_imagem');
   ok(im.length === 3 && im.every(x => !x.args.p_svg && /RENDER_URL/.test(x.args.p_erro)) && t.de('infra_auto_concluir')[0].args.p_status === 'pronto', 'sem o conversor: os desenhos (texto) são gravados e cada um avisa que falta RENDER_URL');
 }
 {
-  const t = montar({ render: () => new Response('Error 400: Syntax error in line 3', { status: 400 }), fila: [[{ id: 'p4', no_id: 'prod', origem: 'github', referencia: 'abc', repositorios: [{ id: 'r', nome: 'it-hub/loja', branch: 'main', provedor: 'github' }], banco: null }]] });
+  const t = montar({ render: () => new Response('Error 400: Syntax error in line 3', { status: 400 }), fila: [[{ id: 'p4', no_id: 'prod', origem: 'github', referencia: 'abc', repositorios: [GH()], banco: null }]] });
   await rodar(t.d);
   ok(t.de('infra_auto_imagem').every(x => /400/.test(x.args.p_erro)), 'conversor recusou: o erro dele fica no desenho');
 }

@@ -4,7 +4,6 @@
    (ou a uma aplicação dele). Camada nova, depois do tarefas.js. Prefixo en.
    ===================================================================== */
 const EN = {repos:null, pubs:null, carregando:null, atividade:null};
-const EN_URL_PADRAO = 'https://tfcvoszeewmpghgxztuy.supabase.co';
 const enSb = () => COM_BANCO ? window.ciclodevBanco : null;
 const enLocal = () => { D.dev = D.dev || {repos:[], pubs:[], links:[]}; return D.dev; };
 const EN_LOCAL = {repositorios:'repos', publicacoes:'pubs', codigo_vinculos:'links'};
@@ -78,8 +77,6 @@ function enNos(chave){
 const enProjeto = chave => { const p = cadeia(chave).project; return p ? 'project:' + p.id : chave; };
 const enVersoes = chave => marcosDoEscopo(chave).filter(m => m.tipo === 'release').sort((a, b) => String(b.entregue || b.data).localeCompare(String(a.entregue || a.data)));
 const enNomeNo = id => { const k = ['projects','products','apps','ws','clients'].map(l => byId(l, id) && ({projects:'project', products:'product', apps:'app', ws:'ws', clients:'client'}[l] + ':' + id)).find(Boolean); return k ? nomeDe(k) : 'Ponto excluído'; };
-const enUrlBanco = () => { const sb = enSb(); return (sb && sb.supabaseUrl) || EN_URL_PADRAO; };
-const enWebhook = r => enUrlBanco().replace(/\/$/, '') + '/functions/v1/git-webhook?r=' + r.id;
 function enHa(ts){ if (!ts) return ''; const m = Math.round((Date.now() - new Date(ts).getTime()) / 60000); if (m < 1) return 'agora'; if (m < 60) return 'há ' + m + ' min'; const h = Math.round(m / 60); if (h < 24) return 'há ' + h + ' h'; const d = Math.round(h / 24); return d === 1 ? 'ontem' : 'há ' + d + ' dias'; }
 const enData = ts => ts ? new Date(ts).toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'}) : '';
 function enCopiar(txt, botao){
@@ -102,12 +99,6 @@ function enLerLink(url){
   if ((m = p.match(/^\/(.+?)\/(?:-\/)?commits?\/([0-9a-f]{7,40})/i))) return {provedor:gl ? 'gitlab' : 'github', tipo:'commit', ref:m[2], repo:m[1], url:u.href};
   if ((m = p.match(/^\/(.+?)\/(?:-\/)?tree\/(.+)$/))) return {provedor:gl ? 'gitlab' : 'github', tipo:'branch', ref:decodeURIComponent(m[2]), repo:m[1], url:u.href};
   return null;
-}
-function enLerRepo(url){
-  let u; try { u = new URL(url.trim().replace(/\.git$/, '')); } catch(e){ const m = String(url).trim().match(/^([A-Za-z0-9_.-]+(?:\/[A-Za-z0-9_.-]+)+)$/); return m ? {nome:m[1]} : null; }
-  const nome = u.pathname.replace(/^\/+|\/+$/g, '').replace(/\/-\/.*$/, '').replace(/\/(tree|blob|pulls?|issues|merge_requests)\/.*$/, '');
-  if (!/^[A-Za-z0-9_.-]+(\/[A-Za-z0-9_.-]+)+$/.test(nome)) return null;
-  return {nome, provedor:/gitlab/i.test(u.host) ? 'gitlab' : /github/i.test(u.host) ? 'github' : null, url:u.origin + '/' + nome};
 }
 
 /* ---------- notas de versão a partir dos itens concluídos ---------- */
@@ -184,8 +175,8 @@ function enHTML(chave){
     '<small>' + esc(enData(p.publicado_em)) + ' · ' + esc(EN_ORIGEM[p.origem] || p.origem) + (p.url ? ' · <a href="' + esc(p.url) + '" target="_blank" rel="noopener noreferrer">abrir</a>' : '') + (p.observacao ? '<br>' + esc(p.observacao) : '') + '</small></div>' + lixo('data-en-excluir-pub', p.id, 'a publicação ' + (p.versao || '')) + '</li>';
   // repositórios: uma linha por repositório
   const linhaR = r => '<li class="en2-repo"><div class="en2-repo-t">' + (EN_ICO[r.provedor] || '') + '<div><a href="' + esc(r.url || (r.provedor === 'gitlab' ? 'https://gitlab.com/' : 'https://github.com/') + r.nome) + '" target="_blank" rel="noopener noreferrer"><b>' + esc(r.nome) + '</b></a>' +
-      '<small class="' + (r.ultimo_erro ? 'en2-erro' : '') + '">' + (r.ultimo_erro ? esc(r.ultimo_erro) : r.ultimo_evento_em ? 'Último aviso: ' + esc(r.ultimo_evento) + ', ' + esc(enHa(r.ultimo_evento_em)) : 'Ainda sem avisos. Veja "Como ligar"') + '</small></div>' + lixo('data-en-excluir-repo', r.id, r.nome) + '</div>' +
-    '<div class="en2-repo-a">' + (pode ? '<label class="en-liga"><input type="checkbox" data-en-mover="' + r.id + '"' + (r.mover_status ? ' checked' : '') + '> Status anda sozinho</label>' : '') + '<button type="button" class="btn fant peq" data-en-como="' + r.id + '">Como ligar</button></div></li>';
+      '<small class="' + (r.ultimo_erro ? 'en2-erro' : '') + '">' + (r.ultimo_erro ? esc(r.ultimo_erro) : r.ultimo_evento_em ? 'Último aviso: ' + esc(r.ultimo_evento) + ', ' + esc(enHa(r.ultimo_evento_em)) : 'Ainda sem avisos. Eles chegam sozinhos a cada push, pull request ou publicação') + '</small></div>' + lixo('data-en-excluir-repo', r.id, r.nome) + '</div>' +
+    '<div class="en2-repo-a">' + (pode ? '<label class="en-liga"><input type="checkbox" data-en-mover="' + r.id + '"' + (r.mover_status ? ' checked' : '') + '> Status anda sozinho</label>' : '') + '</div></li>';
   const caixa = (tit, ajuda, corpo, vazio) => '<section class="en2-caixa"><header><h3>' + tit + '</h3><p>' + ajuda + '</p></header>' + (corpo || '<p class="en2-vazio">' + vazio + '</p>') + '</section>';
   return '<div class="en2">' + (EN.erro ? '<p class="aviso-faixa">Não deu para ler tudo do banco: ' + esc(EN.erro) + '</p>' : '') + trilho +
     '<div class="en2-grade"><div class="en2-col">' +
@@ -193,7 +184,7 @@ function enHTML(chave){
       '<section class="en2-caixa"><header><h3>Atividade de código</h3><p>O que chegou do repositório, com o item de cada um.</p></header><div id="en-atividade"><p class="en2-vazio">Lendo...</p></div></section>' +
     '</div><div class="en2-col">' +
       caixa('No ar', 'Cada vez que algo foi publicado: qual versão, onde e quando.', pubs.length ? '<ul class="en2-lista">' + pubs.slice(0, 12).map(linhaP).join('') + '</ul>' : '', 'Nada publicado ainda.') +
-      caixa('Repositórios', 'O código no GitHub ou no GitLab.', repos.length ? '<ul class="en2-lista">' + repos.map(linhaR).join('') + '</ul>' : '', 'Nenhum repositório ligado. Leva um minuto em "Ligar repositório".') +
+      caixa('Repositórios', 'O código no GitHub ou no GitLab.', repos.length ? '<ul class="en2-lista">' + repos.map(linhaR).join('') + '</ul>' : '', 'Nenhum repositório ligado. Em "Ligar repositório", conecte a conta do GitHub ou do GitLab e escolha o repositório.') +
     '</div></div></div>';
 }
 async function enCarregarAtividade(chave){
@@ -300,59 +291,7 @@ function enNovaPublicacao(marcoId){
   dlg.addEventListener('change', ver); ver();
 }
 
-/* ---------- repositórios ---------- */
-function enNovoRepo(){
-  const proj = enProjeto(UI.sel);
-  // cada produto tem a própria ligação com o GitHub: os desenhos automáticos do produto saem só dos repositórios dele
-  const onde = [[proj, nomeDe(proj) + ' (projeto inteiro)']]
-    .concat(D.products.filter(p => 'project:' + p.project === proj).map(p => ['product:' + p.id, nomeDe('product:' + p.id) + ' (só este produto)']))
-    .concat(D.apps.filter(a => 'project:' + a.project === proj).map(a => ['app:' + a.id, nomeDe('app:' + a.id) + ' (só esta aplicação)']));
-  const dlg = modal('Ligar repositório', '<p class="sec tf-nota" style="margin-top:0">Cole o endereço do repositório. Depois é só colar um endereço e um segredo no GitHub ou no GitLab, e o código passa a aparecer nos itens.</p>' +
-    '<div class="grade-form"><label class="lb largo">Endereço do repositório<input class="campo" id="en-r-u" placeholder="https://github.com/empresa/projeto"></label>' +
-    '<label class="lb">Onde fica<select class="sel" id="en-r-p"><option value="github">GitHub</option><option value="gitlab">GitLab</option></select></label>' +
-    '<label class="lb">Ligar a<select class="sel" id="en-r-o">' + onde.map(([k, n]) => '<option value="' + k + '"' + (k === UI.sel ? ' selected' : '') + '>' + esc(n) + '</option>').join('') + '</select></label>' +
-    '<label class="lb">Branch principal<input class="campo" id="en-r-b" value="main"></label></div>' +
-    '<div class="tf-opcoes"><label><input type="checkbox" id="en-r-m" checked> Mudar o status dos itens sozinho (branch: Em andamento, PR: Em revisão, PR mesclado: Concluído)</label></div>' +
-    '<p class="tf-previa" id="en-r-v"></p>',
-    [{txt:'Cancelar', cls:'sec'}, {txt:'Ligar', acao:dl => {
-      const r = enLerRepo($('#en-r-u', dl).value); if (!r){ toast('Cole o endereço do repositório, como https://github.com/empresa/projeto'); return false; }
-      const provedor = $('#en-r-p', dl).value, no = $('#en-r-o', dl).value.split(':')[1];
-      if ((EN.repos || []).some(x => x.no_id === no && x.provedor === provedor && x.nome.toLowerCase() === r.nome.toLowerCase())){ toast('Esse repositório já está ligado aqui'); return false; }
-      enInserir('repositorios', {no_id:no, provedor, nome:r.nome, url:r.url || null, branch_principal:$('#en-r-b', dl).value.trim() || 'main', mover_status:$('#en-r-m', dl).checked}).then(novo => {
-        if (!novo) return; EN.repos = (EN.repos || []).concat(novo); if (UI.view === 'entregas') rView(); enComoLigar(novo.id, true);
-      });
-    }}]);
-  dlg.addEventListener('input', e => { if (e.target.id !== 'en-r-u') return; const r = enLerRepo(e.target.value); if (r && r.provedor) $('#en-r-p', dlg).value = r.provedor; $('#en-r-v', dlg).textContent = r ? 'Repositório: ' + r.nome : ''; });
-}
-async function enComoLigar(id, novo){
-  const r = (EN.repos || []).find(x => x.id === id); if (!r) return;
-  let seg = '';
-  if (COM_BANCO){ const {data, error} = await enSb().rpc('repositorio_segredo', {p_repo:id, p_trocar:false}); if (error){ toast('Não deu para ler o segredo: ' + tfErro(error)); return; } seg = data || ''; }
-  else seg = r._segredo || (r._segredo = Array.from({length:48}, () => '0123456789abcdef'[Math.floor(Math.random() * 16)]).join(''));
-  const url = enWebhook(r), gh = r.provedor === 'github';
-  const campo = (rot, val, k) => '<div class="en-copia"><span class="rotulo-mini">' + rot + '</span><code id="en-c-' + k + '">' + esc(val) + '</code><button type="button" class="btn sec peq" data-en-copiar="' + k + '">' + EN_ICO.copiar + 'Copiar</button></div>';
-  const passos = gh
-    ? ['No GitHub, abra o repositório <b>' + esc(r.nome) + '</b> e vá em <b>Settings › Webhooks › Add webhook</b>.', 'Em <b>Payload URL</b>, cole o endereço abaixo.', 'Em <b>Content type</b>, escolha <b>application/json</b>.', 'Em <b>Secret</b>, cole o segredo abaixo.',
-       'Em <b>Which events</b>, escolha <b>Let me select individual events</b> e marque: <b>Branch or tag creation</b>, <b>Branch or tag deletion</b>, <b>Pushes</b>, <b>Pull requests</b>, <b>Releases</b> e <b>Deployment statuses</b>.', 'Deixe <b>Active</b> marcado e clique em <b>Add webhook</b>. O GitHub manda um teste na hora: este cartão passa a mostrar "Último aviso recebido: ping".']
-    : ['No GitLab, abra o projeto <b>' + esc(r.nome) + '</b> e vá em <b>Settings › Webhooks › Add new webhook</b>.', 'Em <b>URL</b>, cole o endereço abaixo.', 'Em <b>Secret token</b>, cole o segredo abaixo.',
-       'Em <b>Trigger</b>, marque: <b>Push events</b> (todos os branches), <b>Merge request events</b>, <b>Releases events</b> e <b>Deployment events</b>.', 'Clique em <b>Add webhook</b>. Para testar, use <b>Test › Push events</b>: este cartão passa a mostrar o último aviso recebido.'];
-  const dlg = modal((novo ? 'Repositório ligado. ' : '') + 'Como ligar no ' + (gh ? 'GitHub' : 'GitLab'), '<ol class="en-passos">' + passos.map(p => '<li>' + p + '</li>').join('') + '</ol>' + campo('Endereço', url, 'u') + campo('Segredo', seg, 's') +
-    '<p class="sec tf-nota">Guarde o segredo só no ' + (gh ? 'GitHub' : 'GitLab') + '. Ele garante que só o seu repositório consegue mandar avisos para cá.' + (COM_BANCO ? '' : ' (No modo de exemplo nada chega de verdade.)') + '</p>' +
-    '<p class="sec tf-nota"><b>Como o código liga ao item:</b> use a chave do item (por exemplo <code>BL-37</code>) no nome do branch, na mensagem do commit ou no título do pull request. No item tem um botão que copia o nome do branch pronto.</p>',
-    [podeEditar() && COM_BANCO ? {txt:'Trocar o segredo', cls:'fant', acao:() => { enTrocarSegredo(r); }} : null, {txt:'Pronto'}].filter(Boolean));
-  dlg.addEventListener('click', e => { const b = e.target.closest('[data-en-copiar]'); if (!b) return; const el = $('#en-c-' + b.dataset.enCopiar, dlg); enCopiar(el.textContent, b); const s = document.createRange(); s.selectNodeContents(el); const w = getSelection(); w.removeAllRanges(); w.addRange(s); });
-}
-function enTrocarSegredo(r){
-  modal('Trocar o segredo de ' + esc(r.nome) + '?', '<p style="margin:0">O segredo atual para de valer na hora. Depois de trocar, cole o novo no ' + (r.provedor === 'gitlab' ? 'GitLab' : 'GitHub') + ', senão os avisos são recusados.</p>',
-    [{txt:'Cancelar', cls:'sec'}, {txt:'Trocar', cls:'acento', acao:() => { enSb().rpc('repositorio_segredo', {p_repo:r.id, p_trocar:true}).then(({error}) => { if (error){ toast('Não deu para trocar: ' + tfErro(error)); return; } enComoLigar(r.id); }); }}]);
-}
-function enExcluirRepo(id){
-  const r = (EN.repos || []).find(x => x.id === id); if (!r) return;
-  tfExcluirPerguntaSimples('Excluir o repositório ' + esc(r.nome) + '?', 'Os branches, commits e pull requests que vieram dele saem dos itens. As publicações registradas continuam no histórico. Lembre de apagar o webhook no ' + (r.provedor === 'gitlab' ? 'GitLab' : 'GitHub') + ' também.', () => {
-    enApagar('repositorios', id).then(ok => { if (!ok) return; EN.repos = EN.repos.filter(x => x.id !== id); if (UI.view === 'entregas') rView(); tfAviso('Repositório ' + r.nome + ' excluído.', [], 4000); });
-  });
-}
-
+/* ---------- repositórios: ligar e desligar ficam em git.js (contas conectadas do GitHub e do GitLab) ---------- */
 /* ---------- no item: Desenvolvimento ---------- */
 function enCartaoItem(i, links, pode){
   const temRepo = (EN.repos || []).some(r => enNos('ws:' + i.ws).has(r.no_id));
@@ -387,12 +326,11 @@ document.addEventListener('click', e => {
   let b;
   if (e.target.closest('[data-en-nova-versao]')){ enNovaVersao(); return; }
   if (e.target.closest('[data-en-nova-pub]')){ enNovaPublicacao(null); return; }
-  if (e.target.closest('[data-en-novo-repo]')){ enNovoRepo(); return; }
+  if (e.target.closest('[data-en-novo-repo]')){ gcLigarRepo(); return; }
   if ((b = e.target.closest('[data-en-notas]'))){ enNotas(b.dataset.enNotas); return; }
   if ((b = e.target.closest('[data-en-publicar]'))){ enNovaPublicacao(b.dataset.enPublicar); return; }
   if ((b = e.target.closest('[data-en-excluir-versao]'))){ enExcluirVersao(b.dataset.enExcluirVersao); return; }
-  if ((b = e.target.closest('[data-en-como]'))){ enComoLigar(b.dataset.enComo); return; }
-  if ((b = e.target.closest('[data-en-excluir-repo]'))){ enExcluirRepo(b.dataset.enExcluirRepo); return; }
+  if ((b = e.target.closest('[data-en-excluir-repo]'))){ gcDesligarRepo(b.dataset.enExcluirRepo); return; }
   if ((b = e.target.closest('[data-en-excluir-pub]'))){ const id = b.dataset.enExcluirPub, p = (EN.pubs || []).find(x => x.id === id); if (!p) return;
     tfExcluirPerguntaSimples('Excluir o registro da publicação ' + esc(p.versao || '') + '?', 'Sai só do histórico do CicloDev. O que está no ar não muda.', () => {
       enApagar('publicacoes', id).then(ok => { if (!ok) return; EN.pubs = EN.pubs.filter(x => x.id !== id); if (UI.view === 'entregas') rView(); tfAviso('Registro excluído.', [], 3000); }); }); return; }
@@ -430,4 +368,4 @@ linhasDaTela = function(d){
   (L.marcos || []).forEach(r => { const m = mm.get(r.id); r.notas = m && m.notas ? m.notas : null; });
   return L;
 };
-if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {EN, enGerarNotas, enLerLink, enLerRepo, enBranch, abrirItem, rOperacoes});
+if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {EN, enGerarNotas, enLerLink, enBranch, abrirItem, rOperacoes});

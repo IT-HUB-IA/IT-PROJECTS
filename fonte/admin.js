@@ -93,7 +93,7 @@ function rAdmin(){
   if (!ADM.dono){ el.innerHTML = '<p class="vazio-linha">Só o dono do sistema abre este módulo.</p>'; return; }
   const topo = '<div class="topo-tela"><div><h1><span>Admin</span>' + I('Admin: painel do dono do sistema. Mostra quem usa, quanto usa e como o sistema está respondendo. Não mostra o conteúdo dos projetos de ninguém.') + '</h1><p class="lead">Usuários, cadastro, uso e desempenho do CicloDev.</p></div>' +
     '<div class="acoes"><label class="adm-per">Período <select class="sel peq" data-adm-dias>' + [7, 30, 90].map(d => '<option value="' + d + '"' + (ADM.dias === d ? ' selected' : '') + '>Últimos ' + d + ' dias</option>').join('') + '</select></label><button class="btn sec" type="button" data-adm-atualizar' + (ADM.carregando ? ' disabled' : '') + '>' + (ADM.carregando ? 'Atualizando…' : 'Atualizar') + '</button></div></div>';
-  const abas = '<div class="adm-abas" role="tablist">' + [['visao','Visão geral'],['usuarios','Usuários' + (ADM.usuarios ? ' (' + ADM.usuarios.length + ')' : '')],['ia','Permissões de IA'],['desempenho','Desempenho']].map(([k, n]) => '<button type="button" role="tab" aria-selected="' + (ADM.aba === k) + '" data-adm-aba="' + k + '">' + esc(n) + '</button>').join('') + '</div>';
+  const abas = '<div class="adm-abas" role="tablist">' + [['visao','Visão geral'],['usuarios','Usuários' + (ADM.usuarios ? ' (' + ADM.usuarios.length + ')' : '')],['ia','Permissões de IA'],['git','GitHub e GitLab'],['desempenho','Desempenho']].map(([k, n]) => '<button type="button" role="tab" aria-selected="' + (ADM.aba === k) + '" data-adm-aba="' + k + '">' + esc(n) + '</button>').join('') + '</div>';
   if (!ADM.resumo){
     el.innerHTML = topo + (ADM.erro ? '<p class="entrada-erro">Não foi possível ler os números: ' + esc(ADM.erro) + '</p>' : '<p class="vazio-linha">Lendo os números do banco…</p>');
     if (!ADM.carregando && !ADM.erro) admCarregar();
@@ -114,6 +114,8 @@ function rAdmin(){
     corpo = admTabelaUsuarios();
   } else if (ADM.aba === 'ia' && typeof iaAdminHTML === 'function'){
     corpo = iaAdminHTML();
+  } else if (ADM.aba === 'git' && typeof gcAdminHTML === 'function'){
+    corpo = gcAdminHTML();
   } else {
     corpo = '<div class="kpis">' + admKpi(admMs(R.carregar_ms_mediana), 'Carregar (tempo típico)') + admKpi(admMs(R.carregar_ms_p95), 'Carregar (95% abaixo de)', R.carregar_ms_p95 > 5000) + admKpi(admMs(R.salvar_ms_mediana), 'Salvar (tempo típico)') + admKpi(num(R.salvamentos_7d, 0), 'Salvamentos em 7 dias') + admKpi(num(R.erros_7d, 0), 'Erros em 7 dias', R.erros_7d > 0) + admKpi(num(R.banco_mb, 1) + ' MB', 'Tamanho do banco') + '</div>' +
       '<div class="graficos"><section class="grafico"><h3>Erros por dia</h3>' + admBarras(ADM.diario, 'erros', 'Erros') + '</section><section class="grafico"><h3>Tempo típico para carregar, por dia (ms)</h3>' + admBarras(ADM.diario, 'carregar_ms', 'Tempo para carregar') + '</section></div>' +

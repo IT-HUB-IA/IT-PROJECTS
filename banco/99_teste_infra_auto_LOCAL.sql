@@ -1,4 +1,4 @@
--- SOMENTE TESTE LOCAL: parte 30 (Infraestrutura automática). Roda depois das partes 00 a 20, 22, 23, 25, 26, 28, 29, 30 e dos usuários de teste (91).
+-- SOMENTE TESTE LOCAL: parte 30 (Infraestrutura automática), com as contas conectadas da parte 32. Roda depois das partes 00 a 20, 22, 23, 25, 26, 28, 29, 30, 32 e dos usuários de teste (91).
 \set ON_ERROR_STOP 1
 \pset tuples_only on
 create or replace function pg_temp.como(p uuid) returns void language plpgsql as $$
@@ -18,6 +18,13 @@ with x as (insert into repositorios (no_id, provedor, nome) select prod, 'github
 with x as (insert into repositorios (no_id, provedor, nome) select app, 'github', 'it-hub/bl-java' from t returning id) update t set repo_app = (select id from x);
 with x as (insert into repositorios (no_id, provedor, nome) select pj, 'github', 'it-hub/bl-projeto' from t returning id) update t set repo_pj = (select id from x);
 with x as (insert into repositorios (no_id, provedor, nome) select prod, 'gitlab', 'it-hub/bl-gitlab' from t returning id) update t set repo_gl = (select id from x);
+-- os repositórios entram pela conta conectada do espaço (parte 32); um sem conta conectada não pede desenho
+insert into git_conexoes (espaco_id, provedor, externo_id, conta) select espaco_id, 'github', '1', 'it-hub' from nos where id = (select prod from t);
+insert into git_conexoes (espaco_id, provedor, externo_id, conta) select espaco_id, 'gitlab', '2', 'it-hub' from nos where id = (select prod from t);
+update repositorios r set conexao_id = c.id from git_conexoes c where c.provedor = r.provedor and r.id in (select repo_app from t union select repo_prod from t union select repo_pj from t union select repo_gl from t);
+insert into repositorios (no_id, provedor, nome) select prod, 'github', 'it-hub/sem-conta' from t;
+insert into publicacoes (no_id, repositorio_id, ambiente, status, origem, referencia, id_externo) select prod, (select id from repositorios where nome = 'it-hub/sem-conta'), 'producao', 'sucesso', 'github', 's1', 'deploy:9' from t;
+select pg_temp.ok((select count(*) from infra_automacoes) = 0, 'repositório sem conta conectada não pede desenho');
 
 -- ---------- publicação em produção pede os desenhos do código ----------
 insert into publicacoes (no_id, repositorio_id, versao, ambiente, status, origem, referencia, id_externo) select app, repo_app, '1.0', 'producao', 'sucesso', 'github', 'abc123', 'deploy:1' from t;
@@ -29,7 +36,7 @@ insert into publicacoes (no_id, repositorio_id, ambiente, status, origem, refere
 insert into publicacoes (no_id, repositorio_id, ambiente, status, origem, referencia, id_externo) select prod, repo_prod, 'producao', 'falha', 'github', 'f1', 'deploy:3' from t;
 insert into publicacoes (no_id, repositorio_id, ambiente, status, origem, referencia, id_externo) select prod, repo_gl, 'producao', 'sucesso', 'gitlab', 'g1', 'deploy:4' from t;
 insert into publicacoes (no_id, ambiente, status, origem, versao) select prod, 'producao', 'sucesso', 'manual', '2.0' from t;
-select pg_temp.ok((select count(*) from infra_automacoes) = 1, 'prévia, falha, GitLab e publicação manual não pedem desenho do código');
+select pg_temp.ok((select count(*) from infra_automacoes) = 2 and (select count(*) from infra_automacoes where origem = 'gitlab' and referencia = 'g1') = 1, 'prévia, falha e publicação manual não pedem desenho do código; o GitLab pede');
 update publicacoes set status = 'sucesso' where id_externo = 'deploy:3';
 select pg_temp.ok((select count(*) from infra_automacoes where referencia = 'f1') = 1, 'a falha que virou sucesso pede');
 insert into publicacoes (no_id, repositorio_id, ambiente, status, origem, referencia, id_externo) select pj, repo_pj, 'producao', 'sucesso', 'github', 'pj1', 'deploy:5' from t;
@@ -77,8 +84,8 @@ reset role;
 -- ---------- a função (service_role) ----------
 set role service_role;
 create temp table f as select infra_auto_proximos(10) as j;
-select pg_temp.ok((select jsonb_array_length(j) from f) = 4, 'a função pega os 4 pedidos da fila');
-select pg_temp.ok((select count(*) from infra_automacoes where status = 'rodando') = 4, 'e eles ficam rodando');
+select pg_temp.ok((select jsonb_array_length(j) from f) = 5, 'a função pega os 5 pedidos da fila');
+select pg_temp.ok((select count(*) from infra_automacoes where status = 'rodando') = 5, 'e eles ficam rodando');
 select pg_temp.ok((select jsonb_array_length(infra_auto_proximos(10))) = 0, 'chamar de novo não pega os mesmos');
 select pg_temp.ok((select (x->'repositorios'->0->>'nome') = 'it-hub/bl-java' and jsonb_array_length(x->'repositorios') = 1 and x->'banco' = 'null'
                      from f, jsonb_array_elements(j) x where x->>'referencia' = 'abc123'), 'pedido da publicação: só o repositório que publicou, sem banco');

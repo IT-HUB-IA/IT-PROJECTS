@@ -189,7 +189,7 @@ function ifrMapaDiagramas(){
 }
 const ifrAvisarCanvas = () => ifrFalar({tipo:'diagramas', dados:ifrMapaDiagramas()});
 
-const IFR_DE_ONDE = {github:'automático do código', banco:'automático do banco', devit:'DevIT', manual:'feito à mão'};
+const IFR_DE_ONDE = {github:'automático do código', gitlab:'automático do código', banco:'automático do banco', devit:'DevIT', manual:'feito à mão'};
 // o desenho do DevIT ficou para trás quando o robô atualizou os automáticos depois dele
 const ifrDesatualizado = d => d.origem === 'devit' && typeof IFR_AUTO !== 'undefined' && IFR_AUTO.pedidos.some(p => p.status === 'pronto' && p.concluido_em && d.atualizado_em && p.concluido_em > d.atualizado_em && (p.diagramas || []).length);
 function ifrItemHTML(d, deOutro){
@@ -215,7 +215,7 @@ function ifrLado(){
       return '<div class="ifr-prod"><div class="ifr-prod-cab"><b>' + esc(p.nome) + '</b><button type="button" class="ifr-lnk" data-ifr-ir="product:' + esc(p.id) + '">Abrir no produto</button></div>' + (l.length ? '<ul class="ifr-lista">' + l.map(d => ifrItemHTML(d, true)).join('') + '</ul>' : '<p class="ifr-vazio">Sem desenho nesta parte.</p>') + '</div>'; }).join('');
   }
   h += '<div class="ifr-rodape"><button type="button" class="btn sec peq" data-ifr-zip>Baixar tudo (docs/diagrams)</button>' +
-    (cf.erro ? '<p class="ifr-cfg">' + esc(cf.erro) + '</p>' : IFR.config ? '<ul class="ifr-cfg">' + chave(cf.conversor, 'conversor de desenhos (RENDER_URL)') + chave(cf.devit, 'DevIT (ANTHROPIC_API_KEY)') + chave(cf.github, 'GitHub, para ler o código (GITHUB_TOKEN)') + chave(cf.figma, 'Figma, para ler os protótipos (FIGMA_TOKEN)') + '</ul>' : '') + '</div>';
+    (cf.erro ? '<p class="ifr-cfg">' + esc(cf.erro) + '</p>' : IFR.config ? '<ul class="ifr-cfg">' + chave(cf.conversor, 'conversor de desenhos (RENDER_URL)') + chave(cf.devit, 'DevIT (ANTHROPIC_API_KEY)') + chave(cf.github, 'GitHub, para ler o código (app do CicloDev, em Admin)') + chave(cf.gitlab, 'GitLab, para ler o código (em Admin)') + chave(cf.figma, 'Figma, para ler os protótipos (FIGMA_TOKEN)') + '</ul>' : '') + '</div>';
   el.innerHTML = h;
 }
 
@@ -231,7 +231,7 @@ async function ifrAbrir(id){
   const corpo = '<div class="ifr-ed">' +
     '<div class="ifr-ed-linha"><label class="lb">Nome<input class="campo" id="ifr-nome" value="' + esc(d.nome) + '"' + (pode ? '' : ' disabled') + '></label>' +
     '<label class="lb">Formato<select class="sel" id="ifr-formato"' + (pode ? '' : ' disabled') + '>' + IFR_FORMATOS.map(f => '<option value="' + f[0] + '"' + (f[0] === d.formato ? ' selected' : '') + '>' + esc(f[1]) + '</option>').join('') + '</select></label></div>' +
-    '<p class="ifr-meta">' + esc(ifrNomeNo(d.no_id)) + ' · ' + esc(ifrAba(d.aba).nome) + ' · versão ' + esc(d.versao) + ' · ' + esc(IFR_DE_ONDE[d.origem] || d.origem) + (d.referencia && d.origem === 'github' ? ' (commit ' + esc(String(d.referencia).slice(0, 7)) + ')' : '') + (d.renderizado_em ? ' · imagem de ' + esc(new Date(d.renderizado_em).toLocaleString('pt-BR')) : '') + '</p>' +
+    '<p class="ifr-meta">' + esc(ifrNomeNo(d.no_id)) + ' · ' + esc(ifrAba(d.aba).nome) + ' · versão ' + esc(d.versao) + ' · ' + esc(IFR_DE_ONDE[d.origem] || d.origem) + (d.referencia && (d.origem === 'github' || d.origem === 'gitlab') ? ' (commit ' + esc(String(d.referencia).slice(0, 7)) + ')' : '') + (d.renderizado_em ? ' · imagem de ' + esc(new Date(d.renderizado_em).toLocaleString('pt-BR')) : '') + '</p>' +
     (auto ? '<p class="ifr-aviso-auto">Este desenho sai sozinho ' + (d.origem === 'banco' ? 'da estrutura do banco' : 'do código publicado em produção') + ' e é refeito a cada mudança. Para ajustar à mão, faça uma cópia.</p>' : '') +
     (d.quadro ? '<p class="ifr-meta"><button type="button" class="btn peq" data-ifr-quadro="' + esc(d.quadro) + '">Abrir o quadro deste desenho</button> O quadro é o desenho montado no canvas, com os cards e as ligações.</p>' : '') +
     '<label class="lb">Código do desenho (a fonte de verdade)<textarea class="campo ifr-codigo" id="ifr-fonte" spellcheck="false"' + (pode ? '' : ' readonly') + '>' + esc(d.fonte || '') + '</textarea></label>' +
