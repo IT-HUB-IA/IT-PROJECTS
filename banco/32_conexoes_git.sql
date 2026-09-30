@@ -237,10 +237,17 @@ begin
   return r;
 end $$;
 
+-- ao conectar de novo, a lista é refeita: repositório ligado que quem conectou não acessa mais para (e volta se o acesso voltar)
 create or replace function public.git_conexao_repos(p_conexao uuid, p_repos text[]) returns void
-language sql security definer set search_path = public, pg_temp as $$
-  update public.git_conexoes set repos_permitidos = array(select distinct x from unnest(coalesce(p_repos, '{}')) x where x ~ '^[0-9]+$') where id = p_conexao and provedor = 'github'
-$$;
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare l text[] := array(select distinct x from unnest(coalesce(p_repos, '{}')) x where x ~ '^[0-9]+$');
+begin
+  update public.git_conexoes set repos_permitidos = l where id = p_conexao and provedor = 'github';
+  update public.repositorios set ativo = false, ultimo_erro = 'Conta sem acesso a este repositório: quem conectou não tem mais acesso a ele no GitHub'
+   where conexao_id = p_conexao and provedor = 'github' and ativo and not (externo_id = any(l));
+  update public.repositorios set ativo = true, ultimo_erro = null
+   where conexao_id = p_conexao and provedor = 'github' and not ativo and ultimo_erro like 'Conta sem acesso%' and externo_id = any(l);
+end $$;
 revoke all on function public.git_conexao_repos(uuid, text[]) from public, anon, authenticated;
 grant execute on function public.git_conexao_repos(uuid, text[]) to service_role;
 

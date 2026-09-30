@@ -133,6 +133,7 @@ function gcContasHTML(){
     : '<span class="gc-nao">' + EN_ICO[p] + GC_NOME[p] + ': ainda não ativado pelo dono do sistema</span>';
   const conta = c => '<li class="gc-conta">' + (c.avatar_url ? '<img src="' + esc(c.avatar_url) + '" alt="" width="28" height="28">' : EN_ICO[c.provedor]) +
     '<div><b>' + esc(c.conta) + '</b><small>' + GC_NOME[c.provedor] + (c.conta_tipo === 'Organization' ? ' · organização' : '') + (c.ultimo_erro ? ' · <span class="en2-erro">' + esc(c.ultimo_erro) + '</span>' : '') + '</small></div>' +
+    (c.provedor === 'github' ? '<p class="gc-aviso-conta">Aparecem só os repositórios desta conta que ' + 'quem conectou' + ' pode acessar no GitHub. Se alguém ganhar ou perder acesso lá, clique em <b>Conectar outra conta do GitHub</b> (ou <b>Já foi instalado: só autorizar</b>) para atualizar: o que saiu para sozinho.</p>' : '') +
     '<div class="gc-conta-a"><button type="button" class="btn peq" data-gc-ver="' + c.id + '">Escolher repositório</button>' +
     (c.provedor === 'github' && c.url ? '<a class="btn fant peq" href="' + esc(c.url) + '" target="_blank" rel="noopener noreferrer" title="Escolher no GitHub quais repositórios o CicloDev vê">Mudar acesso no GitHub</a>' : '') +
     '<button type="button" class="btn fant peq" data-gc-desconectar="' + c.id + '">Desconectar</button></div>' +

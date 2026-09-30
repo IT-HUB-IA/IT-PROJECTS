@@ -279,6 +279,11 @@ select pg_temp.ok((select count(*) from codigo_vinculos where repositorio_id = (
 select pg_temp.ok((select count(*) from git_conexoes where id = (select con_gl from alvo)) = 0 and (select count(*) from interno.git_tokens where conexao_id = (select con_gl from alvo)) = 0, 'sem repositório ligado, a conta sai com as chaves dela');
 -- o app removido no GitHub: a conta fica marcada e os repositórios param
 set role service_role;
+-- quem conectou perdeu o acesso ao repositório no GitHub e conectou de novo: o repositório para; voltando o acesso, volta
+select git_conexao_repos((select con_gh from alvo), array['556']);
+select pg_temp.ok((select not ativo and ultimo_erro like 'Conta sem acesso%' from repositorios where id = (select repo from alvo)), 'conectar de novo sem acesso ao repositório para ele sozinho');
+select git_conexao_repos((select con_gh from alvo), array['555', '556']);
+select pg_temp.ok((select ativo and ultimo_erro is null from repositorios where id = (select repo from alvo)), 'e com o acesso de volta, ele volta sozinho');
 select pg_temp.gh('installation', '{"action":"deleted"}');
 reset role;
 select pg_temp.ok((select removida_em is not null from git_conexoes where id = (select con_gh from alvo)) and (select not ativo from repositorios where id = (select repo from alvo)), 'app removido no GitHub: a conta sai e os repositórios param');

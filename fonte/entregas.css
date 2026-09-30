@@ -183,3 +183,4 @@
 .gc-dica ol{margin:6px 0 0;padding-left:20px}
 .gc-dica code{font-family:var(--font-mono);font-size:12px;overflow-wrap:anywhere}
 .gc-dica .mini{padding:1px 8px;font-size:11px}
+.gc-aviso-conta{grid-column:1/-1;margin:4px 0 6px;font-size:12px;line-height:1.5;color:var(--tinta-3)}
