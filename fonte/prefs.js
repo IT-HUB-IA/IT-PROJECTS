@@ -3,7 +3,7 @@
    pessoas_preferencias.lembretes_vistos. O navegador continua com uma cópia só para abrir mais rápido.
    Na primeira vez (banco ainda vazio para a pessoa), o que já estava guardado neste navegador sobe para o banco,
    para ninguém ter de arrumar tudo de novo. */
-const PF_CAMPOS = ['modulo', 'sel', 'view', 'ovSel', 'abertos', 'tabAbertos', 'filtros', 'raias', 'calModo', 'cargaModo', 'ordem', 'abasFixas', 'arvW', 'semArvore', 'bjEpicos', 'bjFechadas'];
+const PF_CAMPOS = ['modulo', 'sel', 'view', 'ovSel', 'abertos', 'tabAbertos', 'filtros', 'raias', 'calModo', 'cargaModo', 'ordem', 'abasFixas', 'arvW', 'semArvore', 'bjEpicos', 'bjFechadas', 'infraAba', 'infraCanvas', 'infraNaBarra'];
 const PF = {pronto:false, timer:0, ultimo:'', vistosUlt:'', semColuna:false};
 const pfBanco = () => (COM_BANCO && BANCO.carregado && window.ciclodevBanco && typeof eu === 'function' && eu()) ? window.ciclodevBanco : null;
 function pfTela(){
