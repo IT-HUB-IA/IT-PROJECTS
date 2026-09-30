@@ -44,7 +44,7 @@ function gcJanela(url){
 }
 
 /* ---------- conectar uma conta (abre a janelinha) ---------- */
-async function gcConectar(provedor, aoTerminar){
+async function gcConectar(provedor, aoTerminar, soAutorizar){
   await gcCarregar();
   const st = GC.status[provedor] || {};
   if (!st.pronto){ toast(provedor === 'github' ? 'O app do GitHub ainda não foi criado. O dono do sistema cria em Admin, aba GitHub e GitLab.' : 'O GitLab ainda não foi configurado. O dono do sistema configura em Admin, aba GitHub e GitLab.'); return; }
@@ -52,7 +52,10 @@ async function gcConectar(provedor, aoTerminar){
   if (error){ toast('Não deu para começar: ' + tfErro(error)); return; }
   gcGuardar(GC_ESPERA, {provedor, estado, client_id:provedor === 'github' ? st.client_id : null, t:Date.now()});
   GC.aoConectar = aoTerminar || null;
-  const url = provedor === 'github'
+  // soAutorizar: o dono do repositório já instalou o app na conta dele; você só confirma quem é e o CicloDev acha a instalação
+  const url = provedor === 'github' && soAutorizar
+    ? 'https://github.com/login/oauth/authorize?' + new URLSearchParams({client_id:st.client_id, state:estado}).toString()
+    : provedor === 'github'
     ? 'https://github.com/apps/' + encodeURIComponent(st.slug) + '/installations/new?state=' + encodeURIComponent(estado)
     : st.base + '/oauth/authorize?' + new URLSearchParams({client_id:st.client_id, redirect_uri:st.retorno, response_type:'code', state:estado, scope:'api'}).toString();
   gcJanela(url);
@@ -80,7 +83,7 @@ async function gcVolta(d){
   const r = await gcFuncao({acao:'concluir', provedor:d.git, code:d.code, estado:d.state || espera.estado});
   if (!r.ok){ toast('Não deu para conectar: ' + r.erro); return; }
   await gcCarregar(true);
-  if (r.instalar){ tfAviso('A conta foi confirmada, mas o app do CicloDev ainda não está instalado nela. Clique em Conectar ao GitHub de novo e escolha a conta.', [], 7000); }
+  if (r.instalar){ tfAviso('A conta foi confirmada, mas o app do CicloDev não está instalado em nenhuma conta que você acessa. Se o repositório é seu, clique em Conectar ao GitHub e escolha a conta. Se é de outra pessoa, peça para o dono instalar (o link está em Ligar repositório) e clique em "Já foi instalado: só autorizar".', [], 9000); }
   else tfAviso((d.git === 'gitlab' ? 'GitLab' : 'GitHub') + ' conectado.', [], 3000);
   if (GC.aoConectar) GC.aoConectar();
 }
@@ -105,6 +108,7 @@ function gcLigarRepo(){
   dlg.addEventListener('click', async e => {
     let b;
     if ((b = e.target.closest('[data-gc-conectar]'))){ gcConectar(b.dataset.gcConectar, () => pintar(true)); return; }
+    if ((b = e.target.closest('[data-gc-autorizar]'))){ gcConectar('github', () => pintar(true), true); return; }
     if ((b = e.target.closest('[data-gc-ver]'))){ gcMostrarRepos(dlg, b.dataset.gcVer); return; }
     if ((b = e.target.closest('[data-gc-desconectar]'))){ gcDesconectar(b.dataset.gcDesconectar, () => pintar(true)); return; }
     if ((b = e.target.closest('[data-gc-ligar]'))){
@@ -136,7 +140,10 @@ function gcContasHTML(){
   return (GC.erro ? '<p class="entrada-erro">' + esc(GC.erro) + '</p>' : '') +
     '<h3 class="gc-t">Contas conectadas' + I('Contas conectadas: as contas do GitHub e do GitLab que a sua empresa ligou ao CicloDev. Valem para todos os projetos do espaço. Cada repositório escolhido fica ligado só ao ponto que você escolher acima.') + '</h3>' +
     (cs.length ? '<ul class="gc-contas">' + cs.map(conta).join('') + '</ul>' : '<p class="sec">Nenhuma conta conectada ainda. Clique abaixo: abre uma janelinha do GitHub ou do GitLab para você autorizar e escolher os repositórios.</p>') +
-    '<div class="gc-botoes">' + botao('github') + botao('gitlab') + '</div>';
+    '<div class="gc-botoes">' + botao('github') + botao('gitlab') + '</div>' +
+    ((GC.status.github || {}).pronto ? '<div class="gc-dica"><b>O repositório é de outra pessoa?</b> O GitHub só deixa instalar o app numa conta sua ou numa organização em que você é administrador. Se você é colaborador:' +
+      '<ol><li>Mande para o dono do repositório este link: <code>https://github.com/apps/' + esc(GC.status.github.slug || '') + '/installations/new</code> <button type="button" class="btn sec mini" data-gc-copiar="https://github.com/apps/' + esc(GC.status.github.slug || '') + '/installations/new">Copiar</button>. Ele instala o app na conta dele e escolhe o repositório.</li>' +
+      '<li>Depois clique em <button type="button" class="btn sec mini" data-gc-autorizar>Já foi instalado: só autorizar</button>. Aparecem só os repositórios desse dono que <b>você</b> pode acessar.</li></ol></div>' : '');
 }
 async function gcMostrarRepos(dlg, conexao){
   const alvo = $('[data-gc-repos="' + conexao + '"]', dlg); if (!alvo) return;

@@ -84,6 +84,11 @@ create table if not exists public.git_conexoes (
 );
 create index if not exists git_conexoes_externo_idx on public.git_conexoes (provedor, externo_id);
 comment on table public.git_conexoes is 'Conta do GitHub (instalação do app do CicloDev) ou do GitLab (autorização OAuth) conectada a um espaço. Quem é do espaço vê e usa.';
+-- GitHub: uma instalação pode ser de outra pessoa (o dono instalou o app e você é colaborador de um repositório dele).
+-- Na hora de conectar, guardamos só os repositórios que QUEM CONECTOU pode acessar; só esses aparecem e podem ser ligados.
+-- Vazio (null) só no GitLab, onde a chave já é da própria pessoa e o GitLab já limita.
+alter table public.git_conexoes add column if not exists repos_permitidos text[];
+comment on column public.git_conexoes.repos_permitidos is 'GitHub: números dos repositórios desta instalação que a pessoa que conectou pode acessar. Só eles aparecem e podem ser ligados. Atualiza ao conectar de novo.';
 
 create table if not exists interno.git_tokens (
   conexao_id  uuid primary key references public.git_conexoes(id) on delete cascade,
@@ -222,6 +227,8 @@ begin
   select * into c from public.git_conexoes where id = p_conexao and espaco_id in (select interno.meus_espacos()) and removida_em is null;
   if c.id is null then raise exception 'Esta conta não está conectada ao seu espaço' using errcode = '42501'; end if;
   if coalesce(p_externo, '') !~ '^[0-9]+$' then raise exception 'Repositório inválido' using errcode = '22023'; end if;
+  if c.provedor = 'github' and not (p_externo = any(coalesce(c.repos_permitidos, '{}'))) then
+    raise exception 'Quem conectou esta conta não tem acesso a este repositório no GitHub' using errcode = '42501'; end if;
   insert into public.repositorios (no_id, provedor, nome, url, branch_principal, mover_status, conexao_id, externo_id)
   values (p_no, c.provedor, p_nome, case when p_url ~ '^https://' then p_url end, coalesce(nullif(btrim(p_branch), ''), 'main'), coalesce(p_mover, true), c.id, p_externo)
   on conflict (no_id, provedor, nome) do update set conexao_id = excluded.conexao_id, externo_id = excluded.externo_id, url = excluded.url,
@@ -229,6 +236,13 @@ begin
   returning * into r;
   return r;
 end $$;
+
+create or replace function public.git_conexao_repos(p_conexao uuid, p_repos text[]) returns void
+language sql security definer set search_path = public, pg_temp as $$
+  update public.git_conexoes set repos_permitidos = array(select distinct x from unnest(coalesce(p_repos, '{}')) x where x ~ '^[0-9]+$') where id = p_conexao and provedor = 'github'
+$$;
+revoke all on function public.git_conexao_repos(uuid, text[]) from public, anon, authenticated;
+grant execute on function public.git_conexao_repos(uuid, text[]) to service_role;
 
 create or replace function public.git_repo_segredo(p_repo uuid) returns text
 language sql stable security definer set search_path = public, pg_temp as $$ select segredo from interno.repositorios_segredos where repositorio_id = p_repo $$;

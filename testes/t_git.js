@@ -49,6 +49,7 @@ window.supabase = { createClient(){ const sess = {user:{id:'u1', email:'admin@it
       const e = chamar('git_estado_usar', { p_estado: c.estado, p_provedor: c.provedor }); if (e.error) return r({ ok: false, erro: e.error.message });
       if (c.code !== 'bom') return r({ ok: false, erro: 'O GitHub não confirmou a conta' });
       const id = chamar('git_conexao_gravar', { p_espaco: e.data.espaco_id, p_pessoa: e.data.pessoa_id, p_provedor: 'github', p_externo: '9001', p_conta: 'it-hub-ia', p_tipo: 'Organization', p_avatar: null, p_url: 'https://github.com/organizations/it-hub-ia/settings/installations/9001', p_tokens: null }, '');
+      psql("select public.git_conexao_repos('" + id.data + "', array['555', '556'])");   // como a função: só os repositórios que a pessoa acessa
       return r({ ok: true, conexoes: [id.data] });
     }
     if (c.acao === 'repos') return r({ ok: true, repos: [{ externo_id: '555', nome: 'it-hub-ia/portal', url: 'https://github.com/it-hub-ia/portal', branch: 'main', privado: true }, { externo_id: '556', nome: 'it-hub-ia/site', url: 'https://github.com/it-hub-ia/site', branch: 'main', privado: false }] });
@@ -95,6 +96,7 @@ window.supabase = { createClient(){ const sess = {user:{id:'u1', email:'admin@it
   await p.evaluate(k => { const U = window.__tf.UI; U.sel = 'project:' + k; U.view = 'entregas'; U.semArvore = true; window.__tf.rOperacoes(); }, pj); await p.waitForTimeout(1500);
   await p.click('[data-en-novo-repo]'); await p.waitForTimeout(1200);
   ok(await p.isVisible('.gc-modal [data-gc-conectar="github"]') && /Nenhuma conta conectada/.test(await p.textContent('.gc-modal')), 'Ligar repositório: sem conta, mostra Conectar ao GitHub');
+  ok(await p.isVisible('.gc-modal [data-gc-autorizar]') && /installations\/new/.test(await p.textContent('.gc-modal .gc-dica')), 'e explica o caso do colaborador: o link para o dono instalar e o botão de só autorizar');
   ok(/ainda não ativado/.test(await p.textContent('.gc-modal')), 'o GitLab, ainda sem configurar, aparece como não ativado');
   janela = janelaNova(); await p.click('.gc-modal [data-gc-conectar="github"]'); janela = await janela; await p.waitForTimeout(800);
   const inst = idas.find(x => /apps\/ciclodev-teste\/installations\/new\?state=/.test(x));

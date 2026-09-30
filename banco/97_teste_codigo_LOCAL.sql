@@ -69,6 +69,9 @@ update alvo set con_gh = git_conexao_gravar((select espaco from alvo), 'd148fdc5
                 con_gl = git_conexao_gravar((select espaco from alvo), 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 'gitlab', '77', 'william', null, null, null, '{"acesso":"gl-acesso","renovacao":"gl-renova","expira_em":"2030-01-01T00:00:00Z"}');
 select pg_temp.ok((git_conexao_ler((select con_gl from alvo))#>>'{tokens,acesso}') = 'gl-acesso', 'a chave do GitLab fica guardada para a função');
 select pg_temp.ok(git_conexao_gravar((select espaco from alvo), 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', 'github', '9001', 'it-hub-ia', 'Organization', null, null) = (select con_gh from alvo), 'conectar a mesma conta de novo não duplica');
+-- a função guarda só os repositórios que quem conectou pode acessar (ela pode ser só colaboradora do dono da instalação)
+select git_conexao_repos((select con_gh from alvo), array['555', '556', 'lixo']);
+select pg_temp.ok((select repos_permitidos from git_conexoes where id = (select con_gh from alvo)) @> array['555','556'] and not ((select repos_permitidos from git_conexoes where id = (select con_gh from alvo)) @> array['lixo']), 'a conta do GitHub guarda só os números dos repositórios que quem conectou pode acessar');
 reset role;
 select pg_temp.como('00000000-0000-0000-0000-00000000000a', 'william@teste.com');
 set role authenticated;
@@ -80,6 +83,8 @@ do $$ begin
   exception when insufficient_privilege then raise notice 'OK    repositório só entra pela conta conectada'; end;
   begin perform git_repo_ligar((select projeto from alvo), (select con_gh from alvo), 'abc', 'it-hub-ia/portal', null, 'main'); raise notice 'FALHA aceitou número de repositório inválido';
   exception when invalid_parameter_value then raise notice 'OK    número de repositório inválido é recusado'; end;
+  begin perform git_repo_ligar((select projeto from alvo), (select con_gh from alvo), '557', 'outra-pessoa/privado', null, 'main'); raise notice 'FALHA ligou repositório a que quem conectou não tem acesso';
+  exception when insufficient_privilege then raise notice 'OK    repositório da instalação a que quem conectou não tem acesso não liga'; end;
 end $$;
 
 -- ---------- William liga um repositório de cada conta ----------
@@ -104,6 +109,10 @@ create or replace function pg_temp.gl(evento text, corpo text) returns jsonb lan
   select public.git_receber_gitlab((select repo_gl from alvo), evento, public.git_repo_segredo((select repo_gl from alvo)), corpo) $$;
 
 set role authenticated;
+do $$ begin
+  begin perform public.git_conexao_repos((select con_gh from alvo), array['1']); raise notice 'FALHA pessoa logada mudou a lista de repositórios da conta';
+  exception when insufficient_privilege then raise notice 'OK    só a função muda a lista de repositórios da conta'; end;
+end $$;
 do $$ begin
   begin perform public.git_receber_github('ping', null, '{}'); raise notice 'FALHA pessoa logada chamou o recebedor de avisos';
   exception when insufficient_privilege then raise notice 'OK    só a função de avisos recebe os avisos'; end;

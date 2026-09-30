@@ -57,8 +57,21 @@ async function concluir(d: DepsCon, c: any) {
     const r = await d.buscar(GH_API + '/user/installations?per_page=100', { headers: ghCabecalhos(tj.access_token) });
     if (!r.ok) throw new Recusa('O GitHub respondeu ' + r.status + ' ao listar as contas');
     const lista = ((await r.json()).installations || []) as any[];
-    for (const i of lista) ids.push(await chamar(d.rpc, 'git_conexao_gravar', { p_espaco: est.espaco_id, p_pessoa: est.pessoa_id, p_provedor: 'github',
-      p_externo: String(i.id), p_conta: i.account?.login || String(i.id), p_tipo: i.account?.type || null, p_avatar: i.account?.avatar_url || null, p_url: i.html_url || null, p_tokens: null }));
+    for (const i of lista) {
+      const id = await chamar(d.rpc, 'git_conexao_gravar', { p_espaco: est.espaco_id, p_pessoa: est.pessoa_id, p_provedor: 'github',
+        p_externo: String(i.id), p_conta: i.account?.login || String(i.id), p_tipo: i.account?.type || null, p_avatar: i.account?.avatar_url || null, p_url: i.html_url || null, p_tokens: null });
+      // só os repositórios que esta pessoa pode acessar (a instalação pode ser de outra pessoa, que instalou o app e fez ela colaboradora)
+      const permitidos: string[] = [];
+      for (let p = 1; p <= 30; p++) {
+        const rr = await d.buscar(GH_API + '/user/installations/' + encodeURIComponent(String(i.id)) + '/repositories?per_page=100&page=' + p, { headers: ghCabecalhos(tj.access_token) });
+        if (!rr.ok) break;
+        const rs = ((await rr.json()).repositories || []) as any[];
+        permitidos.push(...rs.map(x => String(x.id)));
+        if (rs.length < 100) break;
+      }
+      await chamar(d.rpc, 'git_conexao_repos', { p_conexao: id, p_repos: permitidos });
+      ids.push(id);
+    }
     // a chave da pessoa não fica guardada: devolve ao GitHub
     await d.buscar(GH_API + '/applications/' + encodeURIComponent(app.client_id) + '/token', { method: 'DELETE',
       headers: { ...ghCabecalhos(''), authorization: 'Basic ' + btoa(app.client_id + ':' + app.client_secret) }, body: JSON.stringify({ access_token: tj.access_token }) }).catch(() => null);
@@ -84,15 +97,19 @@ async function conexaoMinha(d: DepsCon, id: string) {
   return c;
 }
 
+// GitHub: só os repositórios que quem conectou pode acessar (ver git_conexoes.repos_permitidos)
+const permitido = (con: any, externo: string) => con.provedor !== 'github' || (Array.isArray(con.repos_permitidos) && con.repos_permitidos.includes(String(externo)));
+
 async function repos(d: DepsCon, c: any) {
-  await conexaoMinha(d, c.conexao_id);
+  const con = await conexaoMinha(d, c.conexao_id);
   const a = await acessoDaConexao(deps(d), c.conexao_id);
-  return { ok: true, repos: await listarRepos(deps(d), a) };
+  return { ok: true, repos: (await listarRepos(deps(d), a)).filter(r => permitido(con, r.externo_id)) };
 }
 
 async function ligar(d: DepsCon, c: any) {
   if (!UUID.test(c.no_id || '')) throw new Recusa('Diga onde ligar o repositório');
   const con = await conexaoMinha(d, c.conexao_id);
+  if (!permitido(con, String(c.externo_id || ''))) throw new Recusa('Quem conectou esta conta não tem acesso a este repositório no GitHub. Conecte de novo com a conta que tem.', 403);
   const a = await acessoDaConexao(deps(d), c.conexao_id);
   const info = await lerRepo(deps(d), a, String(c.externo_id || ''));
   const r = await chamar(d.rpcUsuario, 'git_repo_ligar', { p_no: c.no_id, p_conexao: con.id, p_externo: info.externo_id, p_nome: info.nome, p_url: info.url, p_branch: info.branch, p_mover: c.mover !== false });
