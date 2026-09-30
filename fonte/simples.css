@@ -128,7 +128,7 @@
   /* quando a área do conteúdo é estreita, o nome fica sozinho na linha de cima e os botões numa linha só embaixo:
      Criar à esquerda, Compartilhar, ⋯ e lixeira à direita (nada espremido) */
   .ops-cab{container-type:inline-size;container-name:opscab}
-  @container opscab (max-width:1180px){
+  @container opscab (max-width:640px){
     .ops-cab .ops-titulo{grid-template-columns:minmax(0,1fr)}
     .ops-cab .ops-titulo > .acoes{justify-self:stretch;max-width:none;justify-content:flex-end;flex-wrap:wrap;row-gap:8px}
     .ops-cab .ops-titulo > .acoes > .cria-barra{order:-1;flex:1 1 auto;justify-content:flex-start;border-top:0;padding-top:0;margin:0}
@@ -136,3 +136,12 @@
   @container opscab (max-width:820px){
     .ops-cab .cria-barra .cria-rot, .ops-cab .cria-barra .cria-ia-l{display:none}
   }
+  /* barra Criar na linha das abas (criar.js), logo depois delas, empurrada para a direita */
+  .ops-cab .views{align-items:center}
+  .ops-cab .views > .cria-barra{order:9999;margin:0 0 0 auto;padding:4px 0;border:0;gap:6px;flex:0 0 auto}
+  .ops-cab .views > .cria-barra .espaco{display:none}
+  .ops-cab .views > .cria-barra [data-ia-instrucoes]{font-weight:500;color:var(--tinta-2)}
+  @container opscab (max-width:820px){ .ops-cab .views > .cria-barra .cria-ia-l{display:none} }
+  /* abas mais compactas quando a área fica mais estreita, para caber a linha inteira com os botões */
+  @container opscab (max-width:1560px){ .ops-cab .views .view-b{padding:0 9px;letter-spacing:.05em} .ops-cab .views > .cria-barra{gap:4px} .ops-cab .views > .cria-barra .btn{padding-left:9px;padding-right:9px} }
+  @container opscab (max-width:1200px){ .ops-cab .views .view-b{padding:0 7px;letter-spacing:.03em;font-size:11.5px} }
