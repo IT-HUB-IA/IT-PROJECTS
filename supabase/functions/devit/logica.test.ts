@@ -52,7 +52,7 @@ const ultimo = (e: any) => e.msgs[e.msgs.length - 1];
   ok(r.status === 200 && /onde o seu banco está/.test(r.j.mensagens[0].texto) && r.j.mensagens[0].contexto.botoes.map((b: any) => b.valor).join() === "guia:banco-supabase,guia:banco-aws", "o guia começa perguntando onde o banco está (Supabase ou AWS)");
   ok(ultimo(t.estado).autor === "agente" && ultimo(t.estado).pessoa_id === "p1", "a fala do DevIT fica na conversa da própria pessoa");
   t.falar("Supabase", { guia: "banco", valor: "guia:banco-supabase" }); r = await t.chamar({ acao: "responder" });
-  ok(/banco do Supabase/.test(r.j.mensagens[0].texto) && /nunca cole senha/i.test(r.j.mensagens[0].texto) && r.j.mensagens[0].contexto.guia === "banco-supabase", "escolher Supabase abre o guia do Supabase, com o aviso de nunca colar senha");
+  ok(/banco do Supabase/.test(r.j.mensagens[0].texto) && !/^Oi/.test(r.j.mensagens[0].texto) && /nunca cole senha/i.test(r.j.mensagens[0].texto) && r.j.mensagens[0].contexto.guia === "banco-supabase", "escolher Supabase abre o guia do Supabase, com o aviso de nunca colar senha");
   t.falar("Vamos começar", { guia: "banco-supabase", valor: "feito" }); r = await t.chamar({ acao: "responder" });
   ok(/^\*\*Passo 1 de 6: Abra o projeto certo\*\*/.test(r.j.mensagens[0].texto) && r.j.mensagens[0].contexto.passo === 0, "Vamos começar mostra o passo 1 de 6");
   ok(r.j.mensagens[0].contexto.botoes.map((b: any) => b.valor).join() === "feito,duvida,erro", "cada passo oferece Feito, Tenho uma dúvida e Deu erro");
@@ -93,7 +93,7 @@ const ultimo = (e: any) => e.msgs[e.msgs.length - 1];
   ok(t2.iaChamadas.length === 1 && /^Resposta da IA/.test(r.j.mensagens[0].texto) && r.j.mensagens[0].contexto.ia === true && r.j.mensagens[0].contexto.passo === 0, "com a chave, a dúvida vai para a IA e o passo continua o mesmo");
   const conv = t2.iaChamadas[0].c; const tudo = JSON.stringify(conv);
   ok(conv[0].role === "user" && !/SenhaSecreta9/.test(tudo) && /\*\*\*@/.test(tudo), "a conversa enviada à IA começa pela pessoa e leva as senhas mascaradas");
-  ok(/Publicly accessible/.test(t2.iaChamadas[0].s) && /Reader/.test(t2.iaChamadas[0].s) && /Nunca peça senha/.test(t2.iaChamadas[0].s) && /passo 1 de 6/.test(t2.iaChamadas[0].s), "a IA recebe a base de conhecimento inteira, as regras e o passo atual");
+  ok(/Publicly accessible/.test(t2.iaChamadas[0].s) && /Reader/.test(t2.iaChamadas[0].s) && /Nunca peça senha/.test(t2.iaChamadas[0].s) && /Não cumprimente/.test(t2.iaChamadas[0].s) && /passo 1 de 6/.test(t2.iaChamadas[0].s), "a IA recebe a base de conhecimento inteira, as regras e o passo atual");
   t2.falar("terminei esse passo"); r = await t2.chamar({ acao: "responder" });
   ok(/Resposta da IA/.test(r.j.mensagens[0].texto) && /Passo 2 de 6/.test(r.j.mensagens[0].texto) && r.j.mensagens[0].contexto.passo === 1, "quando a IA entende que o passo foi concluído, o DevIT já mostra o próximo");
   // IA fora do ar: cai para as perguntas frequentes
@@ -101,6 +101,19 @@ const ultimo = (e: any) => e.msgs[e.msgs.length - 1];
   await t3.chamar({ acao: "guia", guia: "banco-aws" }); t3.falar("Vamos", { guia: "banco-aws", valor: "feito" }); await t3.chamar({ acao: "responder" });
   t3.falar("deu timeout, tempo esgotado"); r = await t3.chamar({ acao: "responder" });
   ok(/Publicly accessible/.test(r.j.mensagens[0].texto), "se a IA falhar, a resposta vem das perguntas frequentes");
+
+  // encerrar no meio: pelo botão ou escrevendo
+  const t4 = montar(); await t4.chamar({ acao: "guia", guia: "banco-supabase" }); t4.falar("Vamos", { guia: "banco-supabase", valor: "feito" }); await t4.chamar({ acao: "responder" });
+  t4.falar("Encerrar conversa", { guia: "banco-supabase", valor: "parar" }); r = await t4.chamar({ acao: "responder" });
+  ok(r.j.mensagens[0].contexto.fim === true && /encerrei/.test(r.j.mensagens[0].texto), "Encerrar conversa corta o guia no meio e o DevIT se despede");
+  t4.falar("mais uma coisa"); r = await t4.chamar({ acao: "responder" });
+  ok(r.j.mensagens.length === 0, "depois de encerrar, o DevIT não continua o guia");
+  const t5 = montar(); await t5.chamar({ acao: "guia", guia: "banco-aws" }); t5.falar("Vamos", { guia: "banco-aws", valor: "feito" }); await t5.chamar({ acao: "responder" });
+  t5.falar("quero parar por hoje"); r = await t5.chamar({ acao: "responder" });
+  ok(r.j.mensagens[0].contexto.fim === true, "escrever quero parar também encerra");
+  t5.falar("x"); const t6 = montar(); await t6.chamar({ acao: "guia", guia: "banco-aws" }); t6.falar("Vamos", { guia: "banco-aws", valor: "feito" }); await t6.chamar({ acao: "responder" });
+  t6.falar("para que serve o endpoint?"); r = await t6.chamar({ acao: "responder" });
+  ok(!r.j.mensagens[0].contexto.fim, "uma pergunta que começa com para não encerra");
 
   // peças
   ok(SENHA_NO_ENDERECO.test("mysql://u:a#b@h:3306/x") && !SENHA_NO_ENDERECO.test("postgresql://leitura_ciclodev.codigodoprojeto@host"), "reconhece endereço com senha");

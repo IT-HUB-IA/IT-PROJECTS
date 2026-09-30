@@ -67,6 +67,7 @@ const NEGA_OU_ERRO = /\b(nao|erro|error|falhou|failed|denied|nada|problema)\b/;
 export function sistemaIa(guia: string, passo: number): string {
   const g = GUIAS[guia];
   return "Você é o DevIT, o assistente do CicloDev (sistema de gestão de projetos da IT.IA). Agora você está conduzindo a pessoa pelo guia \"" + g.titulo + "\", um passo por vez.\n\n" +
+    "Não cumprimente nem se apresente de novo: a conversa já está acontecendo. Vá direto ao ponto.\n\n" +
     "Responda SEMPRE em português do Brasil, com linguagem simples, curta e acolhedora, como um colega paciente. Nunca use travessão. Formato permitido: **negrito**, `código` e blocos ``` para comandos. Nada de títulos com #.\n\n" +
     "Use APENAS o que está na base de conhecimento abaixo. Se a resposta não estiver nela, diga que não tem certeza e sugira o que a pessoa pode conferir; nunca invente botão, menu ou comando.\n\n" +
     "Nunca peça senha, chave ou endereço de conexão. Se a pessoa colar um, diga que a senha ficou registrada na conversa e recomende trocar a senha.\n\n" +
@@ -122,9 +123,10 @@ export async function responderGuia(d: Deps, pessoa: string, msgs: Msg[]): Promi
   if (valor === "duvida") return { texto: "Claro! Escreva a sua dúvida aqui embaixo, do seu jeito, que eu te explico. Só não cole senha nem o endereço de conexão.", ctx: { guia, passo, botoes: [{ rotulo: "Deixa pra lá, seguir", valor: "feito" }] } };
   if (valor === "erro") return { texto: "Sem problema, a gente resolve. Me conte o que apareceu: pode copiar a mensagem de erro aqui (ela não tem senha). Se o erro mostrar o endereço de conexão, tire a senha antes de colar.", ctx: { guia, passo, botoes: [{ rotulo: "Repetir o passo", valor: "repetir" }] } };
   if (valor === "repetir") return doPasso(Math.max(0, passo));
-  if (valor === "parar") return { texto: "Tudo bem, paramos aqui. Quando quiser continuar, é só clicar em **Guia passo a passo** de novo.", ctx: { guia, passo, fim: true, botoes: [] } };
+  if (valor === "parar") return { texto: "Tudo bem, encerrei por aqui. Quando quiser continuar, é só clicar em **Guia passo a passo** de novo.", ctx: { guia, passo, fim: true, botoes: [] } };
 
   // 3) texto livre
+  if (/^(encerrar|encerra|parar|para|cancelar|cancela|sair|chega|pode encerrar|quero encerrar|quero parar)\b/.test(norm(texto)) && !texto.includes("?")) return { texto: "Tudo bem, encerrei por aqui. Quando quiser continuar, é só clicar em **Guia passo a passo** de novo.", ctx: { guia, passo, fim: true, botoes: [] } };
   if (SENHA_NO_ENDERECO.test(texto))
     return { texto: "Atenção: parece que você colou um endereço com senha aqui no chat. Ele fica registrado na conversa, então o mais seguro é **trocar a senha** do usuário leitura_ciclodev:\n\n```\nalter role leitura_ciclodev with password 'nova-senha-forte';\n```\n\nDepois cole o endereço com a senha nova direto na janela de ligar banco (botão **Trocar** ao lado do banco). Nunca aqui no chat.", ctx: { guia, passo, botoes: botoesAtuais } };
 

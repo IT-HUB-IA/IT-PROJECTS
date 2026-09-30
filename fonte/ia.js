@@ -76,7 +76,7 @@ function iaMontar(){
   if (!r){
     r = document.createElement('div'); r.id = 'ia-raiz';
     r.innerHTML = '<section class="ia-chat" id="ia-chat" role="dialog" aria-label="Conversa com o ' + IA_NOME + '" hidden>' +
-      '<header class="ia-cab"><div><b class="ia-nome">' + IA_NOME + '<i class="ia-ponto" aria-hidden="true"></i></b><small>Só enxerga o que você enxerga no CicloDev</small></div><button type="button" class="ia-fechar" data-ia-fechar aria-label="Fechar a conversa">' +
+      '<header class="ia-cab"><div><b class="ia-nome">' + IA_NOME + '<i class="ia-ponto" aria-hidden="true"></i></b><small>Só enxerga o que você enxerga no CicloDev</small></div><button type="button" class="ia-encerrar" data-ia-encerrar hidden title="Encerra o guia em andamento">Encerrar conversa</button><button type="button" class="ia-fechar" data-ia-fechar aria-label="Fechar a conversa">' +
       '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19"></path></svg></button></header>' +
       '<div class="ia-msgs" data-ia-msgs aria-live="polite"></div>' +
       '<div class="ia-pendentes" data-ia-pendentes hidden></div>' +
@@ -91,7 +91,10 @@ function iaMontar(){
     new Image().src = IA_IMG.animado;
   }
   const chat = $('#ia-chat', r), bal = $('[data-ia-balao]', r), img = $('img', bal);
-  chat.hidden = !IA.aberto;
+  // abre e fecha com transição (sem transição para quem pediu menos movimento no sistema)
+  clearTimeout(IA.fecharT);
+  if (IA.aberto){ if (chat.hidden){ chat.hidden = false; chat.classList.remove('ia-saindo'); chat.classList.add('ia-entrando'); setTimeout(() => chat.classList.remove('ia-entrando'), 260); } }
+  else if (!chat.hidden){ chat.classList.remove('ia-entrando'); chat.classList.add('ia-saindo'); IA.fecharT = setTimeout(() => { if (!IA.aberto){ chat.hidden = true; chat.classList.remove('ia-saindo'); } }, 170); }
   bal.setAttribute('aria-expanded', String(IA.aberto));
   bal.setAttribute('aria-label', (IA.aberto ? 'Fechar' : 'Abrir') + ' a conversa com o ' + IA_NOME);
   iaImagemBalao();
@@ -193,15 +196,20 @@ async function iaBaixar(a){
 
 function iaDesenharMsgs(){
   const box = $('#ia-raiz [data-ia-msgs]'); if (!box) return;
+  // só as mensagens que ainda não tinham aparecido entram com transição (a conversa lida do banco aparece de uma vez)
+  const primeira = !IA.jaVistas; IA.jaVistas = IA.jaVistas || new Set();
+  const novas = new Set(primeira ? [] : (IA.msgs || []).filter(m => !IA.jaVistas.has(m.id)).map(m => m.id));
+  (IA.msgs || []).forEach(m => IA.jaVistas.add(m.id));
+  const enc = $('#ia-raiz [data-ia-encerrar]'); if (enc) enc.hidden = !iaGuiaAtiva() || IA.pensando;
   let h = '';
   if (IA.carregando && !IA.msgs) h = '<p class="ia-aviso">Lendo a conversa…</p>';
   else if (IA.msgs && !IA.msgs.length) h = '<p class="ia-aviso">Olá! Esta é a sua conversa com o ' + IA_NOME + '. Ela fica guardada só para você.</p>';
   else if (IA.msgs) h = (IA.maisAntigas ? '<button type="button" class="ia-antigas" data-ia-antigas' + (IA.carregando ? ' disabled' : '') + '>' + (IA.carregando ? 'Lendo…' : 'Ver mensagens anteriores') + '</button>' : '') +
-    IA.msgs.map(m => '<div class="ia-msg ia-' + (m.autor === 'agente' ? 'agente' : 'usuario') + '">' + (String(m.texto || '').trim() ? (m.autor === 'agente' ? '<div class="ia-texto">' + iaFormatar(m.texto) + '</div>' : '<p>' + esc(m.texto) + '</p>') : '') + iaAnexosHTML(m) + '<time datetime="' + esc(m.criado_em) + '">' + esc(iaHora(m.criado_em)) + '</time></div>').join('');
+    IA.msgs.map(m => '<div class="ia-msg ia-' + (m.autor === 'agente' ? 'agente' : 'usuario') + (novas.has(m.id) ? ' ia-nova' : '') + '">' + iaAvatar(m.autor) + '<div class="ia-corpo">' + (String(m.texto || '').trim() ? (m.autor === 'agente' ? '<div class="ia-texto">' + iaFormatar(m.texto) + '</div>' : '<p>' + esc(m.texto) + '</p>') : '') + iaAnexosHTML(m) + '<time datetime="' + esc(m.criado_em) + '">' + esc(iaHora(m.criado_em)) + '</time></div></div>').join('');
   const ultima = IA.msgs && IA.msgs[IA.msgs.length - 1];
-  if (IA.pensando) h += '<p class="ia-aviso ia-pensando">O ' + IA_NOME + ' está escrevendo…</p>';
+  if (IA.pensando) h += '<div class="ia-pensando" role="status"><span class="ia-av ia-av-agente" aria-hidden="true"><img src="' + IA_IMG.fechado + '" alt="" width="28" height="28" draggable="false"></span><span class="ia-dig"><i></i><i></i><i></i></span><span class="ia-aviso">O ' + IA_NOME + ' está escrevendo</span></div>';
   else if (ultima && ultima.autor === 'agente' && ultima.contexto && (ultima.contexto.botoes || []).length)
-    h += '<div class="ia-botoes" role="group" aria-label="Respostas rápidas">' + ultima.contexto.botoes.map((b, i) => '<button type="button" class="btn ' + (i ? 'sec ' : '') + 'peq" data-ia-botao="' + i + '">' + esc(b.rotulo) + '</button>').join('') + '</div>';
+    h += '<div class="ia-botoes' + (novas.has(ultima.id) ? ' ia-nova' : '') + '" role="group" aria-label="Respostas rápidas">' + ultima.contexto.botoes.map((b, i) => '<button type="button" class="btn ' + (i ? 'sec ' : '') + 'peq" data-ia-botao="' + i + '">' + esc(b.rotulo) + '</button>').join('') + '</div>';
   else if (ultima && ultima.autor === 'usuario' && !iaGuiaAtiva()) h += '<p class="ia-aviso">O ' + IA_NOME + ' ainda não está ligado. Sua mensagem ficou guardada.</p>';
   if (IA.erro) h += '<p class="ia-aviso erro">' + esc(IA.erro) + '</p>';
   const antes = box.scrollHeight - box.scrollTop;
@@ -212,6 +220,12 @@ function iaDesenharMsgs(){
   if (semUrl.length && !IA.assinando){ IA.assinando = true; iaAssinar(semUrl).finally(() => { IA.assinando = false; if (semUrl.some(c => IA.urls[c])) iaDesenharMsgs(); }); }
 }
 const IA_CAMPOS = 'id, autor, texto, anexos, contexto, criado_em';
+// a fotinha ao lado de cada balão: o robozinho do DevIT, ou a inicial do nome de quem está logado
+function iaAvatar(autor){
+  if (autor === 'agente') return '<span class="ia-av ia-av-agente" aria-hidden="true"><img src="' + IA_IMG.fechado + '" alt="" width="28" height="28" draggable="false"></span>';
+  const nome = (typeof MU !== 'undefined' && MU.eu && MU.eu.nome) || '';
+  return '<span class="ia-av ia-av-usuario" title="' + esc(nome || 'Você') + '" aria-hidden="true">' + esc((nome.trim()[0] || '?').toUpperCase()) + '</span>';
+}
 /* ---------- guias conduzidos pelo DevIT (função devit, parte 37): passo a passo com botões e dúvidas ---------- */
 // texto do DevIT: **negrito**, `código`, blocos ``` com botão de copiar; tudo escapado antes
 function iaFormatar(t){
@@ -251,9 +265,13 @@ async function iaBotao(i){
     if (typeof ifrBancoModal === 'function' && typeof IFR !== 'undefined' && IFR.no && UI.view === 'infra') return ifrBancoModal(null, b.valor.slice(12));
     return toast('Abra a aba Infraestrutura da aplicação e clique em Ligar banco, em Bancos de dados.');
   }
-  const sb = iaBanco(); if (!sb) return;
+  return iaFalarValor(b.rotulo, b.valor, a.contexto.guia);
+}
+// a fala da pessoa vai para a conversa com o valor do botão, e o DevIT responde
+async function iaFalarValor(rotulo, valor, guia){
+  const sb = iaBanco(); if (!sb || IA.enviando || IA.pensando) return;
   IA.enviando = true; iaDesenharMsgs();
-  const {data, error} = await sb.from('ia_mensagens').insert({autor:'usuario', texto:b.rotulo, anexos:[], contexto:{guia:a.contexto.guia, valor:b.valor}}).select(IA_CAMPOS);
+  const {data, error} = await sb.from('ia_mensagens').insert({autor:'usuario', texto:rotulo, anexos:[], contexto:{guia, valor}}).select(IA_CAMPOS);
   IA.enviando = false;
   const linha = Array.isArray(data) ? data[0] : data;
   if (error || !linha){ IA.erro = 'A resposta não foi guardada' + (error ? ': ' + error.message : '') + '. Tente de novo.'; iaDesenharMsgs(); return; }
@@ -333,6 +351,7 @@ document.addEventListener('click', e => {
   const ab = e.target.closest('#ia-raiz [data-ia-abrir]'); if (ab) return iaAbrir(ab.dataset.iaAbrir);
   const bo = e.target.closest('#ia-raiz [data-ia-botao]'); if (bo) return iaBotao(+bo.dataset.iaBotao);
   const cp = e.target.closest('#ia-raiz [data-ia-copiar]'); if (cp) return enCopiar(cp.dataset.iaCopiar, cp);
+  if (e.target.closest('#ia-raiz [data-ia-encerrar]')){ const g = iaGuiaAtiva(); if (g) return iaFalarValor('Encerrar conversa', 'parar', g.guia); }
 });
 document.addEventListener('submit', e => { if (e.target.closest('#ia-raiz [data-ia-form]')){ e.preventDefault(); iaEnviar(); } });
 document.addEventListener('change', e => { const f = e.target.closest('#ia-raiz [data-ia-arquivo]'); if (f){ iaAnexar(f.files); f.value = ''; } });

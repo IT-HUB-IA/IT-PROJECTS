@@ -84,7 +84,7 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
         } catch (e) { return Promise.resolve({ data: null, error: { message: String(e.stderr || e.message) } }).then(res, rej); } } };
       return px; } });
   const chamadas = [];
-  await p.exposeFunction('__devit', async s => { chamadas.push(JSON.parse(s)); const r = await tratar(new Request('http://x/devit', { method: 'POST', body: s }), { env: () => undefined, usuario: bancoDe('usuario'), servico: bancoDe('servico') }); return JSON.stringify({ data: await r.json(), error: null }); });
+  await p.exposeFunction('__devit', async s => { chamadas.push(JSON.parse(s)); const at = await p.evaluate(() => window.__atraso || 0).catch(() => 0); if (at) await new Promise(r => setTimeout(r, at)); const r = await tratar(new Request('http://x/devit', { method: 'POST', body: s }), { env: () => undefined, usuario: bancoDe('usuario'), servico: bancoDe('servico') }); return JSON.stringify({ data: await r.json(), error: null }); });
   psql("update public.ia_permissoes set ativo = true where pessoa_id = " + q(eu));
   await p.goto('file://' + process.cwd() + '/vercel/index.html'); await p.waitForTimeout(2500);
   await p.evaluate(() => { const sb = window.ciclodevBanco; sb.functions.invoke = async (nome, o) => nome === 'devit' ? JSON.parse(await window.__devit(JSON.stringify(o.body || {}))) : {data:null, error:{message:'?'}};
@@ -100,6 +100,9 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   let c = await chat();
   ok(c.aberto && !document_temJanela(await p.evaluate(() => !!document.querySelector('dialog.ifr-gp-dlg'))) && /onde o seu banco está/.test(c.ultima) && c.botoes.join('|') === 'Supabase|AWS (RDS ou Aurora)', 'Guia passo a passo abre o chat do DevIT perguntando onde o banco está, com os botões Supabase e AWS');
   await clicar('Supabase'); c = await chat();
+  const av = await p.evaluate(() => { const ms = [...document.querySelectorAll('#ia-chat .ia-msg')]; return ms.map(m => m.classList.contains('ia-agente') ? (m.querySelector('.ia-av-agente img') ? 'robo' : 'sem') : (m.querySelector('.ia-av-usuario') || {}).textContent || 'sem'); });
+  ok(av.length >= 3 && av.every(x => x === 'robo' || /^[A-Z]$/.test(x)) && av.includes('robo') && av.some(x => /^[A-Z]$/.test(x)), 'cada balão tem a fotinha: o robozinho do DevIT ou a inicial de quem está logado (' + av.join(',') + ')');
+  ok(!/^Oi/.test((await p.evaluate(() => [...document.querySelectorAll('#ia-chat .ia-agente .ia-texto')].pop().textContent)).trim()), 'depois da primeira fala, o DevIT não cumprimenta de novo');
   ok(/banco do Supabase/.test(c.ultima) && c.botoes[0] === 'Vamos começar', 'escolher Supabase: o DevIT explica o que vai acontecer e pergunta se pode começar');
   ok(conta("select count(*) from public.ia_mensagens where autor = 'usuario' and texto = 'Supabase' and contexto->>'valor' = 'guia:banco-supabase'") === '1', 'o clique vira uma fala da pessoa guardada na conversa');
   await clicar('Vamos começar'); await clicar('Feito'); c = await chat();
@@ -127,6 +130,27 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   ok(chamadas.length === n, 'com o guia encerrado, a mensagem fica guardada e o DevIT não é chamado');
   if (FOTOS) await p.locator('#ia-chat').screenshot({ path: FOTOS + '/devit_fim.png' });
   ok(conta("select count(*) from public.ia_mensagens where autor = 'agente' and contexto ? 'guia'") >= '10', 'as falas do DevIT ficam guardadas na conversa, com o guia e o passo');
+  // Encerrar no meio do guia, com o DevIT digitando antes de responder (atraso de mentira para ver os pontinhos)
+  await p.evaluate(() => { window.__atraso = 700; });
+  await p.locator('#ops-corpo [data-ifr-guia]').click(); await p.waitForTimeout(1200);
+  await clicar('AWS (RDS ou Aurora)'); await p.waitForTimeout(900);
+  ok(await p.evaluate(() => !document.querySelector('#ia-raiz [data-ia-encerrar]').hidden), 'com um guia em andamento aparece Encerrar conversa no topo do chat');
+  await p.locator('#ia-chat [data-ia-botao]', { hasText: 'Vamos começar' }).first().click(); await p.waitForTimeout(250);
+  const dig = await p.evaluate(() => { const d = document.querySelector('#ia-chat .ia-pensando'); return !!(d && d.querySelectorAll('.ia-dig i').length === 3 && d.querySelector('.ia-av-agente')); });
+  if (FOTOS) await p.locator('#ia-chat').screenshot({ path: FOTOS + '/devit_digitando.png' });
+  ok(dig, 'enquanto o DevIT pensa, aparecem os três pontinhos animados com a fotinha dele');
+  await p.waitForTimeout(900);
+  ok(await p.evaluate(() => { const ms = [...document.querySelectorAll('#ia-chat .ia-msg')]; return ms[ms.length - 1].classList.contains('ia-nova') && getComputedStyle(ms[ms.length - 1]).animationName === 'ia-msg-entrar'; }), 'a mensagem nova entra com transição');
+  await p.click('#ia-raiz [data-ia-encerrar]'); await p.waitForTimeout(1800); c = await chat();
+  ok(/encerrei por aqui/.test(c.ultima) && !c.botoes.length && await p.evaluate(() => document.querySelector('#ia-raiz [data-ia-encerrar]').hidden), 'Encerrar conversa corta o guia no meio: o DevIT se despede e o botão some');
+  ok(conta("select count(*) from public.ia_mensagens where autor = 'usuario' and contexto->>'valor' = 'parar'") === '1', 'o encerrar fica registrado na conversa, para o DevIT saber que a pessoa quis parar');
+  await p.evaluate(() => { window.__atraso = 0; });
+  await p.click('#ia-raiz [data-ia-fechar]'); await p.waitForTimeout(60);
+  const saindo = await p.evaluate(() => { const c = document.querySelector('#ia-chat'); return !c.hidden && c.classList.contains('ia-saindo'); });
+  await p.waitForTimeout(300);
+  ok(saindo && await p.evaluate(() => document.querySelector('#ia-chat').hidden), 'fechar o chat tem transição e depois ele some');
+  await p.click('#ia-raiz [data-ia-balao]'); await p.waitForTimeout(40);
+  ok(await p.evaluate(() => document.querySelector('#ia-chat').classList.contains('ia-entrando')), 'abrir o chat tem transição');
   ok(!erros.length, 'sem erro na página' + (erros.length ? ': ' + erros.join(' | ') : ''));
   await b.close(); console.log(falhas ? falhas + ' FALHA(S)' : 'TUDO OK'); process.exit(falhas ? 1 : 0);
 })();
