@@ -2468,7 +2468,8 @@ dialog.modal.lt-modal{width:min(1040px, calc(100vw - 32px));max-width:none}
 .lt-at-nova{border-style:dashed}
 
 /* Tabela: responsável em lote (tabela_lote.js), botão no cabeçalho da coluna Responsável */
-.rl-cab{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;flex-wrap:nowrap}
+.tl-resp-cab{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;flex-wrap:nowrap;margin:0;vertical-align:bottom}
+.tl-resp-cab .rl-col{margin:-4px 0}
 .rl-col{display:inline-grid;place-items:center;width:22px;height:22px;padding:0;border:1px solid rgba(255,255,255,.45);background:transparent;color:inherit;cursor:pointer;flex:none}
 .rl-col:hover{border-color:#fff;background:rgba(255,255,255,.12)}
 .rl-col:focus-visible{outline:2px solid var(--vermelho);outline-offset:1px}
@@ -12073,7 +12074,7 @@ vTable = function(){
   if (!podeEditar()) return h;
   const bt = '<button class="rl-col" type="button" data-rl-abrir title="Responsável em lote: a mesma pessoa em vários itens de uma vez" aria-label="Responsável em lote">' + RL_ICO + '</button>';
   // o botão fica dentro do cabeçalho da coluna Responsável
-  return h.replace(/(<th scope="col" class="ord" data-ordem="resp">)([^<]*)(<\/th>)/, '$1<span class="rl-cab">' + bt + '$2</span>$3');
+  return h.replace(/(<th scope="col" class="ord" data-ordem="resp">)([^<]*)(<\/th>)/, '$1<span class="tl-resp-cab">' + bt + '$2</span>$3');
 };
 function rlAbrir(){
   const lista = listaFiltrada(), marcados = lista.filter(i => selItens.has(i.id));

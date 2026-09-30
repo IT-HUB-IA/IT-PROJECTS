@@ -9,7 +9,7 @@ vTable = function(){
   if (!podeEditar()) return h;
   const bt = '<button class="rl-col" type="button" data-rl-abrir title="Responsável em lote: a mesma pessoa em vários itens de uma vez" aria-label="Responsável em lote">' + RL_ICO + '</button>';
   // o botão fica dentro do cabeçalho da coluna Responsável
-  return h.replace(/(<th scope="col" class="ord" data-ordem="resp">)([^<]*)(<\/th>)/, '$1<span class="rl-cab">' + bt + '$2</span>$3');
+  return h.replace(/(<th scope="col" class="ord" data-ordem="resp">)([^<]*)(<\/th>)/, '$1<span class="tl-resp-cab">' + bt + '$2</span>$3');
 };
 function rlAbrir(){
   const lista = listaFiltrada(), marcados = lista.filter(i => selItens.has(i.id));
