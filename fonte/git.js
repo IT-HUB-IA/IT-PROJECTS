@@ -193,11 +193,20 @@ function gcAdminHTML(){
         '<p class="sec">Crie a partir do endereço principal do CicloDev (' + esc(location.origin) + '): é para ele que o GitHub devolve as janelinhas. O nome do app precisa ser único no GitHub; se já existir, troque na tela do GitHub.</p>' +
         '<button type="button" class="btn acento" data-gc-criar-app>' + EN_ICO.github + 'Criar o app do GitHub</button>') +
     '</section><section class="grafico gc-adm"><h3>' + EN_ICO.gitlab + 'GitLab</h3>' +
-    '<p>No GitLab, em <b>Preferences, Applications</b> (ou no grupo, em <b>Settings, Applications</b>), crie um aplicativo com:</p>' +
-    '<ul class="gc-lista-adm"><li>Redirect URI: <code>' + esc(gcRetorno('gitlab')) + '</code></li><li>Confidential: marcado</li><li>Scopes: <b>api</b></li></ul>' +
-    '<div class="grade-form"><label class="lb">Application ID<input class="campo" id="gc-gl-id" value="' + esc(gl.client_id || '') + '" autocomplete="off"></label>' +
-    '<label class="lb">Secret<input class="campo" id="gc-gl-seg" type="password" autocomplete="off" placeholder="' + (gl.pronto ? 'deixe vazio para manter' : '') + '"></label>' +
-    '<label class="lb largo">Endereço do GitLab<input class="campo" id="gc-gl-base" value="' + esc(gl.base || 'https://gitlab.com') + '"></label></div>' +
+    (gl.pronto ? '' : '<ol class="gc-passos">' +
+      '<li>Se a sua empresa usa um GitLab próprio (não o gitlab.com), troque primeiro o <b>Endereço do GitLab</b> lá embaixo.</li>' +
+      '<li>Abra a página de aplicativos do GitLab, já logado com a conta da empresa: <a href="' + esc((gl.base || 'https://gitlab.com').replace(/\/$/, '')) + '/-/user_settings/applications" target="_blank" rel="noopener noreferrer"><b>abrir no GitLab</b></a>. (Caminho pelo menu: sua foto, <b>Edit profile</b>, <b>Applications</b>.)</li>' +
+      '<li>Clique em <b>Add new application</b> e preencha:<ul>' +
+        '<li><b>Name</b>: CicloDev</li>' +
+        '<li><b>Redirect URI</b>: <code>' + esc(gcRetorno('gitlab')) + '</code> <button type="button" class="btn sec mini" data-gc-copiar="' + esc(gcRetorno('gitlab')) + '">Copiar</button></li>' +
+        '<li><b>Confidential</b>: deixe marcado</li>' +
+        '<li><b>Scopes</b>: marque só <b>api</b></li></ul></li>' +
+      '<li>Clique em <b>Save application</b>. O GitLab mostra dois códigos: <b>Application ID</b> e <b>Secret</b>. Copie cada um para os campos abaixo. O Secret só aparece uma vez: se fechar a página, use <b>Renew secret</b>.</li>' +
+      '<li>Clique em <b>Salvar o GitLab</b>.</li></ol>') +
+    '<p class="sec">Os campos abaixo não são o seu login. São os códigos que o GitLab gera no passo 4. Se o navegador oferecer para preencher com seu e-mail ou senha, recuse.</p>' +
+    '<div class="grade-form"><label class="lb">Application ID<input class="campo" id="gc-gl-id" name="gc-gitlab-application-id" value="' + esc(gl.client_id || '') + '" autocomplete="off" spellcheck="false" data-lpignore="true" data-1p-ignore placeholder="código longo do GitLab"></label>' +
+    '<label class="lb">Secret<input class="campo gc-oculto" id="gc-gl-seg" name="gc-gitlab-secret" type="text" autocomplete="off" spellcheck="false" data-lpignore="true" data-1p-ignore placeholder="' + (gl.pronto ? 'deixe vazio para manter' : 'começa com gloas-') + '"></label>' +
+    '<label class="lb largo">Endereço do GitLab<input class="campo" id="gc-gl-base" name="gc-gitlab-base" value="' + esc(gl.base || 'https://gitlab.com') + '" autocomplete="off" spellcheck="false"></label></div>' +
     '<p class="sec">' + (gl.pronto ? 'Pronto. As empresas conectam a conta delas em Entregas, Ligar repositório.' : 'Ainda não configurado.') + '</p>' +
     '<button type="button" class="btn ' + (gl.pronto ? 'sec' : 'acento') + '" data-gc-gitlab>' + (gl.pronto ? 'Salvar mudanças' : 'Salvar o GitLab') + '</button></section></div>';
 }
@@ -226,6 +235,8 @@ async function gcCriarApp(){
 }
 async function gcSalvarGitlab(){
   const d = {client_id:$('#gc-gl-id').value.trim(), client_secret:$('#gc-gl-seg').value.trim(), base:$('#gc-gl-base').value.trim(), retorno:gcRetorno('gitlab')};
+  if (!d.client_id || /@|\s/.test(d.client_id)){ toast('O Application ID é o código longo que o GitLab mostra depois de salvar o aplicativo, não o seu e-mail'); return; }
+  if (!d.client_secret && !(GC.status && GC.status.gitlab && GC.status.gitlab.pronto)){ toast('Cole o Secret que o GitLab mostrou junto com o Application ID'); return; }
   const {error} = await gcSb().rpc('git_app_gravar', {p_provedor:'gitlab', p_dados:d});
   if (error){ toast('Não deu para salvar: ' + tfErro(error)); return; }
   GC.status = null; await gcCarregar(true); rAdmin(); tfAviso('GitLab configurado.', [], 3000);
@@ -234,6 +245,7 @@ document.addEventListener('click', e => {
   if (!e.target.closest('#m-admin')) return;
   if (e.target.closest('[data-gc-criar-app]')){ gcCriarApp(); return; }
   if (e.target.closest('[data-gc-gitlab]')){ gcSalvarGitlab(); return; }
+  const cp = e.target.closest('[data-gc-copiar]'); if (cp){ enCopiar(cp.dataset.gcCopiar, cp); return; }
 });
 // voltou da janelinha com a janela principal fechada (ou recarregada): termina agora
 (function(){ const v = gcLer(GC_VOLTA); if (v && v.dados && Date.now() - (v.t || 0) < 10 * 60000) setTimeout(() => gcVolta(v.dados), 1500); })();

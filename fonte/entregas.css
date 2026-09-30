@@ -172,3 +172,8 @@
 .gc-adm p{margin:0 0 10px}
 .gc-adm code{font-family:var(--font-mono);font-size:12px;overflow-wrap:anywhere}
 .gc-lista-adm{margin:0 0 12px;padding-left:18px;font-size:13px}
+.gc-passos{margin:0 0 12px;padding-left:20px;font-size:13px;line-height:1.55}
+.gc-passos > li{margin-bottom:6px}
+.gc-passos ul{margin:4px 0 0;padding-left:18px}
+.gc-passos .mini{padding:1px 8px;font-size:11px;margin-left:4px}
+.gc-oculto{-webkit-text-security:disc;text-security:disc}
