@@ -217,7 +217,7 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   await p.click('[data-ifr-banco=""]'); await p.waitForTimeout(600);
   await p.click('dialog.modal[open] input[name="ifr-b-prov"][value="aws"]'); await p.waitForTimeout(200);
   await p.selectOption('#ifr-b-motor', 'mysql'); await p.waitForTimeout(200);
-  ok(await p.evaluate(() => { const d = document.querySelector('dialog.modal[open]'); const l = d.querySelector('[data-ifr-guia-abrir]'); return /security group/.test(d.textContent) && l && /da AWS/.test(l.textContent); }), 'escolher AWS mostra o resumo e o link para o guia passo a passo da AWS');
+  ok(await p.evaluate(() => { const d = document.querySelector('dialog.modal[open]'); const l = d.querySelector('[data-ifr-guia-abrir]'); return /security group/.test(d.textContent) && l && /\(AWS\)/.test(l.textContent); }), 'escolher AWS mostra o resumo e o link para o guia passo a passo da AWS');
   await p.fill('#ifr-b-nome', 'Relatórios'); await p.fill('#ifr-b-esq', 'relatorios');
   await p.fill('#ifr-b-host', 'rel.abc123.us-east-1.rds.amazonaws.com'); await p.fill('#ifr-b-base', 'relatorios'); await p.fill('#ifr-b-senha', 's3nh@ de teste');
   await p.click('dialog.modal[open] .modal-rod .btn:not(.sec)'); await p.waitForTimeout(2500);

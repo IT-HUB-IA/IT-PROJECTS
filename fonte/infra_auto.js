@@ -108,45 +108,23 @@ const IFR_GUIA = {
 const ifrCmd = txt => '<div class="ifr-gp-cmd"><pre class="ifr-pre">' + esc(txt) + '</pre><button type="button" class="btn sec peq" data-ifr-copiar="' + esc(txt) + '">Copiar</button></div>';
 const ifrPasso = (n, titulo, corpo) => '<li class="ifr-gp-passo"><span class="ifr-gp-num">' + n + '</span><div><h4>' + titulo + '</h4>' + corpo + '</div></li>';
 const ifrErros = linhas => '<div class="ifr-gp-erros"><h4>Se aparecer um erro</h4><dl>' + linhas.map(([m, f]) => '<dt>' + m + '</dt><dd>' + f + '</dd>').join('') + '</dl></div>';
-const IFR_GUIA_COMPLETO = {
-  supabase: () => '<p class="ifr-gp-intro">Leva uns 5 minutos. Você vai criar no Supabase um usuário só para o CicloDev, copiar o endereço de conexão e colar aqui. Esse usuário enxerga só a <b>estrutura</b> do banco (nomes das tabelas, colunas, ligações e regras de acesso). Ele <b>não consegue ler nem mudar nenhum dado</b>.</p><ol class="ifr-gp">' +
-    ifrPasso(1, 'Abra o projeto certo no Supabase', '<p>Entre no painel do Supabase do <b>sistema que você quer desenhar</b> (por exemplo, o do sistema da BL). Não é o projeto do CicloDev.</p>') +
-    ifrPasso(2, 'Crie o usuário do CicloDev', '<p>No menu da esquerda, abra o <b>SQL Editor</b>, clique em <b>New query</b>, cole o texto abaixo, <b>troque a senha</b> e clique em <b>Run</b>.</p>' +
-      ifrCmd("create role leitura_ciclodev with login password 'troque-por-uma-senha-forte';\nalter role leitura_ciclodev set default_transaction_read_only = on;") +
-      '<p class="ifr-gp-dica">Use uma senha só com letras e números, com 20 caracteres ou mais. Símbolos como <code>@ # / : ?</code> quebram o endereço de conexão.</p>' +
-      '<p class="ifr-gp-dica">Não precisa dar permissão em nenhuma tabela: a estrutura fica visível para qualquer usuário do banco, e os dados continuam fechados. A segunda linha deixa esse usuário sempre em modo somente leitura.</p>') +
-    ifrPasso(3, 'Copie o endereço de conexão', '<p>Clique no botão <b>Connect</b>, no alto do painel. Em <b>Connection string</b>, escolha o método <b>Session pooler</b> e copie o endereço. Ele é parecido com este:</p>' +
-      '<pre class="ifr-pre">postgresql://postgres.abcdefghijklmnop:[YOUR-PASSWORD]@aws-0-sa-east-1.pooler.supabase.com:5432/postgres</pre>' +
-      '<p class="ifr-gp-dica">Por que o Session pooler: ele funciona em qualquer plano do Supabase e pela internet comum. A conexão direta só funciona com IPv6 ou com o complemento pago de IPv4.</p>') +
-    ifrPasso(4, 'Troque o usuário e a senha no endereço', '<p>No endereço copiado, mude duas coisas:</p><ul><li><code>postgres.</code> vira <code>leitura_ciclodev.</code> (o código do projeto depois do ponto continua igual);</li><li><code>[YOUR-PASSWORD]</code> vira a senha do passo 2, sem os colchetes.</li></ul>' +
-      '<pre class="ifr-pre">postgresql://leitura_ciclodev.abcdefghijklmnop:SuaSenhaForte123@aws-0-sa-east-1.pooler.supabase.com:5432/postgres</pre>') +
-    ifrPasso(5, 'Cole no CicloDev e salve', '<p>Clique em <b>Ligar banco</b> (aqui embaixo), escolha <b>Supabase</b>, dê um nome (por exemplo "Produção"), deixe o esquema <code>public</code> (ou escreva outros separados por vírgula), cole o endereço e clique em <b>Salvar</b>.</p>') +
-    ifrPasso(6, 'Confira', '<p>Em alguns minutos o banco aparece em <b>Bancos de dados</b> com "Lido há poucos minutos". O DER sai na sub-aba DER, o mapa de acesso na sub-aba Segurança, e a seção Database da ficha técnica é preenchida. Depois disso o CicloDev confere o banco de hora em hora.</p>') +
-    '</ol>' + ifrErros([
-      ['Tenant or user not found', 'Faltou o código do projeto depois do usuário. O certo é <code>leitura_ciclodev.abcdefghijklmnop</code>, com o ponto.'],
-      ['password authentication failed', 'A senha não confere. Se você acabou de trocar a senha, espere um minuto e clique em Atualizar agora (o Supabase guarda a senha antiga por um instante).'],
-      ['Não conecta ou demora demais', 'Se o projeto usa <b>Network Restrictions</b> (Settings, Database), o CicloDev fica bloqueado, porque ele lê de servidores sem IP fixo. Libere o acesso ou desligue a restrição.'],
-      ['O DER saiu vazio', 'O esquema digitado não existe ou está escrito diferente. Confira no Table Editor do Supabase.']]),
-  aws: () => '<p class="ifr-gp-intro">Leva uns 15 minutos. Vale para <b>RDS</b> e <b>Aurora</b>, com PostgreSQL ou MySQL. Você vai deixar o banco alcançável pela internet, criar um usuário só para o CicloDev e preencher os dados aqui.</p><ol class="ifr-gp">' +
-    ifrPasso(1, 'Ache o endereço do banco', '<p>No console da AWS, abra <b>RDS</b> e depois <b>Databases</b>. Clique no banco e, na aba <b>Connectivity &amp; security</b>, copie o <b>Endpoint</b> e a <b>Port</b>.</p>' +
-      '<p class="ifr-gp-dica">No <b>Aurora</b>, clique no cluster e use o endpoint do tipo <b>Reader</b> (leitura). Assim o CicloDev não pesa no banco principal.</p>') +
-    ifrPasso(2, 'Deixe o banco acessível pela internet', '<p>Clique em <b>Modify</b>. Em <b>Connectivity</b>, abra <b>Additional configuration</b> e marque <b>Publicly accessible</b>. Clique em <b>Continue</b>, escolha <b>Apply immediately</b> e confirme.</p>' +
-      '<p class="ifr-gp-dica">Se o banco estiver numa sub-rede privada (sem saída para a internet), só isso não basta: fale com quem cuida da rede da AWS.</p>') +
-    ifrPasso(3, 'Libere a porta no security group', '<p>Volte para <b>Connectivity &amp; security</b> e clique no <b>VPC security group</b>. Em <b>Inbound rules</b>, clique em <b>Edit inbound rules</b> e em <b>Add rule</b>: em <b>Type</b> escolha <b>PostgreSQL</b> (ou <b>MYSQL/Aurora</b>), em <b>Source</b> escolha <b>Anywhere-IPv4</b> (<code>0.0.0.0/0</code>) e clique em <b>Save rules</b>.</p>' +
-      '<p class="ifr-gp-alerta">Por que liberar para qualquer origem: o CicloDev lê de servidores do Supabase que não têm IP fixo. A proteção fica por conta do usuário só de leitura, da senha forte e da conexão sempre criptografada (SSL). Se a sua empresa não permite isso, o banco não tem como ser lido de fora.</p>') +
-    ifrPasso(4, 'Crie o usuário do CicloDev', '<p>Entre no banco com o usuário principal (pelo DBeaver, pgAdmin, MySQL Workbench ou o Query editor do console), <b>troque a senha</b> e rode o comando do seu tipo de banco.</p><p><b>PostgreSQL</b></p>' +
-      ifrCmd("create user leitura_ciclodev with password 'troque-por-uma-senha-forte';\nalter role leitura_ciclodev set default_transaction_read_only = on;") +
-      '<p class="ifr-gp-dica">No PostgreSQL não precisa dar permissão em tabela: a estrutura fica visível para qualquer usuário, e os dados continuam fechados.</p><p><b>MySQL</b> (troque <code>NOME_DO_BANCO</code>)</p>' +
-      ifrCmd("create user 'leitura_ciclodev'@'%' identified by 'troque-por-uma-senha-forte' require ssl;\ngrant select, show view on NOME_DO_BANCO.* to 'leitura_ciclodev'@'%';") +
-      '<p class="ifr-gp-dica">No MySQL o banco só mostra a estrutura das tabelas que o usuário pode ler, por isso aqui é preciso o <code>select</code>. O CicloDev continua lendo só a estrutura, numa sessão somente leitura.</p>') +
-    ifrPasso(5, 'Preencha no CicloDev e salve', '<p>Clique em <b>Ligar banco</b> (aqui embaixo), escolha <b>AWS</b> e o motor, e preencha: <b>Endpoint</b> e <b>Porta</b> do passo 1, <b>Banco (database)</b> (no PostgreSQL costuma ser <code>postgres</code>; no MySQL é o nome do banco), usuário <code>leitura_ciclodev</code> e a senha. Em <b>Esquemas</b>, deixe <code>public</code> no PostgreSQL; no MySQL, escreva o nome do banco. Clique em <b>Salvar</b>.</p>') +
-    ifrPasso(6, 'Confira', '<p>Em alguns minutos o banco aparece em <b>Bancos de dados</b> com "Lido há poucos minutos" e os desenhos saem sozinhos. O CicloDev confere de hora em hora.</p>') +
-    '</ol>' + ifrErros([
-      ['Demora e dá tempo esgotado (timeout)', 'O banco não está alcançável: confira o passo 2 (Publicly accessible) e o passo 3 (regra de entrada na porta certa).'],
-      ['password authentication failed / Access denied', 'Usuário ou senha não conferem. Confira se o usuário foi criado no mesmo banco do endpoint.'],
-      ['no pg_hba.conf entry ... no encryption', 'O banco exige conexão criptografada. O CicloDev já conecta com SSL; se aparecer, confira se o endpoint é o do banco certo.'],
-      ['O DER saiu vazio', 'O esquema (PostgreSQL) ou o banco (MySQL) digitado não existe ou está escrito diferente.']])
-};
+// a janela monta o guia da mesma base de conhecimento que o DevIT usa (window.DEVIT_CONHECIMENTO, do build)
+const ifrTxt = t => String(t || '').split(/\n{2,}/).map(x => '<p>' + x.split('\n').map(l => esc(l).replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>').replace(/`([^`]+)`/g, '<code>$1</code>')).join('<br>') + '</p>').join('');
+function ifrGuiaHTML(prov){
+  const K = window.DEVIT_CONHECIMENTO || {guias:{}, faq:[]}, chave = 'banco-' + prov, g = K.guias[chave];
+  if (!g) return '<p class="ifr-meta">Guia indisponível.</p>';
+  const intro = g.abertura.split(/\n{2,}/).filter(x => !/Podemos começar/.test(x)).join('\n\n');
+  return '<div class="ifr-gp-intro">' + ifrTxt(intro) + '</div><ol class="ifr-gp">' +
+    g.passos.map((p, i) => ifrPasso(i + 1, esc(p.titulo), ifrTxt(p.texto) + (p.comando ? ifrCmd(p.comando) : '') + (p.texto2 ? ifrTxt(p.texto2) : '') + (p.comando2 ? ifrCmd(p.comando2) : '') + (p.nota ? '<div class="ifr-gp-dica">' + ifrTxt(p.nota) + '</div>' : ''))).join('') +
+    '</ol>' + ifrErros(K.faq.filter(f => f.guias.includes(chave)).map(f => [esc(f.titulo), ifrTxt(f.resposta.replace(/```\n?/g, ''))]));
+}
+const IFR_GUIA_COMPLETO = {supabase: () => ifrGuiaHTML('supabase'), aws: () => ifrGuiaHTML('aws')};
+// botão de guia: abre o chat do DevIT conduzindo o passo a passo; sem o DevIT ligado para a pessoa, abre a janela
+async function ifrGuiar(prov){
+  const guia = prov ? 'banco-' + prov : 'banco';
+  if (typeof iaGuiar === 'function' && await iaGuiar(guia)) return;
+  ifrGuiaAbrir(prov || 'supabase');
+}
 function ifrGuiaAbrir(provInicial){
   let prov = provInicial === 'aws' ? 'aws' : 'supabase';
   const dlg = modal('Guia: como ligar um banco de dados', '<div class="ifr-gp-abas" role="tablist"><button type="button" role="tab" data-ifr-gp="supabase">Supabase</button><button type="button" role="tab" data-ifr-gp="aws">AWS (RDS e Aurora)</button></div><div id="ifr-gp-corpo"></div>',
@@ -214,7 +192,7 @@ function ifrBancoModal(id, provInicial){
     c.innerHTML = '<p class="ifr-meta" style="margin:0">O DER' + (motor === 'postgres' ? ' e o mapa de acesso passam' : ' passa') + ' a sair sozinho' + (motor === 'postgres' ? 's' : '') + ' deste banco. O robô só lê a estrutura (tabelas, colunas, chaves' + (motor === 'postgres' ? ', RLS e permissões' : '') + '), nunca os dados, e a conexão abre em modo somente leitura. Dá para ligar vários bancos no mesmo lugar.</p>' +
       '<div class="ifr-prov" role="radiogroup" aria-label="Onde o banco está">' + Object.entries(IFR_PROV).map(([k, n]) => '<label class="ifr-prov-op' + (prov === k ? ' sel' : '') + '"><input type="radio" name="ifr-b-prov" value="' + k + '"' + (prov === k ? ' checked' : '') + '> ' + n + '</label>').join('') + '</div>' +
       (prov !== 'supabase' ? '<label class="lb">Motor<select class="sel" id="ifr-b-motor"><option value="postgres"' + (motor === 'postgres' ? ' selected' : '') + '>PostgreSQL (RDS, Aurora PostgreSQL)</option><option value="mysql"' + (motor === 'mysql' ? ' selected' : '') + '>MySQL (RDS, Aurora MySQL)</option></select></label>' : '') +
-      IFR_GUIA[prov] + (prov !== 'outro' ? '<p style="margin:0"><button type="button" class="ifr-lnk" data-ifr-guia-abrir>Ver o guia passo a passo ' + (prov === 'aws' ? 'da AWS' : 'do Supabase') + '</button></p>' : '') +
+      IFR_GUIA[prov] + (prov !== 'outro' ? '<p style="margin:0"><button type="button" class="ifr-lnk" data-ifr-guia-abrir>' + (typeof IA !== 'undefined' && IA.posso ? 'Fazer o passo a passo com o DevIT' : 'Ver o guia passo a passo') + (prov === 'aws' ? ' (AWS)' : ' (Supabase)') + '</button></p>' : '') +
       '<div class="ifr-ed-linha"><label class="lb">Nome<input class="campo" id="ifr-b-nome" value="' + esc(nome != null ? nome : b ? b.nome : 'Banco de produção') + '"></label>' +
       '<label class="lb">' + (motor === 'mysql' ? 'Bancos (databases)' : 'Esquemas') + '<input class="campo" id="ifr-b-esq" value="' + esc(esq != null ? esq : b ? (b.esquemas || []).join(', ') : motor === 'mysql' ? '' : 'public') + '" placeholder="' + (motor === 'mysql' ? 'nome_do_banco' : 'public') + '"></label></div>' +
       (prov === 'aws'
@@ -224,7 +202,7 @@ function ifrBancoModal(id, provInicial){
         : '<label class="lb">Endereço de conexão' + (b ? ' (deixe vazio para manter o atual)' : '') + '<input class="campo gc-oculto" id="ifr-b-url" type="text" autocomplete="off" spellcheck="false" data-lpignore="true" data-1p-ignore placeholder="' + (prov === 'supabase' ? 'postgresql://leitura_ciclodev.xxxx:senha@aws-0-sa-east-1.pooler.supabase.com:5432/postgres' : motor === 'mysql' ? 'mysql://usuario:senha@servidor:3306/banco' : 'postgresql://usuario:senha@servidor:5432/banco') + '"></label>') +
       '<p class="ifr-meta">O endereço e a senha ficam numa área do banco do CicloDev que nenhuma tela lê; só o robô usa. Ninguém consegue ver a senha depois de salvar.</p>';
   };
-  dlg.addEventListener('click', e => { if (e.target.closest('[data-ifr-guia-abrir]')) ifrGuiaAbrir(prov); });
+  dlg.addEventListener('click', e => { if (e.target.closest('[data-ifr-guia-abrir]')){ if (typeof IA !== 'undefined' && IA.posso){ dlg.close(); dlg.remove(); } ifrGuiar(prov === 'aws' ? 'aws' : 'supabase'); } });
   dlg.addEventListener('change', e => {
     if (e.target.name === 'ifr-b-prov'){ prov = e.target.value; if (prov === 'supabase') motor = 'postgres'; pintar(); }
     else if (e.target.id === 'ifr-b-motor'){ motor = e.target.value; pintar(); }
@@ -254,11 +232,11 @@ document.addEventListener('click', e => {
   if (!e.target.closest('#ops-corpo .ifr-tela') && !e.target.closest('dialog.ifr-modal')) return;
   if (e.target.closest('[data-ifr-atualizar]')) return ifrAutoAtualizar();
   { const bb = e.target.closest('[data-ifr-banco]'); if (bb) return ifrBancoModal(bb.dataset.ifrBanco || null); }
-  { if (e.target.closest('[data-ifr-guia]')) return ifrGuiaAbrir('supabase'); }
+  { if (e.target.closest('[data-ifr-guia]')) return ifrGuiar(null); }
   { const bt = e.target.closest('[data-ifr-banco-tirar]'); if (bt) return ifrBancoTirar(bt.dataset.ifrBancoTirar); }
   if (e.target.closest('[data-ifr-repo]')){ if (typeof gcLigarRepo === 'function') gcLigarRepo(); return; }
   let rb = e.target.closest('[data-ifr-repo-tirar]'); if (rb){ gcDesligarRepo(rb.dataset.ifrRepoTirar); return; }
   rb = e.target.closest('[data-ifr-repo-trocar]'); if (rb){ gcDesligarRepo(rb.dataset.ifrRepoTrocar, true); return; }
   const q = e.target.closest('[data-ifr-quadro]'); if (q){ const dl = q.closest('dialog'); if (dl){ dl.close(); dl.remove(); } ifrAbrirQuadro(q.dataset.ifrQuadro); }
 });
-if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {IFR_AUTO, ifrAutoCarregar, ifrAutoAtualizar, ifrAbrirQuadro, ifrLado, ifrAutoHTML, ifrGuiaAbrir, ifrBancoModal});
+if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {IFR_AUTO, ifrAutoCarregar, ifrAutoAtualizar, ifrAbrirQuadro, ifrLado, ifrAutoHTML, ifrGuiaAbrir, ifrBancoModal, ifrGuiar, ifrGuiaHTML});

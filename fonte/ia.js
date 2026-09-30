@@ -4,7 +4,8 @@
    mandou, usadas como vieram (publico/agente-fechado.webp e publico/agente-aberto.webp), sem recorte nem ajuste.
    A conversa de cada usuário vai para ia_mensagens, e cada pessoa só lê a própria. Nada se apaga: desligar a IA só
    esconde o balão, e o banco também guarda a conversa inteira em .md no agente da pessoa (ia_agentes, parte 26).
-   Ainda não existe agente respondendo: por enquanto o chat só guarda o que o usuário escreve.
+   O agente responde nos guias (função devit, parte 37): conduz o passo a passo com botões e tira dúvidas pela base de
+   conhecimento (supabase/functions/_shared/devit_conhecimento.json). Fora de um guia, o chat só guarda o que o usuário escreve.
    Regra para quando o agente existir: ele só enxerga o que o dono dele enxerga no sistema, e nunca fala de outro projeto. */
 const IA = {posso:false, aberto:false, novas:0, mouse:false, msgs:null, carregando:false, enviando:false, erro:'', perm:null, permErro:'', busca:'', filtro:'todos', mudando:{}};
 const iaBanco = () => (COM_BANCO && window.ciclodevBanco && typeof MU !== 'undefined' && MU.eu) ? window.ciclodevBanco : null;
@@ -196,8 +197,12 @@ function iaDesenharMsgs(){
   if (IA.carregando && !IA.msgs) h = '<p class="ia-aviso">Lendo a conversa…</p>';
   else if (IA.msgs && !IA.msgs.length) h = '<p class="ia-aviso">Olá! Esta é a sua conversa com o ' + IA_NOME + '. Ela fica guardada só para você.</p>';
   else if (IA.msgs) h = (IA.maisAntigas ? '<button type="button" class="ia-antigas" data-ia-antigas' + (IA.carregando ? ' disabled' : '') + '>' + (IA.carregando ? 'Lendo…' : 'Ver mensagens anteriores') + '</button>' : '') +
-    IA.msgs.map(m => '<div class="ia-msg ia-' + (m.autor === 'agente' ? 'agente' : 'usuario') + '">' + (String(m.texto || '').trim() ? '<p>' + esc(m.texto) + '</p>' : '') + iaAnexosHTML(m) + '<time datetime="' + esc(m.criado_em) + '">' + esc(iaHora(m.criado_em)) + '</time></div>').join('');
-  if (IA.msgs && IA.msgs.length && IA.msgs[IA.msgs.length - 1].autor === 'usuario') h += '<p class="ia-aviso">O ' + IA_NOME + ' ainda não está ligado. Sua mensagem ficou guardada.</p>';
+    IA.msgs.map(m => '<div class="ia-msg ia-' + (m.autor === 'agente' ? 'agente' : 'usuario') + '">' + (String(m.texto || '').trim() ? (m.autor === 'agente' ? '<div class="ia-texto">' + iaFormatar(m.texto) + '</div>' : '<p>' + esc(m.texto) + '</p>') : '') + iaAnexosHTML(m) + '<time datetime="' + esc(m.criado_em) + '">' + esc(iaHora(m.criado_em)) + '</time></div>').join('');
+  const ultima = IA.msgs && IA.msgs[IA.msgs.length - 1];
+  if (IA.pensando) h += '<p class="ia-aviso ia-pensando">O ' + IA_NOME + ' está escrevendo…</p>';
+  else if (ultima && ultima.autor === 'agente' && ultima.contexto && (ultima.contexto.botoes || []).length)
+    h += '<div class="ia-botoes" role="group" aria-label="Respostas rápidas">' + ultima.contexto.botoes.map((b, i) => '<button type="button" class="btn ' + (i ? 'sec ' : '') + 'peq" data-ia-botao="' + i + '">' + esc(b.rotulo) + '</button>').join('') + '</div>';
+  else if (ultima && ultima.autor === 'usuario' && !iaGuiaAtiva()) h += '<p class="ia-aviso">O ' + IA_NOME + ' ainda não está ligado. Sua mensagem ficou guardada.</p>';
   if (IA.erro) h += '<p class="ia-aviso erro">' + esc(IA.erro) + '</p>';
   const antes = box.scrollHeight - box.scrollTop;
   box.innerHTML = h; box.scrollTop = IA.manterRolagem ? box.scrollHeight - antes : box.scrollHeight; IA.manterRolagem = false;
@@ -206,7 +211,54 @@ function iaDesenharMsgs(){
   const semUrl = (IA.msgs || []).flatMap(iaAnexosDe).filter(a => iaEhImagem(a) && !IA.urls[a.caminho]).map(a => a.caminho);
   if (semUrl.length && !IA.assinando){ IA.assinando = true; iaAssinar(semUrl).finally(() => { IA.assinando = false; if (semUrl.some(c => IA.urls[c])) iaDesenharMsgs(); }); }
 }
-const IA_CAMPOS = 'id, autor, texto, anexos, criado_em';
+const IA_CAMPOS = 'id, autor, texto, anexos, contexto, criado_em';
+/* ---------- guias conduzidos pelo DevIT (função devit, parte 37): passo a passo com botões e dúvidas ---------- */
+// texto do DevIT: **negrito**, `código`, blocos ``` com botão de copiar; tudo escapado antes
+function iaFormatar(t){
+  const linha = x => esc(x).replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>').replace(/`([^`\n]+)`/g, '<code>$1</code>');
+  return String(t || '').split(/```\n?/).map((parte, i) => i % 2
+    ? '<div class="ia-cod"><pre>' + esc(parte.replace(/\n$/, '')) + '</pre><button type="button" class="btn sec peq" data-ia-copiar="' + esc(parte.replace(/\n$/, '')) + '">Copiar</button></div>'
+    : parte.split(/\n{2,}/).map(x => x.trim()).filter(Boolean).map(x => '<p>' + x.split('\n').map(linha).join('<br>') + '</p>').join('')).join('');
+}
+// o guia está em andamento quando a última fala do DevIT tem guia e não encerrou
+function iaGuiaAtiva(){
+  const a = (IA.msgs || []).filter(m => m.autor === 'agente').pop();
+  return a && a.contexto && a.contexto.guia && !a.contexto.fim ? a.contexto : null;
+}
+const IA_SENHA = /\b[a-z][a-z0-9+.-]*:\/\/[^\s:@\/]+:[^\s]+@[^\s]+/i;   // endereço de conexão com senha: nunca vai para o chat
+async function iaChamar(corpo){
+  const sb = iaBanco(); if (!sb || !sb.functions) return false;
+  IA.pensando = true; IA.erro = ''; iaDesenharMsgs();
+  let data = null, error = null;
+  try { ({data, error} = await sb.functions.invoke('devit', {body:corpo})); } catch (e){ error = e; }
+  IA.pensando = false;
+  if (error || !data || !data.ok){ IA.erro = 'O ' + IA_NOME + ' não conseguiu responder agora' + (data && data.erro ? ': ' + data.erro : '') + '. Tente de novo.'; iaDesenharMsgs(); return false; }
+  (IA.msgs = IA.msgs || []).push(...(data.mensagens || [])); IA.msgs = iaOrdenar(IA.msgs);
+  if ((data.mensagens || []).length && IA.aberto) iaMarcarVisto();
+  iaDesenharMsgs(); return true;
+}
+// abre o chat e começa um guia; devolve false quando o DevIT não está ligado para a pessoa (a tela mostra a janela de guia)
+async function iaGuiar(guia){
+  if (!IA.posso || !iaBanco()) return false;
+  if (!IA.aberto) iaAlternar(true);
+  if (!IA.msgs){ for (let i = 0; i < 40 && (IA.carregando || !IA.msgs); i++) await new Promise(r => setTimeout(r, 50)); }
+  return iaChamar({acao:'guia', guia:guia || 'banco'});
+}
+// a pessoa clicou numa resposta rápida: a fala dela vai para a conversa e o DevIT responde
+async function iaBotao(i){
+  const a = (IA.msgs || [])[IA.msgs.length - 1], b = a && a.contexto && (a.contexto.botoes || [])[i]; if (!b || IA.enviando || IA.pensando) return;
+  if (b.valor.startsWith('local:abrir:')){
+    if (typeof ifrBancoModal === 'function' && typeof IFR !== 'undefined' && IFR.no && UI.view === 'infra') return ifrBancoModal(null, b.valor.slice(12));
+    return toast('Abra a aba Infraestrutura da aplicação e clique em Ligar banco, em Bancos de dados.');
+  }
+  const sb = iaBanco(); if (!sb) return;
+  IA.enviando = true; iaDesenharMsgs();
+  const {data, error} = await sb.from('ia_mensagens').insert({autor:'usuario', texto:b.rotulo, anexos:[], contexto:{guia:a.contexto.guia, valor:b.valor}}).select(IA_CAMPOS);
+  IA.enviando = false;
+  const linha = Array.isArray(data) ? data[0] : data;
+  if (error || !linha){ IA.erro = 'A resposta não foi guardada' + (error ? ': ' + error.message : '') + '. Tente de novo.'; iaDesenharMsgs(); return; }
+  IA.msgs.push(linha); iaChamar({acao:'responder'});
+}
 async function iaLerConversa(){
   const sb = iaBanco(); if (!sb || IA.carregando) return;
   IA.carregando = true; iaDesenharMsgs();
@@ -230,6 +282,8 @@ async function iaAnteriores(){
 async function iaEnviar(){
   const sb = iaBanco(), t = $('#ia-raiz [data-ia-texto]'); if (!sb || !t || IA.enviando) return;
   const texto = t.value.trim(); if (!texto && !IA.pendentes.length) return;
+  if (IA_SENHA.test(texto)){ IA.erro = 'Não mande senha nem endereço de conexão com senha aqui no chat. Cole direto na janela de ligar banco. Se precisar mostrar o endereço, troque a senha por ***.'; iaDesenharMsgs(); return; }
+  const guia = iaGuiaAtiva();
   IA.enviando = true; IA.erro = ''; iaDesenharMsgs(); iaDesenharPendentes();
   // 1) os arquivos vão para o depósito, na pasta <login>/ia/ da pessoa
   const anexos = [];
@@ -245,7 +299,7 @@ async function iaEnviar(){
     }
   }
   // 2) a mensagem vai para o banco, com a lista dos arquivos
-  const {data, error} = await sb.from('ia_mensagens').insert({autor:'usuario', texto, anexos}).select(IA_CAMPOS);
+  const {data, error} = await sb.from('ia_mensagens').insert({autor:'usuario', texto, anexos, contexto:guia ? {guia:guia.guia} : {}}).select(IA_CAMPOS);
   IA.enviando = false;
   const linha = Array.isArray(data) ? data[0] : data;
   if (error || !linha){ IA.erro = 'A mensagem não foi guardada' + (error ? ': ' + error.message : '') + '. Tente de novo.'; }
@@ -255,6 +309,7 @@ async function iaEnviar(){
     IA.pendentes = [];
   }
   iaDesenharMsgs(); iaDesenharPendentes(); t.focus();
+  if (linha && !error && guia) iaChamar({acao:'responder'});
 }
 function iaAlternar(abrir){
   IA.aberto = abrir === undefined ? !IA.aberto : !!abrir; iaMontar();
@@ -276,6 +331,8 @@ document.addEventListener('click', e => {
   if (e.target.closest('#ia-raiz [data-ia-clipe]')) return $('#ia-raiz [data-ia-arquivo]').click();
   const tira = e.target.closest('#ia-raiz [data-ia-tirar]'); if (tira) return iaTirarPendente(tira.dataset.iaTirar);
   const ab = e.target.closest('#ia-raiz [data-ia-abrir]'); if (ab) return iaAbrir(ab.dataset.iaAbrir);
+  const bo = e.target.closest('#ia-raiz [data-ia-botao]'); if (bo) return iaBotao(+bo.dataset.iaBotao);
+  const cp = e.target.closest('#ia-raiz [data-ia-copiar]'); if (cp) return enCopiar(cp.dataset.iaCopiar, cp);
 });
 document.addEventListener('submit', e => { if (e.target.closest('#ia-raiz [data-ia-form]')){ e.preventDefault(); iaEnviar(); } });
 document.addEventListener('change', e => { const f = e.target.closest('#ia-raiz [data-ia-arquivo]'); if (f){ iaAnexar(f.files); f.value = ''; } });
@@ -306,4 +363,4 @@ if (COM_BANCO){
     return r;
   };
 }
-if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {iaAdminHTML, iaConferir, iaAlternar, iaAnexar, iaAbrir, iaNovidades});
+if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {iaAdminHTML, iaConferir, iaAlternar, iaAnexar, iaAbrir, iaNovidades, iaGuiar, iaFormatar, IA});

@@ -8,6 +8,8 @@ js=js.rstrip()[:-len(_fim.strip())]+'\n'+open('recursos.js',encoding='utf-8').re
 import json, html as _h
 from explicacoes import EXPL
 js='window.EXPL = '+json.dumps(EXPL, ensure_ascii=False)+';\n'+js
+# base de conhecimento do DevIT (guia de ligar banco): a mesma que a função devit usa, fonte única em supabase/functions/_shared
+js='window.DEVIT_CONHECIMENTO = '+json.dumps(json.load(open('../supabase/functions/_shared/devit_conhecimento.json',encoding='utf-8')), ensure_ascii=False).replace('</','<\\/')+';\n'+js
 # o canvas da aba Infraestrutura vai junto, como texto (a aba monta ele num iframe); '</' escapado para não fechar o script da página
 js='window.CANVAS_INFRA_HTML = '+json.dumps(open('canvas_infra.html',encoding='utf-8').read(), ensure_ascii=False).replace('</','<\\/')+';\n'+js
 def _esc(t): return _h.escape(t, quote=True).replace('&#x27;','&#39;')

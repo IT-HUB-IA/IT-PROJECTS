@@ -72,3 +72,12 @@ dialog.modal.ia-ver-modal{width:min(960px,calc(100vw - 32px))}
 .ia-escrever textarea{flex:1;min-width:0;resize:none;max-height:140px;font-size:13.5px}
 html.tema-escuro .ia-chat{filter:invert(.92) hue-rotate(180deg)}
 @media (max-width:720px){ #ia-raiz{right:12px;bottom:12px} .ia-balao{width:64px;height:64px} .ia-chat{height:min(520px,calc(100vh - 110px))} }
+/* falas do DevIT nos guias: parágrafos, comandos com botão de copiar e respostas rápidas */
+.ia-agente .ia-texto{background:var(--preto-04);border-left:2px solid var(--vermelho);padding:8px 11px;font-size:13.5px;line-height:1.5;display:grid;gap:8px;overflow-wrap:anywhere;min-width:0}
+.ia-agente .ia-texto p{margin:0;padding:0;background:none;border:0;white-space:normal}
+.ia-texto code{font-family:var(--font-mono);font-size:12px;background:var(--branco);padding:0 3px}
+.ia-cod{display:grid;gap:6px;justify-items:start;min-width:0}
+.ia-cod pre{margin:0;width:100%;box-sizing:border-box;background:var(--branco);border:1px solid var(--linha);padding:8px;font-family:var(--font-mono);font-size:11.5px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}
+.ia-agente{max-width:92%}
+.ia-botoes{display:flex;flex-wrap:wrap;gap:6px;align-self:flex-start;max-width:92%}
+.ia-pensando{text-align:left;align-self:flex-start;font-style:italic}

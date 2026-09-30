@@ -1,0 +1,337 @@
+{
+ "versao": "2026-09-30",
+ "nota": "Fonte única do guia de ligar banco: o chat do DevIT (função devit) e a janela de guia da tela (fonte/infra_auto.js, pelo build) leem daqui. Conferido com a documentação oficial do Supabase e da AWS em 30/09/2026. Formato do texto: **negrito**, `código`, linha em branco separa parágrafos. Nunca pôr valor de senha ou chave aqui.",
+ "guias": {
+  "banco-supabase": {
+   "titulo": "Ligar um banco do Supabase",
+   "abertura": "Oi! Vou te ajudar a ligar o banco do Supabase no CicloDev. Leva uns 5 minutos e a gente vai junto, um passo por vez.\n\nPrimeiro, o que vai acontecer: você vai criar no Supabase um usuário só para o CicloDev. Esse usuário enxerga apenas a **estrutura** do banco (os nomes das tabelas, das colunas e as regras de acesso) e **não consegue ler nem mudar nenhum dado**. Com ele, o CicloDev desenha o banco sozinho e mantém os desenhos atualizados.\n\nUm cuidado importante: **nunca cole senha nem o endereço de conexão aqui no chat**. Quando chegar a hora, você cola direto na janela de ligar banco.\n\nPodemos começar?",
+   "passos": [
+    {
+     "titulo": "Abra o projeto certo",
+     "texto": "Entre no painel do Supabase e abra o projeto do **sistema que você quer desenhar**. Atenção: não é o projeto do CicloDev, é o do sistema (por exemplo, o do sistema da BL).",
+     "pergunta": "Conseguiu abrir o projeto certo?"
+    },
+    {
+     "titulo": "Crie o usuário do CicloDev",
+     "texto": "No menu da esquerda, clique em **SQL Editor** e depois em **New query**. Cole o comando abaixo, **troque a senha** por uma sua e clique em **Run**.\n\nDica de senha: use só letras e números, com uns 20 caracteres. Símbolos como @ # / : ? atrapalham o endereço de conexão.",
+     "comando": "create role leitura_ciclodev with login password 'troque-por-uma-senha-forte';\nalter role leitura_ciclodev set default_transaction_read_only = on;",
+     "nota": "Não precisa dar permissão em nenhuma tabela: a estrutura já fica visível para qualquer usuário do banco, e os dados continuam fechados. A segunda linha deixa esse usuário sempre em modo somente leitura. Guarde a senha, ela vai no endereço daqui a pouco.",
+     "pergunta": "Apareceu **Success. No rows returned** embaixo do comando?"
+    },
+    {
+     "titulo": "Copie o endereço de conexão",
+     "texto": "Clique no botão **Connect**, no alto do painel do Supabase. Em **Connection string**, escolha o método **Session pooler** e copie o endereço.\n\nEle é parecido com este:\n`postgresql://postgres.codigodoprojeto:[YOUR-PASSWORD]@aws-0-sa-east-1.pooler.supabase.com:5432/postgres`",
+     "nota": "Por que o Session pooler: ele funciona em qualquer plano do Supabase e pela internet comum. A conexão direta só funciona com IPv6 ou com o complemento pago de IPv4.",
+     "pergunta": "O seu endereço começa com `postgresql://postgres.` e tem `pooler.supabase.com:5432` no meio? (Não cole ele aqui.)"
+    },
+    {
+     "titulo": "Troque o usuário e a senha no endereço",
+     "texto": "Cole o endereço num Bloco de Notas e mude duas coisas:\n\n1. `postgres.` vira `leitura_ciclodev.` (o código do projeto depois do ponto continua igual).\n2. `[YOUR-PASSWORD]` vira a senha que você criou, sem os colchetes.\n\nFica assim: `postgresql://leitura_ciclodev.codigodoprojeto:SuaSenha123@aws-0-sa-east-1.pooler.supabase.com:5432/postgres`",
+     "pergunta": "Pronto? Confira que não sobrou nenhum [ ou ] no endereço."
+    },
+    {
+     "titulo": "Cole no CicloDev e salve",
+     "texto": "Agora é só colar. Na aba **Infraestrutura** da aplicação, em **Bancos de dados**, clique em **Ligar banco** (ou no botão aqui embaixo). Na janela:\n\n1. Em **Onde está**, marque **Supabase**.\n2. Dê um **Nome**, por exemplo Produção.\n3. Deixe o esquema `public`.\n4. Cole o endereço e clique em **Salvar**.\n\nSe o CicloDev achar algum erro no endereço, ele avisa antes de salvar.",
+     "abrir": "supabase",
+     "pergunta": "Salvou? Apareceu a mensagem **Banco salvo**?"
+    },
+    {
+     "titulo": "Confira a leitura",
+     "texto": "Espere uns 2 ou 3 minutos e olhe embaixo do nome do banco, na lista **Bancos de dados**. Se aparecer **Lido há poucos minutos**, deu tudo certo: o DER sai na sub-aba DER, o mapa de acesso na sub-aba Segurança, e a seção Database da ficha técnica é preenchida. Depois disso o CicloDev confere o banco sozinho de hora em hora.",
+     "pergunta": "O que apareceu embaixo do nome do banco?"
+    }
+   ],
+   "fim": "Pronto, o banco está ligado! A partir de agora o CicloDev lê a estrutura de hora em hora e refaz os desenhos quando alguma tabela mudar. Se um dia precisar trocar a senha, crie a senha nova no Supabase e use **Trocar** ao lado do banco. Qualquer dúvida, é só me chamar."
+  },
+  "banco-aws": {
+   "titulo": "Ligar um banco da AWS (RDS ou Aurora)",
+   "abertura": "Oi! Vou te ajudar a ligar um banco da AWS no CicloDev. Vale para **RDS** e **Aurora**, com PostgreSQL ou MySQL. Leva uns 15 minutos e a gente vai junto, um passo por vez.\n\nO que vai acontecer: você vai deixar o banco alcançável pela internet, criar um usuário só para o CicloDev e preencher os dados na janela de ligar banco.\n\nUm cuidado importante: **nunca cole senha aqui no chat**. A senha vai direto na janela de ligar banco.\n\nPodemos começar?",
+   "passos": [
+    {
+     "titulo": "Ache o endereço do banco",
+     "texto": "No console da AWS, abra **RDS** e depois **Databases**. Clique no banco e, na aba **Connectivity & security**, anote o **Endpoint** e a **Port**.",
+     "nota": "No **Aurora**, clique no cluster e use o endpoint do tipo **Reader** (leitura). Assim o CicloDev não pesa no banco principal.",
+     "pergunta": "Achou o Endpoint e a porta?"
+    },
+    {
+     "titulo": "Deixe o banco acessível pela internet",
+     "texto": "Clique em **Modify**. Em **Connectivity**, abra **Additional configuration** e marque **Publicly accessible**. Clique em **Continue**, escolha **Apply immediately** e confirme.",
+     "nota": "Se o banco estiver numa sub-rede privada, sem saída para a internet, só isso não basta. Nesse caso, fale com quem cuida da rede da AWS.",
+     "pergunta": "Conseguiu marcar Publicly accessible?"
+    },
+    {
+     "titulo": "Libere a porta no security group",
+     "texto": "Volte para **Connectivity & security** e clique no **VPC security group**. Em **Inbound rules**, clique em **Edit inbound rules** e em **Add rule**:\n\n1. Em **Type**, escolha **PostgreSQL** (ou **MYSQL/Aurora**).\n2. Em **Source**, escolha **Anywhere-IPv4** (`0.0.0.0/0`).\n3. Clique em **Save rules**.",
+     "nota": "Por que liberar para qualquer origem: o CicloDev lê a partir de servidores do Supabase, que não têm IP fixo. A proteção fica por conta do usuário só de leitura, da senha forte e da conexão sempre criptografada. Se a política da sua empresa não permite isso, o banco não tem como ser lido de fora.",
+     "pergunta": "A regra foi salva?"
+    },
+    {
+     "titulo": "Crie o usuário do CicloDev",
+     "texto": "Entre no banco com o usuário principal (pelo DBeaver, pgAdmin, MySQL Workbench ou o Query editor do console), **troque a senha** e rode o comando do seu tipo de banco.\n\nSe for **PostgreSQL**:",
+     "comando": "create user leitura_ciclodev with password 'troque-por-uma-senha-forte';\nalter role leitura_ciclodev set default_transaction_read_only = on;",
+     "texto2": "Se for **MySQL** (troque NOME_DO_BANCO):",
+     "comando2": "create user 'leitura_ciclodev'@'%' identified by 'troque-por-uma-senha-forte' require ssl;\ngrant select, show view on NOME_DO_BANCO.* to 'leitura_ciclodev'@'%';",
+     "nota": "No PostgreSQL não precisa dar permissão em tabela. No MySQL precisa do select, porque o MySQL só mostra a estrutura das tabelas que o usuário pode ler; mesmo assim o CicloDev só lê a estrutura, numa sessão somente leitura.",
+     "pergunta": "O comando rodou sem erro?"
+    },
+    {
+     "titulo": "Preencha no CicloDev e salve",
+     "texto": "Na aba **Infraestrutura** da aplicação, em **Bancos de dados**, clique em **Ligar banco** (ou no botão aqui embaixo). Na janela:\n\n1. Em **Onde está**, marque **AWS** e escolha o motor.\n2. Preencha **Endpoint** e **Porta**.\n3. Em **Banco (database)**: no PostgreSQL costuma ser `postgres`; no MySQL é o nome do banco.\n4. Usuário `leitura_ciclodev` e a senha.\n5. Em **Esquemas**, deixe `public` no PostgreSQL; no MySQL, escreva o nome do banco.\n6. Clique em **Salvar**.",
+     "abrir": "aws",
+     "pergunta": "Salvou? Apareceu a mensagem **Banco salvo**?"
+    },
+    {
+     "titulo": "Confira a leitura",
+     "texto": "Espere uns 2 ou 3 minutos e olhe embaixo do nome do banco, na lista **Bancos de dados**. Se aparecer **Lido há poucos minutos**, deu tudo certo e os desenhos saem sozinhos. O CicloDev confere de hora em hora.",
+     "pergunta": "O que apareceu embaixo do nome do banco?"
+    }
+   ],
+   "fim": "Pronto, o banco está ligado! A partir de agora o CicloDev lê a estrutura de hora em hora e refaz os desenhos quando alguma tabela mudar. Qualquer dúvida, é só me chamar."
+  }
+ },
+ "faq": [
+  {
+   "guias": [
+    "banco-supabase"
+   ],
+   "chaves": [
+    "tenant",
+    "user not found"
+   ],
+   "resposta": "Esse erro quer dizer que faltou o código do projeto depois do usuário. No Session pooler do Supabase o usuário é `leitura_ciclodev.codigodoprojeto`, com o ponto no meio. Confira o endereço e use **Trocar** ao lado do banco para colar de novo.",
+   "titulo": "Tenant or user not found"
+  },
+  {
+   "guias": [
+    "banco-supabase",
+    "banco-aws"
+   ],
+   "chaves": [
+    "password authentication",
+    "senha errada",
+    "senha nao confere",
+    "senha não confere",
+    "access denied",
+    "autenticacao",
+    "autenticação"
+   ],
+   "resposta": "A senha não confere. As causas mais comuns:\n\n1. A senha tem símbolos. O CicloDev codifica sozinho ao salvar, mas se o erro continuar, crie uma senha só com letras e números.\n2. A senha foi trocada há pouco. O pooler do Supabase guarda a antiga por um instante: espere um minuto e clique em **Atualizar agora**.\n\nPara trocar a senha no Supabase, rode no SQL Editor:\n```\nalter role leitura_ciclodev with password 'nova-senha-forte';\n```\nDepois use **Trocar** ao lado do banco e cole o endereço com a senha nova.",
+   "titulo": "password authentication failed"
+  },
+  {
+   "guias": [
+    "banco-supabase",
+    "banco-aws"
+   ],
+   "chaves": [
+    "already exists",
+    "ja existe",
+    "já existe"
+   ],
+   "resposta": "O usuário já existia, sem problema. É só definir uma senha nova para ele:\n```\nalter role leitura_ciclodev with password 'nova-senha-forte';\nalter role leitura_ciclodev set default_transaction_read_only = on;\n```\nDepois siga para o próximo passo.",
+   "titulo": "role already exists"
+  },
+  {
+   "guias": [
+    "banco-supabase",
+    "banco-aws"
+   ],
+   "chaves": [
+    "permission denied",
+    "permissao",
+    "permissão",
+    "must be owner",
+    "superuser"
+   ],
+   "resposta": "Esse erro aparece quando o comando é rodado com um usuário sem poder de criar usuários. No Supabase, rode pelo **SQL Editor** do painel (ele já entra com o usuário principal). Na AWS, entre com o **usuário mestre** do banco (o master username criado junto com o banco).",
+   "titulo": "permission denied"
+  },
+  {
+   "guias": [
+    "banco-supabase"
+   ],
+   "chaves": [
+    "connect",
+    "botao connect",
+    "botão connect",
+    "onde fica",
+    "nao acho",
+    "não acho",
+    "não encontro",
+    "nao encontro"
+   ],
+   "resposta": "O botão **Connect** fica no alto do painel do projeto no Supabase, perto do nome do projeto. Se não aparecer, entre em **Project Settings**, depois **Database**, e procure a parte de conexão (Connection string). Escolha o método **Session pooler**.",
+   "titulo": "Não acho o botão Connect"
+  },
+  {
+   "guias": [
+    "banco-supabase"
+   ],
+   "chaves": [
+    "transaction",
+    "6543",
+    "direct",
+    "direta",
+    "ipv6",
+    "ipv4",
+    "qual escolher",
+    "qual metodo",
+    "qual método"
+   ],
+   "resposta": "Use o **Session pooler** (porta 5432 no endereço pooler.supabase.com). A conexão **direta** (db.xxxx.supabase.co) só funciona com IPv6 ou com o complemento pago de IPv4, e o CicloDev lê pela internet comum. O **Transaction pooler** (porta 6543) também é aceito, mas o Session pooler é o recomendado aqui.",
+   "titulo": "Qual método de conexão usar"
+  },
+  {
+   "guias": [
+    "banco-supabase",
+    "banco-aws"
+   ],
+   "chaves": [
+    "seguro",
+    "seguranca",
+    "segurança",
+    "risco",
+    "perigo",
+    "dados",
+    "le os dados",
+    "lê os dados",
+    "ler dados"
+   ],
+   "resposta": "É seguro. O usuário leitura_ciclodev não tem permissão em nenhuma tabela, então ele enxerga só a estrutura (nomes de tabelas, colunas, ligações e regras) e o banco recusa qualquer leitura de dado. Além disso, a sessão abre em modo somente leitura, a conexão é criptografada, e o endereço com a senha fica numa área do banco do CicloDev que nenhuma tela lê: só o robô usa.",
+   "titulo": "É seguro?"
+  },
+  {
+   "guias": [
+    "banco-supabase",
+    "banco-aws"
+   ],
+   "chaves": [
+    "esquema",
+    "schema",
+    "public",
+    "outros esquemas",
+    "mais de um"
+   ],
+   "resposta": "O esquema é o grupo de tabelas que o CicloDev vai desenhar. No Supabase, as tabelas do sistema quase sempre ficam no `public`. Se o seu sistema usa outros esquemas, escreva todos separados por vírgula na janela de ligar, por exemplo `public, financeiro`. Cada esquema vira um DER.",
+   "titulo": "Qual esquema escrever"
+  },
+  {
+   "guias": [
+    "banco-supabase",
+    "banco-aws"
+   ],
+   "chaves": [
+    "nao lido",
+    "não lido",
+    "ainda nao",
+    "ainda não",
+    "demora",
+    "quanto tempo"
+   ],
+   "resposta": "A primeira leitura leva uns 2 ou 3 minutos. Se passar de 10 minutos e continuar **Ainda não lido**, clique em **Atualizar agora**. Se aparecer uma mensagem em vermelho embaixo do nome do banco, me diga o que ela diz que eu te ajudo.",
+   "titulo": "Continua \"Ainda não lido\""
+  },
+  {
+   "guias": [
+    "banco-supabase",
+    "banco-aws"
+   ],
+   "chaves": [
+    "vazio",
+    "sem tabela",
+    "nenhuma tabela",
+    "der vazio"
+   ],
+   "resposta": "O DER sai vazio quando o esquema digitado não existe ou está escrito diferente. No Supabase, confira o nome no **Table Editor** (o seletor de esquema fica no alto). Depois use **Trocar** ao lado do banco e corrija o campo Esquemas.",
+   "titulo": "O DER saiu vazio"
+  },
+  {
+   "guias": [
+    "banco-supabase",
+    "banco-aws"
+   ],
+   "chaves": [
+    "trocar senha",
+    "mudar senha",
+    "nova senha",
+    "desligar",
+    "remover",
+    "apagar banco"
+   ],
+   "resposta": "Para trocar a senha: crie a senha nova no banco (`alter role leitura_ciclodev with password 'nova-senha';`) e clique em **Trocar** ao lado do banco, colando o endereço novo. Para parar de ler o banco, clique em **Desligar**: o endereço guardado é apagado e os desenhos que já saíram continuam.",
+   "titulo": "Trocar a senha ou desligar"
+  },
+  {
+   "guias": [
+    "banco-supabase"
+   ],
+   "chaves": [
+    "network restrictions",
+    "restricao de rede",
+    "restrição de rede",
+    "bloqueado",
+    "timeout",
+    "tempo esgotado"
+   ],
+   "resposta": "Se o projeto do Supabase usa **Network Restrictions** (em Project Settings, Database), o CicloDev fica bloqueado, porque ele lê de servidores que não têm IP fixo. Nesse caso é preciso liberar o acesso ou desligar a restrição.",
+   "titulo": "Não conecta (Supabase)"
+  },
+  {
+   "guias": [
+    "banco-aws"
+   ],
+   "chaves": [
+    "timeout",
+    "tempo esgotado",
+    "nao conecta",
+    "não conecta",
+    "demora e da erro",
+    "connection refused"
+   ],
+   "resposta": "Quando dá tempo esgotado, o banco não está alcançável pela internet. Confira:\n\n1. **Publicly accessible** marcado (passo 2).\n2. A regra de entrada no **security group**, na porta certa (5432 no PostgreSQL, 3306 no MySQL), com Source 0.0.0.0/0 (passo 3).\n3. Se o banco está numa sub-rede com saída para a internet (fale com quem cuida da rede da AWS).",
+   "titulo": "Tempo esgotado (timeout)"
+  },
+  {
+   "guias": [
+    "banco-aws"
+   ],
+   "chaves": [
+    "reader",
+    "writer",
+    "aurora",
+    "cluster",
+    "qual endpoint"
+   ],
+   "resposta": "No Aurora existem dois endpoints principais: o **Writer** (o banco principal, que grava) e o **Reader** (as réplicas de leitura). Use o **Reader**: a estrutura é a mesma, e a leitura do CicloDev não pesa no banco principal.",
+   "titulo": "Aurora: Reader ou Writer"
+  },
+  {
+   "guias": [
+    "banco-aws"
+   ],
+   "chaves": [
+    "ssl",
+    "pg_hba",
+    "no encryption",
+    "criptografia",
+    "certificado"
+   ],
+   "resposta": "O CicloDev sempre conecta com criptografia (SSL). O erro **no pg_hba.conf entry ... no encryption** só aparece quando a conexão chega sem SSL. Se aparecer, confira se o endpoint é o do banco certo. No MySQL, o usuário foi criado com `require ssl`, que é o recomendado.",
+   "titulo": "no pg_hba.conf entry ... no encryption"
+  },
+  {
+   "guias": [
+    "banco-aws"
+   ],
+   "chaves": [
+    "mysql",
+    "select",
+    "show view",
+    "por que select"
+   ],
+   "resposta": "No MySQL o banco só mostra a estrutura das tabelas que o usuário tem alguma permissão, por isso o usuário do CicloDev precisa do `select` e do `show view` naquele banco. Mesmo assim o CicloDev lê só a estrutura (o catálogo information_schema), numa sessão somente leitura, e nunca lê as linhas das tabelas.",
+   "titulo": "Por que o MySQL precisa de select"
+  }
+ ],
+ "base": "# O que o DevIT sabe sobre ligar bancos no CicloDev\n\n## O que o CicloDev faz com o banco\n- Lê só a ESTRUTURA do banco: tabelas, colunas, tipos, chaves primárias e estrangeiras, comentários, e no PostgreSQL também as regras de acesso (RLS, políticas e permissões por papel). Nunca lê as linhas (os dados).\n- Com isso monta sozinho: o DER de cada esquema (sub-aba DER), o mapa de acesso no PostgreSQL (sub-aba Segurança) e a seção Database da ficha técnica.\n- A primeira leitura sai em 2 ou 3 minutos. Depois confere de hora em hora e refaz os desenhos quando a estrutura muda. O botão Atualizar agora força uma leitura.\n- A sessão abre em modo somente leitura (default_transaction_read_only), com tempo máximo de 20 segundos por consulta, e a conexão é criptografada (SSL).\n- O endereço com a senha fica em interno.infra_bancos_conexao, uma área que nenhuma tela lê; só a função diagramas-auto usa. A tela mostra só o servidor (host), nunca usuário nem senha.\n- Cada aplicação, produto ou projeto pode ligar vários bancos (produção, relatórios, legado). Cada banco gera os próprios desenhos, com o nome dele.\n- Botões na lista Bancos de dados: Trocar (muda nome, esquemas ou endereço; campo vazio mantém o endereço atual) e Desligar (para de ler e apaga o endereço; os desenhos que já saíram ficam).\n- Motores aceitos: PostgreSQL (Supabase, RDS, Aurora PostgreSQL, outros) e MySQL (RDS, Aurora MySQL, outros).\n\n## Supabase (conferido na documentação oficial)\n- Um papel próprio com LOGIN funciona na conexão direta, no pooler dedicado e no pooler compartilhado (Supavisor). Não é preciso cadastrar o papel no pooler: basta criar no banco.\n- No pooler compartilhado o usuário leva o código do projeto: leitura_ciclodev.codigodoprojeto. Sem o código, o erro é Tenant or user not found.\n- Conexão direta: db.codigo.supabase.co, porta 5432, só IPv6 (ou IPv4 com o complemento pago). Session pooler: aws-N-regiao.pooler.supabase.com, porta 5432, funciona em IPv4 e em todo plano. Transaction pooler: mesma máquina, porta 6543.\n- O CicloDev usa o Session pooler.\n- Um papel sem nenhuma permissão já enxerga o catálogo (a estrutura) e recebe permission denied ao tentar ler dados. Por isso não se dá grant em tabela nenhuma.\n- Caracteres reservados na senha (como & # ? espaço @ / :) precisam ser codificados no endereço. O CicloDev codifica sozinho a senha ao salvar, mas o mais simples é usar senha só com letras e números.\n- Depois de trocar a senha de um papel, o pooler pode usar a senha antiga em cache por um instante e dar password authentication failed. Esperar e tentar de novo.\n- Network Restrictions do projeto também valem para o pooler: se estiver ligada, bloqueia o CicloDev.\n- Onde fica: botão Connect no alto do painel do projeto; SQL Editor no menu da esquerda; Table Editor para ver esquemas e tabelas.\n\n## AWS RDS e Aurora (conferido na documentação e nos artigos oficiais de suporte)\n- Publicly accessible = Yes dá ao banco um IP público. É preciso também que a sub-rede tenha rota para a internet (internet gateway).\n- O security group precisa de uma regra de entrada (Inbound rule) na porta do banco. A AWS recomenda liberar só IPs conhecidos, mas o CicloDev lê de servidores do Supabase sem IP fixo, então a regra precisa aceitar 0.0.0.0/0. A proteção fica no usuário só de leitura, na senha forte e no SSL. Se a empresa não aceita, o banco não pode ser lido de fora.\n- A AWS recomenda sempre usar SSL/TLS em conexões de fora da VPC. No PostgreSQL existe o parâmetro rds.force_ssl (ligado por padrão nas versões novas). O CicloDev conecta com SSL.\n- No Aurora, usar o endpoint Reader para não pesar no Writer.\n- PostgreSQL: create user leitura_ciclodev with password '...'; alter role leitura_ciclodev set default_transaction_read_only = on; não precisa de grant em tabela.\n- MySQL: o information_schema só mostra tabelas em que o usuário tem alguma permissão, então precisa de grant select, show view on banco.* e o usuário deve ser criado com require ssl.\n- Na janela de ligar da AWS, o CicloDev monta o endereço a partir dos campos Endpoint, Porta, Banco (database), Usuário e Senha, e codifica a senha sozinho.\n\n## Regras de conduta do DevIT neste assunto\n- Nunca peça para a pessoa colar senha, chave ou endereço de conexão no chat. Se ela colar, avise que a senha ficou registrada na conversa e recomende trocar a senha (alter role ... with password) e usar Trocar.\n- Nunca invente botões, menus ou comandos que não estão aqui. Se não souber, diga que não sabe e sugira o que conferir.\n- Fale em português do Brasil, simples, curto e acolhedor. Sem termo técnico sem explicar. Nunca use travessão.\n- Mantenha a pessoa no passo atual do guia: responda a dúvida e, no fim, pergunte se pode seguir."
+}
