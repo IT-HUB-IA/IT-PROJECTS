@@ -234,9 +234,7 @@ const myD = gerarDoBanco(my, ['loja'], { nome: 'Relatórios', motor: 'mysql', pr
   ok(/Docker/.test(v('Stack', 'Plataformas')) && /Supabase/.test(v('Stack', 'Plataformas')) && /GitHub Actions/.test(v('Stack', 'Plataformas')), 'ficha: as plataformas (Docker, Supabase, GitHub Actions)');
   ok(v('Repositories', 'Repositório e branch principal') === 'Blanco-Lisboa/B-L · branch principal main' && /README\.md/.test(v('Repositories', 'Documentação técnica')), 'ficha: o repositório, o branch e a documentação');
   ok(/produção \(bl-sistema-java\/src\/main\/resources\/application-prod\.properties\)/.test(v('Environments', 'Desenvolvimento, homologação e produção')) && /production \(GitHub Actions\)/.test(v('Environments', 'Desenvolvimento, homologação e produção')), 'ficha: os ambientes (perfil prod do Spring e o ambiente do GitHub Actions)');
-  ok(/supabase/.test(v('Database', 'Banco e schema')) && /1 migração/.test(v('Database', 'Banco e schema')), 'ficha: o banco escrito no código e as migrações');
-  ok(/empresas/.test(v('Database', 'Tabelas principais')), 'ficha: as tabelas das entidades (@Table)');
-  ok(/limparSessoes \(@Scheduled cron = "0 0 3 \* \* \*"\)/.test(v('Database', 'Rotinas agendadas e gatilhos')), 'ficha: as rotinas agendadas (@Scheduled)');
+  ok(!f.some(x => x.secao === 'Database'), 'ficha do código: nada na seção Database (ela vem só do banco ligado)');
   ok(/^3 rotas: /.test(v('APIs', 'APIs próprias')) && /POST \/api\/empresas/.test(v('APIs', 'APIs próprias')), 'ficha: as APIs próprias, lidas das rotas');
   ok(/api\.asaas\.com/.test(v('APIs', 'APIs de terceiros')), 'ficha: as APIs de fora que o código chama');
   ok(/Spring Security/.test(v('APIs', 'Tipo de autenticação')) && /JWT/.test(v('APIs', 'Tipo de autenticação')), 'ficha: o tipo de autenticação (Spring Security e JWT)');

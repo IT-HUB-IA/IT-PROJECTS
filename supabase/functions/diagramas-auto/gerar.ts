@@ -1251,33 +1251,7 @@ export function fichaDoCodigo(pac: Pick<Pacote, 'arquivos' | 'caminhos'>, repo: 
   for (const p of caminhos) { const m = p.match(/(?:^|\/)(?:application|bootstrap)-([a-z]+)\.(?:properties|ya?ml)$/) || p.match(/(?:^|\/)\.env\.([a-z]+)(?:\.(?:example|sample|template))?$/); if (m && NOME_AMB[m[1]]) amb.add(NOME_AMB[m[1]] + ' (' + p + ')'); }
   for (const [p, c] of arq) if (WORKFLOW.test(p)) for (const m of c.matchAll(/^\s*environment:\s*(?:\n\s*name:\s*)?["']?([\w-]+)/gm)) amb.add(m[1] + ' (GitHub Actions)');
   pos('Environments', 'Desenvolvimento, homologação e produção', listaFicha([...amb], 12));
-  // ---------- banco (do que está escrito no código) ----------
-  const bancos: string[] = [];
-  const semSenha = (u: string) => u.replace(/\/\/[^@/]*@/, '//').replace(/([?&](password|pass|pwd)=)[^&]*/gi, '$1***');
-  for (const [p, c] of arq) if (/src\/main\/resources\/(application|bootstrap)[^/]*\.(properties|ya?ml)$/.test(p)) {
-    for (const m of c.matchAll(/(?:spring\.datasource\.url|url)\s*[=:]\s*["']?(jdbc:[^\s"']+|\$\{[^}]+\})/g)) bancos.push(semSenha(m[1]).replace(/^jdbc:/, '') + ' (' + p + ')');
-  }
-  for (const [p, c] of arq) if (/\.prisma$/.test(p)) { const pr = (c.match(/datasource\s+\w+\s*\{[^}]*provider\s*=\s*"([^"]+)"/) || [])[1]; if (pr) bancos.push('Prisma · ' + pr + ' (' + p + ')'); }
-  const migr = caminhos.filter(p => /(^|\/)supabase\/migrations\/[^/]+\.sql$/.test(p));
-  if (migr.length) bancos.push('Supabase · PostgreSQL (' + plural(migr.length, 'migração', 'migrações') + ' em supabase/migrations)');
-  const flyway = caminhos.filter(p => /db\/migration\/V[^/]+\.sql$/.test(p)); if (flyway.length) bancos.push('Flyway (' + plural(flyway.length, 'migração', 'migrações') + ')');
-  if (deps.some(d => /liquibase/.test(d))) bancos.push('Liquibase');
-  pos('Database', 'Banco e schema', listaFicha(bancos, 8));
-  const tabelas: string[] = [];
-  for (const [p, c] of arq) {
-    if (/\.prisma$/.test(p)) for (const m of c.matchAll(/^model\s+(\w+)/gm)) tabelas.push(m[1]);
-    if (/\.(java|kt)$/.test(p) && /@Entity\b/.test(c)) { const t = (c.match(/@Table\s*\(\s*(?:name\s*=\s*)?"([^"]+)"/) || [])[1]; const cl = (c.match(/\bclass\s+(\w+)/) || [])[1]; if (t || cl) tabelas.push(t || cl!); }
-    if (/\.sql$/.test(p) && /(migrations?|schema|db)\//i.test(p)) for (const m of c.matchAll(/create\s+table\s+(?:if\s+not\s+exists\s+)?([\w."]+)/gi)) tabelas.push(m[1].replace(/"/g, ''));
-  }
-  pos('Database', 'Tabelas principais', listaFicha(tabelas.sort(), 40));
-  const rotinas: string[] = [];
-  for (const [p, c] of arq) {
-    if (/\.(java|kt)$/.test(p)) for (const m of c.matchAll(/@Scheduled\s*\(([^)]*)\)\s*(?:public\s+)?\w+\s+(\w+)\s*\(/g)) rotinas.push(m[2] + ' (@Scheduled ' + curto(m[1], 40) + ')');
-    if (/\.sql$/.test(p)) { for (const m of c.matchAll(/cron\.schedule\(\s*'([^']+)'\s*,\s*'([^']+)'/g)) rotinas.push(m[1] + ' (pg_cron ' + m[2] + ')'); for (const m of c.matchAll(/create\s+(?:or\s+replace\s+)?(?:constraint\s+)?trigger\s+(\w+)/gi)) rotinas.push('gatilho ' + m[1]); }
-    if (/(^|\/)vercel\.json$/.test(p)) for (const cr of (lerJson(c) || {}).crons || []) rotinas.push(cr.path + ' (Vercel cron ' + cr.schedule + ')');
-    if (WORKFLOW.test(p)) for (const m of c.matchAll(/cron:\s*['"]([^'"]+)['"]/g)) rotinas.push(p.split('/').pop() + ' (GitHub Actions ' + m[1] + ')');
-  }
-  pos('Database', 'Rotinas agendadas e gatilhos', listaFicha(rotinas, 30));
+  // a seção Database da ficha vem só do banco ligado (fichaDoBanco), nunca do código
   // ---------- APIs e integrações ----------
   const rotas = desenhos.find(d => d.tipo === 'rotas'), apis = rotas ? rotas.modelo.cards.filter(c => String(c.id).startsWith('api:')).flatMap(c => c.topicos || []) : [];
   if (apis.length) pos('APIs', 'APIs próprias', plural(apis.length, 'rota', 'rotas') + ': ' + listaFicha(apis, 40));

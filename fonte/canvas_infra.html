@@ -1052,7 +1052,7 @@ function htmlPainel(){
   h += '<div class="pc-cab"><span class="pc-ico">' + ico('grafico') + '</span><div><b>PAINEL CENTRAL</b><span>Tudo o que está no canvas · ' + R.quadros + (R.quadros === 1 ? ' quadro' : ' quadros') + ' · ' + R.cards + ' cards · atualizado ' + new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'}) + '</span></div>' +
        '<div class="pc-pct"><strong>' + R.pct + '%</strong><span style="display:block">dos tópicos concluídos</span></div></div>';
   h += '<div class="pc-kpis">' + kpi(R.tops, 'Tópicos') + kpi(R.st.afazer, 'A fazer', ST.afazer.cor) + kpi(R.st.andamento, 'Em andamento', ST.andamento.cor) +
-       kpi(R.st.concluido, 'Concluídos', ST.concluido.cor) + kpi(R.ativos, 'Cards ativos', '#5BC46E') + kpi(R.inativos, 'Cards parados', '#FF8D8F') + '</div>';
+       kpi(R.st.concluido, 'Concluídos', ST.concluido.cor) + '</div>';
   // progresso por grupo
   const gs = R.grupos.slice(0, 11), rowH = 17, W = 400, L = 130, B = 220;
   let sg = '<svg viewBox="0 0 ' + W + ' ' + Math.max(40, gs.length * rowH + 4) + '" preserveAspectRatio="xMinYMin meet">';
@@ -1087,11 +1087,8 @@ function htmlPainel(){
        '<div class="pc-leg"><span><i style="background:#46A758"></i>Concluídos</span><span><i style="background:#4C7DF0"></i>Outras mudanças</span></div></div></div>';
   // avisos, últimos concluídos, análises e mudanças
   const av = [];
-  R.parados.slice(0, 3).forEach(p => av.push('<li><i style="background:#E5484D"></i>' + bt(p, p.nome) + '<small>parado ' + (quando(p.t) || '') + '</small></li>'));
-  if (R.parados.length > 3) av.push('<li><i style="background:#E5484D"></i>+' + (R.parados.length - 3) + ' cards parados</li>');
   R.velhos.slice(0, 2).forEach(p => av.push('<li><i style="background:#E5C02A"></i>' + bt(p, p.nome) + '<small>em andamento ' + quando(p.t) + '</small></li>'));
   if (R.duvidas) av.push('<li><i style="background:#E5C02A"></i>' + R.duvidas + ' dúvidas em aberto nos cartões amarelos</li>');
-  if (R.semEstado) av.push('<li><i style="background:#6F7C88"></i>' + R.semEstado + ' cards sem Ativo ou Inativo marcado</li>');
   const ul = R.concluidos.slice(0, 7).map(c => '<li><i style="background:#46A758"></i>' + bt(c, c.nome) + '<small>' + esc(c.card.length > 18 ? c.card.slice(0, 17) + '…' : c.card) + ' · ' + quando(c.t) + '</small></li>').join('');
   const an = [];
   const pend = R.grupos.filter(g => g.total >= 3).sort((a, b) => b.c.afazer - a.c.afazer)[0];
@@ -1130,8 +1127,8 @@ function estadoCard(n){
 }
 function estadoHTML(estado, marcado){
   if (estado === 'concluido') return '<span class="est est-ok" title="Tudo concluído"><i></i>Concluído</span>';
-  return '<button class="est' + (marcado === 'ativo' ? ' on-a' : '') + '" data-acao="estado" data-v="ativo" title="Ativo: trabalho em andamento"><i></i>Ativo</button>' +
-         '<button class="est' + (marcado === 'inativo' ? ' on-i' : '') + '" data-acao="estado" data-v="inativo" title="Inativo: trabalho parado"><i></i>Inativo</button>';
+  // desenho de infraestrutura não tem Ativo/Inativo (pedido do William): só o selo de concluído
+  return '';
 }
 // estado de um grupo (empresa ou departamento) a partir do que está dentro dele
 let estadoGrupos = {};
@@ -1194,7 +1191,7 @@ function montarNo(el, n){
     h += '<button class="cab-add" data-acao="add-topico" title="Adicionar tópico" aria-label="Adicionar tópico">' + ico('somar') + '</button>';
     const estC = estadoCard(n);
     if (estC === 'concluido') el.classList.add('concluido');
-    h += '<div class="no-estado">' + estadoHTML(estC, n.estado) + '</div>';
+    if (estC === 'concluido') h += '<div class="no-estado">' + estadoHTML(estC, n.estado) + '</div>';
     h += '<div class="no-titulo" data-campo="titulo" data-ph="' + esc(t.tituloPadrao) + '">' + esc(n.titulo) + '</div>';
     if (n.subtitulo) h += '<div class="no-sub" data-campo="subtitulo" data-ph="Descrição">' + esc(n.subtitulo) + '</div>';
     if (cfg.notas && n.nota) h += '<div class="no-nota-txt">' + esc(n.nota) + '</div>';
@@ -2373,7 +2370,6 @@ function menuNo(cx, cy, n, target){
   }
   it.push({rotulo: n.tipo === 'cartao' || n.tipo === 'texto' ? 'Editar texto' : (n.tipo === 'grupo' ? 'Editar rótulo' : 'Editar título'), icone: 'editar', atalho: 'F2', desativado: bloq, acao: () => editarTitulo(n)});
   if (t.estruturado) it.push({rotulo: 'Adicionar tópico', icone: 'lista', desativado: bloq, acao: () => adicionarTopico(n.id)});
-  if ((t.estruturado || n.tipo === 'grupo') && estadoCard(n) !== 'concluido') it.push({segmento: true, rotulo: 'Estado do trabalho', atual: n.estado || '', opcoes: [{v: 'ativo', rotulo: 'Ativo'}, {v: 'inativo', rotulo: 'Inativo'}, {v: '', rotulo: 'Nenhum'}], acao: v => { if (!ro()) mudarEstado(n.id, v || n.estado); }});
   if (n.tipo !== 'texto'){
     const el = elsNo.get(n.id);
     it.push({rotulo: n.tipo === 'grupo' ? 'Anotação do grupo' : 'Anotação do card', icone: 'nota', acao: () => abrirNota(n.id, null, (el && el.querySelector('.no-nota-b')) || el)});

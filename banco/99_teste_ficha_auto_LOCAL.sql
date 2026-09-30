@@ -74,3 +74,11 @@ update repositorios set ativo = false where id = (select repo from t);
 delete from infra_automacoes;
 select interno.git_processar((select r from repositorios r where id = (select repo from t)), 'push', '{"ref":"refs/heads/main","after":"eee555","commits":[]}');
 select pg_temp.ok((select count(*) from infra_automacoes) = 0, 'repositório desligado não pede nada');
+-- parte 35: Database só vem do banco ligado
+set role service_role;
+select pg_temp.ok(public.infra_ficha_gravar((select app from t), (select repo from t), null, 'blanco/bl', 'fff666',
+  '[{"secao":"Stack","campo":"Frameworks","valor":"Spring Boot 3.2"},{"secao":"Database","campo":"Tabelas principais","valor":"empresas"}]') >= 0
+  and not exists (select 1 from ficha_auto where repositorio_id = (select repo from t) and secao = 'Database')
+  and exists (select 1 from ficha_auto where repositorio_id = (select repo from t) and secao = 'Stack'),
+  'parte 35: o repositório não grava nada em Database (o resto da ficha dele entra normal)');
+reset role;
