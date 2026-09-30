@@ -5,6 +5,11 @@
   .sm-cont{font-family:var(--font-mono);font-size:10px;padding:1px 5px;border:1px solid currentColor;letter-spacing:0}
   .sm-abas-menu{position:absolute;top:100%;right:0;z-index:40;width:340px;max-width:calc(100vw - 32px);background:var(--branco);color:var(--preto);border:1px solid var(--nevoa);box-shadow:0 12px 32px rgba(0,0,0,.18);padding:12px;display:grid;gap:8px}
   .sm-abas-menu[hidden]{display:none}
+  .sm-abas-menu.a-esquerda{left:0;right:auto}
+  .sm-fixar{flex:none;width:30px;height:30px;display:grid;place-items:center;border:1px solid var(--nevoa);background:none;color:var(--grafite);cursor:pointer}
+  .sm-fixar:hover,.sm-fixar:focus-visible{color:var(--preto);border-color:var(--preto)}
+  .sm-fixar.ativo{color:var(--vermelho);border-color:var(--vermelho)}
+  @media (max-width:1600px){ .ops-cab .views .view-b{padding:0 11px;letter-spacing:.07em} }
   .sm-abas-menu .rotulo-mini{margin:0;color:var(--grafite)}
   .sm-abas-menu ul{list-style:none;margin:0;padding:0;display:grid;max-height:60vh;overflow:auto}
   .sm-abas-menu li{display:flex;align-items:center;gap:4px;border-top:1px solid var(--preto-04)}

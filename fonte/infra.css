@@ -11,6 +11,10 @@
 .ifr-cab > div{flex:1 1 420px;min-width:0}
 .ifr-cheia-b{flex:none}
 .ifr-canvas.ifr-cheia{position:fixed;inset:0;height:auto;z-index:40;border:0}
+.ifr-canvas:fullscreen{height:100%;border:0}
+.ifr-sair-cheia{position:absolute;left:50%;bottom:72px;transform:translateX(-50%);z-index:3;display:inline-flex;align-items:center;gap:8px;border:1px solid #2A323A;border-radius:6px;background:#0F1317;color:#E7ECEF;font:inherit;font-size:13px;font-weight:600;padding:8px 14px;cursor:pointer;box-shadow:0 12px 30px -12px #000}
+.ifr-sair-cheia:hover{border-color:#C79A5B}
+.ifr-sair-cheia kbd{font-family:var(--font-mono);font-size:11px;border:1px solid #2A323A;border-radius:4px;padding:1px 5px;color:#A7B0B9}
 .ifr-cab h2{margin:0 0 4px;font-size:20px;text-wrap:balance}
 .ifr-cab .lead{margin:0;max-width:880px;font-size:13.5px}
 .ifr-corpo{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:14px;align-items:stretch;min-width:0}
@@ -51,7 +55,12 @@ dialog.modal.ifr-modal{width:min(980px,calc(100vw - 32px))}
 .ifr-codigo{min-height:260px;font-family:var(--font-mono);font-size:12.5px;line-height:1.5;tab-size:2;white-space:pre;overflow:auto;resize:vertical}
 .ifr-sec{display:grid;gap:8px;border-top:1px solid var(--linha);padding-top:10px}
 .ifr-sec h4{margin:0;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--tinta-2)}
-.ifr-prev{background:#030405;border:1px solid var(--preto);padding:10px;overflow:auto;max-height:420px}
+.ifr-prev{position:relative;background:#030405;border:1px solid var(--preto);padding:10px;overflow:auto;max-height:420px}
+.ifr-prev-cheia{position:sticky;top:0;float:right;z-index:1}
+.ifr-prev:fullscreen{max-height:none;padding:24px}
+.ifr-prev:fullscreen img{max-width:none;max-height:none}
+.ifr-baixar-img{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px 10px;border:1px solid var(--linha);background:var(--branco)}
+.ifr-baixar-img span{font-size:12.5px;color:var(--tinta-2);margin-right:4px}
 .ifr-prev img{display:block;max-width:100%;margin:0 auto;filter:invert(.92) hue-rotate(180deg)}
 .ifr-ev{list-style:none;margin:0;padding:0;display:grid;gap:6px}
 .ifr-ev li{display:grid;gap:2px;font-size:12.5px}

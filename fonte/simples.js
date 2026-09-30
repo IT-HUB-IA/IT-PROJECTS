@@ -36,38 +36,53 @@ const SM_ABAS = {
 };
 VIEWS.forEach(v => { const a = SM_ABAS[v[0]]; if (a){ v[1] = a[0]; v[2] = a[1]; EXPL_VIEW[v[0]] = a[1]; } });
 Object.keys(SM_ABAS).forEach(k => { EXPL_VIEW[k] = SM_ABAS[k][1]; });
-const SM_PRINCIPAIS = ['dashboard','board','table','calendar','timeline','entregas'];
-const smFixas = () => Array.isArray(UI.abasFixas) ? UI.abasFixas : SM_PRINCIPAIS;
+// As abas fixas, sempre nesta ordem (cada uma só onde existe: a Infraestrutura em projeto, produto e aplicação;
+// a Ficha técnica também). O resto fica no Mais, e cada pessoa fixa as que quiser: vale para ela em todas as aplicações.
+const SM_FIXAS = ['dashboard','calendar','board','table','timeline','infra','sheet','backlog'];
+const SM_EXTRAS_PADRAO = ['entregas'];
+const SM_PRINCIPAIS = SM_FIXAS.concat(SM_EXTRAS_PADRAO);
+const smExtras = () => (Array.isArray(UI.abasFixas) ? UI.abasFixas : SM_EXTRAS_PADRAO).filter((v, i, l) => !SM_FIXAS.includes(v) && l.indexOf(v) === i);
+const smFixas = () => SM_FIXAS.concat(smExtras());
 const SM_PINO = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square" aria-hidden="true"><path d="M9 4h6l-1 6 4 3v2H6v-2l4-3z"/><path d="M12 15v6"/></svg>';
+function smOrdem(){ const o = SM_FIXAS.concat(smExtras()); Object.keys(SM_ABAS).concat(VIEWS.map(v => v[0])).forEach(v => { if (!o.includes(v)) o.push(v); }); return o; }
 
 /* agrupa as abas que já estão na tela: as fixas ficam à vista, o resto vai para "Mais". Pode rodar várias vezes. */
 function smAgruparAbas(){
   const nav = $('.ops-cab .views'); if (!nav) return;
   const casas = $$('.view-casa', nav).filter(c => c.querySelector('[data-view]'));
   if (casas.length < 2) return;
-  const fixas = smFixas();
-  const ordem = Object.keys(SM_ABAS).concat(VIEWS.map(v => v[0]));
-  casas.sort((a, b) => ordem.indexOf(a.querySelector('[data-view]').dataset.view) - ordem.indexOf(b.querySelector('[data-view]').dataset.view));
+  const fixas = smFixas(), extras = smExtras();
+  const ordem = smOrdem(), pos = v => { const k = ordem.indexOf(v); return k < 0 ? 999 : k; };
+  casas.sort((a, b) => pos(a.querySelector('[data-view]').dataset.view) - pos(b.querySelector('[data-view]').dataset.view));
   const visiveis = [], outras = [];
-  casas.forEach(c => { const v = c.querySelector('[data-view]').dataset.view; (fixas.includes(v) || v === UI.view ? visiveis : outras).push(c); c.classList.toggle('sm-temp', !fixas.includes(v)); c.querySelector('[data-view]').setAttribute('aria-selected', String(v === UI.view)); });
+  casas.forEach(c => { const v = c.querySelector('[data-view]').dataset.view; (fixas.includes(v) || v === UI.view ? visiveis : outras).push(c); c.classList.toggle('sm-temp', !fixas.includes(v)); c.classList.toggle('sm-extra', extras.includes(v)); c.querySelector('[data-view]').setAttribute('aria-selected', String(v === UI.view)); });
   const velho = $('.sm-mais-casa', nav); if (velho) velho.remove();
   casas.forEach(c => nav.appendChild(c));
   visiveis.forEach(c => { c.hidden = false; }); outras.forEach(c => { c.hidden = true; });
-  const todas = casas.map(c => { const b = c.querySelector('[data-view]'); return [b.dataset.view, b.textContent]; });
+  const nome = v => { const b = casas.map(c => c.querySelector('[data-view]')).find(x => x.dataset.view === v); return b ? b.textContent : v; };
+  const presentes = new Set(casas.map(c => c.querySelector('[data-view]').dataset.view));
+  const noMais = casas.filter(c => !fixas.includes(c.querySelector('[data-view]').dataset.view)).map(c => c.querySelector('[data-view]').dataset.view);
+  const minhas = extras.filter(v => presentes.has(v));
+  const li = (v, botao) => '<li><button type="button" class="sm-aba-ir" role="menuitem" data-view="' + v + '"' + (v === UI.view ? ' aria-current="true"' : '') + '><b>' + esc(nome(v)) + '</b><small>' + esc(SM_DICA[v] || '') + '</small></button>' + botao + '</li>';
   nav.insertAdjacentHTML('beforeend', '<span class="sm-mais-casa"><button class="view-b sm-mais-b" type="button" aria-haspopup="true" aria-expanded="false" data-sm-mais-abas>Mais<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>' +
     '<div class="sm-abas-menu" role="menu" hidden>' +
-    (outras.length ? '<ul>' + todas.filter(([v]) => outras.some(c => c.querySelector('[data-view]').dataset.view === v)).map(([v, n]) => '<li><button type="button" class="sm-aba-ir" role="menuitem" data-view="' + v + '"><b>' + esc(n) + '</b><small>' + esc(SM_DICA[v] || '') + '</small></button></li>').join('') + '</ul>' : '<p class="sm-nada">Todas as abas já estão na barra.</p>') +
+    (noMais.length ? '<p class="rotulo-mini">Outras abas</p><ul>' + noMais.map(v => li(v, '<button type="button" class="sm-fixar" data-sm-fixar="' + v + '" title="Fixar na barra (vale para você em todas as aplicações)" aria-label="Fixar ' + esc(nome(v)) + ' na barra">' + SM_PINO + '</button>')).join('') + '</ul>' : '<p class="sm-nada">Todas as abas já estão na barra.</p>') +
+    (minhas.length ? '<p class="rotulo-mini">Fixadas por você</p><ul>' + minhas.map(v => li(v, '<button type="button" class="sm-fixar ativo" data-sm-soltar="' + v + '" title="Tirar da barra" aria-label="Tirar ' + esc(nome(v)) + ' da barra">' + SM_PINO + '</button>')).join('') + '</ul>' : '') +
     '<button type="button" class="sm-escolher" data-sm-escolher>Escolher as abas da barra</button></div></span>');
 }
-const SM_DICA = {dashboard:'resumo e números', board:'colunas por situação', table:'planilha dos itens', calendar:'itens por data', timeline:'barras do início ao prazo', entregas:'versões e código', backlog:'o que vem pela frente', sprints:'ciclos de 1 ou 2 semanas', list:'itens agrupados', workload:'horas de cada pessoa', mywork:'só os seus itens', whiteboard:'desenho e notas livres', custos:'gastos e receitas', sheet:'dados técnicos', stages:'etapas obrigatórias', relatorios:'gráficos do andamento', metas:'objetivos e resultados'};
-// janela simples: marcar quais abas ficam na barra
+const SM_DICA = {dashboard:'resumo e números', board:'colunas por situação', table:'planilha dos itens', calendar:'itens por data', timeline:'barras do início ao prazo', entregas:'versões e código', backlog:'o que vem pela frente', sprints:'ciclos de 1 ou 2 semanas', list:'itens agrupados', workload:'horas de cada pessoa', mywork:'só os seus itens', whiteboard:'desenho e notas livres', custos:'gastos e receitas', sheet:'dados técnicos', stages:'etapas obrigatórias', relatorios:'gráficos do andamento', metas:'objetivos e resultados', infra:'desenhos do sistema', portal:'quem de fora lê e responde', ajustes:'status, campos e automações'};
+function smGravarExtras(l){ UI.abasFixas = l.filter((v, i) => !SM_FIXAS.includes(v) && l.indexOf(v) === i); salvarUI(); smAgruparAbas(); }
+// janela simples: as fixas aparecem marcadas (não saem) e a pessoa marca quais outras ficam na barra
 function smEscolherAbas(){
   const nav = $('.ops-cab .views'); if (!nav) return;
   const todas = $$('.view-casa [data-view]', nav).map(b => [b.dataset.view, b.textContent]);
-  const ordem = Object.keys(SM_ABAS); todas.sort((a, b) => ordem.indexOf(a[0]) - ordem.indexOf(b[0]));
-  const fixas = smFixas();
-  modal('Abas da barra', '<p style="margin:0 0 12px">Marque as abas que ficam sempre à vista. As outras continuam no botão Mais.</p><ul class="sm-escolha">' + todas.map(([v, n]) => '<li><label><input type="checkbox" value="' + v + '"' + (fixas.includes(v) ? ' checked' : '') + '><span><b>' + esc(n) + '</b><small>' + esc(SM_DICA[v] || '') + '</small></span></label></li>').join('') + '</ul>',
-    [{txt:'Voltar ao padrão', cls:'sec', acao:() => { delete UI.abasFixas; salvarUI(); smAgruparAbas(); toast('Abas padrão de volta'); }}, {txt:'Cancelar', cls:'sec'}, {txt:'Salvar', acao:dl => { const f = $$('.sm-escolha input:checked', dl).map(x => x.value); if (!f.length){ toast('Marque pelo menos uma aba'); return false; } UI.abasFixas = f; salvarUI(); smAgruparAbas(); toast('Abas salvas'); }}]);
+  const ordem = smOrdem(); todas.sort((a, b) => ordem.indexOf(a[0]) - ordem.indexOf(b[0]));
+  const extras = smExtras();
+  const item = ([v, n], fixa) => '<li><label><input type="checkbox" value="' + v + '"' + (fixa || extras.includes(v) ? ' checked' : '') + (fixa ? ' disabled' : '') + '><span><b>' + esc(n) + '</b><small>' + esc(fixa ? 'sempre na barra' : (SM_DICA[v] || '')) + '</small></span></label></li>';
+  modal('Abas da barra', '<p style="margin:0 0 12px">As abas fixas ficam sempre na barra, nesta ordem. Marque as outras que você quer à vista: vale para você em todas as aplicações. As que ficarem sem marcar continuam no botão Mais.</p>' +
+    '<p class="rotulo-mini" style="margin:0 0 6px">Fixas</p><ul class="sm-escolha">' + todas.filter(([v]) => SM_FIXAS.includes(v)).map(x => item(x, true)).join('') + '</ul>' +
+    '<p class="rotulo-mini" style="margin:12px 0 6px">As suas</p><ul class="sm-escolha">' + todas.filter(([v]) => !SM_FIXAS.includes(v)).map(x => item(x, false)).join('') + '</ul>',
+    [{txt:'Voltar ao padrão', cls:'sec', acao:() => { delete UI.abasFixas; salvarUI(); smAgruparAbas(); toast('Abas padrão de volta'); }}, {txt:'Cancelar', cls:'sec'}, {txt:'Salvar', acao:dl => { smGravarExtras($$('.sm-escolha input:checked:not(:disabled)', dl).map(x => x.value)); toast('Abas salvas'); }}]);
 }
 function smFecharMenuAbas(){ const m = $('.sm-abas-menu'); if (m && !m.hidden){ m.hidden = true; const b = $('[data-sm-mais-abas]'); if (b) b.setAttribute('aria-expanded', 'false'); } }
 const _rOperacoesSm = rOperacoes;
@@ -77,8 +92,14 @@ rView = function(){ const r = _rViewSm.apply(this, arguments); smAgruparAbas(); 
 document.addEventListener('click', ev => {
   const t = ev.target;
   const mais = t.closest('[data-sm-mais-abas]');
-  if (mais){ const m = mais.nextElementSibling; m.hidden = !m.hidden; mais.setAttribute('aria-expanded', String(!m.hidden)); if (!m.hidden){ const a = m.querySelector('[aria-current]') || m.querySelector('.sm-aba-ir'); if (a) a.focus(); } return; }
+  if (mais){ const m = mais.nextElementSibling; m.hidden = !m.hidden; mais.setAttribute('aria-expanded', String(!m.hidden));
+    // abre para o lado que cabe: se para a esquerda passaria da área de trabalho (ou do menu lateral), abre para a direita
+    if (!m.hidden){ m.classList.remove('a-esquerda'); const r = m.getBoundingClientRect(), area = (mais.closest('.ops-main') || document.body).getBoundingClientRect(); if (r.left < area.left + 8) m.classList.add('a-esquerda'); } if (!m.hidden){ const a = m.querySelector('[aria-current]') || m.querySelector('.sm-aba-ir'); if (a) a.focus(); } return; }
   if (t.closest('[data-sm-escolher]')){ smFecharMenuAbas(); smEscolherAbas(); return; }
+  const fx = t.closest('[data-sm-fixar]'); if (fx){ ev.stopPropagation(); smGravarExtras(smExtras().concat(fx.dataset.smFixar)); toast('Aba fixada na barra'); const b = $('[data-sm-mais-abas]'); if (b){ b.click(); } return; }
+  const so = t.closest('[data-sm-soltar]'); if (so){ ev.stopPropagation(); smGravarExtras(smExtras().filter(v => v !== so.dataset.smSoltar)); toast('Aba tirada da barra (continua no Mais)'); const b = $('[data-sm-mais-abas]'); if (b){ b.click(); } return; }
+  // o Calendário abre sempre na semana (dentro dele dá para trocar para mês, dia ou agenda)
+  const vw = t.closest('[data-view]'); if (vw && vw.dataset.view === 'calendar' && UI.view !== 'calendar' && vw.closest('.ops-cab')){ UI.calModo = 'semana'; UI.calRef = iso(HOJE); }
   if (!t.closest('.sm-mais-casa')) smFecharMenuAbas();
 }, true);
 document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && $('.sm-abas-menu:not([hidden])')){ ev.stopPropagation(); smFecharMenuAbas(); const b = $('[data-sm-mais-abas]'); if (b) b.focus(); } }, true);
@@ -224,3 +245,44 @@ const _abrirItemSm = abrirItem;
 abrirItem = function(id){ const r = _abrirItemSm.apply(this, arguments); smGaveta(byId('issues', id)); return r; };
 
 if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {abrirItem, rOperacoes, rView, smAgruparAbas, STATUS, VIEWS});
+
+/* ---------- a Fila e o Painel se atualizam sozinhos quando outra pessoa muda os itens ----------
+   A cada 20 segundos, com a aba aberta e visível, confere só quantos itens há e a hora da última mudança (consulta leve).
+   Se mudou e não foi você, relê do banco e redesenha. Não interrompe: com janela aberta, campo em edição, arrasto ou
+   gravação em andamento, espera a próxima rodada. */
+const SM_AO_VIVO = ['backlog', 'dashboard'];
+const SMV = {assin:null, rodando:false, eu:0, pendente:false};
+if (typeof salvar === 'function'){ const _salvarSmv = salvar; salvar = function(){ SMV.eu = Date.now(); return _salvarSmv.apply(this, arguments); }; }
+async function smAssinaturaItens(){
+  const sb = window.ciclodevBanco; if (!sb) return null;
+  const [a, b] = await Promise.all([
+    sb.from('itens').select('id', {count:'exact', head:true}),
+    sb.from('itens').select('atualizado_em').order('atualizado_em', {ascending:false}).limit(1)
+  ]);
+  if (a.error || b.error) return null;
+  return (a.count == null ? '?' : a.count) + '|' + (((b.data || [])[0] || {}).atualizado_em || '');
+}
+const smOcupado = () => !!document.querySelector('dialog[open]') || (window.ciclodevSync && (window.ciclodevSync.rodando || window.ciclodevSync.pendente)) ||
+  !!document.querySelector('.arrastando, [aria-grabbed="true"]') || (document.activeElement && document.activeElement.matches && document.activeElement.matches('#ops-corpo input, #ops-corpo textarea, #ops-corpo select, #ops-corpo [contenteditable="true"]'));
+async function smAoVivo(){
+  if (!COM_BANCO || typeof BANCO === 'undefined' || !BANCO.carregado || SMV.rodando || typeof window.ciclodevCarregarBanco !== 'function') return;
+  if (document.visibilityState !== 'visible' || UI.modulo !== 'operacoes' || !SM_AO_VIVO.includes(UI.view)){ SMV.assin = null; SMV.pendente = false; return; }
+  SMV.rodando = true;
+  try {
+    if (!SMV.pendente){
+      const a = await smAssinaturaItens(); if (!a) return;
+      const antes = SMV.assin; SMV.assin = a;
+      if (antes === null || a === antes) return;
+      if (Date.now() - SMV.eu < 25000) return;   // foi você que mudou: a tela já está certa
+      SMV.pendente = true;
+    }
+    if (smOcupado()) return;
+    const view = UI.view, sel = UI.sel;
+    await window.ciclodevCarregarBanco(null);
+    SMV.pendente = false;
+    if (UI.view === view && UI.sel === sel && !smOcupado()){ rView(); toast(view === 'backlog' ? 'A Fila foi atualizada: alguém mudou os itens.' : 'O Painel foi atualizado com as mudanças do time.'); }
+  } catch(e){ /* tenta de novo na próxima rodada */ }
+  finally { SMV.rodando = false; }
+}
+setInterval(smAoVivo, 20000);
+if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {smAoVivo, SMV, SM_FIXAS, smExtras, smEscolherAbas});

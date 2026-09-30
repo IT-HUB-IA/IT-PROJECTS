@@ -118,7 +118,7 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   const [dl] = await Promise.all([p.waitForEvent('download', {timeout:8000}).catch(() => null), p.click('[data-ifr-zip]')]);
   let lista = '';
   if (dl){ const cam = require('path').join(require('os').tmpdir(), 'infra.zip'); await dl.saveAs(cam); lista = require('child_process').execFileSync('unzip', ['-l', cam], {encoding:'utf8'}); }
-  ok(/docs\/diagrams\/README\.md/.test(lista) && /docs\/diagrams\/manifest\.json/.test(lista) && /docs\/diagrams\/architecture\/contexto-do-sistema\.dsl/.test(lista) && /architecture\/rendered\/contexto-do-sistema\.svg/.test(lista) && /produtos\/[a-z0-9-]+\/architecture\/contexto-do-produto\.mmd/.test(lista), 'Baixar tudo gera o zip na estrutura docs/diagrams (código, imagem, manifesto, produtos)');
+  ok(/docs\/diagrams\/README\.md/.test(lista) && /docs\/diagrams\/manifest\.json/.test(lista) && /docs\/diagrams\/architecture\/contexto-do-sistema\.dsl/.test(lista) && /architecture\/rendered\/contexto-do-sistema\.svg/.test(lista) && /produtos\/[a-z0-9-]+\/architecture\/contexto-do-produto\.mmd/.test(lista) && /docs\/diagrams\/navegar\.html/.test(lista), 'Baixar tudo gera o zip na estrutura docs/diagrams (código, imagem, manifesto, produtos e o arquivo navegável)');
   // outra sub-aba: outro canvas
   await p.click('[data-ifr-aba="der"]'); await p.waitForTimeout(2500);
   ok(await p.evaluate(() => /DER \/ Banco de Dados/.test(document.querySelector('.ifr-cab h2').textContent)) && await fr().evaluate(() => window.__PONTE.init.ns.endsWith('|der') && !document.querySelector('.t-diagrama')), 'cada sub-aba tem o próprio canvas');
@@ -139,6 +139,61 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   await p.click('.ifr-item.auto [data-ifr-quadro]'); await p.waitForTimeout(1500);
   ok(await fr().evaluate(() => /Software · it-hub\/bl/.test(document.querySelector('#trilha').textContent) && document.querySelectorAll('.t-modulo').length === 2 && !!document.querySelector('.t-grupo') && /5 importações/.test(document.querySelector('#camada-rotulos').textContent)), 'Abrir leva ao quadro do desenho no canvas, com os cards, o grupo e a ligação com o número');
   if (process.env.FOTOS) await p.screenshot({path: process.env.FOTOS + '/infra_auto_quadro.png'});
+  // ---------- baixar o quadro aberto (SVG, PNG, PDF), tela cheia e arquivo navegável ----------
+  const os = require('os'), path = require('path'), fs = require('fs');
+  const baixarDoCanvas = async texto => { await fr().click('#b-baixar'); await p.waitForTimeout(250);
+    const [d] = await Promise.all([p.waitForEvent('download', {timeout:15000}).catch(() => null), fr().click('#menu button:has-text("' + texto + '")')]);
+    if (!d) return null; const cam = path.join(os.tmpdir(), 'q-' + Date.now() + '-' + d.suggestedFilename()); await d.saveAs(cam); return {nome:d.suggestedFilename(), cam, buf:fs.readFileSync(cam)}; };
+  ok(await fr().evaluate(() => !!document.querySelector('#b-baixar') && !!document.querySelector('#b-cheia')), 'a barra do canvas tem Baixar e Tela cheia');
+  const svgQ = await baixarDoCanvas('Imagem vetorial (SVG)');
+  const txtSvg = svgQ ? svgQ.buf.toString('utf8') : '';
+  ok(!!svgQ && /\.svg$/.test(svgQ.nome) && /^<\?xml/.test(txtSvg) && /<foreignObject/.test(txtSvg) && /5 importações/.test(txtSvg) && /t-modulo/.test(txtSvg) && !/class="aresta-hit"|id="caixa-sel"|class="alca/.test(txtSvg), 'o quadro sai em SVG com os cards, o grupo e a ligação, sem seleção nem alças');
+  const q2 = await b.newPage({viewport:{width:1200, height:800}});
+  ok(!!svgQ && await q2.goto('file://' + svgQ.cam).then(() => q2.evaluate(() => { const r = document.documentElement.getBoundingClientRect(); return r.width > 700 && r.height > 250; })), 'o SVG abre sozinho no navegador, no tamanho do quadro');
+  if (process.env.FOTOS && svgQ) await q2.screenshot({path: process.env.FOTOS + '/infra_quadro_svg.png'});
+  const pngQ = await baixarDoCanvas('Imagem PNG (alta resolução)');
+  const W = txtSvg.match(/width="(\d+)"/), largPng = pngQ && pngQ.buf.length > 24 ? pngQ.buf.readUInt32BE(16) : 0;
+  ok(!!pngQ && pngQ.buf.slice(1, 4).toString() === 'PNG' && W && largPng === Number(W[1]) * 2, 'o PNG sai com o dobro da resolução da tela (' + largPng + ' px de largura)');
+  if (pngQ) { await q2.goto('about:blank'); await q2.setContent('<img id="i" src="data:image/png;base64,' + pngQ.buf.toString('base64') + '">'); await q2.waitForTimeout(300); }
+  ok(!!pngQ && await q2.evaluate(() => { const i = document.getElementById('i'), c = document.createElement('canvas'); c.width = 200; c.height = 200; const g = c.getContext('2d'); g.drawImage(i, 0, 0, 200, 200); const d = g.getImageData(0, 0, 200, 200).data; const cores = new Set(); for (let k = 0; k < d.length; k += 16) cores.add(d[k] >> 4 << 8 | d[k + 1] >> 4 << 4 | d[k + 2] >> 4); return cores.size > 8; }), 'o PNG tem o desenho de verdade (não sai em branco)');
+  const pdfQ = await baixarDoCanvas('PDF');
+  let pdfOk = '';
+  if (pdfQ){ fs.writeFileSync(path.join(os.tmpdir(), 'q.pdf'), pdfQ.buf);
+    try { pdfOk = execFileSync('python3', ['-c', 'import sys; sys.modules["cryptography"] = None; sys.path.insert(0, sys.argv[1]); import pypdf; r = pypdf.PdfReader(sys.argv[2], strict=True); pg = r.pages[0]; im = list(pg.images); print(len(r.pages), round(float(pg.mediabox.width)), len(im), im[0].image.size[0] if im else 0, r.metadata.title)', process.env.PYPDF || '', path.join(os.tmpdir(), 'q.pdf')], {encoding:'utf8'}).trim(); } catch(e){ pdfOk = 'erro ' + String(e.stderr || e.message).split('\n').slice(-2).join(' '); } }
+  ok(!!pdfQ && /^1 \d+ 1 \d+ /.test(pdfOk) && W && pdfOk.split(' ')[1] == Math.round(Number(W[1]) * 0.75) && /Software · it-hub\/bl/.test(pdfOk), 'o PDF abre num leitor de PDF (pypdf, modo estrito): 1 página do tamanho do quadro com a imagem (' + pdfOk + ')');
+  // tela cheia: de verdade (Fullscreen), com o botão de sair visível, e volta
+  await fr().click('#b-cheia'); await p.waitForTimeout(700);
+  ok(await p.evaluate(() => { const c = document.querySelector('.ifr-canvas'); return (document.fullscreenElement === c || c.classList.contains('ifr-cheia')) && !c.querySelector('.ifr-sair-cheia').hidden && /Sair/.test(document.querySelector('.ifr-cheia-b').textContent); }) && await fr().evaluate(() => document.querySelector('#b-cheia').classList.contains('ativo')), 'Tela cheia no canvas abre o quadro na tela inteira, com o botão de sair à vista');
+  if (process.env.FOTOS) await p.screenshot({path: process.env.FOTOS + '/infra_tela_cheia.png'});
+  await p.click('.ifr-sair-cheia'); await p.waitForTimeout(600);
+  ok(await p.evaluate(() => { const c = document.querySelector('.ifr-canvas'); return document.fullscreenElement !== c && !c.classList.contains('ifr-cheia') && c.querySelector('.ifr-sair-cheia').hidden; }) && await fr().evaluate(() => !document.querySelector('#b-cheia').classList.contains('ativo')), 'Sair da tela cheia volta ao normal');
+  await p.click('.ifr-cheia-b'); await p.waitForTimeout(600);
+  ok(await p.evaluate(() => { const c = document.querySelector('.ifr-canvas'); return document.fullscreenElement === c || c.classList.contains('ifr-cheia'); }), 'o botão Tela cheia do cabeçalho também abre');
+  await p.click('.ifr-cheia-b').catch(() => p.click('.ifr-sair-cheia')); await p.waitForTimeout(500);
+  // arquivo navegável: todas as partes, os quadros e os desenhos, aberto sem o CicloDev
+  const nav = await baixarDoCanvas('Arquivo navegável (HTML)');
+  ok(!!nav && /^desenhos-bl\.html$/.test(nav.nome) && nav.buf.length > 150000, 'o arquivo navegável sai num .html só (' + (nav ? Math.round(nav.buf.length / 1024) : 0) + ' KB)');
+  const n3 = await b.newPage({viewport:{width:1366, height:860}, acceptDownloads:true}); const errNav = [];
+  n3.on('pageerror', e => errNav.push(e.message));
+  if (nav) { await n3.goto('file://' + nav.cam); await n3.waitForTimeout(2500); }
+  const frN = () => n3.frames().find(f => f !== n3.mainFrame());
+  ok(!!nav && await n3.evaluate(() => document.querySelectorAll('.n-aba').length === 10 && /BL/.test(document.querySelector('h1').textContent) && /partes? com conteúdo/.test(document.querySelector('#n-resumo').textContent)), 'o arquivo abre com as 10 partes em abas e o resumo');
+  ok(!!nav && await n3.evaluate(() => document.querySelector('.n-aba[aria-selected="true"]').dataset.aba === 'solucao' && /Contexto do sistema/.test(document.querySelector('#n-lado').textContent)), 'começa na primeira parte com conteúdo, com os desenhos dela ao lado');
+  ok(!!nav && !!frN() && await frN().evaluate(() => window.__PONTE.init.ro === true && window.__PONTE.init.exportado === true && !!document.querySelector('.t-diagrama')), 'o canvas de verdade abre dentro do arquivo, só leitura, com o card do desenho');
+  if (nav) { await n3.click('.n-aba[data-aba="software"]'); await n3.waitForTimeout(2000); }
+  ok(!!nav && /Software · it-hub\/bl/.test(await n3.evaluate(() => document.querySelector('#n-lado').textContent)), 'trocar de parte mostra os quadros daquela parte');
+  if (nav) { await n3.click('.n-q:has-text("Software · it-hub/bl")'); await n3.waitForTimeout(1200); }
+  ok(!!nav && await frN().evaluate(() => /Software · it-hub\/bl/.test(document.querySelector('#trilha').textContent) && document.querySelectorAll('.t-modulo').length === 2), 'clicar num quadro da árvore leva até ele no canvas');
+  if (process.env.FOTOS && nav) await n3.screenshot({path: process.env.FOTOS + '/infra_navegavel.png'});
+  let dlN = null;
+  if (nav) { await frN().click('#b-baixar'); await n3.waitForTimeout(250);
+    ok(await frN().evaluate(() => !/Arquivo navegável/.test(document.querySelector('#menu').textContent)), 'dentro do arquivo, o menu Baixar não oferece baixar o arquivo de novo');
+    [dlN] = await Promise.all([n3.waitForEvent('download', {timeout:10000}).catch(() => null), frN().click('#menu button:has-text("Imagem vetorial (SVG)")')]); }
+  ok(!!dlN && /\.svg$/.test(dlN.suggestedFilename()), 'dentro do arquivo navegável também dá para baixar o quadro em SVG');
+  if (nav) { await n3.click('.n-aba[data-aba="solucao"]'); await n3.waitForTimeout(1800); await n3.click('.n-d:has-text("Contexto do sistema")'); await n3.waitForTimeout(400); }
+  ok(!!nav && await n3.evaluate(() => document.querySelector('#n-dlg').open && !!document.querySelector('#n-dlg .n-img img') && /workspace/.test(document.querySelector('#n-dlg .n-cod').textContent)), 'abrir um desenho no arquivo mostra a imagem e o código');
+  ok(!errNav.length, 'o arquivo navegável abre sem erro' + (errNav.length ? ': ' + errNav.join(' | ') : ''));
+  await q2.close(); await n3.close();
   await p.click('.ifr-item.auto [data-ifr-abrir]'); await p.waitForTimeout(1200);
   ok(await p.evaluate(() => document.querySelector('dialog.ifr-modal[open] #ifr-fonte').readOnly && /sai sozinho do código publicado/.test(document.querySelector('dialog.ifr-modal[open]').textContent) && /commit abc1234/.test(document.querySelector('dialog.ifr-modal[open]').textContent)), 'o editor do desenho automático é só leitura e diz de qual commit saiu');
   await p.click('dialog.ifr-modal[open] .modal-rod button:has-text("Copiar para editar à mão")'); await p.waitForTimeout(2000);
