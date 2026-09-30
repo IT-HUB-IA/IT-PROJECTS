@@ -2114,6 +2114,33 @@ dialog.modal.modal-larga{max-width:min(960px,calc(100% - 32px))}
   .bj-link{border:0;background:none;padding:0;font:inherit;font-weight:600;color:var(--preto);text-decoration:underline;cursor:pointer}
   .bj-sec-acoes .btn[disabled]{opacity:.55;cursor:not-allowed}
   .bj-epicos header{align-items:flex-start!important;gap:8px}
+  /* barra Criar no cabeçalho (criar.js): uma linha logo abaixo de Compartilhar, ⋯ e lixeira, alinhada à direita */
+  .ops-cab .ops-titulo > .acoes > .cria-barra{order:99;flex:0 0 100%;justify-content:flex-end;border:0;margin:2px 0 0;padding:0;gap:6px}
+  .ops-cab .ops-titulo > .acoes > .cria-barra .espaco{display:none}
+  .ops-cab .ops-titulo > .acoes > .cria-barra .cria-rot{margin-right:2px}
+  @media (max-width:760px){ .ops-cab .ops-titulo > .acoes > .cria-barra{justify-content:flex-start} }
+  /* cabeçalho em duas colunas: nome e etiquetas à esquerda; à direita, Compartilhar, ⋯ e lixeira e, logo abaixo, Criar.
+     A coluna dos botões nunca pula para baixo do nome (só no celular). */
+  .ops-cab .ops-titulo{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;column-gap:24px;row-gap:12px}
+  .ops-cab .ops-titulo > .titulo-esq{min-width:0}
+  .ops-cab .ops-titulo > .acoes{justify-self:end;justify-content:flex-end;align-content:flex-start;row-gap:10px;max-width:min(620px,58vw)}
+  .ops-cab .ops-titulo > .acoes > .cria-barra{padding-top:10px;border-top:1px solid var(--linha)}
+  .ops-cab .ops-titulo > .acoes > .cria-barra [data-ia-instrucoes]{font-weight:500;color:var(--tinta-2)}
+  @media (max-width:760px){
+    .ops-cab .ops-titulo{grid-template-columns:minmax(0,1fr)}
+    .ops-cab .ops-titulo > .acoes{justify-self:start;max-width:none}
+  }
+  /* quando a área do conteúdo é estreita, o nome fica sozinho na linha de cima e os botões numa linha só embaixo:
+     Criar à esquerda, Compartilhar, ⋯ e lixeira à direita (nada espremido) */
+  .ops-cab{container-type:inline-size;container-name:opscab}
+  @container opscab (max-width:1180px){
+    .ops-cab .ops-titulo{grid-template-columns:minmax(0,1fr)}
+    .ops-cab .ops-titulo > .acoes{justify-self:stretch;max-width:none;justify-content:flex-end;flex-wrap:wrap;row-gap:8px}
+    .ops-cab .ops-titulo > .acoes > .cria-barra{order:-1;flex:1 1 auto;justify-content:flex-start;border-top:0;padding-top:0;margin:0}
+  }
+  @container opscab (max-width:820px){
+    .ops-cab .cria-barra .cria-rot, .ops-cab .cria-barra .cria-ia-l{display:none}
+  }
 /* ---------- Produtividade: busca rápida, atalhos, tema escuro ---------- */
   kbd{font-family:var(--font-mono);font-size:10.5px;line-height:1;padding:3px 5px;border:1px solid var(--nevoa);border-bottom-width:2px;background:var(--branco);color:var(--preto);white-space:nowrap}
   dialog.pk{padding:0;border:1px solid var(--preto);width:min(640px,calc(100vw - 32px));max-height:min(560px,calc(100vh - 96px));margin:12vh auto auto;background:var(--branco);color:var(--preto);box-shadow:0 24px 64px rgba(0,0,0,.28);overflow:hidden}
@@ -13683,7 +13710,8 @@ if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {FA
 /* ===== Barra Criar: no topo de todas as abas que mostram itens =====
    As abas (Painel, Quadro, Tabela, Lista, Calendário, Linha do tempo, Carga, Fila, Meu trabalho) são só jeitos de ver
    os mesmos itens: tudo o que se cria aqui vai para a mesma tabela de itens, no ponto da estrutura escolhido.
-   Por isso a barra é a mesma em todas, sempre no mesmo lugar: + Item, + Épico, Criar em lote e Instruções para IA. */
+   Por isso a barra é a mesma em todas, sempre no mesmo lugar: no cabeçalho, logo abaixo de Compartilhar, ⋯ e lixeira,
+   com + Item, + Épico, Em lote e Instruções para IA. */
 const CRIA_VIEWS = new Set(['dashboard', 'board', 'table', 'list', 'calendar', 'timeline', 'workload', 'backlog', 'mywork']);
 function criaBarraHTML(){
   return '<div class="cria-barra" role="toolbar" aria-label="Criar"><span class="cria-rot">Criar</span>' +
@@ -13691,16 +13719,20 @@ function criaBarraHTML(){
     '<button type="button" class="btn sec peq" data-bj-acao="novo-epic">' + ICO.mais + 'Épico</button>' +
     '<button type="button" class="btn sec peq" data-lt-abrir>' + ICO.mais + 'Em lote</button>' +
     '<span class="espaco"></span>' +
-    '<button type="button" class="btn fant peq" data-ia-instrucoes title="Baixa um arquivo com o funcionamento do CicloDev para passar a um agente de IA">Instruções para IA</button></div>';
+    '<button type="button" class="btn fant peq" data-ia-instrucoes title="Baixa um arquivo com o funcionamento do CicloDev para passar a um agente de IA" aria-label="Instruções para IA"><span class="cria-ia-l">Instruções para </span>IA</button></div>';
+}
+// a barra fica no cabeçalho, logo abaixo de Compartilhar, ⋯ e lixeira: economiza a altura do conteúdo
+function criaPosicionar(){
+  const c = $('#ops-corpo'), acoes = $('#m-operacoes .ops-titulo > .acoes'), quer = CRIA_VIEWS.has(UI.view) && podeEditar();
+  $$('#m-operacoes .cria-barra').forEach(b => { if (!quer || (acoes && !acoes.contains(b))) b.remove(); });
+  if (quer && acoes && !$('.cria-barra', acoes)) acoes.insertAdjacentHTML('beforeend', criaBarraHTML());
+  else if (quer && !acoes && c && !$('.cria-barra', c)) c.insertAdjacentHTML('afterbegin', criaBarraHTML());   // sem cabeçalho de ações (tela Tudo)
 }
 const _rViewCria = rView;
-rView = function(){
-  const r = _rViewCria.apply(this, arguments);
-  const c = $('#ops-corpo');
-  if (c && CRIA_VIEWS.has(UI.view) && podeEditar() && !$('.cria-barra', c)) c.insertAdjacentHTML('afterbegin', criaBarraHTML());
-  return r;
-};
-if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {criaBarraHTML, CRIA_VIEWS});
+rView = function(){ const r = _rViewCria.apply(this, arguments); criaPosicionar(); return r; };
+const _rOperacoesCria = rOperacoes;
+rOperacoes = function(){ const r = _rOperacoesCria.apply(this, arguments); criaPosicionar(); return r; };
+if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {criaBarraHTML, CRIA_VIEWS, criaPosicionar});
 
 /* ---------- instruções para passar a um agente de IA (ChatGPT, Claude, etc.) ----------
    O agente conversa com a pessoa, monta o texto no formato do Criar em lote e a pessoa cola aqui.

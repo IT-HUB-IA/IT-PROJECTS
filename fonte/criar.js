@@ -1,7 +1,8 @@
 /* ===== Barra Criar: no topo de todas as abas que mostram itens =====
    As abas (Painel, Quadro, Tabela, Lista, Calendário, Linha do tempo, Carga, Fila, Meu trabalho) são só jeitos de ver
    os mesmos itens: tudo o que se cria aqui vai para a mesma tabela de itens, no ponto da estrutura escolhido.
-   Por isso a barra é a mesma em todas, sempre no mesmo lugar: + Item, + Épico, Criar em lote e Instruções para IA. */
+   Por isso a barra é a mesma em todas, sempre no mesmo lugar: no cabeçalho, logo abaixo de Compartilhar, ⋯ e lixeira,
+   com + Item, + Épico, Em lote e Instruções para IA. */
 const CRIA_VIEWS = new Set(['dashboard', 'board', 'table', 'list', 'calendar', 'timeline', 'workload', 'backlog', 'mywork']);
 function criaBarraHTML(){
   return '<div class="cria-barra" role="toolbar" aria-label="Criar"><span class="cria-rot">Criar</span>' +
@@ -9,16 +10,20 @@ function criaBarraHTML(){
     '<button type="button" class="btn sec peq" data-bj-acao="novo-epic">' + ICO.mais + 'Épico</button>' +
     '<button type="button" class="btn sec peq" data-lt-abrir>' + ICO.mais + 'Em lote</button>' +
     '<span class="espaco"></span>' +
-    '<button type="button" class="btn fant peq" data-ia-instrucoes title="Baixa um arquivo com o funcionamento do CicloDev para passar a um agente de IA">Instruções para IA</button></div>';
+    '<button type="button" class="btn fant peq" data-ia-instrucoes title="Baixa um arquivo com o funcionamento do CicloDev para passar a um agente de IA" aria-label="Instruções para IA"><span class="cria-ia-l">Instruções para </span>IA</button></div>';
+}
+// a barra fica no cabeçalho, logo abaixo de Compartilhar, ⋯ e lixeira: economiza a altura do conteúdo
+function criaPosicionar(){
+  const c = $('#ops-corpo'), acoes = $('#m-operacoes .ops-titulo > .acoes'), quer = CRIA_VIEWS.has(UI.view) && podeEditar();
+  $$('#m-operacoes .cria-barra').forEach(b => { if (!quer || (acoes && !acoes.contains(b))) b.remove(); });
+  if (quer && acoes && !$('.cria-barra', acoes)) acoes.insertAdjacentHTML('beforeend', criaBarraHTML());
+  else if (quer && !acoes && c && !$('.cria-barra', c)) c.insertAdjacentHTML('afterbegin', criaBarraHTML());   // sem cabeçalho de ações (tela Tudo)
 }
 const _rViewCria = rView;
-rView = function(){
-  const r = _rViewCria.apply(this, arguments);
-  const c = $('#ops-corpo');
-  if (c && CRIA_VIEWS.has(UI.view) && podeEditar() && !$('.cria-barra', c)) c.insertAdjacentHTML('afterbegin', criaBarraHTML());
-  return r;
-};
-if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {criaBarraHTML, CRIA_VIEWS});
+rView = function(){ const r = _rViewCria.apply(this, arguments); criaPosicionar(); return r; };
+const _rOperacoesCria = rOperacoes;
+rOperacoes = function(){ const r = _rOperacoesCria.apply(this, arguments); criaPosicionar(); return r; };
+if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {criaBarraHTML, CRIA_VIEWS, criaPosicionar});
 
 /* ---------- instruções para passar a um agente de IA (ChatGPT, Claude, etc.) ----------
    O agente conversa com a pessoa, monta o texto no formato do Criar em lote e a pessoa cola aqui.

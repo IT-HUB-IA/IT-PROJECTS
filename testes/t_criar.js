@@ -68,23 +68,23 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   await p.evaluate(() => document.querySelector('[data-tela="operacoes"]').click()); await p.waitForTimeout(500);
   const FOTOS = process.env.FOTOS || '';
   const app = conta("select id from public.nos where tipo = 'aplicacao' and nome like 'Sistema%' order by nome limit 1") || conta("select id from public.nos where tipo = 'aplicacao' order by nome limit 1");
-  const ver = v => p.evaluate(([v, a]) => { const U = window.__tf.UI; U.sel = 'app:' + a; U.view = v; window.__tf.rOperacoes(); const c = document.querySelector('#ops-corpo'); const b = c && c.querySelector('.cria-barra');
-    return { tem: !!b, primeiro: !!b && c.firstElementChild === b, botoes: b ? [...b.querySelectorAll('button')].map(x => x.textContent.trim()).join('|') : '', novoItemFora: c ? [...c.querySelectorAll('[data-acao="novo-item"]')].filter(x => !x.closest('.cria-barra')).length : -1, epicoFora: c ? [...c.querySelectorAll('[data-bj-acao="novo-epic"]')].filter(x => !x.closest('.cria-barra')).length : -1 }; }, [v, app]);
+  const ver = v => p.evaluate(([v, a]) => { const U = window.__tf.UI; U.sel = 'app:' + a; U.view = v; window.__tf.rOperacoes(); const c = document.querySelector('#ops-corpo'); const b = document.querySelector('#m-operacoes .ops-titulo > .acoes > .cria-barra'); const ac = b && b.parentElement;
+    return { tem: !!b, primeiro: (() => { if (!b || c.querySelector('.cria-barra')) return false; const rb = b.getBoundingClientRect(), outros = [...ac.querySelectorAll('button')].filter(x => !b.contains(x) && x.offsetParent); const tops = new Set(outros.map(x => Math.round(x.getBoundingClientRect().top))); const sobrepoe = outros.some(x => { const r = x.getBoundingClientRect(); return !(r.right <= rb.left || r.left >= rb.right || r.bottom <= rb.top || r.top >= rb.bottom); }); return outros.length > 0 && tops.size === 1 && !sobrepoe; })(), botoes: b ? [...b.querySelectorAll('button')].map(x => x.textContent.trim()).join('|') : '', novoItemFora: c ? [...c.querySelectorAll('[data-acao="novo-item"]')].filter(x => !x.closest('.cria-barra')).length : -1, epicoFora: c ? [...c.querySelectorAll('[data-bj-acao="novo-epic"]')].filter(x => !x.closest('.cria-barra')).length : -1 }; }, [v, app]);
   for (const v of ['dashboard', 'board', 'table', 'calendar', 'timeline', 'backlog']) {
     const r = await ver(v); await p.waitForTimeout(150);
     if (!(r.tem && r.primeiro && r.botoes === 'Item|Épico|Em lote|Instruções para IA' && r.novoItemFora === 0 && r.epicoFora === 0)) console.log('DEBUG', v, JSON.stringify(r));
-    ok(r.tem && r.primeiro && r.botoes === 'Item|Épico|Em lote|Instruções para IA' && r.novoItemFora === 0 && r.epicoFora === 0, 'aba ' + v + ': a barra Criar está no topo, com Item, Épico, Em lote e Instruções para IA, sem botão repetido em outro lugar' + (r.tem ? '' : ' (sem barra)'));
-    if (v === 'backlog' && FOTOS) await p.locator('#ops-corpo').screenshot({ path: FOTOS + '/criar_fila.png', clip: undefined });
+    ok(r.tem && r.primeiro && r.botoes === 'Item|Épico|Em lote|Instruções para IA' && r.novoItemFora === 0 && r.epicoFora === 0, 'aba ' + v + ': a barra Criar fica no cabeçalho, junto de Compartilhar (que fica numa linha só com ⋯ e lixeira), com Item, Épico, Em lote e Instruções para IA, sem botão repetido em outro lugar' + (r.tem ? '' : ' (sem barra)'));
+    if (v === 'calendar' && FOTOS) await p.screenshot({ path: FOTOS + '/criar_cab.png', clip: {x: 0, y: 0, width: 1440, height: 380} });
   }
   for (const v of ['sheet']) { const r = await ver(v); ok(!r.tem, 'aba ' + v + ': sem barra Criar (não mostra itens)'); }
   // criar de outra aba, não só da Fila
   await ver('table'); await p.waitForTimeout(200);
   const antes = Number(conta("select count(*) from public.itens where tipo = 'epic'") || 0);
-  await p.click('#ops-corpo .cria-barra [data-bj-acao="novo-epic"]'); await p.waitForTimeout(300);
+  await p.click('.cria-barra [data-bj-acao="novo-epic"]'); await p.waitForTimeout(300);
   await p.fill('#bj-ep-n', 'Épico criado pela Tabela'); await p.click('dialog.modal[open] .modal-rod .btn:not(.sec)'); await p.waitForTimeout(1500);
   ok(/Épico criado pela Tabela/.test(await p.evaluate(() => document.body.textContent)) || Number(conta("select count(*) from public.itens where tipo = 'epic'") || 0) > antes, 'o + Épico da Tabela cria o épico (a mesma tabela de itens)');
   await ver('calendar'); await p.waitForTimeout(200);
-  await p.click('#ops-corpo .cria-barra [data-lt-abrir]'); await p.waitForTimeout(400);
+  await p.click('.cria-barra [data-lt-abrir]'); await p.waitForTimeout(400);
   ok(await p.evaluate(() => !!document.querySelector('dialog.lt-modal [data-lt-ia-baixar]') && !!document.querySelector('dialog.lt-modal [data-lt-ia-copiar]')), 'o Em lote abre do Calendário, com Baixar e Copiar instruções para IA');
   if (FOTOS) await p.locator('dialog.lt-modal').screenshot({ path: FOTOS + '/criar_lote.png' });
   const baixar = async sel => { const [d] = await Promise.all([p.waitForEvent('download'), p.click(sel)]); const fs = require('fs'); return { nome: d.suggestedFilename(), md: fs.readFileSync(await d.path(), 'utf8') }; };
@@ -99,7 +99,7 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   const exemplo = await p.evaluate(() => { const m = document.querySelector('dialog.lt-modal'); const t = m.querySelector('#lt-t'); const f = (window.__tf.ciContexto().frentes[0] || {}).nome || ''; t.value = 'Módulo gerado pelo agente' + (f ? ' [' + f + ']' : '') + '\n- Primeira tarefa\n- Segunda tarefa'; t.dispatchEvent(new Event('input')); return m.querySelector('.lt-previa').textContent; });
   ok(/1 épico novo/.test(exemplo) && /2 itens/.test(exemplo) && !/não existe aqui/.test(exemplo), 'o texto no formato das instruções entra certo na prévia (1 épico e 2 itens, frente reconhecida)');
   await p.evaluate(() => document.querySelectorAll('dialog.modal').forEach(d => { d.close(); d.remove(); }));
-  const geral = await baixar('#ops-corpo .cria-barra [data-ia-instrucoes]');
+  const geral = await baixar('.cria-barra [data-ia-instrucoes]');
   ok(/Cliente › Projeto › Produto › Aplicação › Frente de trabalho/.test(geral.md) && /Tipos de item:\*\*\n- \*\*/.test(geral.md) && /Situações \(status\):\*\*\n- \*\*/.test(geral.md) && /Prioridades:\*\*\n- \*\*/.test(geral.md) && /Linha do tempo/.test(geral.md) && /Formato do Criar em lote/.test(geral.md) && /Criar › Em lote/.test(geral.md), 'Instruções para IA baixa o funcionamento do CicloDev (estrutura, tipos, situações, prioridades, abas) com o formato em lote junto');
   ok(!/—/.test(geral.md) && !/—/.test(lote.md), 'nenhum travessão nas instruções');
   ok(!erros.length, 'sem erro na página' + (erros.length ? ': ' + erros.join(' | ') : ''));

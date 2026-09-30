@@ -109,3 +109,30 @@
   .bj-link{border:0;background:none;padding:0;font:inherit;font-weight:600;color:var(--preto);text-decoration:underline;cursor:pointer}
   .bj-sec-acoes .btn[disabled]{opacity:.55;cursor:not-allowed}
   .bj-epicos header{align-items:flex-start!important;gap:8px}
+  /* barra Criar no cabeçalho (criar.js): uma linha logo abaixo de Compartilhar, ⋯ e lixeira, alinhada à direita */
+  .ops-cab .ops-titulo > .acoes > .cria-barra{order:99;flex:0 0 100%;justify-content:flex-end;border:0;margin:2px 0 0;padding:0;gap:6px}
+  .ops-cab .ops-titulo > .acoes > .cria-barra .espaco{display:none}
+  .ops-cab .ops-titulo > .acoes > .cria-barra .cria-rot{margin-right:2px}
+  @media (max-width:760px){ .ops-cab .ops-titulo > .acoes > .cria-barra{justify-content:flex-start} }
+  /* cabeçalho em duas colunas: nome e etiquetas à esquerda; à direita, Compartilhar, ⋯ e lixeira e, logo abaixo, Criar.
+     A coluna dos botões nunca pula para baixo do nome (só no celular). */
+  .ops-cab .ops-titulo{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;column-gap:24px;row-gap:12px}
+  .ops-cab .ops-titulo > .titulo-esq{min-width:0}
+  .ops-cab .ops-titulo > .acoes{justify-self:end;justify-content:flex-end;align-content:flex-start;row-gap:10px;max-width:min(620px,58vw)}
+  .ops-cab .ops-titulo > .acoes > .cria-barra{padding-top:10px;border-top:1px solid var(--linha)}
+  .ops-cab .ops-titulo > .acoes > .cria-barra [data-ia-instrucoes]{font-weight:500;color:var(--tinta-2)}
+  @media (max-width:760px){
+    .ops-cab .ops-titulo{grid-template-columns:minmax(0,1fr)}
+    .ops-cab .ops-titulo > .acoes{justify-self:start;max-width:none}
+  }
+  /* quando a área do conteúdo é estreita, o nome fica sozinho na linha de cima e os botões numa linha só embaixo:
+     Criar à esquerda, Compartilhar, ⋯ e lixeira à direita (nada espremido) */
+  .ops-cab{container-type:inline-size;container-name:opscab}
+  @container opscab (max-width:1180px){
+    .ops-cab .ops-titulo{grid-template-columns:minmax(0,1fr)}
+    .ops-cab .ops-titulo > .acoes{justify-self:stretch;max-width:none;justify-content:flex-end;flex-wrap:wrap;row-gap:8px}
+    .ops-cab .ops-titulo > .acoes > .cria-barra{order:-1;flex:1 1 auto;justify-content:flex-start;border-top:0;padding-top:0;margin:0}
+  }
+  @container opscab (max-width:820px){
+    .ops-cab .cria-barra .cria-rot, .ops-cab .cria-barra .cria-ia-l{display:none}
+  }
