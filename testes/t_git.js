@@ -117,6 +117,7 @@ window.supabase = { createClient(){ const sess = {user:{id:'u1', email:'admin@it
   ok((await p.textContent('.gc-modal [data-gc-ligar$="|555"]')).trim() === 'Ligado', 'e o botão vira Ligado');
   await p.click('.gc-modal [data-fechar]'); await p.waitForTimeout(800);
   ok(/it-hub-ia\/portal/.test(await p.textContent('#ops-corpo')) && !/Como ligar/.test(await p.textContent('#ops-corpo')), 'a aba Entregas mostra o repositório, sem instruções de webhook');
+  ok(await p.isVisible('[data-en-trocar-repo]') && await p.isVisible('[data-en-excluir-repo]') && /Desligar/.test(await p.textContent('[data-en-excluir-repo]')), 'cada repositório tem os botões Trocar e Desligar escritos');
   // desconectar com repositório ligado é recusado
   await p.click('[data-en-novo-repo]'); await p.waitForTimeout(1200);
   await p.click('.gc-modal [data-gc-desconectar]'); await p.waitForTimeout(400);

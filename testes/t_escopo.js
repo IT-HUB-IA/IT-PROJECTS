@@ -48,6 +48,11 @@ const { chromium } = require('/opt/node22/lib/node_modules/playwright');
   const ficha = await p.evaluate(c => { const D = window.ciclodevDados(); D.sheets[c.pj] = {campos:{'Database|Banco e schema':'SEGREDO-DO-PROJETO'}, custom:[], arquivos:[]}; __tf.UI.sel = c.a1; return __tf.vSheet(); }, C);
   ok(!/SEGREDO-DO-PROJETO|herdado do projeto/.test(ficha), 'a ficha técnica do app não mostra o que foi preenchido no projeto');
   ok(/SEGREDO-DO-PROJETO/.test(await p.evaluate(c => { __tf.UI.sel = c.pj; return __tf.vSheet(); }, C)), 'e a ficha do projeto continua mostrando o dela');
+  // a aplicação tem a aba Infraestrutura (o repositório costuma ser ligado nela)
+  await p.evaluate(c => { __tf.UI.sel = c.a1; __tf.UI.view = 'dashboard'; __tf.abrirArvore(c.a1); __tf.rOperacoes(); }, C); await p.waitForTimeout(300);
+  ok(await p.locator('.view-b[data-view="infra"]').count() > 0, 'a aplicação mostra a aba Infraestrutura');
+  await p.evaluate(c => { __tf.UI.sel = 'ws:ws-t1'; __tf.rOperacoes(); }, C); await p.waitForTimeout(300);
+  ok(await p.locator('.view-b[data-view="infra"]').count() === 0, 'a frente (parte do app) não mostra');
   ok(!erros.length, 'sem erro de JavaScript' + (erros.length ? ': ' + erros.join(' | ') : ''));
   await b.close(); console.log(falhas ? falhas + ' FALHAS' : 'TUDO OK'); process.exit(falhas ? 1 : 0);
 })();

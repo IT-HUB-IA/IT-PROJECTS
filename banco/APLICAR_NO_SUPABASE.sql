@@ -7015,6 +7015,10 @@ alter table public.infra_automacoes add constraint infra_automacoes_origem_check
 alter table public.infra_diagramas drop constraint if exists infra_diagramas_origem_check;
 alter table public.infra_diagramas add constraint infra_diagramas_origem_check check (origem in ('manual','devit','github','gitlab','banco'));
 
+-- Parte 29 (troca): a aplicação também tem a aba Infraestrutura, com os desenhos do código ligado a ela
+create or replace function interno.infra_no_ok(p uuid) returns boolean
+language sql stable security definer set search_path = public, pg_temp as $$ select exists (select 1 from public.nos where id = p and tipo in ('projeto','produto','aplicacao')) $$;
+
 -- Parte 19 (troca): a versão (release) publicada pelo GitHub/GitLab é procurada só no lugar do repositório e no que
 -- está dentro dele, nunca no projeto inteiro: dois produtos com "v1.0" não se confundem.
 create or replace function interno.codigo_versao(p_no uuid, p_nome text) returns uuid
@@ -7029,19 +7033,21 @@ revoke all on function interno.codigo_versao(uuid, text) from public, anon, auth
 
 create or replace function interno.infra_publicou() returns trigger
 language plpgsql security definer set search_path = public, pg_temp as $$
-declare alvo uuid; prov text;
+declare alvo uuid; prov text; n integer := 0;
 begin
   if new.status <> 'sucesso' or new.ambiente <> 'producao' or new.repositorio_id is null then return null; end if;
   if tg_op = 'UPDATE' and old.status = 'sucesso' and old.ambiente = 'producao' and old.referencia is not distinct from new.referencia then return null; end if;
-  alvo := interno.infra_no_de(new.no_id);
-  if alvo is null then return null; end if;
   select r.provedor into prov from public.repositorios r where r.id = new.repositorio_id and r.ativo and r.conexao_id is not null;
   if prov is null then return null; end if;
-  if exists (select 1 from public.infra_automacoes a where a.no_id = alvo and a.repositorio_id = new.repositorio_id
-              and a.referencia is not distinct from new.referencia and a.status in ('pendente','rodando')) then return null; end if;
-  insert into public.infra_automacoes (no_id, origem, repositorio_id, publicacao_id, referencia, pedido_por)
-  values (alvo, prov, new.repositorio_id, new.id, left(new.referencia, 200), null);
-  perform interno.infra_auto_chamar();
+  -- a aplicação dona do repositório (se for uma) e o produto ou projeto em que ela está: os dois ficam em dia
+  for alvo in select distinct x from unnest(array[(select id from public.nos where id = new.no_id and tipo = 'aplicacao'), interno.infra_no_de(new.no_id)]) x where x is not null loop
+    if exists (select 1 from public.infra_automacoes a where a.no_id = alvo and a.repositorio_id = new.repositorio_id
+                and a.referencia is not distinct from new.referencia and a.status in ('pendente','rodando')) then continue; end if;
+    insert into public.infra_automacoes (no_id, origem, repositorio_id, publicacao_id, referencia, pedido_por)
+    values (alvo, prov, new.repositorio_id, new.id, left(new.referencia, 200), null);
+    n := n + 1;
+  end loop;
+  if n > 0 then perform interno.infra_auto_chamar(); end if;
   return null;
 end $$;
 
@@ -7088,7 +7094,7 @@ begin
                                                                     'conexao_id', r.conexao_id, 'externo_id', r.externo_id) order by r.nome), '[]')
                          from public.repositorios r
                         where r.ativo and r.conexao_id is not null and (case when a.repositorio_id is not null then r.id = a.repositorio_id
-                                                else interno.infra_no_de(r.no_id) = a.no_id end)),
+                                                else r.no_id = a.no_id or interno.infra_no_de(r.no_id) = a.no_id end)),
       'banco', (select jsonb_build_object('esquemas', b.esquemas, 'conexao', c.conexao)
                   from public.infra_bancos b join interno.infra_bancos_conexao c on c.no_id = b.no_id
                  where b.no_id = a.no_id and b.ativo and a.origem in ('manual','banco'))

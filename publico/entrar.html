@@ -1985,6 +1985,9 @@ dialog.modal.modal-larga{max-width:min(960px,calc(100% - 32px))}
 .gc-dica code{font-family:var(--font-mono);font-size:12px;overflow-wrap:anywhere}
 .gc-dica .mini{padding:1px 8px;font-size:11px}
 .gc-aviso-conta{grid-column:1/-1;margin:4px 0 6px;font-size:12px;line-height:1.5;color:var(--tinta-3)}
+.en2-repo-b{display:inline-flex;gap:4px;margin-left:auto}
+.en2-repo-a{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.ifr-repo-b{display:flex;gap:10px;margin-top:2px}
 /* ---------- Simplificar: abas agrupadas e tela do item ---------- */
   .ops-cab .views > .view-casa .info{display:none}
   .sm-mais-casa{position:relative;display:inline-flex}
@@ -8999,8 +9002,9 @@ function enHTML(chave){
     '<small>' + esc(enData(p.publicado_em)) + ' · ' + esc(EN_ORIGEM[p.origem] || p.origem) + (p.url ? ' · <a href="' + esc(p.url) + '" target="_blank" rel="noopener noreferrer">abrir</a>' : '') + (p.observacao ? '<br>' + esc(p.observacao) : '') + '</small></div>' + lixo('data-en-excluir-pub', p.id, 'a publicação ' + (p.versao || '')) + '</li>';
   // repositórios: uma linha por repositório
   const linhaR = r => '<li class="en2-repo"><div class="en2-repo-t">' + (EN_ICO[r.provedor] || '') + '<div><a href="' + esc(r.url || (r.provedor === 'gitlab' ? 'https://gitlab.com/' : 'https://github.com/') + r.nome) + '" target="_blank" rel="noopener noreferrer"><b>' + esc(r.nome) + '</b></a>' +
-      '<small class="' + (r.ultimo_erro ? 'en2-erro' : '') + '">' + (r.ultimo_erro ? esc(r.ultimo_erro) : r.ultimo_evento_em ? 'Último aviso: ' + esc(r.ultimo_evento) + ', ' + esc(enHa(r.ultimo_evento_em)) : 'Ainda sem avisos. Eles chegam sozinhos a cada push, pull request ou publicação') + '</small></div>' + lixo('data-en-excluir-repo', r.id, r.nome) + '</div>' +
-    '<div class="en2-repo-a">' + (pode ? '<label class="en-liga"><input type="checkbox" data-en-mover="' + r.id + '"' + (r.mover_status ? ' checked' : '') + '> Status anda sozinho</label>' : '') + '</div></li>';
+      '<small class="' + (r.ultimo_erro ? 'en2-erro' : '') + '">' + (r.ultimo_erro ? esc(r.ultimo_erro) : r.ultimo_evento_em ? 'Último aviso: ' + esc(r.ultimo_evento) + ', ' + esc(enHa(r.ultimo_evento_em)) : 'Ainda sem avisos. Eles chegam sozinhos a cada push, pull request ou publicação') + '</small></div></div>' +
+    '<div class="en2-repo-a">' + (pode ? '<label class="en-liga"><input type="checkbox" data-en-mover="' + r.id + '"' + (r.mover_status ? ' checked' : '') + '> Status anda sozinho</label>' +
+      '<span class="en2-repo-b"><button type="button" class="btn fant peq" data-en-trocar-repo="' + r.id + '">Trocar</button><button type="button" class="btn fant peq" data-en-excluir-repo="' + r.id + '">Desligar</button></span>' : '') + '</div></li>';
   const caixa = (tit, ajuda, corpo, vazio) => '<section class="en2-caixa"><header><h3>' + tit + '</h3><p>' + ajuda + '</p></header>' + (corpo || '<p class="en2-vazio">' + vazio + '</p>') + '</section>';
   return '<div class="en2">' + (EN.erro ? '<p class="aviso-faixa">Não deu para ler tudo do banco: ' + esc(EN.erro) + '</p>' : '') + trilho +
     '<div class="en2-grade"><div class="en2-col">' +
@@ -9155,6 +9159,7 @@ document.addEventListener('click', e => {
   if ((b = e.target.closest('[data-en-publicar]'))){ enNovaPublicacao(b.dataset.enPublicar); return; }
   if ((b = e.target.closest('[data-en-excluir-versao]'))){ enExcluirVersao(b.dataset.enExcluirVersao); return; }
   if ((b = e.target.closest('[data-en-excluir-repo]'))){ gcDesligarRepo(b.dataset.enExcluirRepo); return; }
+  if ((b = e.target.closest('[data-en-trocar-repo]'))){ gcDesligarRepo(b.dataset.enTrocarRepo, true); return; }
   if ((b = e.target.closest('[data-en-excluir-pub]'))){ const id = b.dataset.enExcluirPub, p = (EN.pubs || []).find(x => x.id === id); if (!p) return;
     tfExcluirPerguntaSimples('Excluir o registro da publicação ' + esc(p.versao || '') + '?', 'Sai só do histórico do CicloDev. O que está no ar não muda.', () => {
       enApagar('publicacoes', id).then(ok => { if (!ok) return; EN.pubs = EN.pubs.filter(x => x.id !== id); if (UI.view === 'entregas') rView(); tfAviso('Registro excluído.', [], 3000); }); }); return; }
@@ -9371,13 +9376,20 @@ function gcDesconectar(id, depois){
     if (depois) depois(); tfAviso('Conta ' + c.conta + ' desconectada.', [], 3000);
   });
 }
-function gcDesligarRepo(id){
-  const r = (EN.repos || []).find(x => x.id === id); if (!r) return;
-  tfExcluirPerguntaSimples('Desligar o repositório ' + esc(r.nome) + '?', 'Os branches, commits e pull requests que vieram dele saem dos itens. As publicações registradas continuam no histórico.' + (r.provedor === 'gitlab' ? ' O aviso que o CicloDev criou no projeto do GitLab sai junto.' : ''), async () => {
+// desligar (deixa o ponto sem este repositório) ou trocar (desliga e já abre Ligar repositório para escolher outro)
+function gcDesligarRepo(id, trocar){
+  const r = (EN.repos || []).concat(typeof IFR_AUTO === 'object' ? IFR_AUTO.repos || [] : []).find(x => x.id === id); if (!r) return;
+  tfExcluirPerguntaSimples((trocar ? 'Trocar o repositório ' : 'Desligar o repositório ') + esc(r.nome) + '?',
+    (trocar ? 'Ele é desligado e em seguida abre a janela para escolher o novo. ' : 'O ponto fica sem este repositório (dá para ligar outro quando quiser). ') +
+    'Os branches, commits e pull requests que vieram dele saem dos itens. As publicações e os desenhos que já saíram ficam; os desenhos automáticos param de ser atualizados por ele.' +
+    (r.provedor === 'gitlab' ? ' O aviso que o CicloDev criou no projeto do GitLab sai junto.' : ''), async () => {
     const res = COM_BANCO ? await gcFuncao({acao:'desligar', repo_id:id}) : {ok:await enApagar('repositorios', id)};
     if (!res.ok){ toast('Não deu para desligar: ' + (res.erro || 'sem permissão')); return; }
-    EN.repos = EN.repos.filter(x => x.id !== id); if (UI.view === 'entregas') rView();
+    EN.repos = (EN.repos || []).filter(x => x.id !== id);
+    if (UI.view === 'entregas') rView();
+    if (UI.view === 'infra' && typeof ifrAutoCarregar === 'function'){ await ifrAutoCarregar(); ifrLado(); }
     tfAviso('Repositório ' + r.nome + ' desligado.' + (res.aviso ? ' ' + res.aviso : ''), [], res.aviso ? 8000 : 4000);
+    if (trocar) gcLigarRepo();
   });
 }
 
@@ -12090,7 +12102,7 @@ function rlAbrir(){
 document.addEventListener('click', e => { if (e.target.closest && e.target.closest('[data-rl-abrir]')){ e.stopPropagation(); e.preventDefault(); rlAbrir(); } }, true);
 if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {rlAbrir, selItens});
 
-/* ===== Aba Infraestrutura (projeto = macro, produto = micro) =====
+/* ===== Aba Infraestrutura (projeto = macro; produto e aplicação = micro, cada um com o código dele) =====
    Desenhos do sistema como código. Cada sub-aba tem:
    - o canvas de estruturação (fonte/canvas_infra.html) rodando dentro da aba, com todas as funções dele
      (zoom, minimapa, botão direito, atalhos, busca, grupos, quadros dentro de quadros, desfazer...), gravando no banco
@@ -12130,7 +12142,7 @@ const IFR_MODELO = {
 const IFR = {chave:null, aba:'solucao', no:null, docs:{}, conhecidos:{}, diagramas:[], carregando:false, erro:'', config:null, gerando:false, ultimaLeitura:0};
 const ifrBanco = () => (COM_BANCO && window.ciclodevBanco && BANCO.carregado) ? window.ciclodevBanco : null;
 const ifrAba = id => IFR_ABAS.find(a => a.id === id) || IFR_ABAS[0];
-const ifrPodeTer = sel => /^(project|product):/.test(sel || '');
+const ifrPodeTer = sel => /^(project|product|app):/.test(sel || '');
 const ifrNoDe = sel => (sel || '').split(':')[1] || null;
 // os produtos de um projeto (o macro mostra também os desenhos deles)
 const ifrProdutos = sel => sel && sel.startsWith('project:') ? D.products.filter(p => p.project === ifrNoDe(sel)) : [];
@@ -12550,9 +12562,10 @@ if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {IF
 const IFR_AUTO_FONTE = {software:'codigo', infra:'codigo', ux:'codigo', der:'banco', seguranca:'banco'};
 const IFR_AUTO = {no:null, repos:[], banco:null, pedidos:[], carregado:false, atualizando:null};
 
-// os nós cujos repositórios alimentam este projeto ou produto (o produto e as aplicações dele; o projeto e as aplicações soltas nele)
+// os nós cujos repositórios alimentam este ponto: a aplicação, só ela; o produto e as aplicações dele; o projeto e as aplicações soltas nele
 function ifrNosDoCodigo(sel){
   const id = ifrNoDe(sel), eProd = /^product:/.test(sel || '');
+  if (/^app:/.test(sel || '')) return [id];
   return [id].concat(D.apps.filter(a => eProd ? a.product === id : (a.project === id && !a.product)).map(a => a.id));
 }
 async function ifrAutoCarregar(){
@@ -12584,8 +12597,9 @@ function ifrAutoHTML(){
     : fonte === 'banco' ? 'Esta parte sai <b>sozinha do banco de dados</b> ligado (e do Prisma, no código): quando a estrutura muda, o desenho é refeito.'
     : 'Esta parte depende de interpretação: é feita pelo <b>DevIT</b>, que usa os desenhos automáticos como evidência.') + '</p>';
   h += '<div class="ifr-auto-bloco"><b>Código (GitHub e GitLab)</b>' + (repos.length
-    ? '<ul class="ifr-auto-lista">' + repos.map(r => '<li><span>' + esc(r.nome) + '</span><small>' + esc((r.provedor === 'gitlab' ? 'GitLab' : 'GitHub') + ' · branch ' + (r.branch_principal || 'main')) + '</small></li>').join('') + '</ul>'
-    : '<p class="ifr-vazio">Nenhum repositório ligado ' + (eProd ? 'a este produto' : 'direto neste projeto') + '.</p>') +
+    ? '<ul class="ifr-auto-lista">' + repos.map(r => '<li><span>' + esc(r.nome) + '</span><small>' + esc((r.provedor === 'gitlab' ? 'GitLab' : 'GitHub') + ' · branch ' + (r.branch_principal || 'main')) + '</small>' +
+        (pode ? '<span class="ifr-repo-b"><button type="button" class="ifr-lnk" data-ifr-repo-trocar="' + r.id + '">Trocar</button><button type="button" class="ifr-lnk" data-ifr-repo-tirar="' + r.id + '">Desligar</button></span>' : '') + '</li>').join('') + '</ul>'
+    : '<p class="ifr-vazio">Nenhum repositório ligado ' + (/^app:/.test(UI.sel || '') ? 'a esta aplicação' : eProd ? 'a este produto' : 'direto neste projeto') + '.</p>') +
     (pode ? '<button type="button" class="ifr-lnk" data-ifr-repo>' + (repos.length ? 'Ligar outro repositório' : 'Ligar repositório') + '</button>' : '') + '</div>';
   h += '<div class="ifr-auto-bloco"><b>Banco de dados</b>' + (b
     ? '<p class="ifr-auto-linha">' + esc(b.nome) + ' · esquemas ' + esc((b.esquemas || []).join(', ')) + '</p><p class="ifr-meta">' + (b.ultima_leitura_em ? 'Lido ' + esc(ifrQuando(b.ultima_leitura_em)) : 'Ainda não lido') + (b.ultima_mudanca_em ? ' · estrutura mudou ' + esc(ifrQuando(b.ultima_mudanca_em)) : '') + (b.ativo ? '' : ' · desligado') + '</p>' + (b.ultimo_erro ? '<p class="ifr-auto-erro">' + esc(b.ultimo_erro) + '</p>' : '')
@@ -12678,6 +12692,8 @@ document.addEventListener('click', e => {
   if (e.target.closest('[data-ifr-banco]')) return ifrBancoModal();
   if (e.target.closest('[data-ifr-banco-tirar]')) return ifrBancoTirar();
   if (e.target.closest('[data-ifr-repo]')){ if (typeof gcLigarRepo === 'function') gcLigarRepo(); return; }
+  let rb = e.target.closest('[data-ifr-repo-tirar]'); if (rb){ gcDesligarRepo(rb.dataset.ifrRepoTirar); return; }
+  rb = e.target.closest('[data-ifr-repo-trocar]'); if (rb){ gcDesligarRepo(rb.dataset.ifrRepoTrocar, true); return; }
   const q = e.target.closest('[data-ifr-quadro]'); if (q){ const dl = q.closest('dialog'); if (dl){ dl.close(); dl.remove(); } ifrAbrirQuadro(q.dataset.ifrQuadro); }
 });
 if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {IFR_AUTO, ifrAutoCarregar, ifrAutoAtualizar, ifrAbrirQuadro, ifrLado});

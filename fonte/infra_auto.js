@@ -10,9 +10,10 @@
 const IFR_AUTO_FONTE = {software:'codigo', infra:'codigo', ux:'codigo', der:'banco', seguranca:'banco'};
 const IFR_AUTO = {no:null, repos:[], banco:null, pedidos:[], carregado:false, atualizando:null};
 
-// os nós cujos repositórios alimentam este projeto ou produto (o produto e as aplicações dele; o projeto e as aplicações soltas nele)
+// os nós cujos repositórios alimentam este ponto: a aplicação, só ela; o produto e as aplicações dele; o projeto e as aplicações soltas nele
 function ifrNosDoCodigo(sel){
   const id = ifrNoDe(sel), eProd = /^product:/.test(sel || '');
+  if (/^app:/.test(sel || '')) return [id];
   return [id].concat(D.apps.filter(a => eProd ? a.product === id : (a.project === id && !a.product)).map(a => a.id));
 }
 async function ifrAutoCarregar(){
@@ -44,8 +45,9 @@ function ifrAutoHTML(){
     : fonte === 'banco' ? 'Esta parte sai <b>sozinha do banco de dados</b> ligado (e do Prisma, no código): quando a estrutura muda, o desenho é refeito.'
     : 'Esta parte depende de interpretação: é feita pelo <b>DevIT</b>, que usa os desenhos automáticos como evidência.') + '</p>';
   h += '<div class="ifr-auto-bloco"><b>Código (GitHub e GitLab)</b>' + (repos.length
-    ? '<ul class="ifr-auto-lista">' + repos.map(r => '<li><span>' + esc(r.nome) + '</span><small>' + esc((r.provedor === 'gitlab' ? 'GitLab' : 'GitHub') + ' · branch ' + (r.branch_principal || 'main')) + '</small></li>').join('') + '</ul>'
-    : '<p class="ifr-vazio">Nenhum repositório ligado ' + (eProd ? 'a este produto' : 'direto neste projeto') + '.</p>') +
+    ? '<ul class="ifr-auto-lista">' + repos.map(r => '<li><span>' + esc(r.nome) + '</span><small>' + esc((r.provedor === 'gitlab' ? 'GitLab' : 'GitHub') + ' · branch ' + (r.branch_principal || 'main')) + '</small>' +
+        (pode ? '<span class="ifr-repo-b"><button type="button" class="ifr-lnk" data-ifr-repo-trocar="' + r.id + '">Trocar</button><button type="button" class="ifr-lnk" data-ifr-repo-tirar="' + r.id + '">Desligar</button></span>' : '') + '</li>').join('') + '</ul>'
+    : '<p class="ifr-vazio">Nenhum repositório ligado ' + (/^app:/.test(UI.sel || '') ? 'a esta aplicação' : eProd ? 'a este produto' : 'direto neste projeto') + '.</p>') +
     (pode ? '<button type="button" class="ifr-lnk" data-ifr-repo>' + (repos.length ? 'Ligar outro repositório' : 'Ligar repositório') + '</button>' : '') + '</div>';
   h += '<div class="ifr-auto-bloco"><b>Banco de dados</b>' + (b
     ? '<p class="ifr-auto-linha">' + esc(b.nome) + ' · esquemas ' + esc((b.esquemas || []).join(', ')) + '</p><p class="ifr-meta">' + (b.ultima_leitura_em ? 'Lido ' + esc(ifrQuando(b.ultima_leitura_em)) : 'Ainda não lido') + (b.ultima_mudanca_em ? ' · estrutura mudou ' + esc(ifrQuando(b.ultima_mudanca_em)) : '') + (b.ativo ? '' : ' · desligado') + '</p>' + (b.ultimo_erro ? '<p class="ifr-auto-erro">' + esc(b.ultimo_erro) + '</p>' : '')
@@ -138,6 +140,8 @@ document.addEventListener('click', e => {
   if (e.target.closest('[data-ifr-banco]')) return ifrBancoModal();
   if (e.target.closest('[data-ifr-banco-tirar]')) return ifrBancoTirar();
   if (e.target.closest('[data-ifr-repo]')){ if (typeof gcLigarRepo === 'function') gcLigarRepo(); return; }
+  let rb = e.target.closest('[data-ifr-repo-tirar]'); if (rb){ gcDesligarRepo(rb.dataset.ifrRepoTirar); return; }
+  rb = e.target.closest('[data-ifr-repo-trocar]'); if (rb){ gcDesligarRepo(rb.dataset.ifrRepoTrocar, true); return; }
   const q = e.target.closest('[data-ifr-quadro]'); if (q){ const dl = q.closest('dialog'); if (dl){ dl.close(); dl.remove(); } ifrAbrirQuadro(q.dataset.ifrQuadro); }
 });
 if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {IFR_AUTO, ifrAutoCarregar, ifrAutoAtualizar, ifrAbrirQuadro, ifrLado});

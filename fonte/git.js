@@ -175,13 +175,20 @@ function gcDesconectar(id, depois){
     if (depois) depois(); tfAviso('Conta ' + c.conta + ' desconectada.', [], 3000);
   });
 }
-function gcDesligarRepo(id){
-  const r = (EN.repos || []).find(x => x.id === id); if (!r) return;
-  tfExcluirPerguntaSimples('Desligar o repositório ' + esc(r.nome) + '?', 'Os branches, commits e pull requests que vieram dele saem dos itens. As publicações registradas continuam no histórico.' + (r.provedor === 'gitlab' ? ' O aviso que o CicloDev criou no projeto do GitLab sai junto.' : ''), async () => {
+// desligar (deixa o ponto sem este repositório) ou trocar (desliga e já abre Ligar repositório para escolher outro)
+function gcDesligarRepo(id, trocar){
+  const r = (EN.repos || []).concat(typeof IFR_AUTO === 'object' ? IFR_AUTO.repos || [] : []).find(x => x.id === id); if (!r) return;
+  tfExcluirPerguntaSimples((trocar ? 'Trocar o repositório ' : 'Desligar o repositório ') + esc(r.nome) + '?',
+    (trocar ? 'Ele é desligado e em seguida abre a janela para escolher o novo. ' : 'O ponto fica sem este repositório (dá para ligar outro quando quiser). ') +
+    'Os branches, commits e pull requests que vieram dele saem dos itens. As publicações e os desenhos que já saíram ficam; os desenhos automáticos param de ser atualizados por ele.' +
+    (r.provedor === 'gitlab' ? ' O aviso que o CicloDev criou no projeto do GitLab sai junto.' : ''), async () => {
     const res = COM_BANCO ? await gcFuncao({acao:'desligar', repo_id:id}) : {ok:await enApagar('repositorios', id)};
     if (!res.ok){ toast('Não deu para desligar: ' + (res.erro || 'sem permissão')); return; }
-    EN.repos = EN.repos.filter(x => x.id !== id); if (UI.view === 'entregas') rView();
+    EN.repos = (EN.repos || []).filter(x => x.id !== id);
+    if (UI.view === 'entregas') rView();
+    if (UI.view === 'infra' && typeof ifrAutoCarregar === 'function'){ await ifrAutoCarregar(); ifrLado(); }
     tfAviso('Repositório ' + r.nome + ' desligado.' + (res.aviso ? ' ' + res.aviso : ''), [], res.aviso ? 8000 : 4000);
+    if (trocar) gcLigarRepo();
   });
 }
 

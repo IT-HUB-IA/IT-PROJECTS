@@ -1,4 +1,4 @@
-/* ===== Aba Infraestrutura (projeto = macro, produto = micro) =====
+/* ===== Aba Infraestrutura (projeto = macro; produto e aplicação = micro, cada um com o código dele) =====
    Desenhos do sistema como código. Cada sub-aba tem:
    - o canvas de estruturação (fonte/canvas_infra.html) rodando dentro da aba, com todas as funções dele
      (zoom, minimapa, botão direito, atalhos, busca, grupos, quadros dentro de quadros, desfazer...), gravando no banco
@@ -38,7 +38,7 @@ const IFR_MODELO = {
 const IFR = {chave:null, aba:'solucao', no:null, docs:{}, conhecidos:{}, diagramas:[], carregando:false, erro:'', config:null, gerando:false, ultimaLeitura:0};
 const ifrBanco = () => (COM_BANCO && window.ciclodevBanco && BANCO.carregado) ? window.ciclodevBanco : null;
 const ifrAba = id => IFR_ABAS.find(a => a.id === id) || IFR_ABAS[0];
-const ifrPodeTer = sel => /^(project|product):/.test(sel || '');
+const ifrPodeTer = sel => /^(project|product|app):/.test(sel || '');
 const ifrNoDe = sel => (sel || '').split(':')[1] || null;
 // os produtos de um projeto (o macro mostra também os desenhos deles)
 const ifrProdutos = sel => sel && sel.startsWith('project:') ? D.products.filter(p => p.project === ifrNoDe(sel)) : [];

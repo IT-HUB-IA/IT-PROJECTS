@@ -174,8 +174,9 @@ function enHTML(chave){
     '<small>' + esc(enData(p.publicado_em)) + ' · ' + esc(EN_ORIGEM[p.origem] || p.origem) + (p.url ? ' · <a href="' + esc(p.url) + '" target="_blank" rel="noopener noreferrer">abrir</a>' : '') + (p.observacao ? '<br>' + esc(p.observacao) : '') + '</small></div>' + lixo('data-en-excluir-pub', p.id, 'a publicação ' + (p.versao || '')) + '</li>';
   // repositórios: uma linha por repositório
   const linhaR = r => '<li class="en2-repo"><div class="en2-repo-t">' + (EN_ICO[r.provedor] || '') + '<div><a href="' + esc(r.url || (r.provedor === 'gitlab' ? 'https://gitlab.com/' : 'https://github.com/') + r.nome) + '" target="_blank" rel="noopener noreferrer"><b>' + esc(r.nome) + '</b></a>' +
-      '<small class="' + (r.ultimo_erro ? 'en2-erro' : '') + '">' + (r.ultimo_erro ? esc(r.ultimo_erro) : r.ultimo_evento_em ? 'Último aviso: ' + esc(r.ultimo_evento) + ', ' + esc(enHa(r.ultimo_evento_em)) : 'Ainda sem avisos. Eles chegam sozinhos a cada push, pull request ou publicação') + '</small></div>' + lixo('data-en-excluir-repo', r.id, r.nome) + '</div>' +
-    '<div class="en2-repo-a">' + (pode ? '<label class="en-liga"><input type="checkbox" data-en-mover="' + r.id + '"' + (r.mover_status ? ' checked' : '') + '> Status anda sozinho</label>' : '') + '</div></li>';
+      '<small class="' + (r.ultimo_erro ? 'en2-erro' : '') + '">' + (r.ultimo_erro ? esc(r.ultimo_erro) : r.ultimo_evento_em ? 'Último aviso: ' + esc(r.ultimo_evento) + ', ' + esc(enHa(r.ultimo_evento_em)) : 'Ainda sem avisos. Eles chegam sozinhos a cada push, pull request ou publicação') + '</small></div></div>' +
+    '<div class="en2-repo-a">' + (pode ? '<label class="en-liga"><input type="checkbox" data-en-mover="' + r.id + '"' + (r.mover_status ? ' checked' : '') + '> Status anda sozinho</label>' +
+      '<span class="en2-repo-b"><button type="button" class="btn fant peq" data-en-trocar-repo="' + r.id + '">Trocar</button><button type="button" class="btn fant peq" data-en-excluir-repo="' + r.id + '">Desligar</button></span>' : '') + '</div></li>';
   const caixa = (tit, ajuda, corpo, vazio) => '<section class="en2-caixa"><header><h3>' + tit + '</h3><p>' + ajuda + '</p></header>' + (corpo || '<p class="en2-vazio">' + vazio + '</p>') + '</section>';
   return '<div class="en2">' + (EN.erro ? '<p class="aviso-faixa">Não deu para ler tudo do banco: ' + esc(EN.erro) + '</p>' : '') + trilho +
     '<div class="en2-grade"><div class="en2-col">' +
@@ -330,6 +331,7 @@ document.addEventListener('click', e => {
   if ((b = e.target.closest('[data-en-publicar]'))){ enNovaPublicacao(b.dataset.enPublicar); return; }
   if ((b = e.target.closest('[data-en-excluir-versao]'))){ enExcluirVersao(b.dataset.enExcluirVersao); return; }
   if ((b = e.target.closest('[data-en-excluir-repo]'))){ gcDesligarRepo(b.dataset.enExcluirRepo); return; }
+  if ((b = e.target.closest('[data-en-trocar-repo]'))){ gcDesligarRepo(b.dataset.enTrocarRepo, true); return; }
   if ((b = e.target.closest('[data-en-excluir-pub]'))){ const id = b.dataset.enExcluirPub, p = (EN.pubs || []).find(x => x.id === id); if (!p) return;
     tfExcluirPerguntaSimples('Excluir o registro da publicação ' + esc(p.versao || '') + '?', 'Sai só do histórico do CicloDev. O que está no ar não muda.', () => {
       enApagar('publicacoes', id).then(ok => { if (!ok) return; EN.pubs = EN.pubs.filter(x => x.id !== id); if (UI.view === 'entregas') rView(); tfAviso('Registro excluído.', [], 3000); }); }); return; }

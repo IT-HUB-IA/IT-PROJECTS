@@ -28,15 +28,15 @@ select pg_temp.ok((select count(*) from infra_automacoes) = 0, 'repositório sem
 
 -- ---------- publicação em produção pede os desenhos do código ----------
 insert into publicacoes (no_id, repositorio_id, versao, ambiente, status, origem, referencia, id_externo) select app, repo_app, '1.0', 'producao', 'sucesso', 'github', 'abc123', 'deploy:1' from t;
-select pg_temp.ok((select count(*) from infra_automacoes) = 1, 'publicação em produção põe um pedido na fila');
-select pg_temp.ok((select no_id = (select prod from t) and origem = 'github' and referencia = 'abc123' and repositorio_id = (select repo_app from t) and status = 'pendente' from infra_automacoes), 'o pedido é do produto (a aplicação fica dentro dele), com o commit publicado');
+select pg_temp.ok((select count(*) from infra_automacoes) = 2, 'publicação em produção de um app põe dois pedidos na fila (o app e o produto dele)');
+select pg_temp.ok((select count(*) = 2 and bool_and(origem = 'github' and referencia = 'abc123' and repositorio_id = (select repo_app from t) and status = 'pendente') and bool_or(no_id = (select app from t)) and bool_or(no_id = (select prod from t)) from infra_automacoes), 'publicar pede os desenhos da aplicação dona do repositório e do produto em que ela está, com o commit publicado');
 update publicacoes set status = 'sucesso', url = 'https://x.com' where id_externo = 'deploy:1';
-select pg_temp.ok((select count(*) from infra_automacoes) = 1, 'o mesmo aviso de novo não repete o pedido');
+select pg_temp.ok((select count(*) from infra_automacoes) = 2, 'o mesmo aviso de novo não repete os pedidos');
 insert into publicacoes (no_id, repositorio_id, ambiente, status, origem, referencia, id_externo) select prod, repo_prod, 'previa', 'sucesso', 'github', 'p1', 'deploy:2' from t;
 insert into publicacoes (no_id, repositorio_id, ambiente, status, origem, referencia, id_externo) select prod, repo_prod, 'producao', 'falha', 'github', 'f1', 'deploy:3' from t;
 insert into publicacoes (no_id, repositorio_id, ambiente, status, origem, referencia, id_externo) select prod, repo_gl, 'producao', 'sucesso', 'gitlab', 'g1', 'deploy:4' from t;
 insert into publicacoes (no_id, ambiente, status, origem, versao) select prod, 'producao', 'sucesso', 'manual', '2.0' from t;
-select pg_temp.ok((select count(*) from infra_automacoes) = 2 and (select count(*) from infra_automacoes where origem = 'gitlab' and referencia = 'g1') = 1, 'prévia, falha e publicação manual não pedem desenho do código; o GitLab pede');
+select pg_temp.ok((select count(*) from infra_automacoes) = 3 and (select count(*) from infra_automacoes where origem = 'gitlab' and referencia = 'g1') = 1, 'prévia, falha e publicação manual não pedem desenho do código; o GitLab pede');
 update publicacoes set status = 'sucesso' where id_externo = 'deploy:3';
 select pg_temp.ok((select count(*) from infra_automacoes where referencia = 'f1') = 1, 'a falha que virou sucesso pede');
 insert into publicacoes (no_id, repositorio_id, ambiente, status, origem, referencia, id_externo) select pj, repo_pj, 'producao', 'sucesso', 'github', 'pj1', 'deploy:5' from t;
@@ -84,11 +84,11 @@ reset role;
 -- ---------- a função (service_role) ----------
 set role service_role;
 create temp table f as select infra_auto_proximos(10) as j;
-select pg_temp.ok((select jsonb_array_length(j) from f) = 5, 'a função pega os 5 pedidos da fila');
-select pg_temp.ok((select count(*) from infra_automacoes where status = 'rodando') = 5, 'e eles ficam rodando');
+select pg_temp.ok((select jsonb_array_length(j) from f) = 6, 'a função pega os 6 pedidos da fila');
+select pg_temp.ok((select count(*) from infra_automacoes where status = 'rodando') = 6, 'e eles ficam rodando');
 select pg_temp.ok((select jsonb_array_length(infra_auto_proximos(10))) = 0, 'chamar de novo não pega os mesmos');
-select pg_temp.ok((select (x->'repositorios'->0->>'nome') = 'it-hub/bl-java' and jsonb_array_length(x->'repositorios') = 1 and x->'banco' = 'null'
-                     from f, jsonb_array_elements(j) x where x->>'referencia' = 'abc123'), 'pedido da publicação: só o repositório que publicou, sem banco');
+select pg_temp.ok((select count(*) = 2 and bool_and((x->'repositorios'->0->>'nome') = 'it-hub/bl-java' and jsonb_array_length(x->'repositorios') = 1 and x->'banco' = 'null')
+                     from f, jsonb_array_elements(j) x where x->>'referencia' = 'abc123'), 'pedidos da publicação (app e produto): só o repositório que publicou, sem banco');
 select pg_temp.ok((select (select string_agg(r->>'nome', ',' order by r->>'nome') from jsonb_array_elements(x->'repositorios') r) = 'it-hub/bl-gitlab,it-hub/bl-java,it-hub/bl-produto'
                      and x->'banco'->>'conexao' like 'postgresql://%'
                      from f, jsonb_array_elements(j) x where x->>'origem' = 'manual'), '"Atualizar agora" do produto: os repositórios do produto e das aplicações dele (não o do projeto) e o banco');
@@ -116,8 +116,8 @@ reset role;
 -- um desenho feito à mão no mesmo produto
 insert into infra_diagramas (no_id, aba, nome, formato, fonte) select prod, 'software', 'Feito à mão', 'plantuml', '@startuml\n@enduml' from t;
 set role service_role;
-select infra_auto_concluir((select id from infra_automacoes where referencia = 'abc123'), 'pronto', null, array[(select d1 from t)], '[{"aba":"software"}]', array['github:it-hub/bl-java:']);
-select pg_temp.ok((select status = 'pronto' and diagramas = array[(select d1 from t)] from infra_automacoes where referencia = 'abc123'), 'o pedido fecha com os desenhos que saíram');
+select infra_auto_concluir((select id from infra_automacoes where referencia = 'abc123' and no_id = (select prod from t)), 'pronto', null, array[(select d1 from t)], '[{"aba":"software"}]', array['github:it-hub/bl-java:']);
+select pg_temp.ok((select status = 'pronto' and diagramas = array[(select d1 from t)] from infra_automacoes where referencia = 'abc123' and no_id = (select prod from t)), 'o pedido fecha com os desenhos que saíram');
 select pg_temp.ok((select arquivado_em is not null from infra_diagramas where id = (select d2 from t)), 'o desenho automático da mesma família que não saiu desta vez é arquivado');
 select pg_temp.ok((select arquivado_em is null from infra_diagramas where nome = 'Feito à mão'), 'o desenho feito à mão nunca é arquivado pelo automático');
 select pg_temp.ok((select arquivado_em is null from infra_diagramas where id = (select d1 from t)), 'e o que saiu continua');
@@ -158,6 +158,20 @@ select pg_temp.como('00000000-0000-0000-0000-00000000000c'); set role authentica
 do $$ begin perform infra_quadro_publicar((select prod from t), 'dominio', 'devit:z', 'x', '{"nodes":[],"edges":[]}'); raise exception 'aceitou'; exception when insufficient_privilege then null; end $$;
 select pg_temp.ok(true, 'o stakeholder não publica quadro');
 reset role;
+
+-- a aplicação tem a própria Infraestrutura: desenhos só do código ligado a ela
+reset role;
+update infra_automacoes set status = 'pronto' where status in ('pendente','rodando');
+select pg_temp.como('00000000-0000-0000-0000-00000000000a'); set role authenticated;
+select pg_temp.ok((select (infra_auto_pedir((select app from t))).origem) = 'manual', 'William pede "Atualizar agora" no app');
+reset role;
+set role service_role;
+select pg_temp.ok((select string_agg(r->>'nome', ',') = 'it-hub/bl-java' from jsonb_array_elements(infra_auto_proximos(10)) x, jsonb_array_elements(x->'repositorios') r where x->>'no_id' = (select app::text from t)), '"Atualizar agora" do app: só o repositório do app (nem o do produto, nem o do GitLab do produto)');
+select pg_temp.ok((select (infra_auto_gravar((select app from t), 'software', 'github:it-hub/bl-java:software', 'Software · it-hub/bl-java', 'plantuml', '@startuml\n[a]\n@enduml', 'github', 'abc200'))->>'novo') = 'true', 'o desenho automático do app fica no app');
+reset role;
+select pg_temp.ok((select count(*) from infra_diagramas where no_id = (select app from t)) = 1 and (select count(*) from infra_diagramas where no_id = (select prod from t) and nome = 'Software · it-hub/bl-java') = 1, 'e o do produto continua separado');
+do $$ begin insert into infra_diagramas (no_id, aba, nome, formato, fonte) select id, 'software', 'x', 'plantuml', 'x' from nos where tipo = 'frente' limit 1; raise exception 'aceitou'; exception when others then if sqlerrm = 'aceitou' then raise; end if; end $$;
+select pg_temp.ok(true, 'frente (parte de um app) continua sem Infraestrutura própria');
 
 -- desligar o banco
 select pg_temp.como('00000000-0000-0000-0000-00000000000a'); set role authenticated;
