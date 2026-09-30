@@ -397,7 +397,8 @@
   .g-sec{display:grid;gap:10px}
   .g-sec > h4,.g-cartao > h4{margin:0;display:flex;align-items:center;gap:8px;font-size:11px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:#4B4B52}
   .g-cont{margin-left:auto;font-family:var(--font-mono);letter-spacing:0;text-transform:none;color:#6B6B72}
-  .g-lista{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+  .g-lista{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:minmax(0,1fr);gap:4px}
+  .g-lista > li{min-width:0}
   .g-ck{display:flex;align-items:center;gap:10px;font-size:14px;padding:6px 8px;cursor:pointer}
   .g-ck:hover{background:#F4F4F6}
   .g-ck input{width:16px;height:16px;accent-color:#1E8E3E}

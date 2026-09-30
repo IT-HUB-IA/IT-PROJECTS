@@ -596,7 +596,8 @@
   .g-sec{display:grid;gap:10px}
   .g-sec > h4,.g-cartao > h4{margin:0;display:flex;align-items:center;gap:8px;font-size:11px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:#4B4B52}
   .g-cont{margin-left:auto;font-family:var(--font-mono);letter-spacing:0;text-transform:none;color:#6B6B72}
-  .g-lista{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+  .g-lista{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:minmax(0,1fr);gap:4px}
+  .g-lista > li{min-width:0}
   .g-ck{display:flex;align-items:center;gap:10px;font-size:14px;padding:6px 8px;cursor:pointer}
   .g-ck:hover{background:#F4F4F6}
   .g-ck input{width:16px;height:16px;accent-color:#1E8E3E}
@@ -2436,6 +2437,15 @@ dialog.modal.modal-larga{max-width:min(960px,calc(100% - 32px))}
   .jn-item [data-sm-sec="References"] .refs form .campo{border:0;background:transparent;height:44px;padding:0 14px;flex:1;min-width:0}
   .jn-item [data-sm-sec="References"] .refs form .campo:focus{outline:0;background:var(--branco);box-shadow:inset 3px 0 0 var(--preto)}
   .jn-item [data-sm-sec="References"] .refs form .btn{height:44px;border:0;border-left:1px solid var(--linha);min-width:104px}
+
+  /* ---------- a janela do item abre colada na esquerda, com a coluna Principal primeiro ----------
+     Principal (status, prioridade, responsável, prazo...), Desenvolvimento, Mais detalhes e Tempo ficam à esquerda;
+     título, descrição, checklist, subitens e o resto vêm depois. Na tela estreita fica uma coluna só, com o conteúdo em cima. */
+  .gaveta.jn-item{left:0;right:auto;border-left:0;border-right:2px solid var(--vermelho)}
+  @media (min-width:861px){
+    .jn-item .g-duas{grid-template-columns:340px minmax(0,1fr)}
+    .jn-item .g-lateral{order:-1;padding:24px 0 24px 24px}
+  }
 /* Estrutura: arrastar e soltar (estrutura.js) */
 .ops-arvore .no-arv.es-arrastando{opacity:.4}
 .ops-arvore .no-arv.es-antes{box-shadow:inset 0 2px 0 var(--vermelho)}
