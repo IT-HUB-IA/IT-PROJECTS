@@ -23,7 +23,7 @@ function vsLinha(m, focoId){
 }
 function vsAbrir(focoId){
   if (!podeEditar()) return;
-  const chave = enProjeto(UI.sel), versoes = enVersoes(chave).slice().sort((a, b) => String(a.data || '').localeCompare(String(b.data || '')) || a.nome.localeCompare(b.nome));
+  const chave = noDono(UI.sel), versoes = enVersoes(chave).slice().sort((a, b) => String(a.data || '').localeCompare(String(b.data || '')) || a.nome.localeCompare(b.nome));
   const vazias = versoes.length ? 1 : VS_LINHAS_VAZIAS;
   const dlg = modal('Versões de ' + esc(nomeDe(chave)),
     '<p class="sec tf-nota" style="margin-top:0">Mude o que quiser nas linhas e clique em <b>Salvar</b>. Para criar várias de uma vez, clique no <b>+</b> e preencha as linhas novas. Dá também para colar uma lista do Excel na coluna Nome.</p>' +

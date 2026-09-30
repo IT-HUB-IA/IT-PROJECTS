@@ -89,11 +89,11 @@ function exNoMd(chave){
   if (tipo === 'product') D.apps.filter(a => a.product === id).forEach(a => dentro.push('- Aplicação: ' + a.nome + ' · frentes: ' + D.ws.filter(w => w.app === a.id).map(w => w.nome).join(', ')));
   if (tipo === 'app') D.ws.filter(w => w.app === id).forEach(w => dentro.push('- Frente: ' + w.nome + ' (' + issuesEm('ws:' + w.id).filter(i => !i.arquivado).length + ' itens)'));
   if (dentro.length) md += '## O que tem dentro\n\n' + dentro.join('\n') + '\n\n';
-  // ficha técnica preenchida (a do próprio ponto, ou a do projeto que ele herda)
-  const pj = cadeia(chave).project, fichas = [D.sheets[chave], pj && D.sheets['project:' + pj.id]].filter(Boolean);
+  // ficha técnica preenchida: só a do próprio ponto (nunca a do projeto acima)
+  const fichas = [D.sheets[chave]].filter(Boolean);
   const valores = []; FICHA.forEach(([sec, , campos]) => campos.forEach(cp => { const k = sec + '|' + cp; const v = fichas.map(f => f.campos[k]).find(x => x && String(x).trim()); if (v) valores.push('- **' + sec + ' › ' + cp + ':** ' + String(v).replace(/\n/g, ' ')); }));
   if (valores.length) md += '## Ficha técnica\n\n' + valores.join('\n') + '\n\n';
-  const vs = typeof enVersoes === 'function' && tipo !== 'client' ? enVersoes(typeof enProjeto === 'function' ? enProjeto(chave) : chave) : [];
+  const vs = typeof enVersoes === 'function' && tipo !== 'client' ? enVersoes(chave) : [];
   if (vs.length) md += '## Versões\n\n' + vs.map(v => { const lig = itens.filter(i => i.marco === v.id); return '- **' + v.nome + '**' + (v.desc ? ': ' + v.desc : '') + ' · ' + (v.entregue ? 'no ar desde ' + exData(v.entregue) : 'prevista para ' + exData(v.data)) + (lig.length ? ' · ' + lig.filter(i => i.status === 'done').length + ' de ' + lig.length + ' itens' : ''); }).join('\n') + '\n\n';
   const linhaIt = i => '- ' + (i.status === 'done' ? '[x] ' : '[ ] ') + exNomeItem(i) + ' · ' + exStatus(i) + (i.resp ? ' · ' + exPessoa(i.resp) : '') + (i.fim ? ' · prazo ' + exData(i.fim) : '') + (tipo !== 'ws' ? ' · ' + ((byId('ws', i.ws) || {}).nome || '') : '');
   if (epics.length) md += '## Épicos\n\n' + epics.map(e => { const f = itens.filter(i => i.pai === e.id); return '### ' + exNomeItem(e) + '\n\n' + exLinha('Status', exStatus(e)) + exLinha('Frente', (byId('ws', e.ws) || {}).nome) + exLinha('Versão', (D.marcos.find(m => m.id === e.marco) || {}).nome) +

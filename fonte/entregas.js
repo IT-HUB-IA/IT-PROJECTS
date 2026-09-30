@@ -69,12 +69,11 @@ async function enCarregar(forcar){
 }
 
 /* ---------- escopo: o ponto escolhido, o que está acima (até o projeto) e o que está dentro ---------- */
-function enNos(chave){
-  const s = new Set(caminho(chave).map(([k]) => k.split(':')[1]));
-  const d = tfDentro(chave); [...d.projs, ...d.prods, ...d.apps, ...d.ws].forEach(x => s.add(x));
+function enNos(chave){ // o ponto e o que está dentro dele; nunca o que está acima (ver noDono em app.js)
+  const d = noDono(chave), s = new Set(); if (!d || d === 'all') return s;
+  s.add(d.split(':')[1]); const t = tfDentro(d); [...t.projs, ...t.prods, ...t.apps, ...t.ws].forEach(x => s.add(x));
   return s;
 }
-const enProjeto = chave => { const p = cadeia(chave).project; return p ? 'project:' + p.id : chave; };
 const enVersoes = chave => marcosDoEscopo(chave).filter(m => m.tipo === 'release').sort((a, b) => String(b.entregue || b.data).localeCompare(String(a.entregue || a.data)));
 const enNomeNo = id => { const k = ['projects','products','apps','ws','clients'].map(l => byId(l, id) && ({projects:'project', products:'product', apps:'app', ws:'ws', clients:'client'}[l] + ':' + id)).find(Boolean); return k ? nomeDe(k) : 'Ponto excluído'; };
 function enHa(ts){ if (!ts) return ''; const m = Math.round((Date.now() - new Date(ts).getTime()) / 60000); if (m < 1) return 'agora'; if (m < 60) return 'há ' + m + ' min'; const h = Math.round(m / 60); if (h < 24) return 'há ' + h + ' h'; const d = Math.round(h / 24); return d === 1 ? 'ontem' : 'há ' + d + ' dias'; }
@@ -165,7 +164,7 @@ function enHTML(chave){
       '<button type="button" class="btn sec peq" data-en-nova-pub>' + EN_ICO.foguete + 'Registrar publicação</button>') + '</ol>';
   // versões: uma linha por versão
   const linhaV = m => { const [f, t] = itensV(m), st = situ(m);
-    return '<li class="en2-v en2-' + st[0] + '"><div class="en2-v-nome">' + EN_ICO.versao + '<div><b>' + esc(m.nome) + '</b>' + (m.desc ? '<small>' + esc(m.desc) + '</small>' : '') + '</div></div>' +
+    return '<li class="en2-v en2-' + st[0] + '"><div class="en2-v-nome">' + EN_ICO.versao + '<div><b>' + esc(m.nome) + '</b>' + (m.no && m.no !== noDono(chave) ? ' <span class="en2-onde">' + esc(nomeDe(m.no)) + '</span>' : '') + (m.desc ? '<small>' + esc(m.desc) + '</small>' : '') + '</div></div>' +
       '<span class="en2-pilula en2-' + st[0] + '">' + esc(st[1]) + '</span>' +
       '<div class="en2-prog">' + (t ? '<div class="rl-barra fina"><i style="width:' + (f / t * 100) + '%"></i></div><small>' + f + ' de ' + t + ' itens</small>' : '<small>sem itens ligados</small>') + '</div>' +
       '<div class="en2-acoes"><button type="button" class="btn fant peq" data-en-notas="' + m.id + '">' + (m.notas ? 'Notas' : 'Gerar notas') + '</button>' +
@@ -194,7 +193,7 @@ async function enCarregarAtividade(chave){
   let L = [];
   try {
     if (!COM_BANCO) L = enLocal().links.filter(l => itensEscopo.has(l.item_id));
-    else if (repos.length) L = await enLer('codigo_vinculos', {em:['repositorio_id', repos], ordem:'quando', limite:30});
+    else if (repos.length) L = (await enLer('codigo_vinculos', {em:['repositorio_id', repos], ordem:'quando', limite:60})).filter(l => !l.item_id || itensEscopo.has(l.item_id));
   } catch(e){ el.innerHTML = '<p class="sec">Não deu para ler a atividade: ' + esc(tfErro(e)) + '</p>'; return; }
   if (!$('#en-atividade')) return;
   L = L.slice().sort((a, b) => String(b.quando).localeCompare(String(a.quando))).slice(0, 30);
@@ -211,7 +210,7 @@ function enProximoNome(chave){
   return v ? 'v' + v[0] + '.' + (v[1] + 1) + '.0' : 'v1.0.0';
 }
 function enNovaVersao(){
-  const chave = enProjeto(UI.sel);
+  const chave = noDono(UI.sel);
   const soltos = issuesEm(chave).filter(i => i.status === 'done' && !i.marco);
   const ult = enVersoes(chave).filter(m => m.entregue).map(m => m.entregue).sort().pop();
   const novosFeitos = soltos.filter(i => !ult || (i.feito && i.feito > ult));
@@ -262,9 +261,9 @@ function tfExcluirPerguntaSimples(titulo, texto, fazer){
 
 /* ---------- publicações ---------- */
 function enNovaPublicacao(marcoId){
-  const chave = UI.sel, proj = enProjeto(chave), versoes = enVersoes(proj);
+  const chave = noDono(UI.sel), versoes = enVersoes(chave);
   const m0 = marcoId ? byId('marcos', marcoId) : versoes.find(m => !m.entregue);
-  const onde = [[proj, nomeDe(proj)]].concat(D.apps.filter(a => 'project:' + a.project === proj).map(a => ['app:' + a.id, nomeDe('app:' + a.id)]));
+  const onde = nosDentro(chave).filter(k => !k.startsWith('client')).map(k => [k, nomeDe(k)]);
   const dlg = modal('Registrar publicação', '<p class="sec tf-nota" style="margin-top:0">Anote o que foi para o ar. Com o repositório ligado, as publicações do GitHub e do GitLab chegam sozinhas.</p>' +
     '<div class="grade-form"><label class="lb">Versão<select class="sel" id="en-p-v"><option value="">Sem versão cadastrada</option>' + versoes.map(m => '<option value="' + m.id + '"' + (m0 && m0.id === m.id ? ' selected' : '') + '>' + esc(m.nome) + (m.entregue ? ' (já publicada)' : '') + '</option>').join('') + '</select></label>' +
     '<label class="lb">Ou escreva a versão<input class="campo" id="en-p-t" placeholder="Ex.: v1.2.1 ou o commit"></label>' +

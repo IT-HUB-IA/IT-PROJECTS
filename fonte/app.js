@@ -400,6 +400,15 @@ function caminho(chave){
   if (c.ws) p.push(['ws:' + c.ws.id, c.ws.nome]);
   return p;
 }
+// Dados (versões, marcos, repositórios, publicações, fichas) nunca vêm de cima: cada ponto vê o que é dele e o que
+// está dentro dele. A frente (ws) é parte da aplicação, então ela e os itens dela usam o que é da aplicação.
+// Configuração (status, campos, automações, board) e acesso continuam valendo de cima para baixo.
+function noDono(chave){ if (!chave || chave === 'all') return chave; const [t, id] = chave.split(':'); if (t !== 'ws') return chave; const w = byId('ws', id); return w ? 'app:' + w.app : chave; }
+const dentroDe = (no, chave) => chave === 'all' || (!!no && (no === chave || caminho(no).some(p => p[0] === chave)));
+function nosDentro(chave){ // chaves do ponto e de tudo o que está dentro dele (sem frentes)
+  const d = noDono(chave); if (!d || d === 'all') return [];
+  const t = tfDentro(d); return [d].concat(t.projs.map(x => 'project:' + x), t.prods.map(x => 'product:' + x), t.apps.map(x => 'app:' + x)).filter((k, i, a) => a.indexOf(k) === i);
+}
 const caminhoTexto = i => { const a = appDe(i), w = wsDe(i); return a ? a.nome + ' › ' + (w ? w.nome : '') : ''; };
 function tagsSistema(chave){
   const c = cadeia(chave), t = [];

@@ -113,7 +113,7 @@ function ltAbrir(){
       const novos = r.grupos.filter(g => g.titulo && !g.ja).length;
       if (!novos && !nItens){ toast('Escreva pelo menos um épico ou um item'); return false; }
       tfComDesfazer((novos ? novos + (novos === 1 ? ' épico' : ' épicos') + (nItens ? ' e ' : '') : '') + (nItens ? nItens + (nItens === 1 ? ' item' : ' itens') : '') + ' criados' + (r.novasV.length ? ', com ' + r.novasV.length + (r.novasV.length === 1 ? ' versão nova' : ' versões novas') : '') + '.', () => {
-        const pj = enProjeto(UI.sel), idNova = {};
+        const pj = noDono(UI.sel), idNova = {};
         r.novasV.forEach(n => { const m = {id:uid('mc'), no:pj, tipo:'release', nome:n, desc:'', data:iso(dAdd(HOJE, 30)), vis:true, entregue:null, notas:''}; D.marcos.push(m); idNova[LT_NOVA + n] = m.id; });
         const vs = x => x && String(x).startsWith(LT_NOVA) ? idNova[x] || null : x;
         r.grupos.forEach(g => { g.mc = vs(g.mc); g.itens.forEach(i => { i.mc = vs(i.mc); });

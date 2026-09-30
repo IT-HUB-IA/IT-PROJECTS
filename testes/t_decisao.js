@@ -77,7 +77,7 @@ window.supabase = { createClient(){ let sess = {user:{id:'u1', email:'admin@it-i
   await p.fill('#lt-t', 'Lote Dec {vDecNova}\n- Lote Dec item');
   await p.click('dialog.modal .modal-rod .btn:not(.sec)');
   await espera(); await semErro('criar o lote com versão nova sem erro');
-  ok(conta("select count(*) from public.marcos where nome = 'vDecNova' and no_id = '" + pj + "'") === '1', 'a versão nova foi criada no projeto');
+  ok(conta("select count(*) from public.marcos where nome = 'vDecNova' and no_id = '" + app + "'") === '1', 'a versão nova foi criada no app onde o lote foi feito (nunca no projeto acima)');
   ok(conta("select string_agg(i.titulo, ', ' order by i.titulo) from public.itens i join public.marcos m on m.id = i.marco_id where m.nome = 'vDecNova'").split(', ').sort().join(', ') === ['Lote Dec', 'Lote Dec item'].sort().join(', '), 'épico e item ligados à versão nova');
   await p.reload(); await p.waitForTimeout(2500);
   ok(await p.evaluate(id => { const l = __tf.dcLigacao(__tf.byId('issues', id)); return !!l && window.ciclodevDados().sheets[l.pk].campos[l.chave] === 'Postgres no Supabase'; }, it), 'depois de recarregar, a decisão continua ligada e com o texto');

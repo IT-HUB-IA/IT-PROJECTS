@@ -89,11 +89,9 @@ window.addEventListener('storage', e => { if (e.key === GC_VOLTA && e.newValue){
 
 /* ---------- Ligar repositório (aba Entregas) ---------- */
 function gcOnde(){
-  const proj = enProjeto(UI.sel);
-  // cada produto tem a própria ligação: os desenhos automáticos do produto saem só dos repositórios dele
-  return [[proj, nomeDe(proj) + ' (projeto inteiro)']]
-    .concat(D.products.filter(p => 'project:' + p.project === proj).map(p => ['product:' + p.id, nomeDe('product:' + p.id) + ' (só este produto)']))
-    .concat(D.apps.filter(a => 'project:' + a.project === proj).map(a => ['app:' + a.id, nomeDe('app:' + a.id) + ' (só esta aplicação)']));
+  // só o ponto aberto e o que está dentro dele: um repositório nunca fica ligado a um lugar que você não está vendo
+  const suf = {project:' (projeto inteiro)', product:' (só este produto)', app:' (só esta aplicação)'};
+  return nosDentro(UI.sel).filter(k => !k.startsWith('client')).map(k => [k, nomeDe(k) + (suf[k.split(':')[0]] || '')]);
 }
 function gcLigarRepo(){
   if (!COM_BANCO){ modal('Ligar repositório', '<p style="margin:0">No modo de exemplo não dá para conectar o GitHub ou o GitLab. Entre no CicloDev com login para ligar os repositórios.</p>', [{txt:'Entendi'}]); return; }
@@ -249,3 +247,4 @@ document.addEventListener('click', e => {
 });
 // voltou da janelinha com a janela principal fechada (ou recarregada): termina agora
 (function(){ const v = gcLer(GC_VOLTA); if (v && v.dados && Date.now() - (v.t || 0) < 10 * 60000) setTimeout(() => gcVolta(v.dados), 1500); })();
+if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {marcosDoEscopo, enNos, gcOnde, enHTML, enNovaVersao, formMarco, exNoMd, noDono, nosDentro});

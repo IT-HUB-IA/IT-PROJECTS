@@ -250,7 +250,7 @@ const FILHO_DE = {epic:'story', story:'task', task:'subtask', bug:'subtask'};
 const PAIS_VALIDOS = {epic:[], story:['epic'], task:['epic','story'], bug:['epic','story'], subtask:['task','bug']};
 function descendentes(id){ const r = new Set(); const fila = [id]; while (fila.length){ const x = fila.pop(); D.issues.filter(i => i.pai === x).forEach(i => { if (!r.has(i.id)){ r.add(i.id); fila.push(i.id); } }); } return r; }
 function sprintsDoEscopo(chave){ const pj = chave === 'all' ? null : cadeia(chave).project; return D.sprints.filter(s => !pj || s.project === pj.id); }
-function marcosDoEscopo(chave){ if (chave === 'all') return D.marcos.slice(); const acima = escoposAcima(chave); return D.marcos.filter(m => acima.has(m.no) || caminho(m.no).some(p => p[0] === chave)); }
+function marcosDoEscopo(chave){ if (chave === 'all') return D.marcos.slice(); const d = noDono(chave); return D.marcos.filter(m => dentroDe(m.no, d)); }
 const camposDoEscopo = chave => chave === 'all' ? D.camposItem.slice() : D.camposItem.filter(c => escoposAcima(chave).has(c.no));
 const _abrirItem = abrirItem;
 abrirItem = function(id){
@@ -269,7 +269,7 @@ abrirItem = function(id){
   const linha = (rot, info, ctrl) => '<div class="d-lin"><span class="d-rot">' + esc(rot) + (info ? I(info) : '') + '</span><span class="d-val">' + ctrl + '</span></div>';
   const sel = (campo, opts, atual) => '<select class="sel d-sel" data-rc-g="' + campo + '"' + dis + '>' + opts.map(([v, n]) => '<option value="' + esc(v) + '"' + ((atual || '') === v ? ' selected' : '') + '>' + esc(n) + '</option>').join('') + '</select>';
   const sprints = sprintsDoEscopo(chaveWs).filter(s => s.status !== 'encerrado' || s.id === i.sprint);
-  const marcos = marcosDoEscopo(chaveWs);
+  const marcos = marcosDoEscopo(chaveWs); const mAtual = i.marco && byId('marcos', i.marco); if (mAtual && !marcos.includes(mAtual)) marcos.push(Object.assign({}, mAtual, {nome:mAtual.nome + ' (de ' + nomeDe(mAtual.no) + ')'}));
   const det = $('.g-lateral .g-cartao', g);
   if (det) det.insertAdjacentHTML('beforeend',
     linha('Reporter', 'Reporter (relator): quem abriu o item. É a pessoa avisada quando uma automação diz "avisar quem abriu".', sel('rep', [['', 'Ninguém']].concat(D.people.map(p => [p.id, p.nome])), i.rep)) +
@@ -433,7 +433,7 @@ vTimeline = function(){
 };
 function formMarco(m){
   const m0 = m || {nome:'', tipo:'marco', data:iso(dAdd(HOJE, 30)), desc:'', vis:true, no:UI.sel};
-  const onde = caminho(UI.sel).filter(p => !p[0].startsWith('client') && !p[0].startsWith('ws'));
+  const onde = nosDentro(UI.sel).filter(k => !k.startsWith('client')).map(k => [k, nomeDe(k)]);
   modal(m ? 'Editar ' + esc(m.nome) : 'Novo marco', '<div class="grade-form"><label class="lb largo">Nome<input class="campo" id="mc-n" value="' + esc(m0.nome) + '"></label><label class="lb">Tipo<select class="sel" id="mc-t"><option value="marco"' + (m0.tipo === 'marco' ? ' selected' : '') + '>Milestone (marco)</option><option value="release"' + (m0.tipo === 'release' ? ' selected' : '') + '>Release (entrega de versão)</option></select></label><label class="lb">Data<input class="campo" type="date" id="mc-d" value="' + esc(m0.data) + '"></label>' +
     '<label class="lb">Onde<select class="sel" id="mc-o">' + (onde.length ? onde : [[UI.sel, nomeDe(UI.sel)]]).map(([k, n]) => '<option value="' + k + '"' + (m0.no === k ? ' selected' : '') + '>' + esc(n) + '</option>').join('') + '</select></label><label class="lb">Cliente vê<select class="sel" id="mc-v"><option value="1"' + (m0.vis ? ' selected' : '') + '>Sim</option><option value="0"' + (!m0.vis ? ' selected' : '') + '>Não</option></select></label><label class="lb largo">Descrição<input class="campo" id="mc-ds" value="' + esc(m0.desc || '') + '"></label></div>',
     [m ? {txt:'Excluir', cls:'fant', acao:() => { D.marcos = D.marcos.filter(x => x.id !== m.id); D.issues.forEach(i => { if (i.marco === m.id) i.marco = null; }); salvar(); rView(); }} : null, {txt:'Cancelar', cls:'sec'}, {txt:'Salvar', acao:dl => { const n = $('#mc-n', dl).value.trim(); if (!n){ toast('Escreva o nome'); return false; }

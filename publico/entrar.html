@@ -1978,6 +1978,7 @@ dialog.modal.modal-larga{max-width:min(960px,calc(100% - 32px))}
 .gc-passos ul{margin:4px 0 0;padding-left:18px}
 .gc-passos .mini{padding:1px 8px;font-size:11px;margin-left:4px}
 .gc-oculto{-webkit-text-security:disc;text-security:disc}
+.en2-onde{display:inline-block;margin-left:6px;padding:0 6px;border:1px solid var(--linha);font-size:11px;font-weight:600;color:var(--tinta-3);vertical-align:1px}
 /* ---------- Simplificar: abas agrupadas e tela do item ---------- */
   .ops-cab .views > .view-casa .info{display:none}
   .sm-mais-casa{position:relative;display:inline-flex}
@@ -3798,6 +3799,15 @@ function caminho(chave){
   if (c.ws) p.push(['ws:' + c.ws.id, c.ws.nome]);
   return p;
 }
+// Dados (versões, marcos, repositórios, publicações, fichas) nunca vêm de cima: cada ponto vê o que é dele e o que
+// está dentro dele. A frente (ws) é parte da aplicação, então ela e os itens dela usam o que é da aplicação.
+// Configuração (status, campos, automações, board) e acesso continuam valendo de cima para baixo.
+function noDono(chave){ if (!chave || chave === 'all') return chave; const [t, id] = chave.split(':'); if (t !== 'ws') return chave; const w = byId('ws', id); return w ? 'app:' + w.app : chave; }
+const dentroDe = (no, chave) => chave === 'all' || (!!no && (no === chave || caminho(no).some(p => p[0] === chave)));
+function nosDentro(chave){ // chaves do ponto e de tudo o que está dentro dele (sem frentes)
+  const d = noDono(chave); if (!d || d === 'all') return [];
+  const t = tfDentro(d); return [d].concat(t.projs.map(x => 'project:' + x), t.prods.map(x => 'product:' + x), t.apps.map(x => 'app:' + x)).filter((k, i, a) => a.indexOf(k) === i);
+}
 const caminhoTexto = i => { const a = appDe(i), w = wsDe(i); return a ? a.nome + ' › ' + (w ? w.nome : '') : ''; };
 function tagsSistema(chave){
   const c = cadeia(chave), t = [];
@@ -5495,7 +5505,7 @@ const FILHO_DE = {epic:'story', story:'task', task:'subtask', bug:'subtask'};
 const PAIS_VALIDOS = {epic:[], story:['epic'], task:['epic','story'], bug:['epic','story'], subtask:['task','bug']};
 function descendentes(id){ const r = new Set(); const fila = [id]; while (fila.length){ const x = fila.pop(); D.issues.filter(i => i.pai === x).forEach(i => { if (!r.has(i.id)){ r.add(i.id); fila.push(i.id); } }); } return r; }
 function sprintsDoEscopo(chave){ const pj = chave === 'all' ? null : cadeia(chave).project; return D.sprints.filter(s => !pj || s.project === pj.id); }
-function marcosDoEscopo(chave){ if (chave === 'all') return D.marcos.slice(); const acima = escoposAcima(chave); return D.marcos.filter(m => acima.has(m.no) || caminho(m.no).some(p => p[0] === chave)); }
+function marcosDoEscopo(chave){ if (chave === 'all') return D.marcos.slice(); const d = noDono(chave); return D.marcos.filter(m => dentroDe(m.no, d)); }
 const camposDoEscopo = chave => chave === 'all' ? D.camposItem.slice() : D.camposItem.filter(c => escoposAcima(chave).has(c.no));
 const _abrirItem = abrirItem;
 abrirItem = function(id){
@@ -5514,7 +5524,7 @@ abrirItem = function(id){
   const linha = (rot, info, ctrl) => '<div class="d-lin"><span class="d-rot">' + esc(rot) + (info ? I(info) : '') + '</span><span class="d-val">' + ctrl + '</span></div>';
   const sel = (campo, opts, atual) => '<select class="sel d-sel" data-rc-g="' + campo + '"' + dis + '>' + opts.map(([v, n]) => '<option value="' + esc(v) + '"' + ((atual || '') === v ? ' selected' : '') + '>' + esc(n) + '</option>').join('') + '</select>';
   const sprints = sprintsDoEscopo(chaveWs).filter(s => s.status !== 'encerrado' || s.id === i.sprint);
-  const marcos = marcosDoEscopo(chaveWs);
+  const marcos = marcosDoEscopo(chaveWs); const mAtual = i.marco && byId('marcos', i.marco); if (mAtual && !marcos.includes(mAtual)) marcos.push(Object.assign({}, mAtual, {nome:mAtual.nome + ' (de ' + nomeDe(mAtual.no) + ')'}));
   const det = $('.g-lateral .g-cartao', g);
   if (det) det.insertAdjacentHTML('beforeend',
     linha('Reporter', 'Reporter (relator): quem abriu o item. É a pessoa avisada quando uma automação diz "avisar quem abriu".', sel('rep', [['', 'Ninguém']].concat(D.people.map(p => [p.id, p.nome])), i.rep)) +
@@ -5678,7 +5688,7 @@ vTimeline = function(){
 };
 function formMarco(m){
   const m0 = m || {nome:'', tipo:'marco', data:iso(dAdd(HOJE, 30)), desc:'', vis:true, no:UI.sel};
-  const onde = caminho(UI.sel).filter(p => !p[0].startsWith('client') && !p[0].startsWith('ws'));
+  const onde = nosDentro(UI.sel).filter(k => !k.startsWith('client')).map(k => [k, nomeDe(k)]);
   modal(m ? 'Editar ' + esc(m.nome) : 'Novo marco', '<div class="grade-form"><label class="lb largo">Nome<input class="campo" id="mc-n" value="' + esc(m0.nome) + '"></label><label class="lb">Tipo<select class="sel" id="mc-t"><option value="marco"' + (m0.tipo === 'marco' ? ' selected' : '') + '>Milestone (marco)</option><option value="release"' + (m0.tipo === 'release' ? ' selected' : '') + '>Release (entrega de versão)</option></select></label><label class="lb">Data<input class="campo" type="date" id="mc-d" value="' + esc(m0.data) + '"></label>' +
     '<label class="lb">Onde<select class="sel" id="mc-o">' + (onde.length ? onde : [[UI.sel, nomeDe(UI.sel)]]).map(([k, n]) => '<option value="' + k + '"' + (m0.no === k ? ' selected' : '') + '>' + esc(n) + '</option>').join('') + '</select></label><label class="lb">Cliente vê<select class="sel" id="mc-v"><option value="1"' + (m0.vis ? ' selected' : '') + '>Sim</option><option value="0"' + (!m0.vis ? ' selected' : '') + '>Não</option></select></label><label class="lb largo">Descrição<input class="campo" id="mc-ds" value="' + esc(m0.desc || '') + '"></label></div>',
     [m ? {txt:'Excluir', cls:'fant', acao:() => { D.marcos = D.marcos.filter(x => x.id !== m.id); D.issues.forEach(i => { if (i.marco === m.id) i.marco = null; }); salvar(); rView(); }} : null, {txt:'Cancelar', cls:'sec'}, {txt:'Salvar', acao:dl => { const n = $('#mc-n', dl).value.trim(); if (!n){ toast('Escreva o nome'); return false; }
@@ -8881,12 +8891,11 @@ async function enCarregar(forcar){
 }
 
 /* ---------- escopo: o ponto escolhido, o que está acima (até o projeto) e o que está dentro ---------- */
-function enNos(chave){
-  const s = new Set(caminho(chave).map(([k]) => k.split(':')[1]));
-  const d = tfDentro(chave); [...d.projs, ...d.prods, ...d.apps, ...d.ws].forEach(x => s.add(x));
+function enNos(chave){ // o ponto e o que está dentro dele; nunca o que está acima (ver noDono em app.js)
+  const d = noDono(chave), s = new Set(); if (!d || d === 'all') return s;
+  s.add(d.split(':')[1]); const t = tfDentro(d); [...t.projs, ...t.prods, ...t.apps, ...t.ws].forEach(x => s.add(x));
   return s;
 }
-const enProjeto = chave => { const p = cadeia(chave).project; return p ? 'project:' + p.id : chave; };
 const enVersoes = chave => marcosDoEscopo(chave).filter(m => m.tipo === 'release').sort((a, b) => String(b.entregue || b.data).localeCompare(String(a.entregue || a.data)));
 const enNomeNo = id => { const k = ['projects','products','apps','ws','clients'].map(l => byId(l, id) && ({projects:'project', products:'product', apps:'app', ws:'ws', clients:'client'}[l] + ':' + id)).find(Boolean); return k ? nomeDe(k) : 'Ponto excluído'; };
 function enHa(ts){ if (!ts) return ''; const m = Math.round((Date.now() - new Date(ts).getTime()) / 60000); if (m < 1) return 'agora'; if (m < 60) return 'há ' + m + ' min'; const h = Math.round(m / 60); if (h < 24) return 'há ' + h + ' h'; const d = Math.round(h / 24); return d === 1 ? 'ontem' : 'há ' + d + ' dias'; }
@@ -8977,7 +8986,7 @@ function enHTML(chave){
       '<button type="button" class="btn sec peq" data-en-nova-pub>' + EN_ICO.foguete + 'Registrar publicação</button>') + '</ol>';
   // versões: uma linha por versão
   const linhaV = m => { const [f, t] = itensV(m), st = situ(m);
-    return '<li class="en2-v en2-' + st[0] + '"><div class="en2-v-nome">' + EN_ICO.versao + '<div><b>' + esc(m.nome) + '</b>' + (m.desc ? '<small>' + esc(m.desc) + '</small>' : '') + '</div></div>' +
+    return '<li class="en2-v en2-' + st[0] + '"><div class="en2-v-nome">' + EN_ICO.versao + '<div><b>' + esc(m.nome) + '</b>' + (m.no && m.no !== noDono(chave) ? ' <span class="en2-onde">' + esc(nomeDe(m.no)) + '</span>' : '') + (m.desc ? '<small>' + esc(m.desc) + '</small>' : '') + '</div></div>' +
       '<span class="en2-pilula en2-' + st[0] + '">' + esc(st[1]) + '</span>' +
       '<div class="en2-prog">' + (t ? '<div class="rl-barra fina"><i style="width:' + (f / t * 100) + '%"></i></div><small>' + f + ' de ' + t + ' itens</small>' : '<small>sem itens ligados</small>') + '</div>' +
       '<div class="en2-acoes"><button type="button" class="btn fant peq" data-en-notas="' + m.id + '">' + (m.notas ? 'Notas' : 'Gerar notas') + '</button>' +
@@ -9006,7 +9015,7 @@ async function enCarregarAtividade(chave){
   let L = [];
   try {
     if (!COM_BANCO) L = enLocal().links.filter(l => itensEscopo.has(l.item_id));
-    else if (repos.length) L = await enLer('codigo_vinculos', {em:['repositorio_id', repos], ordem:'quando', limite:30});
+    else if (repos.length) L = (await enLer('codigo_vinculos', {em:['repositorio_id', repos], ordem:'quando', limite:60})).filter(l => !l.item_id || itensEscopo.has(l.item_id));
   } catch(e){ el.innerHTML = '<p class="sec">Não deu para ler a atividade: ' + esc(tfErro(e)) + '</p>'; return; }
   if (!$('#en-atividade')) return;
   L = L.slice().sort((a, b) => String(b.quando).localeCompare(String(a.quando))).slice(0, 30);
@@ -9023,7 +9032,7 @@ function enProximoNome(chave){
   return v ? 'v' + v[0] + '.' + (v[1] + 1) + '.0' : 'v1.0.0';
 }
 function enNovaVersao(){
-  const chave = enProjeto(UI.sel);
+  const chave = noDono(UI.sel);
   const soltos = issuesEm(chave).filter(i => i.status === 'done' && !i.marco);
   const ult = enVersoes(chave).filter(m => m.entregue).map(m => m.entregue).sort().pop();
   const novosFeitos = soltos.filter(i => !ult || (i.feito && i.feito > ult));
@@ -9074,9 +9083,9 @@ function tfExcluirPerguntaSimples(titulo, texto, fazer){
 
 /* ---------- publicações ---------- */
 function enNovaPublicacao(marcoId){
-  const chave = UI.sel, proj = enProjeto(chave), versoes = enVersoes(proj);
+  const chave = noDono(UI.sel), versoes = enVersoes(chave);
   const m0 = marcoId ? byId('marcos', marcoId) : versoes.find(m => !m.entregue);
-  const onde = [[proj, nomeDe(proj)]].concat(D.apps.filter(a => 'project:' + a.project === proj).map(a => ['app:' + a.id, nomeDe('app:' + a.id)]));
+  const onde = nosDentro(chave).filter(k => !k.startsWith('client')).map(k => [k, nomeDe(k)]);
   const dlg = modal('Registrar publicação', '<p class="sec tf-nota" style="margin-top:0">Anote o que foi para o ar. Com o repositório ligado, as publicações do GitHub e do GitLab chegam sozinhas.</p>' +
     '<div class="grade-form"><label class="lb">Versão<select class="sel" id="en-p-v"><option value="">Sem versão cadastrada</option>' + versoes.map(m => '<option value="' + m.id + '"' + (m0 && m0.id === m.id ? ' selected' : '') + '>' + esc(m.nome) + (m.entregue ? ' (já publicada)' : '') + '</option>').join('') + '</select></label>' +
     '<label class="lb">Ou escreva a versão<input class="campo" id="en-p-t" placeholder="Ex.: v1.2.1 ou o commit"></label>' +
@@ -9273,11 +9282,9 @@ window.addEventListener('storage', e => { if (e.key === GC_VOLTA && e.newValue){
 
 /* ---------- Ligar repositório (aba Entregas) ---------- */
 function gcOnde(){
-  const proj = enProjeto(UI.sel);
-  // cada produto tem a própria ligação: os desenhos automáticos do produto saem só dos repositórios dele
-  return [[proj, nomeDe(proj) + ' (projeto inteiro)']]
-    .concat(D.products.filter(p => 'project:' + p.project === proj).map(p => ['product:' + p.id, nomeDe('product:' + p.id) + ' (só este produto)']))
-    .concat(D.apps.filter(a => 'project:' + a.project === proj).map(a => ['app:' + a.id, nomeDe('app:' + a.id) + ' (só esta aplicação)']));
+  // só o ponto aberto e o que está dentro dele: um repositório nunca fica ligado a um lugar que você não está vendo
+  const suf = {project:' (projeto inteiro)', product:' (só este produto)', app:' (só esta aplicação)'};
+  return nosDentro(UI.sel).filter(k => !k.startsWith('client')).map(k => [k, nomeDe(k) + (suf[k.split(':')[0]] || '')]);
 }
 function gcLigarRepo(){
   if (!COM_BANCO){ modal('Ligar repositório', '<p style="margin:0">No modo de exemplo não dá para conectar o GitHub ou o GitLab. Entre no CicloDev com login para ligar os repositórios.</p>', [{txt:'Entendi'}]); return; }
@@ -9433,6 +9440,7 @@ document.addEventListener('click', e => {
 });
 // voltou da janelinha com a janela principal fechada (ou recarregada): termina agora
 (function(){ const v = gcLer(GC_VOLTA); if (v && v.dados && Date.now() - (v.t || 0) < 10 * 60000) setTimeout(() => gcVolta(v.dados), 1500); })();
+if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {marcosDoEscopo, enNos, gcOnde, enHTML, enNovaVersao, formMarco, exNoMd, noDono, nosDentro});
 
 /* ================= Simplificar: nomes em português, abas agrupadas e a tela do item organizada =================
    Carrega por último: só troca nomes e reorganiza o que as camadas anteriores montaram, sem mudar dado nenhum. */
@@ -10849,7 +10857,7 @@ function ltAbrir(){
       const novos = r.grupos.filter(g => g.titulo && !g.ja).length;
       if (!novos && !nItens){ toast('Escreva pelo menos um épico ou um item'); return false; }
       tfComDesfazer((novos ? novos + (novos === 1 ? ' épico' : ' épicos') + (nItens ? ' e ' : '') : '') + (nItens ? nItens + (nItens === 1 ? ' item' : ' itens') : '') + ' criados' + (r.novasV.length ? ', com ' + r.novasV.length + (r.novasV.length === 1 ? ' versão nova' : ' versões novas') : '') + '.', () => {
-        const pj = enProjeto(UI.sel), idNova = {};
+        const pj = noDono(UI.sel), idNova = {};
         r.novasV.forEach(n => { const m = {id:uid('mc'), no:pj, tipo:'release', nome:n, desc:'', data:iso(dAdd(HOJE, 30)), vis:true, entregue:null, notas:''}; D.marcos.push(m); idNova[LT_NOVA + n] = m.id; });
         const vs = x => x && String(x).startsWith(LT_NOVA) ? idNova[x] || null : x;
         r.grupos.forEach(g => { g.mc = vs(g.mc); g.itens.forEach(i => { i.mc = vs(i.mc); });
@@ -10906,7 +10914,7 @@ function vsLinha(m, focoId){
 }
 function vsAbrir(focoId){
   if (!podeEditar()) return;
-  const chave = enProjeto(UI.sel), versoes = enVersoes(chave).slice().sort((a, b) => String(a.data || '').localeCompare(String(b.data || '')) || a.nome.localeCompare(b.nome));
+  const chave = noDono(UI.sel), versoes = enVersoes(chave).slice().sort((a, b) => String(a.data || '').localeCompare(String(b.data || '')) || a.nome.localeCompare(b.nome));
   const vazias = versoes.length ? 1 : VS_LINHAS_VAZIAS;
   const dlg = modal('Versões de ' + esc(nomeDe(chave)),
     '<p class="sec tf-nota" style="margin-top:0">Mude o que quiser nas linhas e clique em <b>Salvar</b>. Para criar várias de uma vez, clique no <b>+</b> e preencha as linhas novas. Dá também para colar uma lista do Excel na coluna Nome.</p>' +
@@ -11186,11 +11194,11 @@ function exNoMd(chave){
   if (tipo === 'product') D.apps.filter(a => a.product === id).forEach(a => dentro.push('- Aplicação: ' + a.nome + ' · frentes: ' + D.ws.filter(w => w.app === a.id).map(w => w.nome).join(', ')));
   if (tipo === 'app') D.ws.filter(w => w.app === id).forEach(w => dentro.push('- Frente: ' + w.nome + ' (' + issuesEm('ws:' + w.id).filter(i => !i.arquivado).length + ' itens)'));
   if (dentro.length) md += '## O que tem dentro\n\n' + dentro.join('\n') + '\n\n';
-  // ficha técnica preenchida (a do próprio ponto, ou a do projeto que ele herda)
-  const pj = cadeia(chave).project, fichas = [D.sheets[chave], pj && D.sheets['project:' + pj.id]].filter(Boolean);
+  // ficha técnica preenchida: só a do próprio ponto (nunca a do projeto acima)
+  const fichas = [D.sheets[chave]].filter(Boolean);
   const valores = []; FICHA.forEach(([sec, , campos]) => campos.forEach(cp => { const k = sec + '|' + cp; const v = fichas.map(f => f.campos[k]).find(x => x && String(x).trim()); if (v) valores.push('- **' + sec + ' › ' + cp + ':** ' + String(v).replace(/\n/g, ' ')); }));
   if (valores.length) md += '## Ficha técnica\n\n' + valores.join('\n') + '\n\n';
-  const vs = typeof enVersoes === 'function' && tipo !== 'client' ? enVersoes(typeof enProjeto === 'function' ? enProjeto(chave) : chave) : [];
+  const vs = typeof enVersoes === 'function' && tipo !== 'client' ? enVersoes(chave) : [];
   if (vs.length) md += '## Versões\n\n' + vs.map(v => { const lig = itens.filter(i => i.marco === v.id); return '- **' + v.nome + '**' + (v.desc ? ': ' + v.desc : '') + ' · ' + (v.entregue ? 'no ar desde ' + exData(v.entregue) : 'prevista para ' + exData(v.data)) + (lig.length ? ' · ' + lig.filter(i => i.status === 'done').length + ' de ' + lig.length + ' itens' : ''); }).join('\n') + '\n\n';
   const linhaIt = i => '- ' + (i.status === 'done' ? '[x] ' : '[ ] ') + exNomeItem(i) + ' · ' + exStatus(i) + (i.resp ? ' · ' + exPessoa(i.resp) : '') + (i.fim ? ' · prazo ' + exData(i.fim) : '') + (tipo !== 'ws' ? ' · ' + ((byId('ws', i.ws) || {}).nome || '') : '');
   if (epics.length) md += '## Épicos\n\n' + epics.map(e => { const f = itens.filter(i => i.pai === e.id); return '### ' + exNomeItem(e) + '\n\n' + exLinha('Status', exStatus(e)) + exLinha('Frente', (byId('ws', e.ws) || {}).nome) + exLinha('Versão', (D.marcos.find(m => m.id === e.marco) || {}).nome) +
