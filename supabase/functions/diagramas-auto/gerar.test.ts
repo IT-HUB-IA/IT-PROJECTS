@@ -7,7 +7,7 @@ import { createRequire } from 'node:module';
 import { execFileSync } from 'node:child_process';
 import { createReadStream, mkdirSync, writeFileSync } from 'node:fs';
 import { Readable } from 'node:stream';
-import { lerTarGz, gerarDoCodigo, gerarSoftware, gerarInfra, gerarRotas, gerarPrisma, gerarDer, gerarAcesso, gerarDoBanco, resumoEstrutura, interessa, CONSULTA_BANCO } from './gerar.ts';
+import { estruturaMysql, lerTarGz, gerarDoCodigo, gerarSoftware, gerarInfra, gerarRotas, gerarPrisma, gerarDer, gerarAcesso, gerarDoBanco, resumoEstrutura, interessa, CONSULTA_BANCO } from './gerar.ts';
 import type { Estrutura, Desenho } from './gerar.ts';
 
 const req = createRequire(import.meta.url);
@@ -92,6 +92,36 @@ ok(/\["GET \/pedidos\/\{id\}"\]/.test(rt.fonte) && /\["POST \/pedidos"\]/.test(r
 ok(/\["GET \/previsao"\]/.test(rt.fonte) && /\["POST \/treino"\]/.test(rt.fonte), 'rotas: FastAPI');
 guardar('exemplo', rt);
 
+/* ---------- um sistema Java como o B-L: Spring Boot, páginas na pasta static, API REST e banco no Supabase ---------- */
+const bl = new Map<string, string>(Object.entries({
+  'bl-sistema-java/pom.xml': '<project><parent><artifactId>spring-boot-starter-parent</artifactId></parent><artifactId>bl-sistema</artifactId><dependencies><dependency><artifactId>spring-boot-starter-web</artifactId></dependency></dependencies></project>',
+  'bl-sistema-java/src/main/resources/application.properties': 'server.port=8081\nspring.datasource.url=${DB_URL:jdbc:postgresql://aws-0-sa-east-1.pooler.supabase.com:6543/postgres}\nspring.datasource.username=postgres',
+  'bl-sistema-java/src/main/java/br/bl/EmpresaController.java': 'package br.bl;\nimport org.springframework.web.bind.annotation.*;\n@RestController\n@RequestMapping("/api/empresas")\nclass EmpresaController {\n @GetMapping List<Empresa> todas(){ return null; }\n @GetMapping("/{id}") Empresa uma(){ return null; }\n @PostMapping void nova(){}\n}',
+  'bl-sistema-java/src/main/java/br/bl/Pagamento.java': 'package br.bl;\nclass P { void f(){ new RestTemplate().getForObject("https://api.asaas.com/v3/payments", String.class); } }',
+  'bl-sistema-java/src/main/resources/static/web/login.html': '<html><body><form action="painel.html"></form><a href="redefinir-senha.html">Esqueci</a><script src="js/login.js"></script></body></html>',
+  'bl-sistema-java/src/main/resources/static/web/js/login.js': "fetch('/api/empresas', { method: 'POST' }).then(r => r.json()).then(() => { window.location.href = '/web/painel.html'; });",
+  'bl-sistema-java/src/main/resources/static/web/painel.html': "<html><body><script>fetch(`/api/empresas/${id}`); fetch('/api/empresas');</script><a href='login.html'>Sair</a></body></html>",
+  'bl-sistema-java/src/main/resources/static/web/redefinir-senha.html': '<html><body><a href="/web/login.html">Voltar</a></body></html>',
+  'bl-sistema-java/Dockerfile': 'FROM eclipse-temurin:21-jre\nEXPOSE 8081\n',
+  '.env.example': 'DB_URL=\nSUPABASE_URL=https://abc.supabase.co',
+}));
+const blCam = [...bl.keys(), 'supabase/migrations/001.sql'].sort();
+const bli = gerarInfra(bl, blCam, 'Blanco-Lisboa/B-L', yaml)!;
+const blSolto = bli.modelo.cards.filter(c => !bli.modelo.ligacoes.some(l => l.de === c.id || l.para === c.id)).map(c => c.id);
+ok(bli.modelo.cards.some(c => c.id === 'app:bl-sistema-java' && c.rotuloTipo === 'APLICAÇÃO SPRING BOOT' && c.titulo === 'bl-sistema' && (c.topicos || []).some(t => /porta 8081/.test(t))), 'infraestrutura Java: a aplicação Spring Boot aparece com o nome do pom.xml e a porta');
+ok(bli.modelo.ligacoes.some(l => l.de === 'app:bl-sistema-java' && l.para === 'sb:pg' && l.rotulo === 'lê e grava'), 'infraestrutura Java: a aplicação liga ao banco do Supabase pelo spring.datasource.url');
+ok(bli.modelo.ligacoes.some(l => l.de === 'app:bl-sistema-java' && l.para === 'ext:api.asaas.com' && l.rotulo === 'chama'), 'infraestrutura Java: a API de fora que o código chama');
+ok(bli.modelo.ligacoes.some(l => l.de === 'img:bl-sistema-java/Dockerfile' && l.para === 'app:bl-sistema-java' && l.rotulo === 'empacota') && bli.modelo.ligacoes.some(l => l.para === 'sb:pg' && /migraç/.test(l.rotulo || '')), 'infraestrutura Java: o Dockerfile empacota a aplicação e as migrações criam as tabelas');
+ok(!blSolto.length, 'infraestrutura: nenhum card solto (' + blSolto.join(', ') + ')');
+const blr = gerarRotas(bl, blCam, 'Blanco-Lisboa/B-L')!;
+const telasBl = blr.modelo.cards.filter(c => c.rotuloTipo === 'TELA').map(c => c.subtitulo).sort();
+ok(JSON.stringify(telasBl) === JSON.stringify(['/web/login', '/web/painel', '/web/redefinir-senha']), 'rotas: a página da pasta static do Spring tem o endereço de verdade (/web/login), sem repetir ' + JSON.stringify(telasBl));
+const temLig = (de: string, para: string, rot: string) => blr.modelo.ligacoes.some(l => l.de === de && l.para === para && l.rotulo === rot);
+ok(temLig('tela:/web/login', 'tela:/web/painel', 'vai para') && temLig('tela:/web/login', 'tela:/web/redefinir-senha', 'vai para') && temLig('tela:/web/painel', 'tela:/web/login', 'vai para') && temLig('tela:/web/redefinir-senha', 'tela:/web/login', 'vai para'), 'rotas: tela → tela pelos links, formulários e window.location (também no script da página)');
+ok(temLig('tela:/web/login', 'api:/api/empresas', 'chama') && temLig('tela:/web/painel', 'api:/api/empresas', 'chama'), 'rotas: tela → API pelo fetch (com ${id} casando com {id})');
+ok(/-\.->\|vai para\|/.test(blr.fonte) && /-->\|chama\|/.test(blr.fonte), 'rotas: o Mermaid também leva as ligações');
+guardar('bl', bli); guardar('bl', blr);
+
 const pr = gerarPrisma(exemplo, 'loja/monorepo')!;
 ok(pr && /Table "usuarios" \{/.test(pr.fonte) && /"email" string \[unique, not null\]/.test(pr.fonte) && /"nome" string$/m.test(pr.fonte), 'Prisma: tabela com @@map, unique e campo opcional');
 ok(/Ref: "pedidos"\."usuario_id" > "usuarios"\."id"/.test(pr.fonte), 'Prisma: a relação vira Ref, com o nome de coluna do @map');
@@ -162,6 +192,27 @@ ok(/service_role\\nignora o RLS/.test(ac.fonte) && /label="ler"/.test(ac.fonte) 
 ok(ac.lacunas.some(l => /public\.pedidos/.test(l)) && ac.evidencias.some(e => /dono = auth\.uid\(\)/.test(e.trecho)), 'banco: avisa a tabela sem RLS e mostra o texto da regra');
 ok(gerarDoBanco(est, ['public', 'auth']).map(d => d.tipo).join(',') === 'der:auth,der:public,acesso', 'banco: um DER por esquema e um mapa de acesso');
 ok((await resumoEstrutura(est)) === (await resumoEstrutura(JSON.parse(JSON.stringify(est)))) && (await resumoEstrutura(est)) !== (await resumoEstrutura({ ...est, papeis: [] })), 'banco: o resumo da estrutura só muda quando a estrutura muda');
+// ligação provável (coluna cliente_id sem FK) e nenhum card solto no mapa de acesso
+const est2: Estrutura = JSON.parse(JSON.stringify(est));
+est2.tabelas.push({ esquema: 'public', nome: 'notas', tipo: 'r', rls: false, rls_forcado: false, nota: null, colunas: [{ nome: 'id', tipo: 'uuid', nao_nulo: true, padrao: null, nota: null }, { nome: 'cliente_id', tipo: 'uuid', nao_nulo: false, padrao: null, nota: null }],
+  restricoes: [{ nome: 'notas_pkey', tipo: 'p', cols: ['id'], ref_esquema: null, ref_tabela: null, ref_cols: null }], permissoes: [], regras: [] } as any);
+const der2 = gerarDer(est2, 'public')!;
+ok(der2.modelo.ligacoes.some(l => l.de === 't:public.notas' && l.para === 't:public.clientes' && l.deLinha === 'cliente_id' && l.tracejada && /provável/.test(l.rotulo || '')), 'banco: cliente_id sem FK vira ligação provável tracejada para clientes');
+ok(der2.modelo.ligacoes.filter(l => /provável/.test(l.rotulo || '')).length === 1, 'banco: coluna que já tem FK não ganha ligação provável repetida');
+const ac2 = gerarAcesso(est2, ['public'])!;
+const soltosAc = ac2.modelo.cards.filter(c => !ac2.modelo.ligacoes.some(l => l.de === c.id || l.para === c.id)).map(c => c.id);
+ok(!soltosAc.length && ac2.modelo.ligacoes.some(l => l.de === 'ninguem' && l.para === 'tab:public.notas'), 'banco: acesso sem card solto (a tabela sem acesso liga em "Ninguém de fora") ' + soltosAc.join(', '));
+// MySQL (AWS RDS): as linhas do information_schema (com os nomes em maiúsculas, como o MySQL 8 devolve) viram a mesma estrutura
+const my = estruturaMysql(
+  [{ ESQUEMA: 'loja', NOME: 'clientes', TIPO: 'BASE TABLE', NOTA: 'quem compra' }, { ESQUEMA: 'loja', NOME: 'pedidos', TIPO: 'BASE TABLE', NOTA: '' }, { ESQUEMA: 'loja', NOME: 'resumo', TIPO: 'VIEW', NOTA: '' }],
+  [{ ESQUEMA: 'loja', TABELA: 'clientes', NOME: 'id', TIPO: 'bigint unsigned', NULO: 'NO', PADRAO: null, NOTA: '' }, { ESQUEMA: 'loja', TABELA: 'clientes', NOME: 'email', TIPO: 'varchar(200)', NULO: 'NO', PADRAO: null, NOTA: '' },
+   { ESQUEMA: 'loja', TABELA: 'pedidos', NOME: 'id', TIPO: 'bigint unsigned', NULO: 'NO', PADRAO: null, NOTA: '' }, { ESQUEMA: 'loja', TABELA: 'pedidos', NOME: 'cliente_id', TIPO: 'bigint unsigned', NULO: 'YES', PADRAO: null, NOTA: '' }],
+  [{ ESQUEMA: 'loja', TABELA: 'clientes', NOME: 'PRIMARY', TIPO: 'PRIMARY KEY', COLUNA: 'id' }, { ESQUEMA: 'loja', TABELA: 'clientes', NOME: 'email_uq', TIPO: 'UNIQUE', COLUNA: 'email' },
+   { ESQUEMA: 'loja', TABELA: 'pedidos', NOME: 'PRIMARY', TIPO: 'PRIMARY KEY', COLUNA: 'id' }, { ESQUEMA: 'loja', TABELA: 'pedidos', NOME: 'fk_cliente', TIPO: 'FOREIGN KEY', COLUNA: 'cliente_id', REF_ESQUEMA: 'loja', REF_TABELA: 'clientes', REF_COLUNA: 'id' }]);
+const myD = gerarDoBanco(my, ['loja'], { nome: 'Relatórios', motor: 'mysql', provedor: 'aws' });
+ok(myD.length === 1 && myD[0].nome === 'DER · Relatórios · banco loja', 'MySQL: sai só o DER (sem mapa de RLS, que é do Postgres), com o nome do banco');
+ok(/Ref: "loja"\."pedidos"\."cliente_id" > "loja"\."clientes"\."id"/.test(myD[0].fonte) && /"email" "varchar\(200\)" \[unique, not null\]/.test(myD[0].fonte), 'MySQL: chave estrangeira, único e tipos');
+ok(myD[0].modelo.ligacoes.some(l => l.de === 't:loja.pedidos' && l.deLinha === 'cliente_id' && l.fim === 'zeroum') && /AWS · MySQL/.test(myD[0].modelo.resumo || ''), 'MySQL: no quadro, a ligação sai da coluna (aceita vazio: zero ou um) e o resumo diz AWS · MySQL');
 guardar('exemplo', der); guardar('exemplo', ac);
 
 if (process.env.BANCO_URL) {

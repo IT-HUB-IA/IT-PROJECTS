@@ -187,3 +187,9 @@
 .en2-repo-b{display:inline-flex;gap:4px;margin-left:auto}
 .en2-repo-a{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 .ifr-repo-b{display:flex;gap:10px;margin-top:2px}
+.ifr-prov{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.ifr-prov-op{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border:1px solid var(--linha);cursor:pointer;font-size:13px}
+.ifr-prov-op.sel{border-color:var(--preto);font-weight:600}
+.ifr-guia{margin:6px 0 10px;padding-left:20px;font-size:13px;line-height:1.55}
+.ifr-guia li{margin-bottom:6px}
+.ifr-guia code{font-family:var(--font-mono);font-size:12px;overflow-wrap:anywhere}

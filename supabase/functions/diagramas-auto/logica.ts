@@ -19,20 +19,21 @@ export interface DepsAuto {
   rpc: Rpc;                                   // cliente de serviço (service_role)
   buscar: typeof fetch;
   yaml: LerYaml;
-  lerBanco: (conexao: string, esquemas: string[]) => Promise<Estrutura>;
+  lerBanco: (conexao: string, esquemas: string[], motor: 'postgres' | 'mysql') => Promise<Estrutura>;
   emSegundoPlano: (p: Promise<unknown>) => void;
   agora?: () => number;
   orcamentoMs?: number;                       // depois disso não começa pedido novo (o resto fica para a próxima chamada)
 }
 type Repo = { id: string; nome: string; branch: string; provedor: 'github' | 'gitlab'; conexao_id: string; externo_id: string | null };
-type Pedido = { id: string; no_id: string; origem: 'github' | 'gitlab' | 'banco' | 'manual'; referencia: string | null; repositorios: Repo[]; banco: { esquemas: string[]; conexao: string } | null };
+export type Banco = { id: string; no_id?: string; nome: string; provedor: string; motor: 'postgres' | 'mysql'; esquemas: string[]; conexao: string };
+type Pedido = { id: string; no_id: string; origem: 'github' | 'gitlab' | 'banco' | 'manual'; referencia: string | null; repositorios: Repo[]; bancos: Banco[] };
 
 const resposta = (corpo: unknown, status = 200) => new Response(JSON.stringify(corpo), { status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' } });
 // a mensagem de erro nunca leva o endereço do banco (com a senha)
 export const limparErro = (e: unknown, conexao?: string) => {
   let m = String((e as Error)?.message || e || 'erro sem detalhe');
   if (conexao) m = m.split(conexao).join('[endereço do banco]');
-  return m.replace(/postgres(ql)?:\/\/[^\s'"]+/gi, '[endereço do banco]').slice(0, 500);
+  return m.replace(/(postgres(ql)?|mysql):\/\/[^\s'"]+/gi, '[endereço do banco]').slice(0, 500);
 };
 async function chamar(d: DepsAuto, nome: string, args: Record<string, unknown>) {
   const r = await d.rpc(nome, args);
@@ -89,43 +90,47 @@ export async function processar(d: DepsAuto, p: Pedido): Promise<void> {
         feitos++;
       } catch (e) { erros++; resumo.push({ repositorio: repo.nome, erro: limparErro(e) }); }
     }
-    if (p.banco) {
+    const bancos = p.bancos || [];
+    for (const b of bancos) {
       try {
-        const e = await d.lerBanco(p.banco.conexao, p.banco.esquemas);
-        const hash = await resumoEstrutura(e);
-        await chamar(d, 'infra_auto_banco_lido', { p_no: p.no_id, p_hash: hash, p_erro: null, p_abrir: false });
-        const ds = gerarDoBanco(e, p.banco.esquemas);
-        ids.push(...await gravarTodos(d, p.no_id, ds, 'banco:', 'banco', hash.slice(0, 16)));
-        prefixos.push('banco:');
-        resumo.push({ banco: p.banco.esquemas.join(', '), tabelas: e.tabelas.length, desenhos: ds.map(x => x.nome) });
+        const { ids: novos, e, ds } = await lerEDesenhar(d, p.no_id, b, false);
+        ids.push(...novos); prefixos.push(prefixoBanco(b, bancos.length));
+        resumo.push({ banco: b.nome, motor: b.motor, esquemas: b.esquemas.join(', '), tabelas: e.tabelas.length, desenhos: ds.map(x => x.nome) });
         feitos++;
       } catch (e) {
-        erros++; const m = limparErro(e, p.banco.conexao);
-        await chamar(d, 'infra_auto_banco_lido', { p_no: p.no_id, p_hash: null, p_erro: m, p_abrir: false }).catch(() => null);
-        resumo.push({ banco: p.banco.esquemas.join(', '), erro: m });
+        erros++; const m = limparErro(e, b.conexao);
+        await chamar(d, 'infra_auto_banco_lido', { p_banco: b.id, p_hash: null, p_erro: m, p_abrir: false }).catch(() => null);
+        resumo.push({ banco: b.nome, erro: m });
       }
     }
-    if (!(p.repositorios || []).length && !p.banco) resumo.push({ aviso: 'Nenhum repositório nem banco ligado a este projeto ou produto.' });
-    const msgErro = erros ? resumo.filter(x => x.erro).map(x => (x.repositorio || 'banco') + ': ' + x.erro).join(' · ') : null;
+    if (!(p.repositorios || []).length && !bancos.length) resumo.push({ aviso: 'Nenhum repositório nem banco ligado a este ponto.' });
+    const msgErro = erros ? resumo.filter(x => x.erro).map(x => (x.repositorio || ('banco ' + x.banco)) + ': ' + x.erro).join(' · ') : null;
     await chamar(d, 'infra_auto_concluir', { p_id: p.id, p_status: erros && !feitos ? 'erro' : 'pronto', p_erro: msgErro, p_diagramas: ids, p_resumo: resumo, p_prefixos: prefixos });
   } catch (e) {
-    await chamar(d, 'infra_auto_concluir', { p_id: p.id, p_status: 'erro', p_erro: limparErro(e, p.banco?.conexao), p_diagramas: ids, p_resumo: resumo, p_prefixos: [] }).catch(() => null);
+    await chamar(d, 'infra_auto_concluir', { p_id: p.id, p_status: 'erro', p_erro: limparErro(e, p.bancos?.[0]?.conexao), p_diagramas: ids, p_resumo: resumo, p_prefixos: [] }).catch(() => null);
   }
 }
 
-// o banco de hora em hora: só redesenha quando a estrutura mudou
-export async function lerBancoDevido(d: DepsAuto, b: { no_id: string; esquemas: string[]; conexao: string }): Promise<void> {
-  let e: Estrutura;
-  try { e = await d.lerBanco(b.conexao, b.esquemas); }
-  catch (x) { await chamar(d, 'infra_auto_banco_lido', { p_no: b.no_id, p_hash: null, p_erro: limparErro(x, b.conexao), p_abrir: true }).catch(() => null); return; }
+// cada banco tem a própria família de desenhos: banco:<id>:der:public, banco:<id>:acesso...
+const prefixoBanco = (b: Banco, _n?: number) => 'banco:' + b.id + ':';
+// lê a estrutura de um banco, guarda o resumo e grava os desenhos dele
+async function lerEDesenhar(d: DepsAuto, no: string, b: Banco, abrir: boolean) {
+  const e = await d.lerBanco(b.conexao, b.esquemas, b.motor || 'postgres');
   const hash = await resumoEstrutura(e);
-  const id = await chamar(d, 'infra_auto_banco_lido', { p_no: b.no_id, p_hash: hash, p_erro: null, p_abrir: true });
-  if (!id) return;
-  try {
-    const ds = gerarDoBanco(e, b.esquemas);
-    const ids = await gravarTodos(d, b.no_id, ds, 'banco:', 'banco', hash.slice(0, 16));
-    await chamar(d, 'infra_auto_concluir', { p_id: id, p_status: 'pronto', p_erro: null, p_diagramas: ids, p_resumo: [{ banco: b.esquemas.join(', '), tabelas: e.tabelas.length, desenhos: ds.map(x => x.nome) }], p_prefixos: ['banco:'] });
-  } catch (x) { await chamar(d, 'infra_auto_concluir', { p_id: id, p_status: 'erro', p_erro: limparErro(x, b.conexao), p_diagramas: [], p_resumo: [], p_prefixos: [] }).catch(() => null); }
+  const pedido = await chamar(d, 'infra_auto_banco_lido', { p_banco: b.id, p_hash: hash, p_erro: null, p_abrir: abrir });
+  if (abrir && !pedido) return { ids: [] as string[], e, ds: [], pedido: null };
+  const ds = gerarDoBanco(e, b.esquemas, { nome: b.nome, motor: b.motor, provedor: b.provedor });
+  const ids = await gravarTodos(d, no, ds, prefixoBanco(b), 'banco', hash.slice(0, 16));
+  return { ids, e, ds, pedido };
+}
+// o banco de hora em hora: só redesenha quando a estrutura mudou
+export async function lerBancoDevido(d: DepsAuto, b: Banco & { no_id: string }): Promise<void> {
+  let r: Awaited<ReturnType<typeof lerEDesenhar>>;
+  try { r = await lerEDesenhar(d, b.no_id, b, true); }
+  catch (x) { await chamar(d, 'infra_auto_banco_lido', { p_banco: b.id, p_hash: null, p_erro: limparErro(x, b.conexao), p_abrir: true }).catch(() => null); return; }
+  if (!r.pedido) return;
+  await chamar(d, 'infra_auto_concluir', { p_id: r.pedido, p_status: 'pronto', p_erro: null, p_diagramas: r.ids, p_resumo: [{ banco: b.nome, motor: b.motor, tabelas: r.e.tabelas.length, desenhos: r.ds.map(x => x.nome) }], p_prefixos: [prefixoBanco(b)] })
+    .catch(() => null);
 }
 
 export async function rodar(d: DepsAuto): Promise<{ pedidos: number; bancos: number }> {
@@ -137,7 +142,7 @@ export async function rodar(d: DepsAuto): Promise<{ pedidos: number; bancos: num
     for (const p of lista) { await processar(d, p); pedidos++; }
   }
   if (agora() - t0 < orc) {
-    const devidos = (await chamar(d, 'infra_auto_bancos_devidos', { p_limite: 3 })) as { no_id: string; esquemas: string[]; conexao: string }[];
+    const devidos = (await chamar(d, 'infra_auto_bancos_devidos', { p_limite: 3 })) as (Banco & { no_id: string })[];
     for (const b of devidos || []) { if (agora() - t0 >= orc) break; await lerBancoDevido(d, b); bancos++; }
   }
   return { pedidos, bancos };

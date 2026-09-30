@@ -157,7 +157,20 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   await p.fill('#ifr-b-url', 'postgresql://leitura_ciclodev:senha-de-teste@db.exemplo:5432/postgres'); await p.fill('#ifr-b-esq', 'public, app');
   await p.click('dialog.modal[open] .modal-rod .btn:not(.sec)'); await p.waitForTimeout(2500);
   ok(conta("select count(*) || '/' || max(array_to_string(esquemas, ',')) from public.infra_bancos where no_id = '" + pj + "'") === '1/app,public' && conta("select count(*) from interno.infra_bancos_conexao where conexao like 'postgresql://leitura_ciclodev:%'") === '1', 'ligar o banco guarda o endereço na área protegida do banco');
-  ok(/Banco de produção · esquemas app, public/.test(await lado()) && !/senha-de-teste/.test(await p.evaluate(() => document.body.innerHTML)), 'a tela mostra o banco ligado e nunca mostra a senha');
+  ok(/Banco de produção[\s\S]*Supabase · PostgreSQL · esquemas app, public · db\.exemplo/.test(await lado()) && !/senha-de-teste/.test(await p.evaluate(() => document.body.innerHTML)), 'a tela mostra o banco ligado (Supabase, esquemas e servidor) e nunca mostra a senha');
+  // um segundo banco: MySQL na AWS, pelos campos (endpoint, banco, usuário e senha)
+  await p.click('[data-ifr-banco=""]'); await p.waitForTimeout(600);
+  await p.click('dialog.modal[open] input[name="ifr-b-prov"][value="aws"]'); await p.waitForTimeout(200);
+  await p.selectOption('#ifr-b-motor', 'mysql'); await p.waitForTimeout(200);
+  ok(await p.evaluate(() => /RDS/.test(document.querySelector('dialog.modal[open] .ifr-guia').textContent) && /show view/.test(document.querySelector('dialog.modal[open] .ifr-guia').textContent)), 'escolher AWS mostra o passo a passo do RDS, com o usuário só leitura do MySQL');
+  await p.fill('#ifr-b-nome', 'Relatórios'); await p.fill('#ifr-b-esq', 'relatorios');
+  await p.fill('#ifr-b-host', 'rel.abc123.us-east-1.rds.amazonaws.com'); await p.fill('#ifr-b-base', 'relatorios'); await p.fill('#ifr-b-senha', 's3nh@ de teste');
+  await p.click('dialog.modal[open] .modal-rod .btn:not(.sec)'); await p.waitForTimeout(2500);
+  ok(conta("select count(*) from public.infra_bancos where no_id = '" + pj + "'") === '2' && conta("select provedor || '/' || motor || '/' || servidor from public.infra_bancos where nome = 'Relatórios'") === 'aws/mysql/rel.abc123.us-east-1.rds.amazonaws.com', 'o segundo banco (MySQL na AWS) fica ligado junto com o primeiro');
+  ok(conta("select c.conexao from interno.infra_bancos_conexao c join public.infra_bancos b on b.id = c.banco_id where b.nome = 'Relatórios'") === 'mysql://leitura_ciclodev:s3nh%40%20de%20teste@rel.abc123.us-east-1.rds.amazonaws.com:3306/relatorios', 'o endereço é montado dos campos, com a senha protegida (caracteres especiais escapados)');
+  ok(/Relatórios[\s\S]*AWS · MySQL · bancos relatorios/.test(await lado()), 'a lista mostra os dois bancos');
+  await p.click('[data-ifr-banco-tirar]'); await p.waitForTimeout(400); await p.click('dialog.modal[open] .modal-rod .btn.perigo'); await p.waitForTimeout(1500);
+  ok(conta("select count(*) from public.infra_bancos where no_id = '" + pj + "'") === '1', 'Desligar tira só aquele banco');
   // no cliente não há aba Infraestrutura
   await p.evaluate(() => { const U = window.__tf.UI; const c = window.__tf.D.clients[0]; U.sel = 'client:' + c.id; window.__tf.rOperacoes(); }); await p.waitForTimeout(800);
   ok(await p.evaluate(() => !document.querySelector('.view-b[data-view="infra"]')), 'cliente não tem a aba Infraestrutura (só projeto e produto)');

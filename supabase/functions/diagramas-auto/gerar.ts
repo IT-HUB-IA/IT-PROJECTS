@@ -433,6 +433,89 @@ export function gerarInfra(arq: Arquivos, caminhos: string[], repo: string, yaml
     }
     evid.push({ fonte: repo, trecho: 'Supabase: ' + plural(funcoes.length, 'Edge Function', 'Edge Functions') + (migr.length ? ', ' + plural(migr.length, 'migração', 'migrações') : '') + (cfg ? ', ' + cfg : '') });
   }
+  // Aplicações (o que roda) e para onde cada uma aponta: banco, Supabase, serviços de fora
+  const envs = new Map<string, string>();   // variáveis dos .env de exemplo (nunca os .env de verdade: esses nem vêm no pacote)
+  for (const p of paths.filter(x => /(^|\/)\.env\.(example|sample|template|exemplo|modelo)$/i.test(x)))
+    for (const m of arq.get(p)!.matchAll(/^\s*(?:export\s+)?([A-Z][A-Z0-9_]*)\s*=\s*["']?([^"'\n#]*)/gm)) if (!envs.has(m[1])) envs.set(m[1], m[2].trim());
+  const bancoPor = (url0: string, dica: string): string | null => {
+    let url = String(url0 || '').trim(); const ph = url.match(/^\$\{([A-Z0-9_]+)(?::([^}]*))?\}$/i);
+    if (ph) { url = ph[2] || envs.get(ph[1]) || ''; dica = 'endereço pela variável ' + ph[1]; }
+    url = url.replace(/^jdbc:/i, '');
+    if (!url && !dica) return null;
+    const motor = /mysql|mariadb/i.test(url) ? 'MySQL' : /sqlserver|mssql/i.test(url) ? 'SQL Server' : /oracle/i.test(url) ? 'Oracle' : /mongodb/i.test(url) ? 'MongoDB'
+      : /redis/i.test(url) ? 'Redis' : /^h2:/i.test(url) ? 'H2 (em memória)' : /sqlite/i.test(url) ? 'SQLite' : /postgres/i.test(url) || /supabase/i.test(url) ? 'PostgreSQL' : 'Banco de dados';
+    const host = (url.match(/\/\/(?:[^@/]*@)?([^:/?,]+)/) || [])[1] || '';
+    if (/supabase\.(co|com)$|pooler\.supabase|^db\.[a-z0-9]+\.supabase/i.test(host) || /supabase\.co/i.test(url)) return no('sb:pg', 'Postgres', 'Supabase', 'cylinder');
+    if (/\.rds\.amazonaws\.com$/i.test(host)) return no('db:' + host, (/cluster-|aurora/i.test(host) ? 'AWS Aurora ' : 'AWS RDS ') + motor + '\n' + host.split('.')[0], 'AWS', 'cylinder');
+    if (host && !/^(localhost|127\.|0\.0\.0\.0|\$)/.test(host)) return no('db:' + host, motor + '\n' + host, 'Bancos de dados', 'cylinder');
+    return no('db:' + motor + ':' + (dica || host || 'local'), motor + '\n' + (dica || (host ? host + ' (na máquina)' : 'na máquina')), 'Bancos de dados', 'cylinder');
+  };
+  const ENV_BANCO: [RegExp, string][] = [[/^(DATABASE_URL|DB_URL|POSTGRES_URL|POSTGRES_PRISMA_URL|PG_URL|JDBC_URL|SPRING_DATASOURCE_URL)$/, ''], [/^(MYSQL_URL|MYSQL_DATABASE_URL)$/, 'mysql://'], [/^(MONGODB_URI|MONGO_URL|MONGO_URI)$/, 'mongodb://'], [/^(REDIS_URL|REDIS_HOST)$/, 'redis://']];
+  const chamadasFora = (raiz: string, id: string) => {
+    const vistos = new Set<string>();
+    for (const [p, c] of arq) {
+      if (raiz && !p.startsWith(raiz + '/')) continue;
+      if (!/\.(ts|tsx|js|jsx|mjs|java|kt|py|go|php|rb|cs)$/.test(p) || PASTAS_FORA.test(p)) continue;
+      for (const m of c.matchAll(/(?:fetch|axios(?:\.\w+)?|requests\.\w+|httpx\.\w+|getForObject|postForObject|getForEntity|postForEntity|WebClient\.create|baseUrl|URI\.create|http\.(?:get|post|request)|NewRequest\([^,]*,)\(?\s*[`'"]https?:\/\/([^/`'"$\s:]+)/g)) {
+        const h = m[1].toLowerCase(); if (vistos.has(h) || /^(localhost|127\.|0\.0\.0\.0)/.test(h) || /\.(local|test|example)$/.test(h)) continue;
+        vistos.add(h); liga(id, /supabase\.co$/.test(h) ? no('sb:pg', 'Postgres', 'Supabase', 'cylinder') : no('ext:' + h, h, 'Serviços de fora', 'oval'), 'chama');
+      }
+    }
+  };
+  const apps: { id: string; raiz: string }[] = [];
+  const RAIZ_APP = /(^|\/)(pom\.xml|build\.gradle(\.kts)?|package\.json|pyproject\.toml|requirements\.txt|go\.mod)$/;
+  for (const p of paths.filter(x => RAIZ_APP.test(x) && !PASTAS_FORA.test(x))) {
+    const raiz = dirDe(p), dentro = (x: string) => !raiz || x === raiz || x.startsWith(raiz + '/'), c = arq.get(p)!;
+    if (apps.some(a => a.raiz === raiz)) continue;
+    let tipo = '', nome = raiz.split('/').pop() || repo.split('/').pop() || 'aplicação';
+    const extra: string[] = [], bancos: [string, string][] = [];
+    if (/pom\.xml$|build\.gradle/.test(p)) {
+      const semPai = c.replace(/<parent>[\s\S]*?<\/parent>/, '');
+      nome = (semPai.match(/<artifactId>([^<]+)<\/artifactId>/) || [])[1] || (arq.get(juntar(raiz, 'settings.gradle')) || arq.get(juntar(raiz, 'settings.gradle.kts')) || '').match(/rootProject\.name\s*=\s*['"]([^'"]+)/)?.[1] || nome;
+      tipo = /spring-boot/.test(c) ? 'Spring Boot' : /quarkus/.test(c) ? 'Quarkus' : /micronaut/.test(c) ? 'Micronaut' : /kotlin/.test(c) ? 'Kotlin' : 'Java';
+      for (const f of paths.filter(x => dentro(x) && /src\/main\/resources\/(application|bootstrap)[^/]*\.(properties|ya?ml)$/.test(x))) {
+        const t = arq.get(f)!; let props: Record<string, string> = {};
+        if (f.endsWith('.properties')) for (const m of t.matchAll(/^\s*([\w.\-]+)\s*[=:]\s*(.*)$/gm)) props[m[1]] = m[2].trim();
+        else { try { const achata = (o: any, pre: string) => { if (o && typeof o === 'object' && !Array.isArray(o)) for (const [k, v] of Object.entries(o)) achata(v, pre ? pre + '.' + k : k); else if (pre && o != null) props[pre] = String(o); }; for (const d of yaml(t)) achata(d, ''); } catch { /* segue */ } }
+        const porta = props['server.port']; if (porta && !extra.some(e => e.startsWith('porta'))) extra.push('porta ' + porta.replace(/^\$\{[A-Z_]+:?([^}]*)\}$/, '$1'));
+        for (const k of ['spring.datasource.url', 'spring.r2dbc.url', 'quarkus.datasource.jdbc.url', 'spring.data.mongodb.uri', 'spring.data.redis.url']) if (props[k]) bancos.push([props[k], '']);
+        for (const k of ['spring.data.redis.host', 'spring.redis.host']) if (props[k]) bancos.push(['redis://' + props[k], '']);
+        if (Object.keys(props).length) evid.push({ fonte: repo + '/' + f, trecho: Object.entries(props).filter(([k]) => /datasource\.url|server\.port|mongodb\.uri|redis\.(host|url)/.test(k)).map(([k, v]) => k + '=' + v.replace(/\/\/[^@/]*@/, '//***@')).join(' · ') || 'configuração da aplicação' });
+      }
+      if (paths.some(x => dentro(x) && /src\/main\/resources\/(static|templates|public)\//.test(x))) extra.push('serve as telas');
+    } else if (p.endsWith('package.json')) {
+      const j = lerJson(c) || {}, d = { ...(j.dependencies || {}), ...(j.devDependencies || {}) }, tem = (x: string) => x in d;
+      tipo = tem('next') ? 'Next.js' : tem('nuxt') ? 'Nuxt' : tem('@sveltejs/kit') ? 'SvelteKit' : Object.keys(d).some(x => x.startsWith('@remix-run/')) ? 'Remix' : tem('astro') ? 'Astro'
+        : tem('@nestjs/core') ? 'NestJS' : tem('express') ? 'Express' : tem('fastify') ? 'Fastify' : tem('hono') ? 'Hono' : tem('koa') ? 'Koa'
+        : tem('react-scripts') || (tem('vite') && (tem('react') || tem('vue') || tem('svelte'))) ? (tem('vue') ? 'Vue' : tem('svelte') ? 'Svelte' : 'React') + ' (Vite)' : '';
+      if (!tipo) continue;
+      nome = j.name || nome;
+      if (tem('@supabase/supabase-js') || tem('@supabase/ssr')) liga('app:' + raiz, no('sb:pg', 'Postgres', 'Supabase', 'cylinder'), 'lê e grava (supabase-js)');
+      if (['pg', 'postgres', 'prisma', '@prisma/client', 'mysql2', 'mysql', 'mongoose', 'mongodb', 'redis', 'ioredis', 'drizzle-orm', 'typeorm', 'sequelize', 'knex', 'kysely'].some(tem))
+        for (const [re, pre] of ENV_BANCO) for (const [k, v] of envs) if (re.test(k)) bancos.push([v ? (pre && !v.includes('://') ? pre + v : v) : '', v ? '' : 'endereço pela variável ' + k]);
+    } else if (/pyproject\.toml$|requirements\.txt$/.test(p)) {
+      const fontes = paths.filter(x => dentro(x) && x.endsWith('.py')).map(x => arq.get(x) || '').join('\n');
+      tipo = /(^|\n)\s*(from|import)\s+fastapi\b/.test(fontes) || /fastapi/i.test(c) ? 'FastAPI' : /(^|\n)\s*(from|import)\s+flask\b/.test(fontes) || /flask/i.test(c) ? 'Flask' : /django/i.test(c + fontes) ? 'Django' : '';
+      if (!tipo) continue;
+      nome = (c.match(/^\s*name\s*=\s*["']([^"']+)/m) || [])[1] || nome;
+      if (/psycopg|sqlalchemy|asyncpg|pymysql|pymongo|redis/i.test(c + fontes)) for (const [re, pre] of ENV_BANCO) for (const [k, v] of envs) if (re.test(k)) bancos.push([v ? (pre && !v.includes('://') ? pre + v : v) : '', v ? '' : 'endereço pela variável ' + k]);
+    } else if (p.endsWith('go.mod')) {
+      if (!paths.some(x => dentro(x) && /(^|\/)main\.go$/.test(x))) continue;
+      tipo = 'Go'; nome = (c.match(/^module\s+(\S+)/m) || [])[1]?.split('/').pop() || nome;
+    }
+    const id = no('app:' + raiz, 'Aplicação ' + tipo + '\n' + nome + (raiz ? '\n' + raiz : '') + (extra.length ? '\n' + extra.join(' · ') : ''), 'Aplicações', 'component');
+    apps.push({ id, raiz });
+    liga(repoNo, id, 'contém');
+    for (const [url, dica] of bancos) { const b = bancoPor(url, dica); if (b) liga(id, b, 'lê e grava'); }
+    chamadasFora(raiz, id);
+    evid.push({ fonte: repo + '/' + p, trecho: 'aplicação ' + tipo + ' ' + nome });
+  }
+  const appDe = (dir: string) => apps.filter(a => !a.raiz || dir === a.raiz || dir.startsWith(a.raiz + '/')).sort((a, b) => b.raiz.length - a.raiz.length)[0];
+  for (const n of [...nos.values()]) {
+    if (n.id.startsWith('img:')) { const a = appDe(dirDe(n.id.slice(4))); if (a) liga(n.id, a.id, 'empacota'); }
+    if (n.id.startsWith('vercel:') || n.id.startsWith('host:')) { const a = appDe(dirDe(n.id.slice(n.id.indexOf(':') + 1))); if (a) liga(n.id, a.id, 'hospeda'); }
+  }
+  if (migr.length && nos.has('sb:pg')) liga(repoNo, 'sb:pg', 'cria as tabelas (' + plural(migr.length, 'migração', 'migrações') + ')');
   // GitHub Actions: para onde cada fluxo publica
   for (const p of paths.filter(x => WORKFLOW.test(x))) {
     let w: any; try { w = yaml(arq.get(p)!)[0]; } catch { continue; } if (!w || typeof w !== 'object') continue;
@@ -448,6 +531,8 @@ export function gerarInfra(arq: Arquivos, caminhos: string[], repo: string, yaml
     evid.push({ fonte: repo + '/' + p, trecho: (w.name || p) + (alvos.length ? ' → ' + [...new Set(alvos)].join(', ') : ' (sem passo de publicação reconhecido)') });
   }
   if (nos.size <= 1) return null;
+  // nenhum card solto: o que não tem outra ligação está no repositório (é de lá que ele foi lido)
+  for (const n of [...nos.values()]) if (n.id !== repoNo && !ligs.some(l => l.de === n.id || l.para === n.id || l.para === 'grupo:' + n.grupo)) liga(repoNo, n.id, n.id.startsWith('ext:') ? 'usa' : 'contém');
   if (!paths.some(x => WORKFLOW.test(x))) lac.push('Não há fluxo do GitHub Actions: se a publicação é feita por integração do próprio serviço (Vercel, Netlify), ela não aparece no código.');
   if (!tfs.length) lac.push('Sem Terraform: a nuvem configurada à mão (fora do código) não aparece aqui.');
   // DOT
@@ -482,6 +567,8 @@ export function gerarInfra(arq: Arquivos, caminhos: string[], repo: string, yaml
     if (pref === 'vercel' || pref === 'host' || pref === 'render') return { ...base, tipo: 'empresa', icone: 'nuvem', rotuloTipo: l1.toUpperCase().slice(0, 30), titulo: resto[0] || l1, topicos: resto.slice(1) };
     if (pref === 'vcron') return { ...base, tipo: 'servico', icone: 'relogio', rotuloTipo: 'ROTINA', titulo: resto[0] || l1, topicos: [l1.replace(/^rotina /, 'quando: ')] };
     if (pref === 'ext') return { ...base, tipo: 'empresa', icone: 'globo', rotuloTipo: 'SERVIÇO DE FORA', titulo: l1, cor: 'cinza' };
+    if (pref === 'app') return { ...base, tipo: 'servico', icone: 'container', rotuloTipo: l1.toUpperCase().slice(0, 40), titulo: resto[0] || l1, topicos: resto.slice(1) };
+    if (pref === 'db') return { ...base, tipo: 'banco', rotuloTipo: l1.toUpperCase().slice(0, 40), titulo: resto[0] || l1, topicos: resto.slice(1) };
     if (pref === 'sb') return n.id === 'sb:pg' ? { ...base, tipo: 'banco', rotuloTipo: 'POSTGRES', titulo: 'Banco do Supabase' } : { ...base, tipo: 'servico', icone: 'funcao', rotuloTipo: 'EDGE FUNCTION', titulo: resto[0] || l1, topicos: [] };
     if (pref === 'gha') return { ...base, tipo: 'servico', icone: 'relogio', rotuloTipo: 'GITHUB ACTIONS', titulo: resto[0] || l1, topicos: resto.slice(1) };
     return { ...base, tipo: 'empresa', icone: 'nuvem', rotuloTipo: 'DESTINO', titulo: l1, topicos: resto };
@@ -567,8 +654,10 @@ export function gerarRotas(arq: Arquivos, caminhos: string[], repo: string): Des
       for (const m of c.matchAll(/@\w+\.route\(\s*["']([^"']+)["'](?:[^)]*methods\s*=\s*\[([^\]]*)\])?/g)) { const ms = (m[2] || "'GET'").match(/\w+/g) || ['GET']; ms.forEach(x => api(x, m[1], p)); quadros.add('Flask'); }
     }
   }
-  if (!telas.size && htmls.length){ for (const p of htmls) tela(p.replace(/(^|\/)index\.html?$/i, '$1').replace(/\.html?$/i, ''), p); quadros.add('páginas HTML'); }
+  // páginas HTML: quando não há outro jeito de rota, ou quando ficam na pasta pública do Spring (ele serve direto)
+  { const soHtml = !telas.size; for (const p of htmls) if (soHtml || /src\/main\/resources\/(static|public)\//.test(p)) { tela(urlDeHtml(p), p); quadros.add('páginas HTML'); } }
   if (!telas.size && !apis.size) return null;
+  const { navega, chama } = ligacoesDasTelas(arq, telas, apis);
   // árvore das telas (até 80), rotas de API à parte (até 60)
   const listaT = [...telas.keys()].sort().slice(0, 80), listaA = [...apis.keys()].sort((a, b) => a.split(' ')[1].localeCompare(b.split(' ')[1]) || a.localeCompare(b)).slice(0, 60);
   const ids = new Map<string, string>(); let n = 0; const id = (k: string) => { if (!ids.has(k)) ids.set(k, 'r' + (++n)); return ids.get(k)!; };
@@ -585,6 +674,8 @@ export function gerarRotas(arq: Arquivos, caminhos: string[], repo: string): Des
     for (const a of listaA) L.push('    ' + id('api ' + a) + '["' + aspasMmd(a.replace(/^\* /, '')) + '"]');
     L.push('  end');
   }
+  for (const [de, para] of navega) if (listaT.includes(de) && listaT.includes(para)) L.push('  ' + id(de) + ' -.->|vai para| ' + id(para));
+  for (const [de, a] of chama) if (listaT.includes(de) && listaA.includes(a)) L.push('  ' + id(de) + ' -->|chama| ' + id('api ' + a));
   L.push('  classDef pasta fill:#f4f4f4,stroke:#bbbbbb,color:#666666');
   for (const r of listaT.slice(0, 20)) evid.push({ fonte: repo + '/' + telas.get(r)!, trecho: 'tela ' + r });
   for (const a of listaA.slice(0, 20)) evid.push({ fonte: repo + '/' + apis.get(a)!, trecho: 'rota ' + a });
@@ -595,19 +686,66 @@ export function gerarRotas(arq: Arquivos, caminhos: string[], repo: string): Des
   // no quadro: a árvore das telas (da raiz para as filhas) e as rotas de API juntas por recurso, com o método HTTP
   const todasT = new Set<string>(listaT.length ? ['/'] : []); listaT.forEach(r => { const sg = r.split('/').filter(Boolean); for (let i = 1; i <= sg.length; i++) todasT.add('/' + sg.slice(0, i).join('/')); });
   const recurso = (rota: string) => '/' + rota.split('/').filter(Boolean).slice(0, rota.startsWith('/api/') ? 2 : 1).join('/');
+  // quem responde cada rota: a aplicação (pasta com package.json, pom.xml, go.mod...) do arquivo onde a rota foi escrita
+  const servidores = new Map<string, Set<string>>(); listaA.forEach(a => { const r = raizDe(apis.get(a)!, raizes), k = recurso(a.slice(a.indexOf(' ') + 1)); (servidores.get(r) || servidores.set(r, new Set()).get(r)!).add(k); });
   const porRecurso = new Map<string, string[]>(); listaA.forEach(a => { const [m, r] = [a.slice(0, a.indexOf(' ')), a.slice(a.indexOf(' ') + 1)]; const k = recurso(r); (porRecurso.get(k) || porRecurso.set(k, []).get(k)!).push((m === '*' ? 'TODOS' : m) + ' ' + r); });
   const modelo: Modelo = {
     titulo: 'Telas e rotas · ' + repo, layout: 'camadas',
-    resumo: 'Lido de: ' + ([...quadros].sort().join(', ') || 'páginas HTML') + '. ' + plural(telas.size, 'tela', 'telas') + (apis.size ? ' e ' + plural(apis.size, 'rota de API', 'rotas de API') : '') + '. A seta vai da rota para as rotas dentro dela.',
-    legenda: ['Card de tela: uma rota que abre uma página', 'Card cinza: parte do caminho, sem página própria', 'Rotas de API: juntas por recurso, com o método HTTP (GET, POST, PUT, PATCH, DELETE)'],
+    resumo: 'Lido de: ' + ([...quadros].sort().join(', ') || 'páginas HTML') + '. ' + plural(telas.size, 'tela', 'telas') + (apis.size ? ' e ' + plural(apis.size, 'rota de API', 'rotas de API') : '') + '. ' + plural(navega.length, 'caminho entre telas', 'caminhos entre telas') + ' e ' + plural(chama.length, 'chamada de tela para a API', 'chamadas de telas para a API') + '.',
+    legenda: ['Card de tela: uma rota que abre uma página', 'Card cinza: parte do caminho, sem página própria', 'Rotas de API: juntas por recurso, com o método HTTP (GET, POST, PUT, PATCH, DELETE)', 'Seta cinza: a rota dentro da outra · tracejada azul "vai para": link ou redirecionamento de uma tela para outra · roxa "chama": a tela chama a API'],
     grupos: [...(todasT.size ? [{ id: 'telas', titulo: 'Telas', cor: 'azul' }] : []), ...(porRecurso.size ? [{ id: 'api', titulo: 'Rotas de API', cor: 'roxo' }] : [])],
     cards: [...[...todasT].sort().map(r => ({ id: 'tela:' + r, grupo: 'telas', tipo: 'modulo' as const, icone: telas.has(r) ? 'tela' : 'quadro', rotuloTipo: telas.has(r) ? 'TELA' : 'CAMINHO', titulo: r === '/' ? '/' : '/' + r.split('/').pop(), subtitulo: r, cor: telas.has(r) ? 'azul' : 'cinza' })),
-      ...[...porRecurso.keys()].sort().map(k => ({ id: 'api:' + k, grupo: 'api', tipo: 'servico' as const, icone: 'api', rotuloTipo: 'API', titulo: k, topicos: porRecurso.get(k)! }))],
-    ligacoes: [...todasT].sort().filter(r => r !== '/').map(r => { const pai = dirDe(r.slice(1)); return { de: 'tela:' + (pai ? '/' + pai : '/'), para: 'tela:' + r }; }),
+      ...[...porRecurso.keys()].sort().map(k => ({ id: 'api:' + k, grupo: 'api', tipo: 'servico' as const, icone: 'api', rotuloTipo: 'API', titulo: k, topicos: porRecurso.get(k)! })),
+      ...[...servidores.keys()].sort().map(r => ({ id: 'srv:' + r, grupo: 'api', tipo: 'servico' as const, icone: 'container', rotuloTipo: 'SERVIDOR', titulo: r || repo, subtitulo: 'responde as rotas de API', cor: 'roxo' }))],
+    ligacoes: [...[...todasT].sort().filter(r => r !== '/').map(r => { const pai = dirDe(r.slice(1)); return { de: 'tela:' + (pai ? '/' + pai : '/'), para: 'tela:' + r, cor: 'cinza' }; }),
+      ...navega.filter(([de, para]) => todasT.has(de) && todasT.has(para)).map(([de, para]) => ({ de: 'tela:' + de, para: 'tela:' + para, rotulo: 'vai para', tracejada: true, cor: 'azul' })),
+      ...[...servidores].flatMap(([r, ks]) => [...ks].sort().map(k => ({ de: 'srv:' + r, para: 'api:' + k, rotulo: 'responde', cor: 'roxo' }))),
+      ...[...new Map(chama.filter(([de, a]) => todasT.has(de) && listaA.includes(a)).map(([de, a]) => { const r = a.slice(a.indexOf(' ') + 1), k = 'tela:' + de + '>' + recurso(r); return [k, { de: 'tela:' + de, para: 'api:' + recurso(r), rotulo: 'chama', cor: 'roxo' }]; })).values()]],
   };
   return { modelo, tipo: 'rotas', aba: 'ux', nome: 'Telas e rotas · ' + repo, formato: 'mermaid', fonte: L.join('\n') + '\n', evidencias: [{ fonte: repo, trecho: 'Lido de: ' + ([...quadros].sort().join(', ') || 'páginas HTML') }, ...evid].slice(0, 60), lacunas: lac };
 }
 const juntarRota = (a: string, b: string) => '/' + [a, b].join('/').split('/').filter(Boolean).join('/');
+// o endereço de uma página HTML: a pasta pública (static, public, templates...) não entra, index é a própria pasta
+const PASTA_PUBLICA = /^(?:.*\/)?(?:src\/main\/resources\/(?:static|public|resources|templates|META-INF\/resources)|public|static|www|wwwroot)\//;
+function urlDeHtml(p: string): string { const r = p.replace(PASTA_PUBLICA, '').replace(/(^|\/)index\.html?$/i, '$1').replace(/\.html?$/i, ''); return '/' + r.split('/').filter(Boolean).join('/'); }
+const normRota = (r: string) => ('/' + r.split('/').filter(Boolean).join('/')).replace(/\/index$/, '') || '/';
+// uma rota do código casa com o caminho usado na tela ({id}, :id e * aceitam qualquer parte)
+function casaRota(padrao: string, caminho: string): boolean {
+  const a = padrao.split('/').filter(Boolean), b = caminho.split('/').filter(Boolean);
+  if (a.some(s => s.startsWith('*'))) { const i = a.findIndex(s => s.startsWith('*')); return b.length >= i && a.slice(0, i).every((s, k) => /^[:{]/.test(s) || s === b[k]); }
+  return a.length === b.length && a.every((s, k) => /^[:{]/.test(s) || s === b[k] || /^\$\{/.test(b[k]));
+}
+// as ligações de cada tela: para onde ela leva (link, redirecionamento, navegação) e que API ela chama
+function ligacoesDasTelas(arq: Arquivos, telas: Map<string, string>, apis: Map<string, string>): { navega: [string, string][]; chama: [string, string][] } {
+  const navega: [string, string][] = [], chama: [string, string][] = [];
+  const rotasT = [...telas.keys()], rotasA = [...apis.keys()];
+  const resolver = (alvo: string, base: string): string | null => {
+    let x = alvo.trim().replace(/[?#].*$/, ''); if (!x || /^(https?:|mailto:|tel:|javascript:|data:|#|\{\{|\$\{)/i.test(x)) return null;
+    x = x.replace(/\$\{[^}]*\}/g, ':x');
+    if (!x.startsWith('/')) x = juntarRota(base, x.replace(/^\.\//, '')).replace(/\/[^/]+\/\.\.\//g, '/');
+    return normRota(x.replace(/\.html?$/i, ''));
+  };
+  for (const [rota, fonte] of telas) {
+    const c0 = arq.get(fonte) || '', dir = dirDe(fonte), base = rota.split('/').slice(0, -1).join('/') || '/';
+    // a página e os scripts dela (<script src>) contam
+    let c = c0;
+    for (const m of c0.matchAll(/<script\b[^>]*\bsrc=["']([^"'?#]+)["']/gi)) { if (/^https?:/i.test(m[1])) continue; const f = m[1].startsWith('/') ? [...arq.keys()].find(k => k.endsWith(m[1])) : juntar(dir, m[1]); if (f && arq.has(f)) c += '\n' + arq.get(f); }
+    const destinos = new Set<string>();
+    for (const m of c.matchAll(/(?:\bhref|\baction|th:href|th:action|\bto)\s*=\s*\{?\s*["'`]([^"'`]+)["'`]|(?:location(?:\.href)?\s*=|location\.(?:assign|replace)\(|window\.open\(|router\.(?:push|replace)\(|navigate\(|redirect\(|navigateTo\()\s*["'`]([^"'`]+)["'`]|["']redirect:([^"']+)["']/g)) {
+      const d = resolver(m[1] || m[2] || m[3], base); if (!d || d === rota) continue;
+      const t = rotasT.find(r => casaRota(r, d)); if (t && t !== rota) destinos.add(t);
+      else { const a = rotasA.find(k => casaRota(k.slice(k.indexOf(' ') + 1), d)); if (a) chama.push([rota, a]); }
+    }
+    for (const d of destinos) navega.push([rota, d]);
+    for (const m of c.matchAll(/(?:\bfetch|\baxios(?:\.(get|post|put|patch|delete))?|\$\.(get|post|ajax|getJSON)|\bhttp\.(get|post|put|patch|delete)|\bapi\.(get|post|put|patch|delete))\(\s*(?:\{\s*url\s*:\s*)?["'`]([^"'`]+)["'`]([^)]*)/g)) {
+      const d = resolver(m[5], base); if (!d) continue;
+      const metodo = (m[1] || m[2] || m[3] || m[4] || ((m[6] || '').match(/method\s*:\s*["'](\w+)/i) || [])[1] || 'get').toUpperCase().replace('GETJSON', 'GET').replace('AJAX', 'GET');
+      const a = rotasA.find(k => k.startsWith(metodo + ' ') && casaRota(k.slice(k.indexOf(' ') + 1), d)) || rotasA.find(k => casaRota(k.slice(k.indexOf(' ') + 1), d));
+      if (a && !chama.some(([x, y]) => x === rota && y === a)) chama.push([rota, a]);
+    }
+  }
+  return { navega: [...new Map(navega.map(p => [p.join('>'), p])).values()].sort(), chama: [...new Map(chama.map(p => [p.join('>'), p])).values()].sort() };
+}
 
 /* ================= 4. Prisma ================= */
 const idDbml = (s: string) => '"' + String(s).replace(/"/g, '') + '"';
@@ -660,7 +798,8 @@ export function gerarPrisma(arq: Arquivos, repo: string): Desenho | null {
         return { id: 't:' + tb, grupo: 'prisma', tipo: 'tabela' as const, estilo: 'der' as const, titulo: tb, subtitulo: md.nome !== tb ? 'model ' + md.nome : '',
           linhas: md.campos.map(c => ({ nome: c.coluna, tipo: c.tipo, chave: chaveDe(c.opc.includes('pk') || idsC.includes(c.coluna), fk.has(c.coluna), c.opc.includes('unique')), nulo: !c.opc.includes('not null') })) }; }),
       ...enums.map(e => ({ id: 'e:' + e.nome, grupo: 'enums', tipo: 'modulo' as const, rotuloTipo: 'ENUM', icone: 'lista', titulo: e.nome, topicos: e.valores, cor: 'amarelo' }))],
-    ligacoes: refsQ.map(r => ligFk('t:' + r.de, r.dc, 't:' + r.para, r.pc, r.nulo, false)),
+    ligacoes: [...refsQ.map(r => ligFk('t:' + r.de, r.dc, 't:' + r.para, r.pc, r.nulo, false)),
+      ...modelos.flatMap(md => md.campos.filter(c => enumNomes.has(c.tipo.replace(/\[\]$/, ''))).map(c => ({ de: 't:' + md.tabela, deLinha: c.coluna, para: 'e:' + c.tipo.replace(/\[\]$/, ''), rotulo: 'usa o enum', tracejada: true, cor: 'amarelo' })))],
   };
   return { modelo, tipo: 'prisma', aba: 'der', nome: 'Banco (Prisma) · ' + repo, formato: 'dbml', fonte: L.join('\n').trim() + '\n', evidencias: arquivos.map(p => ({ fonte: repo + '/' + p, trecho: plural(modelos.length, 'modelo', 'modelos') + (enums.length ? ', ' + plural(enums.length, 'enum', 'enums') : '') })), lacunas: [] };
 }
@@ -806,6 +945,16 @@ export function gerarDer(e: Estrutura, esquema: string): Desenho | null {
       etiquetas: soCols ? [] : [t.rls ? 'RLS' : 'SEM RLS'], cor: soCols ? 'cinza' : undefined, nota: [t.nota || '', ...comp].filter(Boolean).join('\n'),
       linhas: t.colunas.filter(c => !soCols || soCols.has(c.nome)).map(c => ({ nome: c.nome, tipo: c.tipo, chave: chaveDe(pk.has(c.nome), fk.has(c.nome), uq.has(c.nome)), nulo: !c.nao_nulo })) };
   };
+  // ligação provável: coluna cliente_id sem chave estrangeira, com a tabela clientes (ou cliente) no mesmo esquema
+  const nomesT = new Map(tabs.map(t => [t.nome, t]));
+  for (const t of tabs) for (const c of t.colunas) {
+    const m = c.nome.match(/^(.+?)_?id$/i); if (!m || c.nome === 'id' || t.restricoes.some(r => r.tipo === 'f' && r.cols.includes(c.nome))) continue;
+    const base = m[1].replace(/_$/, ''), alvo = nomesT.get(base + 's') || nomesT.get(base + 'es') || nomesT.get(base) || nomesT.get(base.replace(/ao$/, 'oes')) || nomesT.get(base.replace(/l$/, 'is'));
+    if (!alvo || alvo === t) continue;
+    const pkAlvo = alvo.restricoes.find(r => r.tipo === 'p' && r.cols.length === 1)?.cols[0]; if (!pkAlvo) continue;
+    fkQ.push({ ...ligFk('t:' + t.esquema + '.' + t.nome, c.nome, 't:' + alvo.esquema + '.' + alvo.nome, pkAlvo, !c.nao_nulo, false, 'provável (sem FK no banco)'), tracejada: true, cor: 'cinza' });
+    pares.push(['t:' + t.esquema + '.' + t.nome, 't:' + alvo.esquema + '.' + alvo.nome]);
+  }
   const ordem = ordenarPorLigacao(tabs.map(t => 't:' + t.esquema + '.' + t.nome), pares);
   const modelo: Modelo = {
     titulo: 'DER · esquema ' + esquema, layout: 'grade', legenda: LEGENDA_DER,
@@ -876,9 +1025,14 @@ export function gerarAcesso(e: Estrutura, esquemas: string[]): Desenho | null {
         const id = 'todas:' + s + ':' + com[0].privs;
         if (!cardsA.some(c => c.id === id)) cardsA.push({ id, grupo: 'e:' + s, tipo: 'cartao', titulo: 'Todas as ' + doEsq.length + ' tabelas do esquema ' + s, subtitulo: 'O mesmo acesso em todas: ' + com[0].privs + '. Quais linhas cada pessoa vê é o RLS de cada tabela.', cor: 'cinza' });
         ligA.push({ de: 'papel:' + p, para: id, rotulo: com[0].privs });
+        for (const x of com) if (!ligA.some(l => l.de === id && l.para === 'tab:' + x.t.esquema + '.' + x.t.nome)) ligA.push({ de: id, para: 'tab:' + x.t.esquema + '.' + x.t.nome, rotulo: 'vale para', cor: 'cinza' });
       } else for (const x of com) ligA.push({ de: 'papel:' + p, para: 'tab:' + x.t.esquema + '.' + x.t.nome, rotulo: x.privs });
     }
   });
+  // tabela que nenhum papel acessa (só o dono do banco): liga no card que diz isso, para não ficar solta sem explicação
+  const semAcesso = tabs.filter(t => !ligA.some(l => l.para === 'tab:' + t.esquema + '.' + t.nome));
+  if (semAcesso.length) { cardsA.push({ id: 'ninguem', grupo: 'papeis', tipo: 'cartao', titulo: 'Ninguém de fora', subtitulo: 'Só o dono do banco usa estas tabelas: nenhum papel da API (anon, authenticated...) tem acesso a elas.', cor: 'cinza' });
+    for (const t of semAcesso) ligA.push({ de: 'ninguem', para: 'tab:' + t.esquema + '.' + t.nome, rotulo: 'sem acesso pela API', tracejada: true, cor: 'cinza' }); }
   const modelo: Modelo = {
     titulo: 'Acesso ao banco: quem lê e grava cada tabela, e onde o RLS está ligado', layout: 'grade',
     resumo: evid[0].trecho + '.' + (semRls.length ? ' Atenção: ' + plural(semRls.length, 'tabela sem RLS com acesso', 'tabelas sem RLS com acesso') + ' (em vermelho).' : ''),
@@ -896,9 +1050,38 @@ export function gerarAcesso(e: Estrutura, esquemas: string[]): Desenho | null {
   return { tipo: 'acesso', aba: 'seguranca', nome: 'Acesso ao banco (RLS e permissões)', formato: 'graphviz', fonte: L.join('\n') + '\n', evidencias: evid, lacunas: lac, modelo };
 }
 
-export function gerarDoBanco(e: Estrutura, esquemas: string[]): Desenho[] {
-  const out: Desenho[] = [];
-  for (const s of [...esquemas].sort()) { const d = gerarDer(e, s); if (d) out.push(d); }
-  const a = gerarAcesso(e, esquemas); if (a) out.push(a);
+// banco: o nome que a pessoa deu (aparece no título quando há mais de um) e o motor. O mapa de acesso é do Postgres
+// (papéis, GRANT e RLS); no MySQL sai só o DER.
+export type InfoBanco = { nome?: string; motor?: 'postgres' | 'mysql'; provedor?: string };
+export function gerarDoBanco(e: Estrutura, esquemas: string[], info: InfoBanco = {}): Desenho[] {
+  const out: Desenho[] = [], onde = info.nome ? ' · ' + info.nome : '';
+  const prov = info.provedor === 'supabase' ? 'Supabase' : info.provedor === 'aws' ? 'AWS' : '';
+  for (const s of [...esquemas].sort()) { const d = gerarDer(e, s); if (d) {
+    d.nome = 'DER' + onde + ' · ' + (info.motor === 'mysql' ? 'banco ' : 'esquema ') + s;
+    d.modelo.titulo = d.nome; if (prov || info.motor) d.modelo.resumo = [prov, info.motor === 'mysql' ? 'MySQL' : 'PostgreSQL'].filter(Boolean).join(' · ') + '. ' + (d.modelo.resumo || '');
+    out.push(d); } }
+  if (info.motor !== 'mysql') { const a = gerarAcesso(e, esquemas); if (a) { if (onde) { a.nome += onde; a.modelo.titulo += onde; } out.push(a); } }
   return out;
+}
+// MySQL (AWS RDS e Aurora MySQL): as linhas do information_schema viram a mesma estrutura que o Postgres dá
+export type LinhaMysql = Record<string, any>;
+export const CONSULTAS_MYSQL = {
+  tabelas: "select table_schema as esquema, table_name as nome, table_type as tipo, table_comment as nota from information_schema.tables where table_schema in (?) order by 1, 2",
+  colunas: "select table_schema as esquema, table_name as tabela, column_name as nome, column_type as tipo, is_nullable as nulo, column_default as padrao, column_comment as nota, ordinal_position as ordem from information_schema.columns where table_schema in (?) order by 1, 2, ordinal_position",
+  restricoes: "select k.table_schema as esquema, k.table_name as tabela, k.constraint_name as nome, c.constraint_type as tipo, k.column_name as coluna, k.ordinal_position as ordem, k.referenced_table_schema as ref_esquema, k.referenced_table_name as ref_tabela, k.referenced_column_name as ref_coluna from information_schema.key_column_usage k join information_schema.table_constraints c on c.constraint_schema = k.constraint_schema and c.table_name = k.table_name and c.constraint_name = k.constraint_name where k.table_schema in (?) order by 1, 2, 3, k.ordinal_position",
+};
+export function estruturaMysql(tabelas: LinhaMysql[], colunas: LinhaMysql[], restricoes: LinhaMysql[]): Estrutura {
+  const v = (r: LinhaMysql, k: string) => r[k] ?? r[k.toUpperCase()];
+  const out: Tabela[] = tabelas.map(t => ({ esquema: String(v(t, 'esquema')), nome: String(v(t, 'nome')), tipo: /VIEW/i.test(String(v(t, 'tipo'))) ? 'v' : 'r', rls: false, rls_forcado: false,
+    nota: v(t, 'nota') ? String(v(t, 'nota')) : null, colunas: [], restricoes: [], permissoes: [], regras: [] }));
+  const achar = (e: unknown, n: unknown) => out.find(t => t.esquema === String(e) && t.nome === String(n));
+  for (const c of colunas) { const t = achar(v(c, 'esquema'), v(c, 'tabela')); if (t) t.colunas.push({ nome: String(v(c, 'nome')), tipo: String(v(c, 'tipo')), nao_nulo: String(v(c, 'nulo')).toUpperCase() === 'NO', padrao: v(c, 'padrao') == null ? null : String(v(c, 'padrao')), nota: v(c, 'nota') ? String(v(c, 'nota')) : null }); }
+  const TIPO: Record<string, string> = { 'PRIMARY KEY': 'p', UNIQUE: 'u', 'FOREIGN KEY': 'f' };
+  for (const r of restricoes) {
+    const t = achar(v(r, 'esquema'), v(r, 'tabela')), tp = TIPO[String(v(r, 'tipo')).toUpperCase()]; if (!t || !tp) continue;
+    let x = t.restricoes.find(y => y.nome === String(v(r, 'nome')) && y.tipo === tp);
+    if (!x) { x = { nome: String(v(r, 'nome')), tipo: tp, cols: [], ref_esquema: tp === 'f' ? String(v(r, 'ref_esquema')) : null, ref_tabela: tp === 'f' ? String(v(r, 'ref_tabela')) : null, ref_cols: tp === 'f' ? [] : null }; t.restricoes.push(x); }
+    x.cols.push(String(v(r, 'coluna'))); if (tp === 'f' && v(r, 'ref_coluna') != null) x.ref_cols!.push(String(v(r, 'ref_coluna')));
+  }
+  return { tabelas: out, papeis: [] };
 }

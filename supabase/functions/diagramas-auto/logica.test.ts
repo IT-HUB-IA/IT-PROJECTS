@@ -40,6 +40,7 @@ const ESTR: Estrutura = { papeis: [{ nome: 'authenticated', ignora_rls: false }]
   { esquema: 'public', nome: 'clientes', tipo: 'r', rls: true, rls_forcado: false, nota: null, colunas: [{ nome: 'id', tipo: 'uuid', nao_nulo: true, padrao: null, nota: null }],
     restricoes: [{ nome: 'pk', tipo: 'p', cols: ['id'], ref_esquema: null, ref_tabela: null, ref_cols: null }], permissoes: [{ papel: 'authenticated', privs: ['SELECT'] }], regras: [] }] };
 const CONEXAO = 'postgresql://leitor:SenhaSecreta123@db.exemplo.com:5432/postgres';
+const BANCO = { id: 'b1', nome: 'Produção', provedor: 'supabase', motor: 'postgres' as const, esquemas: ['public'], conexao: CONEXAO };
 const SEGREDO = 'a'.repeat(64);
 
 type Chamada = { nome: string; args: any };
@@ -88,7 +89,7 @@ const pedir = (headers: Record<string, string> = {}, metodo = 'POST') => new Req
   ok(t.fundo.length === 0 && !t.de('infra_auto_proximos').length, 'sem autorização, nada roda');
 }
 {
-  const t = montar({ fila: [[{ id: 'p1', no_id: 'prod', origem: 'github', referencia: 'abc1234def', repositorios: [GH()], banco: null }]] });
+  const t = montar({ fila: [[{ id: 'p1', no_id: 'prod', origem: 'github', referencia: 'abc1234def', repositorios: [GH()], bancos: [] }]] });
   const r = await tratar(pedir({ 'x-diagramas-segredo': SEGREDO }), t.d);
   ok(r.status === 202, 'segredo certo: responde 202 na hora e trabalha em segundo plano');
   await Promise.all(t.fundo);
@@ -113,29 +114,43 @@ const pedir = (headers: Record<string, string> = {}, metodo = 'POST') => new Req
 // ---------- "Atualizar agora": branch principal, GitLab avisado, banco lido junto ----------
 {
   const t = montar({ fila: [[{ id: 'm1', no_id: 'prod', origem: 'manual', referencia: null, repositorios: [
-    { ...GH('it-hub/loja', 'producao'), id: 'r1' }, { id: 'r2', nome: 'it-hub/grupo/app', branch: 'main', provedor: 'gitlab', conexao_id: 'cgl', externo_id: '888' }], banco: { esquemas: ['public'], conexao: CONEXAO } }]] });
+    { ...GH('it-hub/loja', 'producao'), id: 'r1' }, { id: 'r2', nome: 'it-hub/grupo/app', branch: 'main', provedor: 'gitlab', conexao_id: 'cgl', externo_id: '888' }], bancos: [BANCO] }]] });
   const r = await rodar(t.d);
   ok(r.pedidos === 1 && t.buscas[0].endsWith('/tarball/producao'), 'Atualizar agora baixa o branch principal do repositório');
   ok(t.de('infra_auto_gravar').find(x => x.args.p_chave === 'github:it-hub/loja:software')!.args.p_referencia === 'abc1234', 'e guarda o commit que veio no pacote');
   const c = t.de('infra_auto_concluir')[0].args;
   ok(t.buscas.includes('https://gitlab.com/api/v4/projects/888/repository/archive.tar.gz?sha=main') && t.de('infra_auto_gravar').some(x => x.args.p_chave === 'gitlab:it-hub/grupo/app:software' && x.args.p_origem === 'gitlab'), 'o GitLab também é lido: baixa o pacote pelo número do projeto e grava com a origem gitlab');
   ok(t.de('infra_auto_banco_lido')[0].args.p_abrir === false, 'o banco lido dentro do pedido não abre outro pedido');
-  ok(t.de('infra_auto_gravar').some(x => x.args.p_chave === 'banco:der:public' && x.args.p_aba === 'der' && x.args.p_origem === 'banco') && t.de('infra_auto_gravar').some(x => x.args.p_chave === 'banco:acesso' && x.args.p_aba === 'seguranca'), 'o banco dá o DER e o mapa de acesso');
-  const der = t.de('infra_auto_quadro').find(x => x.args.p_chave === 'banco:der:public')!.args.p_doc;
+  ok(t.de('infra_auto_gravar').some(x => x.args.p_chave === 'banco:b1:der:public' && x.args.p_aba === 'der' && x.args.p_origem === 'banco') && t.de('infra_auto_gravar').some(x => x.args.p_chave === 'banco:b1:acesso' && x.args.p_aba === 'seguranca'), 'o banco dá o DER e o mapa de acesso');
+  const der = t.de('infra_auto_quadro').find(x => x.args.p_chave === 'banco:b1:der:public')!.args.p_doc;
   ok(der.nodes.some((n: any) => n.tipo === 'tabela' && n.titulo === 'clientes' && n.linhas.some((l: any) => l.nome === 'id' && l.chave === 'pk')), 'o quadro do DER tem a tabela com a coluna PK');
-  ok(c.p_status === 'pronto' && c.p_prefixos.join() === 'github:it-hub/loja:,gitlab:it-hub/grupo/app:,banco:', 'fecha pronto, com as três famílias');
+  ok(c.p_status === 'pronto' && c.p_prefixos.join() === 'github:it-hub/loja:,gitlab:it-hub/grupo/app:,banco:b1:', 'fecha pronto, com as três famílias');
 }
+
+// ---------- dois bancos no mesmo ponto: Supabase e MySQL na AWS ----------
+{
+  const motores: string[] = [];
+  const t = montar({ banco: async (_c: string, _e: string[], motor?: string) => { motores.push(String(motor)); return ESTR; },
+    fila: [[{ id: 'm3', no_id: 'prod', origem: 'manual', referencia: null, repositorios: [], bancos: [BANCO, { id: 'b2', nome: 'Relatórios', provedor: 'aws', motor: 'mysql', esquemas: ['public'], conexao: 'mysql://u:SenhaSecreta123@rel.x.us-east-1.rds.amazonaws.com/public' }] }]] });
+  await rodar(t.d);
+  const chaves = t.de('infra_auto_gravar').map(x => x.args.p_chave).sort();
+  ok(motores.join() === 'postgres,mysql', 'cada banco é lido com o motor dele (Postgres e MySQL)');
+  ok(chaves.join() === 'banco:b1:acesso,banco:b1:der:public,banco:b2:der:public', 'cada banco tem a própria família de desenhos; o MySQL dá só o DER (' + chaves.join() + ')');
+  ok(t.de('infra_auto_gravar').find(x => x.args.p_chave === 'banco:b2:der:public')!.args.p_nome === 'DER · Relatórios · banco public', 'o nome do banco entra no título do desenho');
+  ok(t.de('infra_auto_concluir')[0].args.p_prefixos.join() === 'banco:b1:,banco:b2:' && t.de('infra_auto_banco_lido').map(x => x.args.p_banco).join() === 'b1,b2', 'fecha com as duas famílias e marca a leitura de cada banco');
+}
+ok(limparErro(new Error('falhou em mysql://u:p@h/db agora')) === 'falhou em [endereço do banco] agora', 'endereço mysql:// também sai da mensagem');
 
 // ---------- erros: sem chave, banco fora do ar (a senha nunca aparece), conversor fora ----------
 {
-  const t = montar({ fila: [[{ id: 'p2', no_id: 'prod', origem: 'github', referencia: 'x', repositorios: [{ ...GH(), conexao_id: 'fora' }], banco: null }]] });
+  const t = montar({ fila: [[{ id: 'p2', no_id: 'prod', origem: 'github', referencia: 'x', repositorios: [{ ...GH(), conexao_id: 'fora' }], bancos: [] }]] });
   await rodar(t.d);
   const c = t.de('infra_auto_concluir')[0].args;
   ok(c.p_status === 'erro' && /desconectada/.test(c.p_erro) && !t.buscas.length, 'conta desconectada: o pedido fecha com erro dizendo o motivo, sem baixar nada');
 }
 {
   const t = montar({ banco: async () => { throw new Error('connection to ' + CONEXAO + ' failed: password authentication failed'); },
-    fila: [[{ id: 'm2', no_id: 'prod', origem: 'manual', referencia: null, repositorios: [], banco: { esquemas: ['public'], conexao: CONEXAO } }]] });
+    fila: [[{ id: 'm2', no_id: 'prod', origem: 'manual', referencia: null, repositorios: [], bancos: [BANCO] }]] });
   await rodar(t.d);
   const c = t.de('infra_auto_concluir')[0].args, lido = t.de('infra_auto_banco_lido')[0].args;
   ok(c.p_status === 'erro' && /password authentication failed/.test(c.p_erro), 'banco com senha errada: o pedido fecha com erro');
@@ -143,28 +158,28 @@ const pedir = (headers: Record<string, string> = {}, metodo = 'POST') => new Req
 }
 ok(limparErro(new Error('falhou em postgres://u:p@h/db agora')) === 'falhou em [endereço do banco] agora', 'qualquer endereço postgres:// sai da mensagem');
 {
-  const t = montar({ env: { RENDER_URL: '' }, fila: [[{ id: 'p3', no_id: 'prod', origem: 'github', referencia: 'abc', repositorios: [GH()], banco: null }]] });
+  const t = montar({ env: { RENDER_URL: '' }, fila: [[{ id: 'p3', no_id: 'prod', origem: 'github', referencia: 'abc', repositorios: [GH()], bancos: [] }]] });
   await rodar(t.d);
   const im = t.de('infra_auto_imagem');
   ok(im.length === 3 && im.every(x => !x.args.p_svg && /RENDER_URL/.test(x.args.p_erro)) && t.de('infra_auto_concluir')[0].args.p_status === 'pronto', 'sem o conversor: os desenhos (texto) são gravados e cada um avisa que falta RENDER_URL');
 }
 {
-  const t = montar({ render: () => new Response('Error 400: Syntax error in line 3', { status: 400 }), fila: [[{ id: 'p4', no_id: 'prod', origem: 'github', referencia: 'abc', repositorios: [GH()], banco: null }]] });
+  const t = montar({ render: () => new Response('Error 400: Syntax error in line 3', { status: 400 }), fila: [[{ id: 'p4', no_id: 'prod', origem: 'github', referencia: 'abc', repositorios: [GH()], bancos: [] }]] });
   await rodar(t.d);
   ok(t.de('infra_auto_imagem').every(x => /400/.test(x.args.p_erro)), 'conversor recusou: o erro dele fica no desenho');
 }
 
 // ---------- banco de hora em hora ----------
 {
-  const t = montar({ devidos: [{ no_id: 'prod', esquemas: ['public'], conexao: CONEXAO }] });
+  const t = montar({ devidos: [{ ...BANCO, no_id: 'prod' }] });
   await rodar(t.d);
   ok(t.de('infra_auto_banco_lido')[0].args.p_abrir === true && t.de('infra_auto_gravar').length === 2 && t.de('infra_auto_concluir')[0].args.p_id === 'pedido-banco', 'estrutura nova: abre o pedido de banco e desenha');
 }
 {
-  const t0 = montar({ devidos: [{ no_id: 'prod', esquemas: ['public'], conexao: CONEXAO }] });
+  const t0 = montar({ devidos: [{ ...BANCO, no_id: 'prod' }] });
   await rodar(t0.d);
   const hash = t0.de('infra_auto_banco_lido')[0].args.p_hash;
-  const t = montar({ hashAnterior: hash, devidos: [{ no_id: 'prod', esquemas: ['public'], conexao: CONEXAO }] });
+  const t = montar({ hashAnterior: hash, devidos: [{ ...BANCO, no_id: 'prod' }] });
   await rodar(t.d);
   ok(t.de('infra_auto_banco_lido').length === 1 && !t.de('infra_auto_gravar').length && !t.de('infra_auto_concluir').length, 'estrutura igual: só marca que leu, não redesenha');
 }
@@ -172,7 +187,7 @@ ok(limparErro(new Error('falhou em postgres://u:p@h/db agora')) === 'falhou em [
 // ---------- tempo: não começa pedido novo depois do limite ----------
 {
   let relogio = 0;
-  const p = (id: string) => [{ id, no_id: 'prod', origem: 'manual', referencia: null, repositorios: [], banco: null }];
+  const p = (id: string) => [{ id, no_id: 'prod', origem: 'manual', referencia: null, repositorios: [], bancos: [] }];
   const t = montar({ fila: [p('a'), p('b'), p('c')], agora: () => (relogio += 40_000), orcamentoMs: 110_000 });
   const r = await rodar(t.d);
   ok(r.pedidos === 2 && t.de('infra_auto_proximos').length === 2, 'passou do tempo: para de pegar pedido (o resto fica para a próxima chamada)');

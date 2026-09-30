@@ -48,20 +48,30 @@ select pg_temp.ok((select (infra_auto_pedir((select prod from t))).origem) = 'ma
 select pg_temp.ok((select count(*) from infra_automacoes where origem = 'manual') = 1, 'e pedir de novo antes de rodar não duplica') from (select infra_auto_pedir((select prod from t))) x;
 do $$ begin insert into infra_automacoes (no_id, origem) select prod, 'manual' from t; raise exception 'aceitou'; exception when insufficient_privilege then null; end $$;
 select pg_temp.ok(true, 'ninguém põe pedido direto na fila pela tela');
-do $$ begin perform infra_banco_definir((select prod from t), 'Produção', '{public}', 'mysql://x'); raise exception 'aceitou'; exception when others then if sqlerrm = 'aceitou' then raise; end if; end $$;
+do $$ begin perform infra_banco_salvar((select prod from t), null, 'Produção', 'supabase', 'postgres', '{public}', 'mysql://x'); raise exception 'aceitou'; exception when others then if sqlerrm = 'aceitou' then raise; end if; end $$;
 select pg_temp.ok(true, 'endereço que não é postgresql:// é recusado');
-do $$ begin perform infra_banco_definir((select prod from t), 'Produção', '{public}'); raise exception 'aceitou'; exception when others then if sqlerrm = 'aceitou' then raise; end if; end $$;
+do $$ begin perform infra_banco_salvar((select prod from t), null, 'Produção', 'supabase', 'postgres', '{public}'); raise exception 'aceitou'; exception when others then if sqlerrm = 'aceitou' then raise; end if; end $$;
 select pg_temp.ok(true, 'ligar pela primeira vez sem endereço é recusado');
-do $$ begin perform infra_banco_definir((select prod from t), 'Produção', '{"public; drop"}', 'postgresql://leitor:x@db:5432/postgres'); raise exception 'aceitou'; exception when others then if sqlerrm = 'aceitou' then raise; end if; end $$;
+do $$ begin perform infra_banco_salvar((select prod from t), null, 'Produção', 'supabase', 'postgres', '{"public; drop"}', 'postgresql://leitor:x@db:5432/postgres'); raise exception 'aceitou'; exception when others then if sqlerrm = 'aceitou' then raise; end if; end $$;
 select pg_temp.ok(true, 'nome de esquema estranho é recusado');
-select pg_temp.ok((select (infra_banco_definir((select prod from t), 'Produção', '{public, app}', 'postgresql://leitor:segredo@db.exemplo:5432/postgres')).esquemas) = '{app,public}', 'William liga o banco do produto');
+select pg_temp.ok((select (infra_banco_salvar((select prod from t), null, 'Produção', 'supabase', 'postgres', '{public, app}', 'postgresql://leitor:segredo@db.exemplo:5432/postgres')).esquemas) = '{app,public}', 'William liga o banco do Supabase no produto');
 select pg_temp.ok((select count(*) from infra_bancos) = 1 and (select nome from infra_bancos) = 'Produção', 'e vê que está ligado');
 do $$ begin perform * from interno.infra_bancos_conexao; raise exception 'leu'; exception when insufficient_privilege then null; end $$;
 select pg_temp.ok(true, 'mas não lê o endereço guardado (a senha)');
 select pg_temp.ok((select row_to_json(b)::text !~ 'segredo' from infra_bancos b), 'e o endereço não aparece em infra_bancos');
-select pg_temp.ok((select (infra_banco_definir((select prod from t), 'Produção principal', '{public}', null)).nome) = 'Produção principal', 'trocar o nome sem mandar o endereço mantém o endereço');
+select pg_temp.ok((select (infra_banco_salvar((select prod from t), (select id from infra_bancos where nome = 'Produção'), 'Produção principal', 'supabase', 'postgres', '{public}', null)).nome) = 'Produção principal', 'trocar o nome sem mandar o endereço mantém o endereço');
 reset role;
 select pg_temp.ok((select conexao from interno.infra_bancos_conexao) = 'postgresql://leitor:segredo@db.exemplo:5432/postgres', 'o endereço continua o mesmo');
+select pg_temp.ok((select servidor from infra_bancos) = 'db.exemplo', 'a tela vê só o servidor (sem usuário nem senha)');
+-- um segundo banco, na AWS (MySQL no RDS), no mesmo produto
+select pg_temp.como('00000000-0000-0000-0000-00000000000a'); set role authenticated;
+select pg_temp.ok((select (infra_banco_salvar((select prod from t), null, 'Relatórios', 'aws', 'mysql', '{relatorios}', 'mysql://leitor:s@rel.abc123.us-east-1.rds.amazonaws.com:3306/relatorios')).motor) = 'mysql', 'William liga um segundo banco, MySQL na AWS');
+select pg_temp.ok((select count(*) from infra_bancos) = 2, 'o produto fica com os dois bancos');
+do $$ begin perform infra_banco_salvar((select prod from t), null, 'Relatórios', 'aws', 'mysql', '{x}', 'mysql://a@b/c'); raise exception 'aceitou'; exception when others then if sqlerrm = 'aceitou' then raise; end if; end $$;
+select pg_temp.ok(true, 'dois bancos com o mesmo nome no mesmo ponto é recusado');
+do $$ begin perform infra_banco_salvar((select prod from t), null, 'X', 'supabase', 'mysql', '{x}', 'mysql://a@b/c'); raise exception 'aceitou'; exception when others then if sqlerrm = 'aceitou' then raise; end if; end $$;
+select pg_temp.ok(true, 'Supabase com MySQL é recusado (o Supabase é PostgreSQL)');
+reset role;
 
 -- stakeholder e gente de fora
 select pg_temp.como('00000000-0000-0000-0000-00000000000c'); set role authenticated;
@@ -69,7 +79,7 @@ select pg_temp.ok((select count(*) from infra_automacoes) > 0, 'o stakeholder v�
 select pg_temp.ok((select count(*) from infra_bancos) = 0, 'mas não vê qual banco está ligado');
 do $$ begin perform infra_auto_pedir((select prod from t)); raise exception 'aceitou'; exception when insufficient_privilege then null; end $$;
 select pg_temp.ok(true, 'e não pede "Atualizar agora"');
-do $$ begin perform infra_banco_definir((select prod from t), 'x', '{public}', 'postgresql://a'); raise exception 'aceitou'; exception when insufficient_privilege then null; end $$;
+do $$ begin perform infra_banco_salvar((select prod from t), null, 'x', 'outro', 'postgres', '{public}', 'postgresql://a'); raise exception 'aceitou'; exception when insufficient_privilege then null; end $$;
 select pg_temp.ok(true, 'nem liga banco');
 do $$ begin perform infra_auto_proximos(1); raise exception 'aceitou'; exception when insufficient_privilege then null; end $$;
 select pg_temp.ok(true, 'ninguém logado chama as funções da fila');
@@ -87,11 +97,11 @@ create temp table f as select infra_auto_proximos(10) as j;
 select pg_temp.ok((select jsonb_array_length(j) from f) = 6, 'a função pega os 6 pedidos da fila');
 select pg_temp.ok((select count(*) from infra_automacoes where status = 'rodando') = 6, 'e eles ficam rodando');
 select pg_temp.ok((select jsonb_array_length(infra_auto_proximos(10))) = 0, 'chamar de novo não pega os mesmos');
-select pg_temp.ok((select count(*) = 2 and bool_and((x->'repositorios'->0->>'nome') = 'it-hub/bl-java' and jsonb_array_length(x->'repositorios') = 1 and x->'banco' = 'null')
+select pg_temp.ok((select count(*) = 2 and bool_and((x->'repositorios'->0->>'nome') = 'it-hub/bl-java' and jsonb_array_length(x->'repositorios') = 1 and jsonb_array_length(x->'bancos') = 0)
                      from f, jsonb_array_elements(j) x where x->>'referencia' = 'abc123'), 'pedidos da publicação (app e produto): só o repositório que publicou, sem banco');
 select pg_temp.ok((select (select string_agg(r->>'nome', ',' order by r->>'nome') from jsonb_array_elements(x->'repositorios') r) = 'it-hub/bl-gitlab,it-hub/bl-java,it-hub/bl-produto'
-                     and x->'banco'->>'conexao' like 'postgresql://%'
-                     from f, jsonb_array_elements(j) x where x->>'origem' = 'manual'), '"Atualizar agora" do produto: os repositórios do produto e das aplicações dele (não o do projeto) e o banco');
+                     and (select string_agg(b->>'motor', ',' order by b->>'nome') from jsonb_array_elements(x->'bancos') b) = 'postgres,mysql'
+                     from f, jsonb_array_elements(j) x where x->>'origem' = 'manual'), '"Atualizar agora" do produto: os repositórios do produto e das aplicações dele (não o do projeto) e os dois bancos');
 reset role;
 update infra_automacoes set iniciado_em = now() - interval '20 minutes' where referencia = 'pj1';
 set role service_role;
@@ -123,16 +133,17 @@ select pg_temp.ok((select arquivado_em is null from infra_diagramas where nome =
 select pg_temp.ok((select arquivado_em is null from infra_diagramas where id = (select d1 from t)), 'e o que saiu continua');
 
 -- banco: leitura de hora em hora
-select pg_temp.ok((select jsonb_array_length(infra_auto_bancos_devidos(5))) = 1, 'banco nunca lido está na hora de ler');
-select pg_temp.ok((select infra_auto_banco_lido((select prod from t), 'h1')) is not null, 'primeira leitura abre um pedido de banco');
+select pg_temp.ok((select jsonb_array_length(infra_auto_bancos_devidos(5))) = 2, 'os dois bancos nunca lidos estão na hora de ler');
+update infra_bancos set ultima_leitura_em = now() where nome = 'Relatórios';
+select pg_temp.ok((select infra_auto_banco_lido((select id from infra_bancos where nome = 'Produção principal'), 'h1')) is not null, 'primeira leitura abre um pedido de banco');
 select pg_temp.ok((select status = 'rodando' and origem = 'banco' from infra_automacoes where referencia = 'h1'), 'já rodando');
-select pg_temp.ok((select infra_auto_banco_lido((select prod from t), 'h1')) is null, 'estrutura igual: não pede nada');
+select pg_temp.ok((select infra_auto_banco_lido((select id from infra_bancos where nome = 'Produção principal'), 'h1')) is null, 'estrutura igual: não pede nada');
 select pg_temp.ok((select jsonb_array_length(infra_auto_bancos_devidos(5))) = 0, 'e só lê de novo daqui a uma hora');
-select pg_temp.ok((select infra_auto_banco_lido((select prod from t), 'h2')) is not null, 'estrutura mudou: pede');
-select pg_temp.ok((select infra_auto_banco_lido((select prod from t), 'h3', null, false)) is null, 'dentro do "Atualizar agora" a estrutura nova não abre outro pedido');
-select pg_temp.ok((select ultimo_hash from infra_bancos) = 'h3', 'só guarda o resumo novo');
-select infra_auto_banco_lido((select prod from t), null, 'senha errada');
-select pg_temp.ok((select ultimo_erro = 'senha errada' and ultimo_hash = 'h3' from infra_bancos), 'erro de leitura fica guardado sem perder o último resumo');
+select pg_temp.ok((select infra_auto_banco_lido((select id from infra_bancos where nome = 'Produção principal'), 'h2')) is not null, 'estrutura mudou: pede');
+select pg_temp.ok((select infra_auto_banco_lido((select id from infra_bancos where nome = 'Produção principal'), 'h3', null, false)) is null, 'dentro do "Atualizar agora" a estrutura nova não abre outro pedido');
+select pg_temp.ok((select ultimo_hash from infra_bancos where nome = 'Produção principal') = 'h3', 'só guarda o resumo novo');
+select infra_auto_banco_lido((select id from infra_bancos where nome = 'Produção principal'), null, 'senha errada');
+select pg_temp.ok((select ultimo_erro = 'senha errada' and ultimo_hash = 'h3' from infra_bancos where nome = 'Produção principal'), 'erro de leitura fica guardado sem perder o último resumo');
 reset role;
 
 -- o quadro do desenho no canvas
@@ -175,7 +186,7 @@ select pg_temp.ok(true, 'frente (parte de um app) continua sem Infraestrutura pr
 
 -- desligar o banco
 select pg_temp.como('00000000-0000-0000-0000-00000000000a'); set role authenticated;
-select infra_banco_remover((select prod from t));
+select infra_banco_remover(id) from infra_bancos;
 reset role;
 select pg_temp.ok((select count(*) from infra_bancos) = 0 and (select count(*) from interno.infra_bancos_conexao) = 0, 'desligar tira o endereço guardado');
 select pg_temp.ok((select count(*) from infra_diagramas where id = (select d1 from t)) = 1, 'e os desenhos que já saíram ficam');
@@ -187,4 +198,4 @@ select pg_temp.ok(not has_table_privilege('authenticated', 'interno.infra_bancos
    and not has_function_privilege('authenticated', 'public.infra_auto_gravar(uuid, text, text, text, text, text, text, text, jsonb, jsonb)', 'execute')
    and not has_function_privilege('anon', 'public.infra_auto_pedir(uuid)', 'execute')
    and has_function_privilege('service_role', 'public.infra_auto_concluir(uuid, text, text, uuid[], jsonb, text[])', 'execute'), 'permissões: a tela só lê e chama as 3 funções dela; a fila é da função');
-select pg_temp.ok((select count(*) from pg_proc where proname in ('infra_banco_definir','infra_auto_pedir','infra_auto_proximos','infra_auto_gravar','infra_auto_concluir','infra_auto_banco_lido','infra_auto_quadro','infra_quadro_publicar','infra_quadro_gravar')) = 9, 'uma versão só de cada função');
+select pg_temp.ok((select count(*) from pg_proc where proname in ('infra_banco_salvar','infra_banco_remover','infra_auto_pedir','infra_auto_proximos','infra_auto_gravar','infra_auto_concluir','infra_auto_banco_lido','infra_auto_quadro','infra_quadro_publicar','infra_quadro_gravar')) = 10 and (select count(*) from pg_proc where proname = 'infra_banco_definir') = 0, 'uma versão só de cada função (e a antiga infra_banco_definir saiu)');
