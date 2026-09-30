@@ -44,6 +44,10 @@ const { chromium } = require('/opt/node22/lib/node_modules/playwright');
   // exportar o app não leva as versões do projeto
   const md = await p.evaluate(ch => typeof __tf.exNoMd === 'function' ? __tf.exNoMd(ch) : null, C.a1);
   if (md !== null) ok(!/vProjeto|vApp2/.test(md), 'o .md do app não leva versões do projeto nem do outro app');
+  // ficha técnica: o que está na ficha do projeto não aparece na do app
+  const ficha = await p.evaluate(c => { const D = window.ciclodevDados(); D.sheets[c.pj] = {campos:{'Database|Banco e schema':'SEGREDO-DO-PROJETO'}, custom:[], arquivos:[]}; __tf.UI.sel = c.a1; return __tf.vSheet(); }, C);
+  ok(!/SEGREDO-DO-PROJETO|herdado do projeto/.test(ficha), 'a ficha técnica do app não mostra o que foi preenchido no projeto');
+  ok(/SEGREDO-DO-PROJETO/.test(await p.evaluate(c => { __tf.UI.sel = c.pj; return __tf.vSheet(); }, C)), 'e a ficha do projeto continua mostrando o dela');
   ok(!erros.length, 'sem erro de JavaScript' + (erros.length ? ': ' + erros.join(' | ') : ''));
   await b.close(); console.log(falhas ? falhas + ' FALHAS' : 'TUDO OK'); process.exit(falhas ? 1 : 0);
 })();

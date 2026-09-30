@@ -66,11 +66,11 @@ window.supabase = { createClient(){ let sess = {user:{id:'u1', email:'admin@it-i
   await p.fill('[data-dc-valor]', 'Postgres no Supabase');
   await espera(); await semErro('ligar a decisão e escrever sem erro');
   const pj = await p.evaluate(id => __tf.dcLigacao(__tf.byId('issues', id)).pk.split(':')[1], it);
-  ok(conta("select valor from public.ficha_campos where no_id = '" + pj + "' and secao = 'Database' and campo = 'Banco e schema'") === 'Postgres no Supabase', 'o texto da decisão está na ficha do projeto no banco');
+  ok(conta("select valor from public.ficha_campos where no_id = '" + pj + "' and secao = 'Database' and campo = 'Banco e schema'") === 'Postgres no Supabase', 'o texto da decisão está na ficha da aplicação do item no banco (nunca na do projeto)');
   ok(conta("select valor from public.ficha_campos where no_id = '" + pj + "' and secao = '_decisao' and campo = 'Database›Banco e schema'") === it, 'a ligação com o item está no banco');
   await p.evaluate(() => __tf.fecharItem());
   // versão nova pelo Criar em lote
-  const app = await p.evaluate(pj => window.ciclodevDados().apps.find(a => a.project === pj).id, pj);
+  const app = pj;   // a decisão vai para a ficha da aplicação do item
   await p.evaluate(() => document.querySelector('[data-tela="operacoes"]').click()); await p.waitForTimeout(400);
   await p.evaluate(a => { __tf.UI.sel = 'app:' + a; __tf.UI.view = 'backlog'; __tf.UI.bjEpic = null; __tf.rOperacoes(); }, app); await p.waitForTimeout(500);
   await p.click('[data-lt-abrir]'); await p.waitForTimeout(300);

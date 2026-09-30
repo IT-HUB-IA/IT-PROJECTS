@@ -4311,13 +4311,10 @@ function vWhiteboard(){
 function vSheet(){
   const chave = UI.sel;
   const f = D.sheets[chave] || (D.sheets[chave] = {campos:{}, custom:[], arquivos:[]});
-  const c = cadeia(chave);
-  const pai = chave.startsWith('app') ? D.sheets[c.product ? 'product:' + c.product.id : ''] || D.sheets['project:' + (c.project || {}).id] : chave.startsWith('product') ? D.sheets['project:' + (c.project || {}).id] : null;
-  const paiProj = c.project ? D.sheets['project:' + c.project.id] : null;
+  // cada ponto tem a própria ficha: nada vem do projeto nem vai para os produtos (ver noDono em app.js)
   const dis = podeEditar() ? '' : ' disabled';
-  const herdar = k => { const v = (pai && pai.campos[k]) || (paiProj && paiProj.campos[k]); return v && !chave.startsWith('project') ? v : ''; };
-  return '<p class="intro">A ' + T('Tech sheet','ficha técnica') + ' de ' + esc(nomeDe(chave)) + '.' + (chave.startsWith('project') ? ' Aplicações e produtos deste projeto herdam o que for preenchido aqui.' : ' Campo vazio usa o valor do projeto. ' + T('Inherits','herda: já nasce com o que o projeto definiu')) + '</p>' +
-    FICHA.map(([sec, expl, campos]) => '<section class="ficha-sec"><h3>' + (expl ? T(sec, expl) : esc(sec)) + '</h3><div class="ficha-campos">' + campos.map(cp => { const k = sec + '|' + cp, v = f.campos[k] || '', h = herdar(k); return '<label class="lb">' + esc(cp) + (h && !v ? ' <span class="herdado">herdado do projeto</span>' : '') + '<textarea class="campo" rows="2" data-ficha="' + esc(k) + '" placeholder="' + esc(h || '') + '"' + dis + '>' + esc(v) + '</textarea></label>'; }).join('') + '</div>' +
+  return '<p class="intro">A ' + T('Tech sheet','ficha técnica') + ' de ' + esc(nomeDe(chave)) + '. Vale só para ' + esc(nomeDe(chave)) + (chave.startsWith('project') ? ': cada produto e aplicação tem a sua.' : '.') + '</p>' +
+    FICHA.map(([sec, expl, campos]) => '<section class="ficha-sec"><h3>' + (expl ? T(sec, expl) : esc(sec)) + '</h3><div class="ficha-campos">' + campos.map(cp => { const k = sec + '|' + cp, v = f.campos[k] || ''; return '<label class="lb">' + esc(cp) + '<textarea class="campo" rows="2" data-ficha="' + esc(k) + '"' + dis + '>' + esc(v) + '</textarea></label>'; }).join('') + '</div>' +
       (sec === 'Visual identity' || sec === 'Anexos e anotações' ? '<div class="arquivos">' + f.arquivos.filter(a => a.sec === sec).map((a, ix) => '<span class="arq">' + (a.url ? '<img src="' + a.url + '" alt="">' : ICO.clip) + '<span>' + esc(a.nome) + '</span></span>').join('') + (podeEditar() ? '<label class="btn sec peq" style="cursor:pointer">' + ICO.clip + 'Anexar arquivos<input type="file" multiple hidden data-anexar-ficha="' + esc(sec) + '"></label>' : '') + '</div>' : '') + '</section>').join('') +
     '<section class="ficha-sec"><h3>' + T('Custom fields','campos personalizados') + '</h3><div class="tabela-rolo" style="border:0"><table class="tabela"><thead><tr><th>Campo</th><th>Tipo</th><th>Valor</th><th style="width:60px"></th></tr></thead><tbody>' +
       f.custom.map((cf, ix) => '<tr><th scope="row">' + esc(cf.nome) + '</th><td>' + esc(cf.tipo) + '</td><td><input class="campo" data-custom="' + ix + '" value="' + esc(cf.valor) + '"' + dis + ' style="width:100%"></td><td>' + (podeEditar() ? '<button class="ico-btn" type="button" data-tirar-custom="' + ix + '" aria-label="Tirar campo">' + ICO.fechar + '</button>' : '') + '</td></tr>').join('') +
@@ -9440,7 +9437,7 @@ document.addEventListener('click', e => {
 });
 // voltou da janelinha com a janela principal fechada (ou recarregada): termina agora
 (function(){ const v = gcLer(GC_VOLTA); if (v && v.dados && Date.now() - (v.t || 0) < 10 * 60000) setTimeout(() => gcVolta(v.dados), 1500); })();
-if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {marcosDoEscopo, enNos, gcOnde, enHTML, enNovaVersao, formMarco, exNoMd, noDono, nosDentro});
+if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {marcosDoEscopo, enNos, gcOnde, enHTML, enNovaVersao, formMarco, exNoMd, noDono, nosDentro, vSheet});
 
 /* ================= Simplificar: nomes em português, abas agrupadas e a tela do item organizada =================
    Carrega por último: só troca nomes e reorganiza o que as camadas anteriores montaram, sem mudar dado nenhum. */
@@ -11017,14 +11014,14 @@ document.addEventListener('keydown', e => { if (e.altKey && e.key === 'ArrowLeft
 if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {abrirItem, fecharItem, NAV});
 
 /* ===== Decisões que vão para a ficha técnica =====
-   Um item de decisão (por exemplo "Escolher o banco de dados") pode ser ligado a um campo da ficha técnica do projeto
-   (por exemplo Database › Banco e schema). O texto da decisão fica num lugar só, o campo da ficha:
-   escrever no item muda a ficha, escrever na ficha muda o item, e aplicações e produtos do projeto herdam como sempre.
-   A ligação fica na própria ficha do projeto, na chave "_decisao|Seção›Campo" com o id do item (grava em ficha_campos,
+   Um item de decisão (por exemplo "Escolher o banco de dados") pode ser ligado a um campo da ficha técnica da aplicação
+   do item (por exemplo Database › Banco e schema). O texto da decisão fica num lugar só, o campo da ficha:
+   escrever no item muda a ficha, escrever na ficha muda o item. Nada vai para o projeto nem para outro produto.
+   A ligação fica na própria ficha da aplicação, na chave "_decisao|Seção›Campo" com o id do item (grava em ficha_campos,
    sem mudar o banco). O item mostra a ligação no cartão Principal e o campo da ficha mostra de qual item veio. */
 const DC_PREFIXO = '_decisao|';
 const dcChave = (sec, campo) => DC_PREFIXO + sec + '›' + campo;
-function dcProjeto(i){ const c = i && cadeia('ws:' + i.ws); return c && c.project ? 'project:' + c.project.id : null; }
+function dcProjeto(i){ const d = i && i.ws ? noDono('ws:' + i.ws) : null; return d && d.startsWith('app:') ? d : null; }   // a aplicação do item (o nome antigo ficou para não mexer nos chamadores)
 function dcFicha(pk){ return D.sheets[pk] || (D.sheets[pk] = {campos:{}, custom:[], arquivos:[]}); }
 // o campo da ficha ligado a este item, ou null
 function dcLigacao(i){
@@ -11033,7 +11030,7 @@ function dcLigacao(i){
   const [sec, campo] = k.slice(DC_PREFIXO.length).split('›'); return {pk, sec, campo, chave:sec + '|' + campo};
 }
 // o item ligado a um campo da ficha, ou null
-function dcItemDoCampo(pk, sec, campo){ const f = D.sheets[pk]; const id = f && f.campos[dcChave(sec, campo)]; const it = id ? byId('issues', id) : null; return it && dcProjeto(it) === pk ? it : null; }   // o item precisa ser do mesmo projeto (uma cópia de projeto leva a ficha junto)
+function dcItemDoCampo(pk, sec, campo){ const f = D.sheets[pk]; const id = f && f.campos[dcChave(sec, campo)]; const it = id ? byId('issues', id) : null; return it && dcProjeto(it) === pk ? it : null; }   // o item precisa ser da mesma aplicação (uma cópia leva a ficha junto)
 function dcLigar(i, alvo){
   const pk = dcProjeto(i); if (!pk) return;
   const f = dcFicha(pk), atual = dcLigacao(i);
@@ -11085,7 +11082,7 @@ document.addEventListener('click', e => {
 const _vSheetDc = vSheet;
 vSheet = function(){
   let h = _vSheetDc();
-  const pk = (cadeia(UI.sel).project && UI.sel.startsWith('project:')) ? UI.sel : null; if (!pk || !D.sheets[pk]) return h;
+  const pk = UI.sel && UI.sel.startsWith('app:') ? UI.sel : null; if (!pk || !D.sheets[pk]) return h;
   FICHA.forEach(([sec, , campos]) => campos.forEach(cp => {
     const it = dcItemDoCampo(pk, sec, cp); if (!it) return;
     const k = esc(sec + '|' + cp), marca = 'data-ficha="' + k + '"';

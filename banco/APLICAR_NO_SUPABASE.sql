@@ -6811,12 +6811,33 @@ language sql security definer set search_path = public, pg_temp as $$ update pub
 
 -- ---------- 6. receber os avisos ----------
 -- o que cada aviso faz, igual para os dois provedores depois de conferido
+-- o repositório mudou de nome ou de dono no GitHub ou no GitLab: o CicloDev acompanha sozinho no próximo aviso.
+-- É só uma troca de nome: a ligação é pelo id do repositório no GitHub/GitLab (externo_id), que não muda.
+-- Nunca derruba o aviso: se o nome novo não couber nas regras da tabela, fica o antigo.
+create or replace function interno.git_nome_repo(r public.repositorios, j jsonb) returns void
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare nm text; u text; ext text;
+begin
+  if r.provedor = 'github' then nm := j#>>'{repository,full_name}'; u := j#>>'{repository,html_url}'; ext := j#>>'{repository,id}';
+  else nm := j#>>'{project,path_with_namespace}'; u := j#>>'{project,web_url}'; ext := j#>>'{project,id}'; end if;
+  if nm is null or ext is null or r.externo_id is null or ext <> r.externo_id then return; end if;
+  if nm !~ '^[A-Za-z0-9_.-]+(/[A-Za-z0-9_.-]+)+$' or length(nm) > 200 then return; end if;
+  if u is not null and u !~ '^https://' then u := null; end if;
+  begin
+    update public.repositorios set nome = nm, url = coalesce(u, url)
+     where id = r.id and (nome is distinct from nm or (u is not null and url is distinct from u));
+  exception when unique_violation then null;
+  end;
+end $$;
+revoke all on function interno.git_nome_repo(public.repositorios, jsonb) from public, anon, authenticated;
+
 create or replace function interno.git_processar(r public.repositorios, p_evento text, j jsonb) returns jsonb
 language plpgsql security definer set search_path = public, pg_temp as $$
 declare ev text := lower(coalesce(p_evento, '')); res jsonb := '{}'::jsonb;
   br text; its uuid[]; its_b uuid[]; c jsonb; n_lig integer := 0; n_mov integer := 0; x uuid; pr jsonb; est text;
 begin
   if not r.ativo then return jsonb_build_object('ignorado', 'repositório desligado'); end if;
+  perform interno.git_nome_repo(r, j);
   if r.provedor = 'github' then
     if ev = 'ping' then res := jsonb_build_object('ping', true);
     elsif ev = 'push' then
@@ -6972,6 +6993,18 @@ alter table public.infra_automacoes drop constraint if exists infra_automacoes_o
 alter table public.infra_automacoes add constraint infra_automacoes_origem_check check (origem in ('github','gitlab','banco','manual'));
 alter table public.infra_diagramas drop constraint if exists infra_diagramas_origem_check;
 alter table public.infra_diagramas add constraint infra_diagramas_origem_check check (origem in ('manual','devit','github','gitlab','banco'));
+
+-- Parte 19 (troca): a versão (release) publicada pelo GitHub/GitLab é procurada só no lugar do repositório e no que
+-- está dentro dele, nunca no projeto inteiro: dois produtos com "v1.0" não se confundem.
+create or replace function interno.codigo_versao(p_no uuid, p_nome text) returns uuid
+language sql stable security definer set search_path = public, pg_temp as $$
+  select m.id from public.marcos m
+   where m.tipo = 'release' and p_nome is not null
+     and m.no_id in (select a.no_id from public.nos_ancestrais a where a.ancestral_id = p_no)
+     and lower(regexp_replace(btrim(m.nome), '^[vV]', '')) = lower(regexp_replace(btrim(p_nome), '^[vV]', ''))
+   order by m.data desc limit 1
+$$;
+revoke all on function interno.codigo_versao(uuid, text) from public, anon, authenticated;
 
 create or replace function interno.infra_publicou() returns trigger
 language plpgsql security definer set search_path = public, pg_temp as $$

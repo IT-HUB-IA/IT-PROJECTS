@@ -1,12 +1,12 @@
 /* ===== Decisões que vão para a ficha técnica =====
-   Um item de decisão (por exemplo "Escolher o banco de dados") pode ser ligado a um campo da ficha técnica do projeto
-   (por exemplo Database › Banco e schema). O texto da decisão fica num lugar só, o campo da ficha:
-   escrever no item muda a ficha, escrever na ficha muda o item, e aplicações e produtos do projeto herdam como sempre.
-   A ligação fica na própria ficha do projeto, na chave "_decisao|Seção›Campo" com o id do item (grava em ficha_campos,
+   Um item de decisão (por exemplo "Escolher o banco de dados") pode ser ligado a um campo da ficha técnica da aplicação
+   do item (por exemplo Database › Banco e schema). O texto da decisão fica num lugar só, o campo da ficha:
+   escrever no item muda a ficha, escrever na ficha muda o item. Nada vai para o projeto nem para outro produto.
+   A ligação fica na própria ficha da aplicação, na chave "_decisao|Seção›Campo" com o id do item (grava em ficha_campos,
    sem mudar o banco). O item mostra a ligação no cartão Principal e o campo da ficha mostra de qual item veio. */
 const DC_PREFIXO = '_decisao|';
 const dcChave = (sec, campo) => DC_PREFIXO + sec + '›' + campo;
-function dcProjeto(i){ const c = i && cadeia('ws:' + i.ws); return c && c.project ? 'project:' + c.project.id : null; }
+function dcProjeto(i){ const d = i && i.ws ? noDono('ws:' + i.ws) : null; return d && d.startsWith('app:') ? d : null; }   // a aplicação do item (o nome antigo ficou para não mexer nos chamadores)
 function dcFicha(pk){ return D.sheets[pk] || (D.sheets[pk] = {campos:{}, custom:[], arquivos:[]}); }
 // o campo da ficha ligado a este item, ou null
 function dcLigacao(i){
@@ -15,7 +15,7 @@ function dcLigacao(i){
   const [sec, campo] = k.slice(DC_PREFIXO.length).split('›'); return {pk, sec, campo, chave:sec + '|' + campo};
 }
 // o item ligado a um campo da ficha, ou null
-function dcItemDoCampo(pk, sec, campo){ const f = D.sheets[pk]; const id = f && f.campos[dcChave(sec, campo)]; const it = id ? byId('issues', id) : null; return it && dcProjeto(it) === pk ? it : null; }   // o item precisa ser do mesmo projeto (uma cópia de projeto leva a ficha junto)
+function dcItemDoCampo(pk, sec, campo){ const f = D.sheets[pk]; const id = f && f.campos[dcChave(sec, campo)]; const it = id ? byId('issues', id) : null; return it && dcProjeto(it) === pk ? it : null; }   // o item precisa ser da mesma aplicação (uma cópia leva a ficha junto)
 function dcLigar(i, alvo){
   const pk = dcProjeto(i); if (!pk) return;
   const f = dcFicha(pk), atual = dcLigacao(i);
@@ -67,7 +67,7 @@ document.addEventListener('click', e => {
 const _vSheetDc = vSheet;
 vSheet = function(){
   let h = _vSheetDc();
-  const pk = (cadeia(UI.sel).project && UI.sel.startsWith('project:')) ? UI.sel : null; if (!pk || !D.sheets[pk]) return h;
+  const pk = UI.sel && UI.sel.startsWith('app:') ? UI.sel : null; if (!pk || !D.sheets[pk]) return h;
   FICHA.forEach(([sec, , campos]) => campos.forEach(cp => {
     const it = dcItemDoCampo(pk, sec, cp); if (!it) return;
     const k = esc(sec + '|' + cp), marca = 'data-ficha="' + k + '"';

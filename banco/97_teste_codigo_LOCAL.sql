@@ -174,6 +174,35 @@ select pg_temp.ok((select ambiente || '|' || status || '|' || origem from public
 select pg_temp.ok((select count(*) from infra_automacoes where origem = 'gitlab' and repositorio_id = (select repo_gl from alvo)) = 1, 'GitLab em produção também pede os desenhos do código');
 select pg_temp.ok((select ultimo_evento = 'Deployment Hook' and ultimo_erro is null from repositorios where id = (select repo_gl from alvo)), 'o repositório guarda o último aviso recebido');
 select pg_temp.ok((select jsonb_path_exists(infra_auto_proximos(10), '$[*].repositorios[*] ? (@.conexao_id != null && @.externo_id == "888")')), 'a fila dos desenhos leva a conta e o número do repositório');
+-- trocar o nome é só trocar o nome: o repositório renomeado no GitHub/GitLab acompanha sozinho, sem perder nada
+select pg_temp.gh('push', jsonb_build_object('ref', 'refs/heads/main', 'commits', '[]'::jsonb, 'repository', jsonb_build_object('id', 555, 'full_name', 'it-hub-ia/portal-novo', 'html_url', 'https://github.com/it-hub-ia/portal-novo')));
+select pg_temp.ok((select nome || '|' || url from repositorios where id = (select repo from alvo)) = 'it-hub-ia/portal-novo|https://github.com/it-hub-ia/portal-novo', 'GitHub: repositório renomeado muda o nome e o endereço no CicloDev sozinho');
+select pg_temp.ok((select count(*) from codigo_vinculos where repositorio_id = (select repo from alvo)) > 0 and (select ativo from repositorios where id = (select repo from alvo)), 'e continua com todo o código ligado e ativo');
+select pg_temp.gh('push', jsonb_build_object('ref', 'refs/heads/main', 'commits', '[]'::jsonb, 'repository', jsonb_build_object('id', 555, 'full_name', 'nome inválido', 'html_url', 'javascript:x')));
+select pg_temp.ok((select nome from repositorios where id = (select repo from alvo)) = 'it-hub-ia/portal-novo', 'nome estranho no aviso não troca o nome (e o aviso não quebra)');
+select pg_temp.gl('Push Hook', json_build_object('ref', 'refs/heads/main', 'after', 'aaa000', 'project', json_build_object('id', 888, 'path_with_namespace', 'it-hub-ia/grupo/app-novo', 'web_url', 'https://gitlab.com/it-hub-ia/grupo/app-novo'), 'commits', '[]'::json)::text);
+select pg_temp.ok((select nome from repositorios where id = (select repo_gl from alvo)) = 'it-hub-ia/grupo/app-novo', 'GitLab: projeto renomeado também acompanha');
+select pg_temp.gl('Push Hook', json_build_object('ref', 'refs/heads/main', 'after', 'aaa001', 'project', json_build_object('id', 999, 'path_with_namespace', 'outro/projeto'), 'commits', '[]'::json)::text);
+select pg_temp.ok((select nome from repositorios where id = (select repo_gl from alvo)) = 'it-hub-ia/grupo/app-novo', 'aviso com outro número de projeto não troca o nome');
+-- a versão publicada é procurada só no lugar do repositório: um repositório ligado a um app não marca a versão de outro app
+reset role;
+create temp table apps_t as select n.id, row_number() over (order by n.id) k from nos n join nos_ancestrais a on a.no_id = n.id
+  where n.tipo = 'aplicacao' and a.ancestral_id = (select projeto from alvo) and a.no_id <> a.ancestral_id;
+grant select on apps_t to authenticated, service_role;
+insert into marcos (no_id, tipo, nome, data) select id, 'release', 'v9.9.0', current_date from apps_t where k = 2;
+insert into marcos (no_id, tipo, nome, data) select id, 'release', 'v9.9.1', current_date from apps_t where k = 1;
+select pg_temp.como('00000000-0000-0000-0000-00000000000a', 'william@teste.com');
+set role authenticated;
+select (git_repo_ligar((select id from apps_t where k = 1), (select con_gh from alvo), '556', 'it-hub-ia/app-um', 'https://github.com/it-hub-ia/app-um', 'main')).id is not null;
+reset role;
+set role service_role;
+select pg_temp.gh('release', jsonb_build_object('action', 'published', 'repository', jsonb_build_object('id', 556, 'html_url', 'https://github.com/it-hub-ia/app-um'), 'release', jsonb_build_object('id', 778, 'tag_name', 'v9.9.0', 'html_url', 'https://github.com/it-hub-ia/app-um/releases/tag/v9.9.0', 'published_at', '2026-09-29T13:00:00Z')));
+select pg_temp.ok((select entregue_em is null from marcos where nome = 'v9.9.0') and (select count(*) from publicacoes where versao = 'v9.9.0' and marco_id is null) = 1, 'release do repositório de um app não marca a versão com o mesmo nome de outro app do projeto');
+select pg_temp.gh('release', jsonb_build_object('action', 'published', 'repository', jsonb_build_object('id', 556, 'html_url', 'https://github.com/it-hub-ia/app-um'), 'release', jsonb_build_object('id', 779, 'tag_name', 'v9.9.1', 'html_url', 'https://github.com/it-hub-ia/app-um/releases/tag/v9.9.1', 'published_at', '2026-09-29T14:00:00Z')));
+select pg_temp.ok((select entregue_em is not null from marcos where nome = 'v9.9.1'), 'e marca a versão do próprio app');
+reset role;
+delete from repositorios where externo_id = '556';
+set role service_role;
 reset role;
 update infra_automacoes set status = 'pronto';
 

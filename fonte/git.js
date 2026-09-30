@@ -247,4 +247,4 @@ document.addEventListener('click', e => {
 });
 // voltou da janelinha com a janela principal fechada (ou recarregada): termina agora
 (function(){ const v = gcLer(GC_VOLTA); if (v && v.dados && Date.now() - (v.t || 0) < 10 * 60000) setTimeout(() => gcVolta(v.dados), 1500); })();
-if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {marcosDoEscopo, enNos, gcOnde, enHTML, enNovaVersao, formMarco, exNoMd, noDono, nosDentro});
+if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {marcosDoEscopo, enNos, gcOnde, enHTML, enNovaVersao, formMarco, exNoMd, noDono, nosDentro, vSheet});
