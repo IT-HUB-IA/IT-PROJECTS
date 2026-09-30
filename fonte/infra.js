@@ -189,11 +189,16 @@ function ifrMapaDiagramas(){
 }
 const ifrAvisarCanvas = () => ifrFalar({tipo:'diagramas', dados:ifrMapaDiagramas()});
 
+const IFR_DE_ONDE = {github:'automático do código', banco:'automático do banco', devit:'DevIT', manual:'feito à mão'};
+// o desenho do DevIT ficou para trás quando o robô atualizou os automáticos depois dele
+const ifrDesatualizado = d => d.origem === 'devit' && typeof IFR_AUTO !== 'undefined' && IFR_AUTO.pedidos.some(p => p.status === 'pronto' && p.concluido_em && d.atualizado_em && p.concluido_em > d.atualizado_em && (p.diagramas || []).length);
 function ifrItemHTML(d, deOutro){
   const f = ifrFmt(d.formato);
-  const st = d.formato === 'markdown' ? 'especificação' : d.svg ? 'com imagem' : d.erro ? 'erro na imagem' : 'sem imagem';
-  return '<li class="ifr-item' + (d.erro ? ' com-erro' : '') + '"><button type="button" class="ifr-item-abrir" data-ifr-abrir="' + esc(d.id) + '"><b>' + esc(d.nome) + '</b><small>' + esc(f[1]) + ' · v' + esc(d.versao) + ' · ' + esc(st) + (d.origem === 'devit' ? ' · DevIT' : '') + '</small></button>' +
-    (podeEditar() ? '<button type="button" class="btn sec peq" data-ifr-por="' + esc(d.id) + '" title="Pôr este desenho no quadro' + (deOutro ? ' do projeto' : '') + '">No quadro</button>' : '') + '</li>';
+  const st = d.quadro ? 'no quadro' : d.formato === 'markdown' ? 'especificação' : d.svg ? 'com imagem' : d.erro ? 'erro na imagem' : 'sem imagem';
+  return '<li class="ifr-item' + (d.erro && !d.quadro ? ' com-erro' : '') + (d.chave_auto ? ' auto' : '') + '"><button type="button" class="ifr-item-abrir" data-ifr-abrir="' + esc(d.id) + '"><b>' + esc(d.nome) + '</b><small>' + esc(IFR_DE_ONDE[d.origem] || d.origem) + ' · ' + esc(f[1]) + ' · v' + esc(d.versao) + ' · ' + esc(st) + '</small>' +
+    (ifrDesatualizado(d) ? '<small class="ifr-velho">O sistema mudou depois deste desenho: peça de novo ao DevIT.</small>' : '') + '</button>' +
+    (d.quadro && !deOutro ? '<button type="button" class="btn peq" data-ifr-quadro="' + esc(d.quadro) + '" title="Abrir o quadro deste desenho no canvas">Abrir</button>' : '') +
+    (podeEditar() && !d.quadro ? '<button type="button" class="btn sec peq" data-ifr-por="' + esc(d.id) + '" title="Pôr este desenho no quadro' + (deOutro ? ' do projeto' : '') + '">No quadro</button>' : '') + '</li>';
 }
 function ifrLado(){
   const el = $('#ops-corpo [data-ifr-lado]'); if (!el) return;
@@ -217,14 +222,18 @@ function ifrLado(){
 /* ---------- editor de um desenho: código, imagem, evidências e versões ---------- */
 async function ifrAbrir(id){
   const d = IFR.diagramas.find(x => x.id === id); if (!d) return;
-  const pode = podeEditar() && (d.no_id === IFR.no || ifrProdutos(UI.sel).some(p => p.id === d.no_id));
+  const podeNo = podeEditar() && (d.no_id === IFR.no || ifrProdutos(UI.sel).some(p => p.id === d.no_id));
+  // o desenho automático é refeito sozinho: não se muda o texto dele (dá para copiar e editar a cópia)
+  const auto = !!d.chave_auto, pode = podeNo && !auto;
   const img = d.svg ? '<div class="ifr-prev"><img src="data:image/svg+xml;charset=utf-8,' + encodeURIComponent(d.svg) + '" alt="' + esc(d.nome) + '"></div>' : '<p class="ifr-vazio">' + (d.formato === 'markdown' ? 'Especificação em texto: não vira imagem.' : d.erro ? 'Não deu para gerar a imagem: ' + esc(d.erro) : 'Ainda sem imagem. Salve o código e clique em Gerar imagem.') + '</p>';
   const ev = (d.evidencias || []).length ? '<ul class="ifr-ev">' + d.evidencias.map(e => '<li><b>' + esc(e.fonte || e.tipo || 'fonte') + '</b>' + (e.trecho ? '<small>' + esc(String(e.trecho).slice(0, 300)) + '</small>' : '') + '</li>').join('') + '</ul>' : '<p class="ifr-vazio">' + (d.origem === 'devit' ? 'O DevIT não listou evidências.' : 'Desenho feito à mão: sem evidências registradas.') + '</p>';
-  const lac = (d.lacunas || []).length ? '<div class="ifr-lacunas"><b>O que o DevIT não achou nas fontes</b><ul>' + d.lacunas.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul></div>' : '';
+  const lac = (d.lacunas || []).length ? '<div class="ifr-lacunas"><b>' + (auto ? 'O que o robô não conseguiu desenhar' : 'O que o DevIT não achou nas fontes') + '</b><ul>' + d.lacunas.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul></div>' : '';
   const corpo = '<div class="ifr-ed">' +
     '<div class="ifr-ed-linha"><label class="lb">Nome<input class="campo" id="ifr-nome" value="' + esc(d.nome) + '"' + (pode ? '' : ' disabled') + '></label>' +
     '<label class="lb">Formato<select class="sel" id="ifr-formato"' + (pode ? '' : ' disabled') + '>' + IFR_FORMATOS.map(f => '<option value="' + f[0] + '"' + (f[0] === d.formato ? ' selected' : '') + '>' + esc(f[1]) + '</option>').join('') + '</select></label></div>' +
-    '<p class="ifr-meta">' + esc(ifrNomeNo(d.no_id)) + ' · ' + esc(ifrAba(d.aba).nome) + ' · versão ' + esc(d.versao) + (d.origem === 'devit' ? ' · gerado pelo DevIT' : '') + (d.renderizado_em ? ' · imagem de ' + esc(new Date(d.renderizado_em).toLocaleString('pt-BR')) : '') + '</p>' +
+    '<p class="ifr-meta">' + esc(ifrNomeNo(d.no_id)) + ' · ' + esc(ifrAba(d.aba).nome) + ' · versão ' + esc(d.versao) + ' · ' + esc(IFR_DE_ONDE[d.origem] || d.origem) + (d.referencia && d.origem === 'github' ? ' (commit ' + esc(String(d.referencia).slice(0, 7)) + ')' : '') + (d.renderizado_em ? ' · imagem de ' + esc(new Date(d.renderizado_em).toLocaleString('pt-BR')) : '') + '</p>' +
+    (auto ? '<p class="ifr-aviso-auto">Este desenho sai sozinho ' + (d.origem === 'banco' ? 'da estrutura do banco' : 'do código publicado em produção') + ' e é refeito a cada mudança. Para ajustar à mão, faça uma cópia.</p>' : '') +
+    (d.quadro ? '<p class="ifr-meta"><button type="button" class="btn peq" data-ifr-quadro="' + esc(d.quadro) + '">Abrir o quadro deste desenho</button> O quadro é o desenho montado no canvas, com os cards e as ligações.</p>' : '') +
     '<label class="lb">Código do desenho (a fonte de verdade)<textarea class="campo ifr-codigo" id="ifr-fonte" spellcheck="false"' + (pode ? '' : ' readonly') + '>' + esc(d.fonte || '') + '</textarea></label>' +
     '<section class="ifr-sec"><h4>Imagem</h4>' + img + '</section>' +
     '<section class="ifr-sec"><h4>De onde veio</h4>' + ev + lac + '</section>' +
@@ -232,6 +241,7 @@ async function ifrAbrir(id){
   const bts = [{txt:'Fechar', cls:'sec'},
     {txt:'Baixar código', cls:'sec', acao:() => { ifrBaixarTexto(ifrArquivo(d), d.fonte || ''); return false; }}];
   if (d.svg) bts.push({txt:'Baixar imagem', cls:'sec', acao:() => { ifrBaixarTexto(ifrSlug(d.nome) + '.svg', d.svg, 'image/svg+xml'); return false; }});
+  if (podeNo && auto) bts.push({txt:'Copiar para editar à mão', cls:'sec', acao:() => { ifrCopiar(d); }});
   if (pode){
     bts.push({txt:'Arquivar', cls:'fant', acao:() => { ifrArquivar(d); }});
     if (d.formato !== 'markdown') bts.push({txt:'Salvar e gerar imagem', cls:'sec', acao:dl => { ifrSalvarEditor(dl, d, true); return false; }});
@@ -248,6 +258,13 @@ async function ifrAbrir(id){
     if (e.target.dataset.ifrBaixarVersao) ifrBaixarTexto(ifrSlug(d.nome) + '.v' + v.versao + '.' + ifrFmt(d.formato)[2], v.fonte);
     else modal(esc(d.nome) + ' · versão ' + esc(v.versao), '<pre class="ifr-pre">' + esc(v.fonte) + '</pre>', [{txt:'Fechar', cls:'sec'}]);
   });
+}
+// a cópia de um desenho automático vira um desenho feito à mão (o original segue sendo refeito sozinho)
+async function ifrCopiar(d){
+  try {
+    const n = await ifrSalvarDiagrama({no_id:d.no_id, aba:d.aba, nome:(d.nome + ' (cópia)').slice(0, 160), formato:d.formato, fonte:d.fonte || ''}, {evidencias:d.evidencias || [], lacunas:d.lacunas || []});
+    ifrTrocar(n); ifrLado(); ifrAvisarCanvas(); ifrAbrir(n.id);
+  } catch(e){ toast('Não deu para copiar: ' + (e.message || e)); }
 }
 async function ifrVersoes(d){
   const sb = ifrBanco();
@@ -400,10 +417,11 @@ window.addEventListener('message', async e => {
   else if (m.tipo === 'renderizar' && podeEditar()) ifrRenderizar(d.diagramaId);
   else if (m.tipo === 'gerar' && podeEditar()) ifrGerar();
 });
-// o que outra pessoa mudou no canvas chega sozinho (a cada 30 segundos, com a aba aberta)
-setInterval(async () => {
+// o que outra pessoa (ou o robô) mudou no canvas chega sozinho (a cada 30 segundos, com a aba aberta)
+setInterval(() => { if (UI.view === 'infra' && document.visibilityState === 'visible') ifrAtualizarRemoto(); }, 30000);
+async function ifrAtualizarRemoto(){
   const sb = ifrBanco();
-  if (!sb || UI.view !== 'infra' || !IFR.no || document.visibilityState !== 'visible' || !ifrFrame()) return;
+  if (!sb || UI.view !== 'infra' || !IFR.no || !ifrFrame()) return;
   const {data, error} = await sb.from('infra_canvas').select('caminho, dados, aba, no_id').eq('no_id', IFR.no).eq('aba', IFR.aba);
   if (error) return;
   const vistos = new Set();
@@ -412,7 +430,7 @@ setInterval(async () => {
     if (JSON.stringify(r.dados) !== JSON.stringify(IFR.conhecidos[r.caminho])){ IFR.conhecidos[r.caminho] = r.dados; IFR.docs[r.caminho] = r.dados; ifrFalar({tipo:'remoto', dados:{caminho:r.caminho, dados:r.dados}}); }
   });
   Object.keys(IFR.conhecidos).forEach(c => { if (!vistos.has(c)){ delete IFR.conhecidos[c]; delete IFR.docs[c]; ifrFalar({tipo:'remoto', dados:{caminho:c, dados:null}}); } });
-}, 30000);
+}
 
 document.addEventListener('click', e => {
   if (!e.target.closest('#ops-corpo .ifr-tela')) return;

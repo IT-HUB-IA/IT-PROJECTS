@@ -303,7 +303,10 @@ function enNovaPublicacao(marcoId){
 /* ---------- repositórios ---------- */
 function enNovoRepo(){
   const proj = enProjeto(UI.sel);
-  const onde = [[proj, nomeDe(proj) + ' (projeto inteiro)']].concat(D.apps.filter(a => 'project:' + a.project === proj).map(a => ['app:' + a.id, nomeDe('app:' + a.id) + ' (só esta aplicação)']));
+  // cada produto tem a própria ligação com o GitHub: os desenhos automáticos do produto saem só dos repositórios dele
+  const onde = [[proj, nomeDe(proj) + ' (projeto inteiro)']]
+    .concat(D.products.filter(p => 'project:' + p.project === proj).map(p => ['product:' + p.id, nomeDe('product:' + p.id) + ' (só este produto)']))
+    .concat(D.apps.filter(a => 'project:' + a.project === proj).map(a => ['app:' + a.id, nomeDe('app:' + a.id) + ' (só esta aplicação)']));
   const dlg = modal('Ligar repositório', '<p class="sec tf-nota" style="margin-top:0">Cole o endereço do repositório. Depois é só colar um endereço e um segredo no GitHub ou no GitLab, e o código passa a aparecer nos itens.</p>' +
     '<div class="grade-form"><label class="lb largo">Endereço do repositório<input class="campo" id="en-r-u" placeholder="https://github.com/empresa/projeto"></label>' +
     '<label class="lb">Onde fica<select class="sel" id="en-r-p"><option value="github">GitHub</option><option value="gitlab">GitLab</option></select></label>' +

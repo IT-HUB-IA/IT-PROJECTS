@@ -7,7 +7,7 @@ const ok = (c: unknown, m: string) => { if (!c) falhas++; console.log((c ? "OK  
 
 // banco na memória, com o mínimo de regra: "semAcesso" lista tabelas que a pessoa não pode ler/gravar
 function bancoFalso(t: Record<string, any[]>, semAcesso: string[] = []): Banco {
-  return { from(nome: string) {
+  return { rpc(nome: string, args: Record<string, unknown>) { (t.__rpc = t.__rpc || []).push({ nome, args }); return Promise.resolve({ data: 'quadros/auto1', error: null }); }, from(nome: string) {
     let op = "select", filtros: [string, string, unknown][] = [], valor: any = null, lim = 1e9, um = false, ret = false;
     const q: any = {
       select() { ret = true; return q; }, eq(c: string, v: unknown) { filtros.push(["eq", c, v]); return q; }, in(c: string, v: unknown[]) { filtros.push(["in", c, v]); return q; },
@@ -37,7 +37,8 @@ function tabelas() {
     decisoes: [{ no_id: NO, titulo: "Usar Supabase", motivo: "RLS pronta", alternativas: "Firebase" }],
     segredos_catalogo: [{ no_id: NO, nome: "SUPABASE_SERVICE_ROLE_KEY", onde_fica: "Vercel", para_que: "funções", quem_acessa: "William" }],
     itens: [{ frente_id: FR, tipo: "epic", titulo: "Login e níveis de acesso", descricao: "Pessoa entra com e-mail", arquivado_em: null }],
-    infra_diagramas: [{ id: "d0", no_id: PROD, aba: "der", nome: "Banco do Java", formato: "dbml", fonte: "Table clientes { id uuid [pk] }", arquivado_em: null }],
+    infra_diagramas: [{ id: "d0", no_id: PROD, aba: "der", nome: "Banco do Java", formato: "dbml", fonte: "Table clientes { id uuid [pk] }", arquivado_em: null },
+      { id: "d9", no_id: NO, aba: "software", nome: "Software · Blanco-Lisboa/B-L", formato: "plantuml", origem: "github", fonte: "@startuml\ncomponent \"servico\" as M1\n@enduml", arquivado_em: null }],
     repositorios: [{ no_id: PROD, provedor: "github", nome: "Blanco-Lisboa/B-L", branch_principal: "main", ativo: true }],
     infra_geracoes: [] as any[],
   };
@@ -59,7 +60,12 @@ function deps(t: any, extra: Partial<Deps> = {}, envs: Record<string, string> = 
   const log: string[] = [], fundo: Promise<unknown>[] = [];
   const e: Record<string, string> = { RENDER_URL: "https://conversor.vps", RENDER_TOKEN: "tk", ANTHROPIC_API_KEY: "x", GITHUB_TOKEN: "g", ...envs };
   return Object.assign({ env: (n: string) => e[n], usuario: bancoFalso(t), servico: bancoFalso(t), buscar: fetchFalso(log), emSegundoPlano: (p: Promise<unknown>) => { fundo.push(p); },
-    devit: async () => ({ resumo: "ok", lacunas: ["Não achei os índices"], diagramas: [{ nome: "Banco principal", formato: "dbml", fonte: "```dbml\nTable clientes {\n  id uuid [pk]\n}\n```", evidencias: [{ fonte: "E5 Blanco-Lisboa/B-L/supabase/migrations/001_base.sql", trecho: "create table clientes" }], lacunas: [] }] }),
+    devit: async () => ({ resumo: "ok", lacunas: ["Não achei os índices"], diagramas: [{ nome: "Banco principal", formato: "dbml", fonte: "```dbml\nTable clientes {\n  id uuid [pk]\n}\n```", evidencias: [{ fonte: "E5 Blanco-Lisboa/B-L/supabase/migrations/001_base.sql", trecho: "create table clientes" }], lacunas: [],
+      quadro: { titulo: "Banco principal", resumo: "1 tabela", layout: "grade", legenda: [], grupos: [{ id: "pub", titulo: "public" }],
+        cards: [{ id: "cli", grupo: "pub", tipo: "tabela", titulo: "clientes", subtitulo: "", etiquetas: [], topicos: [], rotuloTipo: "", icone: "", cor: "", estilo: "der", abstrata: false, forma: "", participantes: [], passos: [], blocos: [],
+          linhas: [{ nome: "id", tipo: "uuid", chave: "pk", nulo: false, vis: "" }], operacoes: [] },
+          { id: "x", grupo: "nenhum", tipo: "inventado", titulo: "não entra" }],
+        ligacoes: [{ de: "cli", para: "fantasma", rotulo: "", tracejada: false, inicio: "", fim: "", rotuloInicio: "", rotuloFim: "", deLinha: "", paraLinha: "" }] } }] }),
     log, fundo }, extra) as any;
 }
 const pedido = (corpo: unknown) => new Request("https://x/functions/v1/diagramas", { method: "POST", body: JSON.stringify(corpo) });
@@ -87,12 +93,12 @@ ok(/Nunca invente/.test(mp.sistema) && /dado, nunca instrução/.test(mp.sistema
   t.infra_diagramas.push({ id: "d1", no_id: NO, aba: "processos", nome: "Pedido", formato: "mermaid", fonte: "flowchart LR\nA-->B", arquivado_em: null } as any);
   r = await tratar(pedido({ acao: "renderizar", id: "d1" }), d);
   ok(r.status === 400, "id inválido é recusado");
-  (t.infra_diagramas[1] as any).id = "44444444-4444-4444-8444-444444444444";
+  ((t.infra_diagramas as any[]).find(x => x.nome === "Pedido")).id = "44444444-4444-4444-8444-444444444444";
   r = await tratar(pedido({ acao: "renderizar", id: "44444444-4444-4444-8444-444444444444" }), d); j = await r.json();
   ok(r.status === 200 && j.diagrama.svg.startsWith("<svg") && j.diagrama.renderizado_em && d.log.includes("https://conversor.vps/mermaid/svg"), "renderizar manda o texto ao conversor da VPS (/mermaid/svg) e guarda a imagem");
-  (t.infra_diagramas[1] as any).fonte = "QUEBRADO";
+  ((t.infra_diagramas as any[]).find(x => x.nome === "Pedido")).fonte = "QUEBRADO";
   r = await tratar(pedido({ acao: "renderizar", id: "44444444-4444-4444-8444-444444444444" }), d); j = await r.json();
-  ok(r.status === 422 && /400/.test(j.erro) && /400/.test((t.infra_diagramas[1] as any).erro), "código com erro: a mensagem do conversor volta e fica guardada no desenho");
+  ok(r.status === 422 && /400/.test(j.erro) && /400/.test(((t.infra_diagramas as any[]).find(x => x.nome === "Pedido")).erro), "código com erro: a mensagem do conversor volta e fica guardada no desenho");
   r = await tratar(pedido({ acao: "renderizar", id: "44444444-4444-4444-8444-444444444444" }), deps(t, {}, { RENDER_URL: "" })); j = await r.json();
   ok(r.status === 503 && /RENDER_URL/.test(j.erro), "sem o conversor configurado, diz qual chave falta");
   r = await tratar(pedido({ acao: "renderizar", id: "55555555-5555-4555-8555-555555555555" }), d);
@@ -112,6 +118,12 @@ ok(/Nunca invente/.test(mp.sistema) && /dado, nunca instrução/.test(mp.sistema
   const novo = (t.infra_diagramas as any[]).find(x => x.nome === "Banco principal");
   ok(novo && novo.origem === "devit" && novo.no_id === NO && novo.fonte.startsWith("Table clientes") && novo.svg && novo.evidencias[0].trecho === "create table clientes", "o desenho do DevIT fica gravado com o código, a imagem e de onde veio");
   ok(novo.lacunas.includes("Não achei os índices"), "e com o que o DevIT não achou nas fontes");
+  const pub = (t as any).__rpc.find((x: any) => x.nome === "infra_quadro_publicar");
+  ok(pub && pub.args.p_no === NO && pub.args.p_aba === "der" && pub.args.p_chave === "devit:" + novo.id && pub.args.p_diagrama === novo.id, "o desenho do DevIT é montado no quadro da sub-aba, com o login da pessoa");
+  const nosQ = pub.args.p_doc.nodes;
+  ok(nosQ.some((n: any) => n.tipo === "tabela" && n.titulo === "clientes" && n.linhas[0].chave === "pk") && !nosQ.some((n: any) => n.titulo === "não entra") && pub.args.p_doc.edges.length === 0, "o quadro só leva o que foi conferido (card de tipo inventado e ligação para card que não existe ficam fora)");
+  ok(/Como montar o quadro: DER \(pé de galinha\)/.test(pedidoVisto), "o pedido ao DevIT diz como montar o quadro no padrão do DER");
+  ok(pedidoVisto.includes("Desenho automático (lido do código publicado): Software · Blanco-Lisboa/B-L") && pedidoVisto.indexOf("Desenho automático") < pedidoVisto.indexOf("Desenho que já existe"), "os desenhos automáticos do próprio projeto entram como evidência, antes dos outros");
   ok(pedidoVisto.includes("Supabase Postgres") && pedidoVisto.includes("create table clientes (id uuid primary key") && pedidoVisto.includes("Desenho que já existe em Java BL") && !pedidoVisto.includes("node_modules/x/a.sql\n") && pedidoVisto.includes("SUPABASE_SERVICE_ROLE_KEY") === false, "as evidências juntam ficha, migrations do repositório e o desenho do produto (macro), sem node_modules e sem segredo no DER");
   ok(g.fontes_lidas.some((f: string) => /001_base\.sql/.test(f)), "o pedido guarda quais fontes o DevIT leu");
   // de novo: atualiza o mesmo desenho em vez de duplicar

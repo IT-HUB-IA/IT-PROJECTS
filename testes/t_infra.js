@@ -45,7 +45,7 @@ function q(t){ const st = {t, op:'select', filtro:{}, de:0, ate:998};
 window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1', email:'admin@it-ia.tec.br'}}; return { auth:{ async getSession(){ return {data:{session:sess}}; }, onAuthStateChange(){ return {data:{subscription:{unsubscribe(){}}}}; }, async signOut(){} },
   storage:{ from(){ return { async upload(caminho, blob){ window.__deposito = window.__deposito || {}; window.__deposito[caminho] = blob.size; return {data:{path:caminho}, error:null}; }, async createSignedUrls(ps){ return {data:ps.map(p => ({path:p, signedUrl:'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'})), error:null}; }, async createSignedUrl(p, s, o){ window.__baixou = (window.__baixou || []).concat(p + '|' + ((o || {}).download || '')); return {data:{signedUrl:'data:application/octet-stream;base64,SGVsbG8='}, error:null}; } }; } },
   functions:{ async invoke(nome, o){ return JSON.parse(await window.__fn(JSON.stringify(o.body || {}))); } },
-  from:q, async rpc(fn, args){ if (/^(ia_|admin_ia_|admin_usuarios)/.test(fn)) return JSON.parse(await window.__rpc(JSON.stringify({fn, args:args || {}}))); if (fn === 'sou_dono_sistema') return {data:true, error:null}; if (/^admin_/.test(fn)) return {data:fn === 'admin_resumo' ? {gerado_em:new Date().toISOString()} : [], error:null}; if (fn !== 'vincular_meu_login') return {data:null, error:null}; return {data:[{pessoa_id:window.__eu, nome:'William', papel:'master', numero:100001, espaco_id:window.__esp || null}], error:null}; } }; } };`;
+  from:q, async rpc(fn, args){ if (/^(ia_|admin_ia_|admin_usuarios|infra_)/.test(fn)) return JSON.parse(await window.__rpc(JSON.stringify({fn, args:args || {}}))); if (fn === 'sou_dono_sistema') return {data:true, error:null}; if (/^admin_/.test(fn)) return {data:fn === 'admin_resumo' ? {gerado_em:new Date().toISOString()} : [], error:null}; if (fn !== 'vincular_meu_login') return {data:null, error:null}; return {data:[{pessoa_id:window.__eu, nome:'William', papel:'master', numero:100001, espaco_id:window.__esp || null}], error:null}; } }; } };`;
 (async () => {
   prepararLogin();
   const eu = COMO ? 'd148fdc5-eef3-5398-bf89-f49b55b5cd28' : psql("select id from public.pessoas where papel='master' order by nome limit 1").trim();
@@ -53,7 +53,12 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   const p = await b.newPage({ viewport: { width: 1440, height: 900 }, acceptDownloads: true });
   p.on('pageerror', e => { erros.push(e.message); console.log('PAGEERROR', e.stack.split('\n').slice(0,4).join(' | ')); });
   await p.exposeFunction('__bd', s => JSON.stringify(executar(JSON.parse(s))));
-  await p.exposeFunction('__rpc', s => JSON.stringify({data:null, error:null}));
+  // as funções infra_* rodam de verdade no Postgres local, como a pessoa logada
+  const litSql = v => v === null || v === undefined ? 'null' : typeof v === 'number' || typeof v === 'boolean' ? String(v) : Array.isArray(v) ? '$l$' + '{' + v.map(x => '"' + String(x).replace(/"/g, '') + '"').join(',') + '}' + '$l$' : typeof v === 'object' ? '$l$' + JSON.stringify(v) + '$l$' : '$l$' + v + '$l$';
+  await p.exposeFunction('__rpc', s => { const {fn, args} = JSON.parse(s);
+    if (!/^infra_/.test(fn)) return JSON.stringify({data:null, error:null});
+    try { const out = psql(COMO + 'select to_json(public.' + fn + '(' + Object.entries(args).map(([k, v]) => k + ' => ' + litSql(v)).join(', ') + '))').trim(); return JSON.stringify({data:out ? JSON.parse(out) : null, error:null}); }
+    catch (e) { const m = String(e.stderr || e.message).split('\n').find(l => /ERROR/.test(l)) || String(e.message); return JSON.stringify({data:null, error:{message:m.replace(/^.*ERROR:\s*/, '')}}); } });
   const conta = sql => psql(sql).trim();
   // a função diagramas de mentira: o "conversor" devolve um SVG com o nome do desenho
   const chamadas = [];
@@ -74,7 +79,7 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   await abrir();
   ok(await p.evaluate(() => document.querySelectorAll('.ifr-aba').length === 10 && !!document.querySelector('.view-b[data-view="infra"]')), 'o projeto tem a aba Infraestrutura com as 10 sub-abas');
   const fr = () => p.frames().find(f => f !== p.mainFrame());
-  ok(!!fr() && await fr().evaluate(() => !!window.__PONTE && document.querySelectorAll('#barra [data-criar]').length === 10), 'o canvas abre dentro da aba, com a barra de criar');
+  ok(!!fr() && await fr().evaluate(() => !!window.__PONTE && document.querySelectorAll('#barra [data-criar]').length === 12 && !!document.querySelector('#barra [data-criar="tabela"]') && !!document.querySelector('#barra [data-criar="fluxo"]')), 'o canvas abre dentro da aba, com a barra de criar (inclusive tabela e passo de processo)');
   ok(await fr().evaluate(() => !!document.querySelector('#barra [data-criar="diagrama"]')), 'a barra do canvas tem o card "Desenho do sistema"');
   // criar o card Desenho pelo canvas: pede para escolher, cria um desenho novo e liga no card
   await fr().click('#barra [data-criar="diagrama"]'); await p.waitForTimeout(800);
@@ -118,6 +123,41 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   await p.click('[data-ifr-aba="der"]'); await p.waitForTimeout(2500);
   ok(await p.evaluate(() => /DER \/ Banco de Dados/.test(document.querySelector('.ifr-cab h2').textContent)) && await fr().evaluate(() => window.__PONTE.init.ns.endsWith('|der') && !document.querySelector('.t-diagrama')), 'cada sub-aba tem o próprio canvas');
   if (process.env.FOTOS) await p.screenshot({path: process.env.FOTOS + '/infra_der.png'});
+  // ---------- automático: o desenho que o robô grava, com o quadro dele no canvas ----------
+  const DOC = {nome:'Software · it-hub/bl', pai:'raiz', nodes:[{id:'nt', tipo:'texto', x:0, y:-100, w:800, texto:'Arquitetura de Software · it-hub/bl', fonte:'g', negrito:true},
+    {id:'ng', tipo:'grupo', x:0, y:0, w:700, h:260, cor:'azul', titulo:'fonte', nota:''},
+    {id:'n1', tipo:'modulo', x:30, y:50, w:260, cor:'ouro', titulo:'app', subtitulo:'12 arquivos', etiquetas:['JavaScript'], topicos:[], nota:''},
+    {id:'n2', tipo:'modulo', x:400, y:50, w:260, cor:'ouro', titulo:'lib', subtitulo:'3 arquivos', etiquetas:['JavaScript'], topicos:[], nota:''}],
+    edges:[{id:'a1', de:'n1', deLado:'r', para:'n2', paraLado:'l', rotulo:'5 importações', cor:'azul', estilo:'curva', tracejada:false, setas:'fim', nota:''}]};
+  psql("set role service_role; select public.infra_auto_gravar('" + pj + "', 'software', 'github:it-hub/bl:software', 'Software · it-hub/bl', 'plantuml', '@startuml\n[app] --> [lib] : 5\n@enduml', 'github', 'abc1234def')");
+  psql("set role service_role; select public.infra_auto_quadro('" + pj + "', 'software', 'github:it-hub/bl:software', 'Software · it-hub/bl', $j$" + JSON.stringify(DOC) + "$j$, (select id from public.infra_diagramas where chave_auto = 'github:it-hub/bl:software'))");
+  await p.click('[data-ifr-aba="software"]'); await p.waitForTimeout(3000);
+  const lado = () => p.evaluate(() => document.querySelector('[data-ifr-lado]').textContent);
+  ok(/Automático/.test(await lado()) && /sai sozinha do código/.test(await lado()) && /Nenhum repositório ligado direto neste projeto/.test(await lado()), 'a sub-aba mostra de onde o desenho sai sozinho e que falta ligar um repositório a este projeto');
+  ok(await p.evaluate(() => { const li = [...document.querySelectorAll('.ifr-item')].find(x => /Software · it-hub\/bl/.test(x.textContent)); return !!li && /automático do código/.test(li.textContent) && !!li.querySelector('[data-ifr-quadro]'); }), 'o desenho automático aparece na lista, dizendo de onde veio, com o botão de abrir o quadro');
+  ok(await fr().evaluate(() => [...document.querySelectorAll('.t-quadro')].some(x => /Software · it-hub\/bl/.test(x.textContent))), 'o quadro principal da sub-aba tem o card que abre o quadro do desenho');
+  await p.click('.ifr-item.auto [data-ifr-quadro]'); await p.waitForTimeout(1500);
+  ok(await fr().evaluate(() => /Software · it-hub\/bl/.test(document.querySelector('#trilha').textContent) && document.querySelectorAll('.t-modulo').length === 2 && !!document.querySelector('.t-grupo') && /5 importações/.test(document.querySelector('#camada-rotulos').textContent)), 'Abrir leva ao quadro do desenho no canvas, com os cards, o grupo e a ligação com o número');
+  if (process.env.FOTOS) await p.screenshot({path: process.env.FOTOS + '/infra_auto_quadro.png'});
+  await p.click('.ifr-item.auto [data-ifr-abrir]'); await p.waitForTimeout(1200);
+  ok(await p.evaluate(() => document.querySelector('dialog.ifr-modal[open] #ifr-fonte').readOnly && /sai sozinho do código publicado/.test(document.querySelector('dialog.ifr-modal[open]').textContent) && /commit abc1234/.test(document.querySelector('dialog.ifr-modal[open]').textContent)), 'o editor do desenho automático é só leitura e diz de qual commit saiu');
+  await p.click('dialog.ifr-modal[open] .modal-rod button:has-text("Copiar para editar à mão")'); await p.waitForTimeout(2000);
+  ok(conta("select count(*) || '/' || max(origem) || '/' || count(chave_auto) from public.infra_diagramas where no_id = '" + pj + "' and aba = 'software' and nome like '%(cópia)'") === '1/manual/0', 'Copiar para editar à mão cria um desenho feito à mão (o automático segue sendo refeito)');
+  await p.evaluate(() => { const d = document.querySelector('dialog.modal[open]'); if (d){ d.close(); d.remove(); } });
+  // Atualizar agora
+  await p.click('[data-ifr-atualizar]'); await p.waitForTimeout(1500);
+  ok(conta("select count(*) from public.infra_automacoes where no_id = '" + pj + "' and origem = 'manual' and status = 'pendente'") === '1', 'Atualizar agora põe o pedido na fila do robô');
+  psql("update public.infra_automacoes set status = 'pronto', concluido_em = now(), diagramas = array[(select id from public.infra_diagramas where chave_auto = 'github:it-hub/bl:software')] where origem = 'manual'");
+  await p.waitForTimeout(7000);
+  ok(/Pronto: 1 desenho atualizado/.test(await p.evaluate(() => (document.querySelector('#toast') || {}).textContent || '')) && /Última atualização[\s\S]*pronto · Atualizar agora/.test(await lado()), 'quando o robô termina, a tela avisa e mostra a última atualização');
+  // ligar o banco do sistema
+  await p.click('[data-ifr-banco]'); await p.waitForTimeout(600);
+  await p.fill('#ifr-b-url', 'mysql://errado'); await p.click('dialog.modal[open] .modal-rod .btn:not(.sec)'); await p.waitForTimeout(400);
+  ok(await p.evaluate(() => !!document.querySelector('dialog.modal[open] #ifr-b-url')), 'endereço que não é postgresql:// não fecha a janela');
+  await p.fill('#ifr-b-url', 'postgresql://leitura_ciclodev:senha-de-teste@db.exemplo:5432/postgres'); await p.fill('#ifr-b-esq', 'public, app');
+  await p.click('dialog.modal[open] .modal-rod .btn:not(.sec)'); await p.waitForTimeout(2500);
+  ok(conta("select count(*) || '/' || max(array_to_string(esquemas, ',')) from public.infra_bancos where no_id = '" + pj + "'") === '1/app,public' && conta("select count(*) from interno.infra_bancos_conexao where conexao like 'postgresql://leitura_ciclodev:%'") === '1', 'ligar o banco guarda o endereço na área protegida do banco');
+  ok(/Banco de produção · esquemas app, public/.test(await lado()) && !/senha-de-teste/.test(await p.evaluate(() => document.body.innerHTML)), 'a tela mostra o banco ligado e nunca mostra a senha');
   // no cliente não há aba Infraestrutura
   await p.evaluate(() => { const U = window.__tf.UI; const c = window.__tf.D.clients[0]; U.sel = 'client:' + c.id; window.__tf.rOperacoes(); }); await p.waitForTimeout(800);
   ok(await p.evaluate(() => !document.querySelector('.view-b[data-view="infra"]')), 'cliente não tem a aba Infraestrutura (só projeto e produto)');

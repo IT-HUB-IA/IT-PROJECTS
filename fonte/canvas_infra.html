@@ -1,4 +1,50 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
+  /* tabela (DER) e classe (UML) */
+  .no.t-tabela{overflow:hidden}
+  .tb-cab{display:flex;align-items:center;gap:8px;height:44px;padding:0 8px 0 11px;background:color-mix(in srgb, var(--cor) 18%, transparent);border-bottom:1px solid color-mix(in srgb, var(--cor) 50%, transparent);color:var(--cor)}
+  .tb-tt{flex:1;min-width:0}
+  .tb-cab .no-tags{flex:none;display:flex;gap:4px}
+  .tb-titulo{font-weight:600;font-size:14px;line-height:1.25;color:var(--tinta);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tb-titulo.abs{font-style:italic}
+  .tb-sub{font-size:11px;line-height:1.3;color:var(--tinta2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tb-linhas{list-style:none;margin:0;padding:0}
+  .tb-linhas li{display:grid;grid-template-columns:40px minmax(0,1fr) auto;align-items:center;gap:6px;height:24px;padding:0 10px 0 8px;font-size:12.5px;border-top:1px solid var(--linha)}
+  .tb-linhas li:first-child{border-top:0}
+  .tb-ops{border-top:2px solid color-mix(in srgb, var(--cor) 50%, transparent)}
+  .tb-n{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--tinta)}
+  .tb-t{font-family:ui-monospace, SFMono-Regular, Menlo, monospace;font-size:11.5px;color:var(--tinta2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tb-k{display:flex;gap:2px}
+  .k-pk .tb-n,.k-pkfk .tb-n{font-weight:700}
+  .bdg{display:inline-block;font-size:9px;font-weight:800;letter-spacing:.03em;padding:1px 3px;border-radius:3px;line-height:1.35;font-style:normal}
+  .bdg.pk{background:#E5C02A;color:#1A1400}.bdg.fk{background:#2A9DBF;color:#00161C}.bdg.uq{background:#8E4EC6;color:#fff}
+  .t-tabela .no-nota-b{position:static}
+  /* passo de processo: a forma é o próprio card */
+  .no.t-fluxo{background:transparent;border:0;box-shadow:none;border-radius:0}
+  .no.t-fluxo.sel{box-shadow:none}
+  .fx{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;text-align:center}
+  .fx-forma{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+  .fx-forma .f{fill:color-mix(in srgb, var(--cor) 16%, var(--sup));stroke:var(--cor);stroke-width:2;vector-effect:non-scaling-stroke}
+  .fx-forma .f2{fill:none;stroke:var(--cor);stroke-width:1.6;vector-effect:non-scaling-stroke}
+  .fx-fim .f{stroke-width:4.5}
+  .no.t-fluxo.sel .f,.no.t-fluxo.sel .f2{stroke:var(--ouro2)}
+  .fx-txt{position:relative;padding:6px 14px;max-width:100%}
+  .fx-decisao .fx-txt{padding:6px 24%}
+  .fx-dados .fx-txt{padding:6px 18%}
+  .fx-inicio .fx-txt,.fx-fim .fx-txt,.fx-evento .fx-txt{position:absolute;top:100%;left:50%;transform:translateX(-50%);width:max-content;max-width:190px;padding:6px 0 0}
+  .fx-titulo{font-size:13px;font-weight:600;color:var(--tinta);line-height:1.3;word-break:break-word}
+  .fx-sub{font-size:11px;color:var(--tinta2);margin-top:2px;line-height:1.3}
+  .t-fluxo .no-nota-b{position:absolute;top:-6px;right:-6px}
+  /* diagrama de sequência */
+  .no.t-sequencia{overflow:hidden}
+  .sq-cab{display:flex;align-items:center;gap:8px;height:40px;padding:0 10px 0 12px;border-bottom:1px solid var(--linha);color:var(--cor)}
+  .sq-titulo{flex:1;min-width:0;font-weight:600;font-size:14px;color:var(--tinta);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sq-svg{display:block;width:100%;height:calc(100% - 40px)}
+  /* rótulo nas pontas da linha (cardinalidade, multiplicidade) */
+  .rotulo-ponta{position:absolute;transform:translate(-50%,-50%);padding:1px 6px;border-radius:5px;background:var(--sup2);border:1px solid var(--linha2);font-size:11px;font-weight:700;color:var(--tinta);pointer-events:none;white-space:nowrap}
+  .rotulo-ponta.sel{border-color:var(--ouro2)}
+  .in.mono{font-family:ui-monospace, SFMono-Regular, Menlo, monospace;font-size:12px}
+  .no-topicos .tp-texto{overflow-wrap:anywhere}
+</style></head><body>
 <title>Canvas de Infraestrutura</title>
 <meta name="description" content="Canvas da aba Infraestrutura do CicloDev: desenhos do sistema como código, com cards, ligações e quadros.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -145,8 +191,8 @@
   .dg-abrir svg{width:14px;height:14px}
   .dg-abrir:hover{background:var(--sup3);color:var(--tinta)}
   .dg-titulo{font-weight:600;font-size:14.5px;padding:6px 12px 8px;word-break:break-word}
-  .dg-img{flex:1;min-height:0;margin:0 8px 8px;background:#FFFFFF;border-radius:5px;display:grid;place-items:center;overflow:hidden}
-  .dg-img img{max-width:100%;max-height:100%;object-fit:contain;display:block;pointer-events:none}
+  .dg-img{flex:1;min-height:0;margin:0 8px 8px;background:#030405;border:1px solid var(--linha);border-radius:5px;display:grid;place-items:center;overflow:hidden}
+  .dg-img img{max-width:100%;max-height:100%;object-fit:contain;display:block;pointer-events:none;filter:invert(.92) hue-rotate(180deg)}
   .dg-sem{flex:1;min-height:0;margin:0 8px 8px;border:1px dashed var(--linha2);border-radius:5px;padding:12px;color:var(--tinta3);font-size:12.5px;line-height:1.5;white-space:pre-wrap;overflow:hidden}
   .dg-vazio{flex:1;margin:0 8px 8px;border:1px dashed var(--ouro);border-radius:5px;background:var(--ouro-suave);color:var(--tinta);font-size:13px}
   body.ro .dg-vazio{pointer-events:none;opacity:.6}
@@ -466,7 +512,7 @@
     lerLS(k, d){ const v = (INIT.ls || {})[k]; return v === undefined ? d : copia(v); },
     gravarLS(k, v){ (INIT.ls = INIT.ls || {})[k] = copia(v); falar({tipo:'ls', dados:{k, v}}); },
     pedir(tipo, dados){ falar({tipo, dados}); },
-    aoMudarDiagramas: null, aoLigar: null, aoInserir: null
+    aoMudarDiagramas: null, aoLigar: null, aoInserir: null, aoAbrirQuadro: null
   };
   window.addEventListener('message', e => {
     if (e.source !== parent) return;
@@ -481,6 +527,7 @@
     if (m.tipo === 'diagramas'){ P.diagramas = m.dados || {}; if (P.aoMudarDiagramas) P.aoMudarDiagramas(); }
     if (m.tipo === 'ligar-diagrama' && P.aoLigar) P.aoLigar(m.dados);
     if (m.tipo === 'inserir-diagrama' && P.aoInserir) P.aoInserir(m.dados);
+    if (m.tipo === 'abrir-quadro' && P.aoAbrirQuadro) P.aoAbrirQuadro(m.dados);
   });
   const db = {
     collection(nome){ return {onSnapshot(cb){ colOuv.push({nome, cb});
@@ -529,10 +576,20 @@ const TIPOS = {
   grupo:        {nome:'Grupo',             rotulo:'GRUPO',          icone:'grupo',    w:560, h:380, cor:'ciano'},
   quadro:       {nome:'Novo quadro',       rotulo:'QUADRO',         icone:'quadro',   w:250, cor:'ouro'},
   painel:       {nome:'Painel central',    rotulo:'PAINEL CENTRAL', icone:'grafico',  w:1280, h:800, cor:'ouro'},
-  diagrama:     {nome:'Desenho do sistema', rotulo:'DESENHO',       icone:'diagrama', w:560, h:400, cor:'ciano'}
+  diagrama:     {nome:'Desenho do sistema', rotulo:'DESENHO',       icone:'diagrama', w:560, h:400, cor:'ciano'},
+  tabela:       {nome:'Tabela ou classe',  rotulo:'TABELA',         icone:'tabela',   w:280, cor:'ciano'},
+  fluxo:        {nome:'Passo de processo', rotulo:'PASSO',          icone:'fluxo',    w:200, h:80, cor:'verde'},
+  sequencia:    {nome:'Diagrama de sequência', rotulo:'SEQUÊNCIA',  icone:'sequencia', w:820, h:420, cor:'roxo'}
 };
+// formas de passo de processo (padrão de fluxograma e BPMN) e o tamanho de cada uma
+const FORMAS = {tarefa:{r:'Tarefa', w:200, h:80}, decisao:{r:'Decisão', w:150, h:150}, inicio:{r:'Início', w:64, h:64}, fim:{r:'Fim', w:64, h:64},
+  evento:{r:'Evento', w:64, h:64}, dados:{r:'Dados (entrada ou saída)', w:200, h:80}, documento:{r:'Documento', w:200, h:86}, subprocesso:{r:'Subprocesso', w:200, h:86}};
+// pontas de linha: seta, cardinalidade (pé de galinha) e UML
+const PONTAS = [['', 'Padrão (seta)'], ['nenhum', 'Nada'], ['seta', 'Seta cheia'], ['aberta', 'Seta aberta'], ['um', 'Um ( | )'], ['umum', 'Exatamente um ( || )'], ['zeroum', 'Zero ou um ( o| )'],
+  ['muitos', 'Muitos (pé de galinha)'], ['ummuitos', 'Um ou muitos ( |< )'], ['zeromuitos', 'Zero ou muitos ( o< )'], ['triangulo', 'Herança (triângulo vazado)'], ['losango', 'Agregação (losango vazado)'], ['losangoc', 'Composição (losango cheio)']];
+const COR_PART = {ator:'laranja', tela:'azul', servico:'roxo', banco:'ciano', externo:'cinza', fila:'amarelo'};
 const ESTRUTURADOS = Object.keys(TIPOS).filter(k => TIPOS[k].estruturado);
-const ORDEM_CRIAR = ['diagrama','cartao','modulo','empresa','departamento','banco','servico','texto','grupo','quadro'];
+const ORDEM_CRIAR = ['diagrama','cartao','modulo','empresa','departamento','banco','servico','tabela','fluxo','texto','grupo','quadro'];
 
 const ICO = {
   cartao:'<path d="M15 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9z"/><path d="M15 3v6h6"/>',
@@ -578,7 +635,24 @@ const ICO = {
   limpar:'<path d="M3 21h18M6 17l9-12 5 4-8 8z"/>',
   lupa:'<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/>',
   grafico:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
-  diagrama:'<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M7 13l3-4 3 3 4-5"/><path d="M8 21h8M12 17v4"/>'
+  diagrama:'<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M7 13l3-4 3 3 4-5"/><path d="M8 21h8M12 17v4"/>',
+  tabela:'<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M3 14h18M9 9v11"/>',
+  classe:'<rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M4 8h16M4 14h16"/>',
+  fluxo:'<rect x="3" y="3" width="7" height="6" rx="1.5"/><path d="M17.5 13.5 21 17l-3.5 3.5L14 17z"/><path d="M6.5 9v4a2 2 0 0 0 2 2H14"/>',
+  sequencia:'<path d="M6 3v18M18 3v18" stroke-dasharray="2 2.5"/><path d="M6 8h11M14 5.5 17 8l-3 2.5M18 15H7M10 12.5 7 15l3 2.5"/>',
+  container:'<path d="m12 3 8 4.5v9L12 21l-8-4.5v-9z"/><path d="m4 7.5 8 4.5 8-4.5M12 12v9"/>',
+  nuvem:'<path d="M7 18a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 9.5a4.25 4.25 0 0 1-.5 8.5z"/>',
+  volume:'<path d="M4 7c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3z"/><path d="M4 7v10c0 1.7 3.6 3 8 3s8-1.3 8-3V7"/>',
+  fila:'<rect x="3" y="6" width="4" height="12" rx="1"/><rect x="10" y="6" width="4" height="12" rx="1"/><path d="M17 12h4M19 10l2 2-2 2"/>',
+  globo:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z"/>',
+  api:'<path d="M8 7 3 12l5 5M16 7l5 5-5 5M14 4l-4 16"/>',
+  tela:'<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>',
+  chave:'<circle cx="8" cy="15" r="4"/><path d="m11 12 9-9M17 6l2 2M15 8l2 2"/>',
+  escudo:'<path d="M12 3 4 6v6c0 4.5 3.4 8.2 8 9 4.6-.8 8-4.5 8-9V6z"/>',
+  relogio:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  git:'<circle cx="6" cy="6" r="2.2"/><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="8" r="2.2"/><path d="M6 8.2v7.6M18 10.2c0 4-6 3-10.4 6.6"/>',
+  funcao:'<path d="M10 20c2 0 2.5-2 3-5l1.5-7c.5-2.5 1.2-4 3.5-4M7 10h9"/>',
+  pessoa:'<circle cx="12" cy="7" r="4"/><path d="M4 21c.9-4.2 4-6.5 8-6.5s7.1 2.3 8 6.5"/>'
 };
 const ico = (n, cls) => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"' + (cls ? ' class="' + cls + '"' : '') + '>' + (ICO[n] || '') + '</svg>';
 
@@ -857,6 +931,9 @@ function novoNo(tipo, x, y){
   if (tipo === 'grupo'){ n.titulo = ''; n.nota = ''; }
   if (tipo === 'quadro'){ n.titulo = 'Novo quadro'; n.nota = ''; }
   if (tipo === 'diagrama'){ n.diagramaId = null; n.nota = ''; }
+  if (tipo === 'tabela'){ n.titulo = ''; n.subtitulo = ''; n.estilo = 'der'; n.etiquetas = []; n.linhas = [{id: uid('l'), nome: 'id', tipo: 'uuid', chave: 'pk', nulo: false}]; n.operacoes = []; n.nota = ''; }
+  if (tipo === 'fluxo'){ n.forma = 'tarefa'; n.titulo = ''; n.subtitulo = ''; n.nota = ''; }
+  if (tipo === 'sequencia'){ n.titulo = ''; n.participantes = []; n.passos = []; n.blocos = []; n.nota = ''; }
   return n;
 }
 function arestaPadrao(){ return {rotulo: '', cor: 'cinza', estilo: cfg.estiloLinha, tracejada: false, setas: 'fim', nota: ''}; }
@@ -1105,7 +1182,7 @@ function montarNo(el, n){
     const tops = n.topicos || [];
     if (!tops.length) el.classList.add('sem-topicos');
     const tags = (n.etiquetas || []).map(x => '<span class="tag">' + esc(x) + '</span>').join('');
-    h += '<div class="no-corpo"><div class="no-cab"><span class="no-ico">' + ico(t.icone) + '</span><span class="no-tipo">' + esc(n.rotuloTipo || t.rotulo) + '</span><span class="no-tags">' + tags + '</span>' + btnNota + '</div>';
+    h += '<div class="no-corpo"><div class="no-cab"><span class="no-ico">' + ico(n.icone && ICO[n.icone] ? n.icone : t.icone) + '</span><span class="no-tipo">' + esc(n.rotuloTipo || t.rotulo) + '</span><span class="no-tags">' + tags + '</span>' + btnNota + '</div>';
     h += '<button class="cab-add" data-acao="add-topico" title="Adicionar tópico" aria-label="Adicionar tópico">' + ico('somar') + '</button>';
     const estC = estadoCard(n);
     if (estC === 'concluido') el.classList.add('concluido');
@@ -1148,16 +1225,145 @@ function montarNo(el, n){
     else h += '<div class="dg-sem">' + (d.erro ? 'Não deu para gerar a imagem: ' + esc(d.erro) : d.formato === 'markdown' ? esc(String(d.fonte || '').slice(0, 900)) : 'Ainda sem imagem. Dois cliques para abrir o código e gerar.') + '</div>';
     if (cfg.notas && n.nota) h += '<div class="no-nota-txt" style="margin:0 10px 10px">' + esc(n.nota) + '</div>';
   }
+  else if (n.tipo === 'tabela'){
+    const cls = n.estilo === 'classe';
+    const tags = (n.etiquetas || []).map(x => '<span class="tag">' + esc(x) + '</span>').join('');
+    const BDG = {pk: '<b class="bdg pk">PK</b>', fk: '<b class="bdg fk">FK</b>', pkfk: '<b class="bdg pk">PK</b><b class="bdg fk">FK</b>', uq: '<b class="bdg uq">UQ</b>'};
+    const linha = (l, op) => '<li data-lid="' + esc(l.id) + '" class="' + (l.chave ? 'k-' + esc(l.chave) : '') + '"><span class="tb-k">' + (op ? '' : (BDG[l.chave] || '')) + '</span><span class="tb-n">' + esc((cls && l.vis ? l.vis + ' ' : '') + l.nome) + '</span><span class="tb-t">' + esc(l.tipo || '') + (l.nulo ? '?' : '') + '</span></li>';
+    h += '<div class="tb-cab"><span class="no-ico">' + ico(cls ? 'classe' : 'tabela') + '</span><div class="tb-tt"><div class="tb-titulo' + (n.abstrata ? ' abs' : '') + '" data-campo="titulo" data-ph="' + (cls ? 'Classe' : 'Tabela') + '">' + esc(n.titulo) + '</div>' + (n.subtitulo ? '<div class="tb-sub">' + esc(n.subtitulo) + '</div>' : '') + '</div><span class="no-tags">' + tags + '</span>' + btnNota + '</div>';
+    h += '<ul class="tb-linhas">' + (n.linhas || []).map(l => linha(l, false)).join('') + '</ul>';
+    if (cls && (n.operacoes || []).length) h += '<ul class="tb-linhas tb-ops">' + n.operacoes.map(l => linha(l, true)).join('') + '</ul>';
+    if (cfg.notas && n.nota) h += '<div class="no-nota-txt" style="margin:8px 10px 10px">' + esc(n.nota) + '</div>';
+  }
+  else if (n.tipo === 'fluxo'){
+    const f = FORMAS[n.forma] ? n.forma : 'tarefa';
+    const FORMA_SVG = {tarefa: '<rect class="f" x="1" y="1" width="98" height="98" rx="12" ry="14"/>', subprocesso: '<rect class="f" x="1" y="1" width="98" height="98" rx="12" ry="14"/><rect class="f2" x="44" y="80" width="12" height="13"/><path class="f2" d="M50 83v7M46.5 86.5h7"/>',
+      decisao: '<polygon class="f" points="50,1 99,50 50,99 1,50"/>', dados: '<polygon class="f" points="14,1 99,1 86,99 1,99"/>',
+      documento: '<path class="f" d="M1 1H99V84C80 72 66 100 40 92C24 87 12 86 1 92Z"/>', inicio: '<circle class="f" cx="50" cy="50" r="48"/>', fim: '<circle class="f" cx="50" cy="50" r="46"/>',
+      evento: '<circle class="f" cx="50" cy="50" r="48"/><circle class="f2" cx="50" cy="50" r="38"/>'};
+    h += '<div class="fx fx-' + f + '"><svg class="fx-forma" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">' + FORMA_SVG[f] + '</svg>' +
+      '<div class="fx-txt"><div class="fx-titulo" data-campo="titulo" data-ph="' + esc(FORMAS[f].r) + '">' + esc(n.titulo) + '</div>' + (n.subtitulo ? '<div class="fx-sub">' + esc(n.subtitulo) + '</div>' : '') + '</div>' + btnNota + '</div>';
+  }
+  else if (n.tipo === 'sequencia'){
+    h += '<div class="sq-cab"><span class="no-ico">' + ico('sequencia') + '</span><span class="no-tipo">SEQUÊNCIA</span><span class="sq-titulo" data-campo="titulo" data-ph="Diagrama de sequência">' + esc(n.titulo) + '</span>' + btnNota + '</div>' + seqSVG(n);
+  }
   if (n.tipo === 'painel') h += '<div class="pc-wrap"><div class="pc-escala">' + htmlPainel() + '</div></div>';
   if (n.tipo !== 'grupo' && n.tipo !== 'painel') h += '<span class="alca" data-lado="t"></span><span class="alca" data-lado="r"></span><span class="alca" data-lado="b"></span><span class="alca" data-lado="l"></span>';
   h += '<span class="redim" title="Redimensionar"></span>';
   el.innerHTML = h;
 }
+function seqMedidas(n){
+  const ps = n.participantes || [], st = n.passos || [], bl = n.blocos || [];
+  const colW = Math.max(180, ...ps.map(p => String(p.nome || '').length * 7.4 + 56), ...st.filter(x => x.de !== x.para).map(x => Math.min(420, String(x.texto || '').length * 6.9 + 40) / Math.max(1, Math.abs(ps.findIndex(p => p.id === x.para) - ps.findIndex(p => p.id === x.de)))));
+  const W = 40 + colW * Math.max(1, ps.length);
+  let y = 98; const ys = [];
+  st.forEach((x, i) => { y += bl.filter(b => b.de === i).length * 30; y += bl.filter(b => (b.senao || []).some(z => z.em === i)).length * 24; ys.push(y); y += x.de === x.para ? 56 : 44; y += bl.filter(b => b.ate === i).length * 16; });
+  return {colW, W, H: y + 76, ys};
+}
+function seqSVG(n){
+  const ps = n.participantes || [], st = n.passos || [], bl = n.blocos || [];
+  if (!ps.length) return '<div class="dg-sem">Sem participantes ainda. Abra o painel para escrever os passos.</div>';
+  const M = seqMedidas(n), idx = id => ps.findIndex(p => p.id === id), X = i => 20 + M.colW * i + M.colW / 2;
+  const u = 'sq' + String(n.id).replace(/[^\w]/g, ''), hexP = p => corHex(COR_PART[p.tipo] || 'roxo'), txt = '#ECEEF0', lin = '#A7B0B9', acento = corHex(n.cor || 'roxo');
+  const e = s => esc(s);
+  let g = '<defs><marker id="' + u + 'c" viewBox="0 0 10 10" refX="9.5" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="' + lin + '"/></marker>' +
+    '<marker id="' + u + 'a" viewBox="0 0 10 10" refX="9.5" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,0 L10,5 L0,10" fill="none" stroke="' + lin + '" stroke-width="1.4"/></marker></defs>';
+  // blocos (alt, opt, loop, par) atrás de tudo, com a aba do tipo e a condição
+  bl.forEach((b, k) => {
+    if (b.de == null || b.ate == null || !M.ys.length) return;
+    const prof = bl.filter((o, j) => j !== k && o.de <= b.de && o.ate >= b.ate && (o.de < b.de || o.ate > b.ate || j < k)).length;
+    const y1 = M.ys[b.de] - 30 - bl.filter((o, j) => j > k && o.de === b.de).length * 30 + 4, fimSelf = st[b.ate] && st[b.ate].de === st[b.ate].para ? 34 : 14, y2 = M.ys[b.ate] + fimSelf + 4;
+    const x1 = 10 + prof * 8, x2 = M.W - 10 - prof * 8, rot = String(b.tipo || 'alt');
+    g += '<rect x="' + x1 + '" y="' + y1 + '" width="' + (x2 - x1) + '" height="' + (y2 - y1) + '" rx="4" fill="none" stroke="' + acento + '" stroke-opacity=".75"/>';
+    g += '<path d="M' + x1 + ' ' + y1 + 'h' + (rot.length * 8 + 22) + 'v12l-7 7H' + x1 + 'z" fill="' + acento + '" fill-opacity=".22" stroke="' + acento + '" stroke-opacity=".75"/>';
+    g += '<text x="' + (x1 + 8) + '" y="' + (y1 + 14) + '" fill="' + txt + '" font-size="11.5" font-weight="700">' + e(rot) + '</text>';
+    if (b.rotulo) g += '<text x="' + (x1 + rot.length * 8 + 32) + '" y="' + (y1 + 14) + '" fill="' + lin + '" font-size="11.5">[' + e(b.rotulo) + ']</text>';
+    (b.senao || []).forEach(z => { const yz = M.ys[z.em] - 22; if (!isFinite(yz)) return; g += '<line x1="' + x1 + '" x2="' + x2 + '" y1="' + yz + '" y2="' + yz + '" stroke="' + acento + '" stroke-opacity=".75" stroke-dasharray="6 5"/><text x="' + (x1 + 8) + '" y="' + (yz + 14) + '" fill="' + lin + '" font-size="11.5">[' + e(z.rotulo || 'senão') + ']</text>'; });
+  });
+  // participantes em cima e embaixo, e a linha de vida
+  const cabeca = (p, i, y, alto) => {
+    const x = X(i), w = M.colW - 30, c = hexP(p);
+    if (p.tipo === 'ator') return '<g><circle cx="' + x + '" cy="' + (y + 8) + '" r="7" fill="none" stroke="' + c + '" stroke-width="1.8"/><path d="M' + x + ' ' + (y + 15) + 'v14M' + (x - 11) + ' ' + (y + 20) + 'h22M' + x + ' ' + (y + 29) + 'l-9 11M' + x + ' ' + (y + 29) + 'l9 11" stroke="' + c + '" stroke-width="1.8" fill="none"/><text x="' + x + '" y="' + (y + alto + 6) + '" text-anchor="middle" fill="' + txt + '" font-size="12.5" font-weight="600">' + e(p.nome) + '</text></g>';
+    if (p.tipo === 'banco') return '<g><path d="M' + (x - w / 2) + ' ' + (y + 7) + 'a' + (w / 2) + ' 7 0 0 0 ' + w + ' 0v' + (alto - 14) + 'a' + (w / 2) + ' 7 0 0 1 -' + w + ' 0z" fill="' + c + '" fill-opacity=".16" stroke="' + c + '" stroke-width="1.6"/><ellipse cx="' + x + '" cy="' + (y + 7) + '" rx="' + (w / 2) + '" ry="7" fill="' + c + '" fill-opacity=".3" stroke="' + c + '" stroke-width="1.6"/><text x="' + x + '" y="' + (y + alto / 2 + 9) + '" text-anchor="middle" fill="' + txt + '" font-size="12.5" font-weight="600">' + e(p.nome) + '</text></g>';
+    return '<g><rect x="' + (x - w / 2) + '" y="' + y + '" width="' + w + '" height="' + alto + '" rx="8" fill="' + c + '" fill-opacity=".16" stroke="' + c + '" stroke-width="1.6"' + (p.tipo === 'externo' ? ' stroke-dasharray="5 4"' : '') + '/><text x="' + x + '" y="' + (y + alto / 2 + 4.5) + '" text-anchor="middle" fill="' + txt + '" font-size="12.5" font-weight="600">' + e(p.nome) + '</text></g>';
+  };
+  ps.forEach((p, i) => { g += '<line x1="' + X(i) + '" x2="' + X(i) + '" y1="58" y2="' + (M.H - 58) + '" stroke="' + lin + '" stroke-opacity=".55" stroke-dasharray="5 5"/>'; });
+  // barras de ativação: abre na chamada que chega, fecha no retorno que sai
+  const pilha = ps.map(() => []), barras = [];
+  st.forEach((x, k) => { const y = M.ys[k], a = idx(x.de), b = idx(x.para); if (a < 0 || b < 0) return;
+    if ((x.tipo || 'chamada') === 'chamada' && a !== b) pilha[b].push(y);
+    if (x.tipo === 'retorno' && pilha[a].length) barras.push([a, pilha[a].pop(), y]); });
+  pilha.forEach((l, i) => l.forEach(y0 => barras.push([i, y0, M.H - 70])));
+  barras.forEach(([i, y0, y1]) => { g += '<rect x="' + (X(i) - 5) + '" y="' + (y0 - 4) + '" width="10" height="' + Math.max(12, y1 - y0 + 8) + '" fill="#1B2027" stroke="' + hexP(ps[i]) + '" stroke-width="1.4"/>'; });
+  // mensagens numeradas (o número segue a ordem, como o autonumber do PlantUML)
+  st.forEach((x, k) => {
+    const y = M.ys[k], a = idx(x.de), b = idx(x.para); if (a < 0 || b < 0) return;
+    const ret = x.tipo === 'retorno', ass = x.tipo === 'assincrona', mk = 'url(#' + u + (ret || ass ? 'a' : 'c') + ')', num = '<tspan fill="' + acento + '" font-weight="700">' + (k + 1) + '.</tspan> ';
+    if (a === b){
+      const xa = X(a) + 5;
+      g += '<path d="M' + xa + ' ' + y + 'h40v24h-38" fill="none" stroke="' + lin + '" stroke-width="1.5"' + (ret ? ' stroke-dasharray="6 5"' : '') + ' marker-end="' + mk + '"/>';
+      g += '<text x="' + (xa + 48) + '" y="' + (y + 16) + '" fill="' + txt + '" font-size="12">' + num + e(x.texto || '') + '</text>';
+      return;
+    }
+    const dir = b > a ? 1 : -1, x1 = X(a) + dir * 5, x2 = X(b) - dir * 6;
+    g += '<line x1="' + x1 + '" x2="' + x2 + '" y1="' + y + '" y2="' + y + '" stroke="' + lin + '" stroke-width="1.5"' + (ret ? ' stroke-dasharray="6 5"' : '') + ' marker-end="' + mk + '"/>';
+    g += '<text x="' + ((x1 + x2) / 2) + '" y="' + (y - 7) + '" text-anchor="middle" fill="' + (ret ? lin : txt) + '" font-size="12">' + num + e(x.texto || '') + '</text>';
+  });
+  ps.forEach((p, i) => { g += cabeca(p, i, 12, 42) + cabeca(p, i, M.H - 54, 42); });
+  return '<svg class="sq-svg" viewBox="0 0 ' + M.W + ' ' + M.H + '" preserveAspectRatio="xMidYMin meet" font-family="Inter, system-ui, sans-serif">' + g + '</svg>';
+}
+// texto simples para escrever a sequência no painel (parecido com PlantUML):
+//   participantes: "Nome | tipo" (ator, tela, servico, banco, externo, fila)
+//   passos: "A -> B: mensagem" (chamada), "B --> A: resposta" (retorno), "A ->> B: aviso" (assíncrona)
+//   blocos: "alt condição", "senao outra condição", "fim" (também opt, loop e par)
+function seqParaTexto(n){
+  const nome = id => { const p = (n.participantes || []).find(x => x.id === id); return p ? p.nome : '?'; };
+  const L = [], bl = n.blocos || [];
+  (n.passos || []).forEach((x, i) => {
+    bl.filter(b => b.de === i).forEach(b => L.push((b.tipo || 'alt') + (b.rotulo ? ' ' + b.rotulo : '')));
+    bl.forEach(b => (b.senao || []).filter(z => z.em === i).forEach(z => L.push('senao' + (z.rotulo ? ' ' + z.rotulo : ''))));
+    L.push(nome(x.de) + (x.tipo === 'retorno' ? ' --> ' : x.tipo === 'assincrona' ? ' ->> ' : ' -> ') + nome(x.para) + ': ' + (x.texto || ''));
+    bl.filter(b => b.ate === i).forEach(() => L.push('fim'));
+  });
+  return L.join('\n');
+}
+function textoParaSeq(n, partes, passos){
+  const ps = partes.split('\n').map(l => l.trim()).filter(Boolean).map(l => { const [nm, tp] = l.split('|').map(x => x.trim()); const velho = (n.participantes || []).find(p => p.nome === nm); return {id: velho ? velho.id : uid('p'), nome: nm, tipo: COR_PART[tp] ? tp : 'servico'}; });
+  const pid = nm => { let p = ps.find(x => x.nome === nm); if (!p){ p = {id: uid('p'), nome: nm, tipo: 'servico'}; ps.push(p); } return p.id; };
+  const st = [], bl = [], abertos = [];
+  passos.split('\n').map(l => l.trim()).filter(Boolean).forEach(l => {
+    let m = l.match(/^(alt|opt|loop|par)\b\s*(.*)$/i);
+    if (m){ const b = {tipo: m[1].toLowerCase(), rotulo: m[2], de: st.length, ate: null, senao: []}; bl.push(b); abertos.push(b); return; }
+    if ((m = l.match(/^(senao|senão|else)\b\s*(.*)$/i))){ const b = abertos[abertos.length - 1]; if (b) b.senao.push({em: st.length, rotulo: m[2]}); return; }
+    if (/^(fim|end)$/i.test(l)){ const b = abertos.pop(); if (b) b.ate = Math.max(b.de, st.length - 1); return; }
+    if ((m = l.match(/^(.+?)\s*(-->|->>|->)\s*(.+?)\s*:\s*(.*)$/))) st.push({id: uid('s'), de: pid(m[1]), para: pid(m[3]), texto: m[4], tipo: m[2] === '-->' ? 'retorno' : m[2] === '->>' ? 'assincrona' : 'chamada'});
+  });
+  abertos.forEach(b => { b.ate = Math.max(b.de, st.length - 1); });
+  n.participantes = ps; n.passos = st; n.blocos = bl.filter(b => b.de < st.length);
+  const M = seqMedidas(n); n.w = Math.max(n.w || 0, Math.round(M.W)); n.h = Math.round(M.H + 44);
+}
+// colunas da tabela no painel: "nome tipo PK FK UQ ?" (? = aceita vazio); na classe, "+ nome: Tipo"
+function linhasParaTexto(n, op){
+  return (op ? n.operacoes || [] : n.linhas || []).map(l => n.estilo === 'classe' ? ((l.vis ? l.vis + ' ' : '') + l.nome + (l.tipo ? ': ' + l.tipo : '')) :
+    [l.nome, l.tipo, l.chave === 'pkfk' ? 'PK FK' : (l.chave || '').toUpperCase(), l.nulo ? '?' : ''].filter(Boolean).join(' ')).join('\n');
+}
+function textoParaLinhas(n, txt, op){
+  const velhas = op ? n.operacoes || [] : n.linhas || [];
+  const out = txt.split('\n').map(l => l.trim()).filter(Boolean).map((l, i) => {
+    let o;
+    if (n.estilo === 'classe'){ const m = l.match(/^([+\-#~])?\s*([^:]+?)\s*(?::\s*(.+))?$/) || []; o = {vis: m[1] || '', nome: (m[2] || l).trim(), tipo: (m[3] || '').trim(), chave: '', nulo: false}; }
+    else { const p = l.split(/\s+/), up = p.map(x => x.toUpperCase()); const pk = up.includes('PK'), fk = up.includes('FK'), uq = up.includes('UQ');
+      o = {nome: p[0], tipo: p.slice(1).filter(x => !['PK','FK','UQ','?'].includes(x.toUpperCase())).join(' '), chave: pk && fk ? 'pkfk' : pk ? 'pk' : fk ? 'fk' : uq ? 'uq' : '', nulo: p.includes('?')}; }
+    const v = velhas.find(x => x.nome === o.nome) || velhas[i];
+    return Object.assign({id: v ? v.id : uid('l')}, o);
+  });
+  if (op) n.operacoes = out; else n.linhas = out;
+}
 function posicionar(el, n){
   el.style.left = n.x + 'px';
   el.style.top = n.y + 'px';
   el.style.width = n.w + 'px';
-  el.style.height = (n.tipo === 'cartao' || n.tipo === 'grupo' || n.tipo === 'painel' || n.tipo === 'diagrama') ? n.h + 'px' : '';
+  el.style.height = (n.tipo === 'cartao' || n.tipo === 'grupo' || n.tipo === 'painel' || n.tipo === 'diagrama' || n.tipo === 'fluxo' || n.tipo === 'sequencia') ? n.h + 'px' : '';
   if (n.tipo === 'painel'){
     const e = el.querySelector('.pc-escala');
     if (e){ const W = n.w - 4, Hh = n.h - 4, sc = Math.min(W / 960, Hh / 600); e.style.transform = 'translate(' + ((W - 960 * sc) / 2) + 'px,' + ((Hh - 600 * sc) / 2) + 'px) scale(' + sc + ')'; }
@@ -1227,20 +1433,41 @@ function caminho(estilo, l1, l2, p1, p2){
 }
 function montarDefs(){
   const lista = CORES.map(c => [c.id, c.hex]).concat([['sel', COR_SEL]]);
+  const fundo = '#0E1114', bar = x => '<path d="M' + x + ' 3v14"/>', pe = '<path d="M20 3 7 10l13 7M7 10h13"/>', bola = x => '<circle cx="' + x + '" cy="10" r="3.6" fill="' + fundo + '"/>';
+  const PT = {aberta: '<path d="M7 3l13 7-13 7" fill="none"/>', um: bar(13), umum: bar(10) + bar(15), zeroum: bola(5) + bar(14), muitos: pe, ummuitos: pe + bar(4), zeromuitos: pe + bola(0),
+    triangulo: '<path d="M5 3 20 10 5 17z" fill="' + fundo + '"/>', losango: '<path d="M0 10 10 4.5 20 10 10 15.5z" fill="' + fundo + '"/>', losangoc: '<path d="M0 10 10 4.5 20 10 10 15.5z" fill="currentColor"/>'};
   defs.innerHTML = lista.map(([id, hex]) =>
-    '<marker id="m-' + id + '" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="' + hex + '"/></marker>').join('');
+    '<marker id="m-' + id + '" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="' + hex + '"/></marker>' +
+    Object.entries(PT).map(([k, d]) => '<marker id="mk-' + k + '-' + id + '" viewBox="-5 0 26 20" refX="20" refY="10" markerWidth="26" markerHeight="20" markerUnits="userSpaceOnUse" orient="auto-start-reverse" style="color:' + hex + '"><g fill="none" stroke="' + hex + '" stroke-width="1.8" stroke-linejoin="round">' + d + '</g></marker>').join('')).join('');
+}
+// ponto de saída de uma linha que liga numa coluna da tabela (a altura da linha da coluna, no lado esquerdo ou direito)
+function pontoLinha(n, lid, lado){
+  const el = elsNo.get(n.id), li = el && el.querySelector('li[data-lid="' + (window.CSS && CSS.escape ? CSS.escape(lid) : lid) + '"]');
+  if (!li || (lado !== 'l' && lado !== 'r')) return pontoLado(n, lado);
+  const y = n.y + li.offsetTop + li.offsetHeight / 2;
+  return {x: lado === 'l' ? n.x : n.x + tam(n).w, y};
+}
+function pontaURL(tipo, mk){ if (!tipo || tipo === 'nenhum') return ''; return tipo === 'seta' ? 'url(#m-' + mk + ')' : 'url(#mk-' + tipo + '-' + mk + ')'; }
+function rotuloPonta(p, lado, txt, s){
+  const d = DIR[lado] || [1, 0];
+  const x = p.x + d[0] * 26 + (d[0] === 0 ? 14 : 0), y = p.y + d[1] * 24 + (d[1] === 0 ? -13 : 0);
+  return '<div class="rotulo-ponta' + (s ? ' sel' : '') + '" style="left:' + x + 'px;top:' + y + 'px">' + esc(txt) + '</div>';
 }
 function renderArestas(){
   let h = '', r = '', f = '';
   for (const a of Q.edges){
     const A = no(a.de), B = no(a.para);
     if (!A || !B) continue;
-    const c = caminho(a.estilo, a.deLado, a.paraLado, pontoLado(A, a.deLado), pontoLado(B, a.paraLado));
+    const p1 = a.deLinha ? pontoLinha(A, a.deLinha, a.deLado) : pontoLado(A, a.deLado), p2 = a.paraLinha ? pontoLinha(B, a.paraLinha, a.paraLado) : pontoLado(B, a.paraLado);
+    const c = caminho(a.estilo, a.deLado, a.paraLado, p1, p2);
     const s = sel.has(a.id);
     const mk = s ? 'sel' : (a.cor || 'cinza');
     const hex = s ? COR_SEL : corHex(a.cor);
-    const me = a.setas !== 'nenhuma' ? ' marker-end="url(#m-' + mk + ')"' : '';
-    const ms = a.setas === 'ambas' ? ' marker-start="url(#m-' + mk + ')"' : '';
+    const fimU = a.fim ? pontaURL(a.fim, mk) : (a.setas !== 'nenhuma' ? 'url(#m-' + mk + ')' : ''), iniU = a.inicio ? pontaURL(a.inicio, mk) : (a.setas === 'ambas' ? 'url(#m-' + mk + ')' : '');
+    const me = fimU ? ' marker-end="' + fimU + '"' : '';
+    const ms = iniU ? ' marker-start="' + iniU + '"' : '';
+    if (a.rotuloInicio) r += rotuloPonta(p1, a.deLado, a.rotuloInicio, s);
+    if (a.rotuloFim) r += rotuloPonta(p2, a.paraLado, a.rotuloFim, s);
     h += '<g data-aresta="' + esc(a.id) + '"' + (s ? ' class="sel"' : '') + '><path class="aresta-hit" d="' + c.d + '"/><path class="aresta' + (a.tracejada ? ' trac' : '') + '" d="' + c.d + '" stroke="' + hex + '"' + me + ms + '/></g>';
     f += '<path class="aresta' + (a.tracejada ? ' trac' : '') + '" d="' + c.d + '" stroke="' + hex + '"/>';
     if (a.rotulo) r += '<div class="rotulo-aresta' + (s ? ' sel' : '') + '" data-aresta="' + esc(a.id) + '" style="left:' + c.meio.x + 'px;top:' + c.meio.y + 'px">' + esc(a.rotulo) + (a.nota ? '<i class="rot-nota" title="Tem anotação"></i>' : '') + '</div>';
@@ -2291,6 +2518,21 @@ function painelNo(n){
   } else if (n.tipo === 'quadro'){
     h += '<div class="campo"><label for="pn-titulo">Nome do quadro</label><input class="in" id="pn-titulo" value="' + esc(nomeNo(n)) + '"></div>';
     h += '<div class="acoes"><button class="b primario" id="pn-abrir">' + ico('abrir') + 'Abrir quadro</button></div>';
+  } else if (n.tipo === 'tabela'){
+    h += '<div class="campo"><span>É uma</span>' + segHTML('pn-estilo', [{v:'der', rotulo:'Tabela do banco'}, {v:'classe', rotulo:'Classe (UML)'}], n.estilo || 'der') + '</div>';
+    h += '<div class="campo"><label for="pn-titulo">Nome</label><input class="in" id="pn-titulo" value="' + esc(n.titulo) + '"></div>';
+    h += '<div class="campo"><label for="pn-sub">' + (n.estilo === 'classe' ? 'Estereótipo (ex.: «entidade»)' : 'Esquema ou descrição') + '</label><input class="in" id="pn-sub" value="' + esc(n.subtitulo) + '"></div>';
+    h += '<div class="campo"><label for="pn-linhas">' + (n.estilo === 'classe' ? 'Atributos (um por linha: + nome: Tipo)' : 'Colunas (uma por linha: nome tipo PK FK UQ ?)') + '</label><textarea class="in mono" id="pn-linhas" rows="8">' + esc(linhasParaTexto(n, false)) + '</textarea><small>' + (n.estilo === 'classe' ? '+ público, - privado, # protegido, ~ pacote.' : 'PK chave primária, FK chave estrangeira, UQ único, ? aceita vazio.') + '</small></div>';
+    if (n.estilo === 'classe') h += '<div class="campo"><label for="pn-ops">Operações (uma por linha: + nome(): Tipo)</label><textarea class="in mono" id="pn-ops" rows="4">' + esc(linhasParaTexto(n, true)) + '</textarea></div>';
+    h += '<div class="campo"><label for="pn-tags">Etiquetas</label><input class="in" id="pn-tags" value="' + esc((n.etiquetas || []).join(', ')) + '"></div>';
+  } else if (n.tipo === 'fluxo'){
+    h += '<div class="campo"><label for="pn-forma">Forma</label><select class="in" id="pn-forma">' + Object.entries(FORMAS).map(([k, f]) => '<option value="' + k + '"' + (k === (n.forma || 'tarefa') ? ' selected' : '') + '>' + esc(f.r) + '</option>').join('') + '</select></div>';
+    h += '<div class="campo"><label for="pn-titulo">Texto</label><input class="in" id="pn-titulo" value="' + esc(n.titulo) + '"></div>';
+    h += '<div class="campo"><label for="pn-sub">Quem faz ou detalhe</label><input class="in" id="pn-sub" value="' + esc(n.subtitulo) + '"></div>';
+  } else if (n.tipo === 'sequencia'){
+    h += '<div class="campo"><label for="pn-titulo">Título</label><input class="in" id="pn-titulo" value="' + esc(n.titulo) + '"></div>';
+    h += '<div class="campo"><label for="pn-partes">Participantes (um por linha: Nome | tipo)</label><textarea class="in mono" id="pn-partes" rows="5">' + esc((n.participantes || []).map(p => p.nome + ' | ' + p.tipo).join('\n')) + '</textarea><small>Tipos: ator, tela, servico, banco, externo, fila.</small></div>';
+    h += '<div class="campo"><label for="pn-passos">Passos (um por linha)</label><textarea class="in mono" id="pn-passos" rows="10">' + esc(seqParaTexto(n)) + '</textarea><small>A -> B: chamada · B --> A: retorno · A ->> B: assíncrona · alt condição / senao / fim (também opt, loop, par).</small></div>';
   }
   if (n.tipo === 'texto'){
     h += '<div class="campo"><span>Tamanho</span>' + segHTML('pn-fonte', [{v:'p',rotulo:'P'},{v:'m',rotulo:'M'},{v:'g',rotulo:'G'},{v:'xg',rotulo:'XG'}], n.fonte || 'm') + '</div>';
@@ -2310,7 +2552,7 @@ function painelNo(n){
   if (n.tipo === 'painel') h += '<div class="campo"><span>Tamanho pronto</span>' + segHTML('pn-tam', [{v:'p',rotulo:'Pequeno'},{v:'m',rotulo:'Médio'},{v:'g',rotulo:'Grande'},{v:'xg',rotulo:'Enorme'}], '') + '</div>';
   if (n.tipo === 'painel') h += '<p class="dica">O Painel central lê tudo o que está no canvas, em todos os quadros, e atualiza sozinho. Arraste o canto de baixo à direita pra deixar do tamanho que quiser (segure Shift pra manter a proporção); o conteúdo acompanha.</p>';
   if (n.tipo !== 'texto' && n.tipo !== 'painel') h += '<div class="campo"><label for="pn-nota">' + (n.tipo === 'grupo' ? 'Anotação do grupo' : 'Anotação do card') + '</label><textarea class="in" id="pn-nota" placeholder="Observações, decisões, dúvidas...">' + esc(n.nota) + '</textarea></div>';
-  const temAltura = n.tipo === 'cartao' || n.tipo === 'grupo' || n.tipo === 'painel';
+  const temAltura = n.tipo === 'fluxo' || n.tipo === 'sequencia' || n.tipo === 'cartao' || n.tipo === 'grupo' || n.tipo === 'painel';
   h += '<div class="' + (temAltura ? 'linha2' : 'campo') + '"><div class="campo"><label for="pn-w">Largura (px)</label><input class="in" type="number" min="60" step="10" id="pn-w" value="' + Math.round(n.w) + '"></div>' +
        (temAltura ? '<div class="campo"><label for="pn-h">Altura (px)</label><input class="in" type="number" min="60" step="10" id="pn-h" value="' + Math.round(n.h) + '"></div>' : '') + '</div>';
   h += '<div class="acoes"><button class="b" id="pn-dup">' + ico('copiar') + 'Duplicar</button><button class="b perigo" id="pn-del">' + ico('lixo') + 'Excluir</button></div>';
@@ -2323,6 +2565,12 @@ function painelNo(n){
   ligarTexto('pn-texto', obter, (m, v) => { m.texto = v; });
   ligarTexto('pn-nota', obter, (m, v) => { m.nota = v; });
   ligarTexto('pn-w', obter, (m, v) => { const x = parseInt(v, 10); if (x >= 60) m.w = Math.min(x, 4000); });
+  ligarSeg('pn-estilo', v => mutar(() => { const m = obter(); if (m){ m.estilo = v; } }));
+  ligarTexto('pn-linhas', obter, (m, v) => { textoParaLinhas(m, v, false); });
+  ligarTexto('pn-ops', obter, (m, v) => { textoParaLinhas(m, v, true); });
+  const selF = $('#pn-forma'); if (selF) selF.addEventListener('change', () => mutar(() => { const m = obter(); if (m){ m.forma = selF.value; const f = FORMAS[m.forma]; m.w = f.w; m.h = f.h; } }));
+  ligarTexto('pn-partes', obter, (m, v) => { textoParaSeq(m, v, ($('#pn-passos') || {}).value || seqParaTexto(m)); });
+  ligarTexto('pn-passos', obter, (m, v) => { textoParaSeq(m, ($('#pn-partes') || {}).value || '', v); });
   ligarTexto('pn-h', obter, (m, v) => { const x = parseInt(v, 10); if (x >= 60) m.h = Math.min(x, 4000); });
   const tipoSel = $('#pn-tipo'); if (tipoSel) tipoSel.addEventListener('change', () => { const m = obter(); if (m) converter(m, tipoSel.value); });
   ligarCores('pn-cores', c => mutar(() => { const m = obter(); if (m) m.cor = c; }));
@@ -2388,6 +2636,9 @@ function painelAresta(a){
   h += '<div class="campo"><label for="pa-rotulo">Rótulo</label><input class="in" id="pa-rotulo" placeholder="Ex.: API, Webhook, sincroniza ficha" value="' + esc(a.rotulo) + '"></div>';
   h += '<div class="campo"><span>Cor</span>' + coresHTML('pa-cores', a.cor) + '</div>';
   h += '<div class="campo"><span>Formato</span>' + segHTML('pa-estilo', [{v:'curva',rotulo:'Curva'},{v:'reta',rotulo:'Reta'},{v:'angulo',rotulo:'Ângulo'}], a.estilo) + '</div>';
+  h += '<div class="linha2"><div class="campo"><label for="pa-ini">Ponta no começo</label><select class="in" id="pa-ini">' + PONTAS.map(([k, r]) => '<option value="' + k + '"' + ((a.inicio || '') === k ? ' selected' : '') + '>' + esc(k === '' ? 'Padrão' : r) + '</option>').join('') + '</select></div>' +
+       '<div class="campo"><label for="pa-fim">Ponta no fim</label><select class="in" id="pa-fim">' + PONTAS.map(([k, r]) => '<option value="' + k + '"' + ((a.fim || '') === k ? ' selected' : '') + '>' + esc(r) + '</option>').join('') + '</select></div></div>';
+  h += '<div class="linha2"><div class="campo"><label for="pa-ri">Texto no começo</label><input class="in" id="pa-ri" placeholder="Ex.: 1" value="' + esc(a.rotuloInicio || '') + '"></div><div class="campo"><label for="pa-rf">Texto no fim</label><input class="in" id="pa-rf" placeholder="Ex.: 0..*" value="' + esc(a.rotuloFim || '') + '"></div></div>';
   h += '<div class="campo"><span>Setas</span>' + segHTML('pa-setas', [{v:'fim',rotulo:'No fim'},{v:'ambas',rotulo:'Nas duas'},{v:'nenhuma',rotulo:'Nenhuma'}], a.setas) + '</div>';
   h += '<label class="chk"><input type="checkbox" id="pa-trac"' + (a.tracejada ? ' checked' : '') + '> Linha tracejada</label>';
   h += '<div class="campo"><label for="pa-nota">Anotação da linha</label><textarea class="in" id="pa-nota" placeholder="O que passa por essa ligação, regras, dúvidas...">' + esc(a.nota) + '</textarea></div>';
@@ -2397,7 +2648,10 @@ function painelAresta(a){
   ligarTexto('pa-nota', obter, (x, v) => { x.nota = v; });
   ligarCores('pa-cores', c => mutar(() => { const x = obter(); if (x) x.cor = c; }));
   ligarSeg('pa-estilo', v => mutar(() => { const x = obter(); if (x) x.estilo = v; }));
-  ligarSeg('pa-setas', v => mutar(() => { const x = obter(); if (x) x.setas = v; }));
+  ligarSeg('pa-setas', v => mutar(() => { const x = obter(); if (x){ x.setas = v; delete x.inicio; delete x.fim; } }));
+  ['pa-ini', 'pa-fim'].forEach(idS => { const el = $('#' + idS); if (el) el.addEventListener('change', () => mutar(() => { const x = obter(); if (!x) return; const k = idS === 'pa-ini' ? 'inicio' : 'fim'; if (el.value) x[k] = el.value; else delete x[k]; })); });
+  ligarTexto('pa-ri', obter, (x, v) => { x.rotuloInicio = v.slice(0, 20); });
+  ligarTexto('pa-rf', obter, (x, v) => { x.rotuloFim = v.slice(0, 20); });
   $('#pa-trac').addEventListener('change', e => mutar(() => { const x = obter(); if (x) x.tracejada = e.target.checked; }));
   $('#pa-inv').addEventListener('click', () => mutar(() => { const x = obter(); if (!x) return; [x.de, x.para] = [x.para, x.de]; [x.deLado, x.paraLado] = [x.paraLado, x.deLado]; }));
   $('#pa-del').addEventListener('click', excluirSel);
@@ -2487,7 +2741,7 @@ $('#arquivo').addEventListener('change', async e => {
 /* ================= busca (Ctrl+F) ================= */
 const normalizar_ = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 function textoDoNo(n){
-  return [n.titulo, n.subtitulo, n.texto, n.rotuloTipo, (n.etiquetas || []).join(' '), n.nota, n.tipo === 'diagrama' && diag(n.diagramaId) ? diag(n.diagramaId).nome + ' ' + diag(n.diagramaId).formato : '',
+  return [n.titulo, n.subtitulo, n.texto, n.rotuloTipo, (n.etiquetas || []).join(' '), n.nota, (n.linhas || []).concat(n.operacoes || []).map(l => l.nome + ' ' + (l.tipo || '')).join(' '), (n.participantes || []).map(p => p.nome).join(' '), (n.passos || []).map(p => p.texto).join(' '), n.tipo === 'diagrama' && diag(n.diagramaId) ? diag(n.diagramaId).nome + ' ' + diag(n.diagramaId).formato : '',
           (n.topicos || []).map(t => (t.texto || '') + ' ' + (t.nota || '')).join(' '),
           n.tipo === 'quadro' && quadros[n.quadroId] ? quadros[n.quadroId].nome : ''].join(' \n ');
 }
@@ -2697,6 +2951,8 @@ function montarBarra(){
 if (window.__PONTE){
   window.__PONTE.aoMudarDiagramas = () => { if (Q) render(); };
   window.__PONTE.aoLigar = o => { if (ro()) return; mutar(() => { const n = no(o.nodeId); if (n) n.diagramaId = o.diagramaId; }); };
+  // o CicloDev pede para abrir o quadro de um desenho (montado pelo robô ou pelo DevIT)
+  window.__PONTE.aoAbrirQuadro = o => { if (o && quadros[o.id]) entrarNoQuadro(o.id); else toast('Este quadro ainda está chegando. Tente de novo em alguns segundos.'); };
   window.__PONTE.aoInserir = o => { if (ro()) return; const c = centroMundo(), d = (cascata++ % 6) * 24; criar('diagrama', {x: c.x + d, y: c.y + d}, null, {centrar: true, diagramaId: o.diagramaId}); };
 }
 
