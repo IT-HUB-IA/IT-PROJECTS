@@ -151,6 +151,10 @@ Na tela: Entregas, **Ligar repositório** (conectar a conta, escolher o reposit�
 
 `42_banco_trocado_em.sql`: coluna `infra_bancos.conexao_trocada_em`, preenchida pela `infra_banco_salvar` (mesma assinatura) sempre que o endereço é gravado ou trocado, e copiada da área escondida para os bancos que já existiam. A tela mostra "Endereço salvo em ..." no card do banco, para saber se o Trocar foi gravado. A senha continua só em `interno.infra_bancos_conexao`.
 
+## Parte 43: análise de segurança automática do código e do banco (aplicada no Supabase em 01/10/2026, em partes: tabelas, regras de acesso e funções)
+
+`43_analise_seguranca.sql`: `analise_achados` (cada achado com regra, gravidade, onde, trecho com segredo mascarado, identidade estável, status aberto/corrigido/ignorado, motivo e item ligado) e `analise_rodadas` (o resumo de cada leitura). `analise_gravar` (só o robô, service_role) grava o que achou e marca como corrigido o que sumiu; `analise_marcar` (quem edita o ponto) ignora com motivo, volta a abrir e liga ao item. As regras ficam em `supabase/functions/diagramas-auto/seguranca.ts` (fonte única: a tela pega o mesmo catálogo no build). A tela: `fonte/seguranca.js` (aba Segurança).
+
 ## Parte 38: item completo pelo método do Product Owner (aplicada em 01/10/2026 como `ciclodev_38_item_completo_po` e `ciclodev_38b_sem_truncate`)
 
 `38_item_completo_po.sql`, só acrescenta (nenhuma coluna antiga muda de sentido):

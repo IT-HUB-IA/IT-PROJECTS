@@ -11,6 +11,8 @@ import { renderizar, KROKI } from '../diagramas/logica.ts';
 import { lerTarGz, gerarDoCodigo, gerarDoBanco, resumoEstrutura, fichaDoCodigo, fichaDoBanco } from './gerar.ts';
 import type { Desenho, Estrutura, LerYaml, Pacote } from './gerar.ts';
 import { montarQuadro, manterPosicoes } from '../_shared/quadro.ts';
+import { analisarCodigo, analisarBanco, dependenciasDe, analisarDependencias } from './seguranca.ts';
+import type { Achado } from './seguranca.ts';
 import { acessoDaConexao, cabecalhos, urlPacote } from '../_shared/git.ts';
 
 export type Rpc = (nome: string, args: Record<string, unknown>) => Promise<{ data: any; error: { message?: string } | null }>;
@@ -79,6 +81,15 @@ async function gravarFicha(d: DepsAuto, no: string, de: { repositorio?: string; 
     return plural(lista.length, 'campo', 'campos') + (n ? ' (' + n + (n === 1 ? ' mudou)' : ' mudaram)') : '');
   } catch (e) { return 'não gravou: ' + limparErro(e); }
 }
+// a análise de segurança (parte 43): como a ficha, um erro aqui não atrapalha os desenhos; vai para o resumo do pedido
+async function gravarAnalise(d: DepsAuto, no: string, de: { repositorio?: string; banco?: string }, rotulo: string, referencia: string, arquivos: number, achar: () => Promise<{ achados: Achado[]; avisos?: string }>): Promise<string> {
+  try {
+    const r = await achar();
+    const g = await chamar(d, 'analise_gravar', { p_no: no, p_repositorio: de.repositorio || null, p_banco: de.banco || null, p_rotulo: rotulo, p_referencia: referencia || null, p_arquivos: arquivos, p_achados: r.achados, p_avisos: r.avisos || null });
+    if (!g) return 'não gravou: o repositório ou o banco não é deste ponto';
+    return plural(g.abertos, 'achado aberto', 'achados abertos') + (g.novos ? ', ' + g.novos + ' novo' + (g.novos === 1 ? '' : 's') : '') + (g.corrigidos ? ', ' + g.corrigidos + ' corrigido' + (g.corrigidos === 1 ? '' : 's') : '') + (r.avisos ? ' (' + r.avisos + ')' : '');
+  } catch (e) { return 'não gravou: ' + limparErro(e); }
+}
 const plural = (n: number, um: string, varios: string) => n + ' ' + (n === 1 ? um : varios);
 const commitDe = (pac: Pacote, pedido: string | null) => pedido || (pac.raiz.match(/-([0-9a-f]{7,40})$/) || [])[1] || '';
 
@@ -96,16 +107,20 @@ export async function processar(d: DepsAuto, p: Pedido): Promise<void> {
         ids.push(...await gravarTodos(d, p.no_id, desenhos, prefixo, repo.provedor, commit));
         prefixos.push(prefixo);
         const ficha = await gravarFicha(d, p.no_id, { repositorio: repo.id }, repo.nome, commit, () => fichaDoCodigo(pac, { nome: repo.nome, branch: repo.branch }, desenhos));
-        resumo.push({ repositorio: repo.nome, commit, arquivos: pac.caminhos.length, desenhos: desenhos.map(x => x.nome), ficha, avisos, cortado: pac.cortado || undefined });
+        const seguranca = await gravarAnalise(d, p.no_id, { repositorio: repo.id }, repo.nome, commit, pac.caminhos.length, async () => {
+          const dep = await analisarDependencias(dependenciasDe(pac.arquivos), d.buscar);
+          return { achados: analisarCodigo(pac.arquivos, pac.caminhos).concat(dep.achados), avisos: [dep.erro, pac.cortado ? 'o repositório é grande e parte dos arquivos não foi lida' : ''].filter(Boolean).join('; ') };
+        });
+        resumo.push({ repositorio: repo.nome, commit, arquivos: pac.caminhos.length, desenhos: desenhos.map(x => x.nome), ficha, seguranca, avisos, cortado: pac.cortado || undefined });
         feitos++;
       } catch (e) { erros++; resumo.push({ repositorio: repo.nome, erro: limparErro(e) }); }
     }
     const bancos = p.bancos || [];
     for (const b of bancos) {
       try {
-        const { ids: novos, e, ds, ficha: fi } = await lerEDesenhar(d, p.no_id, b, false);
+        const { ids: novos, e, ds, ficha: fi, seguranca: sg } = await lerEDesenhar(d, p.no_id, b, false);
         ids.push(...novos); prefixos.push(prefixoBanco(b, bancos.length));
-        resumo.push({ banco: b.nome, motor: b.motor, esquemas: b.esquemas.join(', '), tabelas: e.tabelas.length, desenhos: ds.map(x => x.nome), ficha: fi });
+        resumo.push({ banco: b.nome, motor: b.motor, esquemas: b.esquemas.join(', '), tabelas: e.tabelas.length, desenhos: ds.map(x => x.nome), ficha: fi, seguranca: sg });
         feitos++;
       } catch (e) {
         erros++; const m = limparErro(e, b.conexao);
@@ -128,12 +143,13 @@ async function lerEDesenhar(d: DepsAuto, no: string, b: Banco, abrir: boolean) {
   const e = await d.lerBanco(b.conexao, b.esquemas, b.motor || 'postgres');
   const hash = await resumoEstrutura(e);
   const pedido = await chamar(d, 'infra_auto_banco_lido', { p_banco: b.id, p_hash: hash, p_erro: null, p_abrir: abrir });
-  if (abrir && !pedido) return { ids: [] as string[], e, ds: [], pedido: null, ficha: null };
+  if (abrir && !pedido) return { ids: [] as string[], e, ds: [], pedido: null, ficha: null, seguranca: null };
   const info = { nome: b.nome, motor: b.motor, provedor: b.provedor };
   const ds = gerarDoBanco(e, b.esquemas, info);
   const ids = await gravarTodos(d, no, ds, prefixoBanco(b), 'banco', hash.slice(0, 16));
   const ficha = await gravarFicha(d, no, { banco: b.id }, b.nome, hash.slice(0, 16), () => fichaDoBanco(e, b.esquemas, info));
-  return { ids, e, ds, pedido, ficha };
+  const seguranca = await gravarAnalise(d, no, { banco: b.id }, b.nome, hash.slice(0, 16), e.tabelas.length, async () => ({ achados: b.motor === 'mysql' ? [] : analisarBanco(e) }));
+  return { ids, e, ds, pedido, ficha, seguranca };
 }
 // o banco de hora em hora: só redesenha quando a estrutura mudou
 export async function lerBancoDevido(d: DepsAuto, b: Banco & { no_id: string }): Promise<void> {

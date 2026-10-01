@@ -129,6 +129,10 @@ const pedir = (headers: Record<string, string> = {}, metodo = 'POST') => new Req
   ok(fi.length === 3 && fi.some(x => x.args.p_repositorio === 'r1' && x.args.p_banco === null && x.args.p_rotulo === 'it-hub/loja' && x.args.p_no === 'prod' && Array.isArray(x.args.p_campos) && x.args.p_campos.some((k: any) => k.secao === 'Repositories'))
     && fi.some(x => x.args.p_repositorio === 'r2') && fi.some(x => x.args.p_banco === 'b1' && x.args.p_repositorio === null && x.args.p_campos.some((k: any) => k.secao === 'Database')), 'a ficha técnica é gravada para cada repositório e para o banco (' + fi.length + ' gravações)');
   ok(!JSON.stringify(fi).includes('senha'), 'e a ficha não leva o endereço do banco com a senha');
+  const an = t.de('analise_gravar');
+  ok(an.length === 3 && an.some(x => x.args.p_repositorio === 'r1' && Array.isArray(x.args.p_achados) && typeof x.args.p_arquivos === 'number') && an.some(x => x.args.p_banco === 'b1' && Array.isArray(x.args.p_achados)), 'a análise de segurança é gravada para cada repositório e para o banco');
+  ok(!JSON.stringify(an).includes('postgresql://'), 'e a análise não leva o endereço do banco');
+  ok((c.p_resumo as any[]).some(x => x.repositorio === 'it-hub/loja' && typeof x.seguranca === 'string'), 'o resumo do pedido diz o que a análise de segurança achou');
   ok((c.p_resumo as any[]).some(x => x.repositorio === 'it-hub/loja' && /campos?/.test(x.ficha)), 'o resumo do pedido diz quantos campos da ficha saíram');
 }
 

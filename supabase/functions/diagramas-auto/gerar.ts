@@ -26,11 +26,13 @@ const CODIGO = /\.(ts|tsx|mts|cts|js|jsx|mjs|cjs|vue|svelte|py|go|java|kt|kts|cs
 const CONFIG = /(^|\/)(package\.json|tsconfig[^/]*\.json|jsconfig\.json|deno\.jsonc?|go\.mod|pom\.xml|build\.gradle(\.kts)?|settings\.gradle(\.kts)?|pyproject\.toml|setup\.py|[^/]+\.csproj|docker-compose[^/]*\.ya?ml|compose[^/]*\.ya?ml|Dockerfile[^/]*|[^/]+\.Dockerfile|[^/]+\.tf|vercel\.json|netlify\.toml|fly\.toml|render\.ya?ml|config\.toml|[^/]+\.prisma)$/i;
 const YAML_K8S = /(^|\/)(k8s|kubernetes|kube|manifests|deploy|deployment|charts?)\/.*\.ya?ml$/i;
 const WORKFLOW = /^\.github\/workflows\/[^/]+\.ya?ml$/i;
+// o que a análise de segurança (seguranca.ts) também lê: configurações com senha, arquivos .env, telas HTML e dependências de Python
+const SEGURANCA = /(^|\/)(\.env[\w.-]*|[^/]+\.properties|application[^/]*\.ya?ml|appsettings[^/]*\.json|[^/]+\.html?|requirements[^/]*\.txt|\.npmrc)$/i;
 
 export function interessa(caminho: string, tamanho: number): boolean {
   if (tamanho > 400_000 || PASTAS_FORA.test(caminho)) return false;
   if (/\.min\.(js|css)$/i.test(caminho) || /(^|\/)(package-lock|yarn|pnpm-lock)\./i.test(caminho)) return false;
-  return CODIGO.test(caminho) || CONFIG.test(caminho) || YAML_K8S.test(caminho) || WORKFLOW.test(caminho);
+  return CODIGO.test(caminho) || CONFIG.test(caminho) || YAML_K8S.test(caminho) || WORKFLOW.test(caminho) || SEGURANCA.test(caminho);
 }
 
 export type Pacote = { arquivos: Arquivos; caminhos: string[]; raiz: string; bytes: number; cortado: boolean };

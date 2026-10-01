@@ -71,7 +71,7 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   const ir = async (sel, view) => { await p.evaluate(([s, v]) => { const U = window.__tf.UI; U.sel = s; if (v) U.view = v; U.semArvore = true; window.__tf.rOperacoes(); }, [sel, view]); await p.waitForTimeout(700); };
   const barra = () => p.evaluate(() => [...document.querySelectorAll('.ops-cab .views .view-casa:not([hidden]) [data-view]')].map(b => b.dataset.view).join(','));
   await ir('app:' + app, 'dashboard');
-  ok(await barra() === 'dashboard,calendar,board,table,timeline,infra,sheet,backlog,entregas', 'na aplicação, as abas fixas na ordem pedida: Painel, Calendário, Quadro, Tabela, Linha do tempo, Infraestrutura, Ficha técnica, Fila (e Entregas, que vem fixada de começo) (' + await barra() + ')');
+  ok(await barra() === 'dashboard,calendar,board,table,timeline,infra,sheet,backlog,entregas,seguranca', 'na aplicação, as abas fixas na ordem pedida: Painel, Calendário, Quadro, Tabela, Linha do tempo, Infraestrutura, Ficha técnica, Fila (e Entregas e Segurança, que vêm fixadas de começo) (' + await barra() + ')');
   ok(await p.evaluate(() => [...document.querySelectorAll('.ops-cab .views .view-casa:not([hidden]) [data-view]')].slice(0, 8).map(b => b.textContent).join(' · ')) === 'Painel · Calendário · Quadro · Tabela · Linha do tempo · Infraestrutura · Ficha técnica · Fila', 'com os nomes em português');
   ok(await p.evaluate(() => !!document.querySelector('.ops-cab .views [data-sm-mais-abas]') && document.querySelector('.ops-cab .views .view-casa:last-child, .ops-cab .views > :last-child').classList.contains('sm-mais-casa')), 'o Mais fica no fim da barra');
   await ir('ws:' + frente, 'dashboard');
@@ -81,13 +81,13 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   await p.click('[data-sm-mais-abas]'); await p.waitForTimeout(200);
   ok(await p.evaluate(() => { const m = document.querySelector('.sm-abas-menu'); return !m.hidden && !!m.querySelector('[data-sm-fixar="list"]') && !m.querySelector('[data-sm-fixar="board"]') && !!m.querySelector('[data-sm-soltar="entregas"]'); }), 'o Mais mostra as outras abas com o alfinete, e as fixadas por você (as fixas não aparecem lá)');
   await p.click('[data-sm-fixar="list"]'); await p.waitForTimeout(400);
-  ok(await barra() === 'dashboard,calendar,board,table,timeline,infra,sheet,backlog,entregas,list', 'fixar a Lista põe ela na barra, depois das fixas');
-  ok(await p.evaluate(() => JSON.stringify(window.__tf.UI.abasFixas)) === '["entregas","list"]', 'fica guardado nas preferências da pessoa');
+  ok(await barra() === 'dashboard,calendar,board,table,timeline,infra,sheet,backlog,entregas,seguranca,list', 'fixar a Lista põe ela na barra, depois das fixas');
+  ok(await p.evaluate(() => JSON.stringify(window.__tf.UI.abasFixas)) === '["entregas","seguranca","list"]', 'fica guardado nas preferências da pessoa');
   await ir('app:' + app2, 'dashboard');
-  ok((await barra()).endsWith('entregas,list'), 'em outra aplicação a Lista fixada também aparece');
+  ok((await barra()).endsWith('entregas,seguranca,list'), 'em outra aplicação a Lista fixada também aparece');
   await p.click('[data-sm-mais-abas]'); await p.waitForTimeout(200);
   await p.click('[data-sm-soltar="entregas"]'); await p.waitForTimeout(400);
-  ok(await barra() === 'dashboard,calendar,board,table,timeline,infra,sheet,backlog,list', 'tirar Entregas da barra deixa ela só no Mais');
+  ok(await barra() === 'dashboard,calendar,board,table,timeline,infra,sheet,backlog,seguranca,list', 'tirar Entregas da barra deixa ela só no Mais');
   ok(await p.evaluate(() => !document.querySelector('.sm-abas-menu').hidden && !!document.querySelector('[data-sm-fixar="entregas"]')), 'o Mais continua aberto para fixar ou tirar outras, e Entregas volta para a lista');
   if (process.env.FOTOS) await p.screenshot({path: process.env.FOTOS + '/abas_mais.png'});
   ok(await p.evaluate(() => { const m = document.querySelector('.sm-abas-menu'), r = m.getBoundingClientRect(), a = document.querySelector('.ops-main').getBoundingClientRect(); return r.left >= a.left && r.right <= window.innerWidth; }), 'o menu Mais abre inteiro dentro da área de trabalho (não fica embaixo do menu lateral)');
