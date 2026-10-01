@@ -653,15 +653,18 @@ async function ifrBaixarNavegavel(){
 /* ---------- conversa com o canvas ---------- */
 window.addEventListener('message', async e => {
   const f = ifrFrame(); if (!f || e.source !== f.contentWindow) return;
-  const m = e.data || {}; if (!m.__infra || m.ns !== ifrNs()) return;
+  // o canvas do projeto (ns) e o da visão completa (ns|visao, só leitura): a visão também pede tela cheia, baixar e abrir
+  const m = e.data || {}; if (!m.__infra || (m.ns !== ifrNs() && m.ns !== ifrNs() + '|visao')) return;
+  const visao = m.ns !== ifrNs();
   const responder = erro => ifrFalar({resposta:m.id, erro:erro || null});
   const d = m.dados || {};
-  if (m.tipo === 'set') responder(await ifrGravarDoc(d.caminho, d.dados));
+  if (visao && (m.tipo === 'set' || m.tipo === 'delete')) responder({code:'somente-leitura', message:'A visão completa é só leitura'});
+  else if (m.tipo === 'set') responder(await ifrGravarDoc(d.caminho, d.dados));
   else if (m.tipo === 'delete') responder(await ifrApagarDoc(d.caminho));
   else if (m.tipo === 'ls'){
     const P = UI.infraCanvas = Object.assign({cfg:null, vistas:{}}, UI.infraCanvas || {});
     if (d.k === 'canvas-bl-cfg') P.cfg = d.v;
-    else if (d.k === 'canvas-bl-vistas'){ P.vistas[ifrNs()] = d.v; const ks = Object.keys(P.vistas); if (ks.length > 60) delete P.vistas[ks[0]]; }
+    else if (d.k === 'canvas-bl-vistas'){ P.vistas[m.ns] = d.v; const ks = Object.keys(P.vistas); if (ks.length > 60) delete P.vistas[ks[0]]; }
     salvarUI();
   }
   else if (m.tipo === 'baixar'){
