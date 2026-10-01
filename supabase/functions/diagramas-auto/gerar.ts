@@ -914,7 +914,9 @@ select json_build_object(
       'regras', (select coalesce(json_agg(json_build_object('nome', po.polname, 'comando', po.polcmd::text, 'permissiva', po.polpermissive,
                     'usando', pg_get_expr(po.polqual, po.polrelid), 'checa', pg_get_expr(po.polwithcheck, po.polrelid),
                     'papeis', (select coalesce(json_agg(coalesce(r.rolname, 'PUBLIC') order by 1), '[]') from unnest(po.polroles) pr left join pg_roles r on r.oid = pr)) order by po.polname), '[]')
-                  from pg_policy po where po.polrelid = t.oid)
+                  from pg_policy po where po.polrelid = t.oid),
+      'indices', (select coalesce(json_agg((select json_agg(a.attname order by k.i) from unnest(ix.indkey) with ordinality k(n, i) join pg_attribute a on a.attrelid = ix.indrelid and a.attnum = k.n)), '[]')
+                  from pg_index ix where ix.indrelid = t.oid)
     ) order by t.esquema, t.nome)
     from tab t), '[]'),
   'papeis', coalesce((select json_agg(json_build_object('nome', r.rolname, 'ignora_rls', r.rolbypassrls) order by r.rolname) from pg_roles r
@@ -924,7 +926,7 @@ select json_build_object(
 export type Coluna = { nome: string; tipo: string; nao_nulo: boolean; padrao: string | null; nota: string | null };
 export type Restricao = { nome: string; tipo: string; cols: string[]; ref_esquema: string | null; ref_tabela: string | null; ref_cols: string[] | null };
 export type Tabela = { esquema: string; nome: string; tipo: string; rls: boolean; rls_forcado: boolean; nota: string | null; colunas: Coluna[]; restricoes: Restricao[];
-  permissoes: { papel: string; privs: string[] }[]; regras: { nome: string; comando: string; permissiva: boolean; papeis: string[]; usando?: string | null; checa?: string | null }[] };
+  permissoes: { papel: string; privs: string[] }[]; indices?: string[][]; regras: { nome: string; comando: string; permissiva: boolean; papeis: string[]; usando?: string | null; checa?: string | null }[] };
 export type Estrutura = { tabelas: Tabela[]; papeis: { nome: string; ignora_rls: boolean }[] };
 
 export async function resumoEstrutura(e: Estrutura): Promise<string> {

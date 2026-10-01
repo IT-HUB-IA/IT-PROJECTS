@@ -11,7 +11,7 @@ export type Achado = {
   trecho: string;            // o pedaço que motivou (segredos sempre mascarados)
   impressao: string;         // identidade estável do achado (a próxima análise reconhece o mesmo)
 };
-export type Regra = { id: string; area: 'codigo' | 'banco' | 'dependencias'; gravidade: Gravidade; titulo: string; porque: string; correcao: string; fonte: string };
+export type Regra = { id: string; area: 'codigo' | 'banco' | 'dependencias' | 'qualidade' | 'arquitetura'; gravidade: Gravidade; titulo: string; porque: string; correcao: string; fonte: string };
 
 const OWASP = (n: string) => 'OWASP ' + n.replace(/_/g, ' ');
 // o catálogo: o que a tela mostra para cada regra (o texto não vai em cada achado, só o código da regra)
@@ -98,6 +98,35 @@ export const REGRAS: Regra[] = [
   { id: 'BD-09', area: 'banco', gravidade: 'baixa', titulo: 'RLS ligada sem nenhuma regra', fonte: OWASP('Authorization_Cheat_Sheet'),
     porque: 'Ninguém além do dono consegue ler a tabela. Se ela é usada pela API, alguma tela não funciona; se não é, está tudo certo.',
     correcao: 'Se a tabela é usada pela API, crie as políticas de quem pode ver e mudar. Se não é, nada a fazer.' },
+  // ---------- qualidade do código (base de conhecimento: Código Limpo) ----------
+  { id: 'QUA-01', area: 'qualidade', gravidade: 'baixa', titulo: 'Arquivo grande demais', fonte: 'Código Limpo (base de conhecimento): funções e classes pequenas',
+    porque: 'Um arquivo com centenas de linhas costuma juntar várias responsabilidades: fica difícil de entender, de testar e qualquer mudança mexe em muita coisa.',
+    correcao: 'Separe por assunto: cada parte com uma responsabilidade num arquivo próprio (ex.: tela, regras e acesso ao banco separados).' },
+  { id: 'QUA-02', area: 'qualidade', gravidade: 'baixa', titulo: 'Função longa demais', fonte: 'Código Limpo (base de conhecimento): funções pequenas que fazem uma coisa',
+    porque: 'Função muito longa faz várias coisas ao mesmo tempo: é onde os bugs se escondem e ninguém quer mexer.',
+    correcao: 'Quebre em funções menores com nomes que dizem o que cada uma faz. Uma boa medida é caber na tela sem rolar.' },
+  { id: 'QUA-03', area: 'qualidade', gravidade: 'baixa', titulo: 'Código repetido em dois lugares', fonte: 'Código Limpo (base de conhecimento): não se repita (DRY)',
+    porque: 'O mesmo bloco copiado em vários lugares obriga a corrigir cada cópia; quando uma é esquecida, o sistema passa a se comportar diferente em cada tela.',
+    correcao: 'Junte o bloco numa função só e chame dos dois lugares.' },
+  { id: 'QUA-04', area: 'qualidade', gravidade: 'baixa', titulo: 'Erro engolido (catch vazio)', fonte: OWASP('Error_Handling_Cheat_Sheet'),
+    porque: 'O erro acontece e ninguém fica sabendo: o usuário vê algo errado sem aviso e não há registro para investigar.',
+    correcao: 'Registre o erro (log) e trate: avise o usuário, tente de novo ou deixe o erro subir. Nunca deixe o catch vazio.' },
+  { id: 'QUA-05', area: 'qualidade', gravidade: 'baixa', titulo: 'Trabalho marcado como não terminado (TODO, FIXME)', fonte: 'Código Limpo (base de conhecimento): comentários',
+    porque: 'Quem escreveu deixou avisado que falta algo ou que há um problema conhecido neste ponto. É um sinal de que a funcionalidade pode não estar pronta.',
+    correcao: 'Termine o que falta ou crie um item para isso e tire a marca do código.' },
+  { id: 'QUA-06', area: 'qualidade', gravidade: 'baixa', titulo: 'Mensagens de depuração esquecidas no código', fonte: OWASP('Logging_Cheat_Sheet'),
+    porque: 'console.log e System.out.println soltos poluem o log de produção e às vezes mostram dados que não deveriam aparecer.',
+    correcao: 'Tire as mensagens de teste ou troque por um log de verdade, com nível (info, erro) e sem dados sensíveis.' },
+  { id: 'QUA-07', area: 'qualidade', gravidade: 'media', titulo: 'Repositório sem nenhum teste automático', fonte: 'Desenvolvimento ágil (base de conhecimento): Definição de Pronto com testes',
+    porque: 'Sem teste, cada mudança pode quebrar algo que funcionava e só o usuário descobre.',
+    correcao: 'Comece pelos fluxos mais importantes (login, cadastro, pagamento): um teste para cada um, rodando a cada publicação.' },
+  // ---------- arquitetura do banco ----------
+  { id: 'ARQ-01', area: 'arquitetura', gravidade: 'media', titulo: 'Chave estrangeira sem índice', fonte: 'Bancos de dados (base de conhecimento): índices e chaves estrangeiras',
+    porque: 'Sem índice na coluna da chave estrangeira, as buscas por ela e as exclusões na tabela pai ficam lentas e travam a tabela quando o volume cresce.',
+    correcao: 'Crie o índice: create index on tabela (coluna_id);' },
+  { id: 'ARQ-02', area: 'arquitetura', gravidade: 'baixa', titulo: 'Coluna que aponta para outra tabela sem chave estrangeira', fonte: 'Bancos de dados (base de conhecimento): integridade referencial',
+    porque: 'A coluna termina em _id mas o banco não confere se o registro apontado existe: sobram referências para coisas apagadas.',
+    correcao: 'Declare a chave estrangeira (alter table ... add foreign key (coluna_id) references outra_tabela(id)) depois de limpar os valores órfãos.' },
 ];
 export const REGRA = (id: string) => REGRAS.find(r => r.id === id)!;
 
@@ -107,12 +136,12 @@ function hash(s: string): string { let h = 2166136261; for (let i = 0; i < s.len
 const linhaDe = (txt: string, pos: number) => txt.slice(0, pos).split('\n').length;
 const trechoDe = (txt: string, pos: number) => { const i = txt.lastIndexOf('\n', pos) + 1, f = txt.indexOf('\n', pos); return txt.slice(i, f < 0 ? undefined : f).trim().slice(0, 200); };
 const CODIGO_FONTE = /\.(ts|tsx|mts|cts|js|jsx|mjs|cjs|vue|svelte|py|go|java|kt|kts|cs|php|rb)$/i;
-const TESTE = /(^|\/)(test|tests|__tests__|spec|e2e|cypress|fixtures?|mocks?|exemplos?|examples?|docs?)\/|\.(test|spec)\.[a-z]+$|Test\.java$/i;
+const TESTE = /(^|\/)(test|tests|testes?|__tests__|spec|e2e|cypress|fixtures?|mocks?|exemplos?|examples?|docs?)\/|\.(test|spec)\.[a-z]+$|Test\.java$/i;
 const COMENTARIO = /^\s*(\/\/|#|\*|\/\*|<!--)/;
 // o mesmo achado na próxima análise: regra + arquivo + o texto da linha (sem espaços), e não o número da linha (que muda)
 const impressao = (regra: string, arquivo: string, linha: string) => hash(regra + '|' + arquivo + '|' + linha.replace(/\s+/g, ''));
 
-type Padrao = { regra: string; re: RegExp; so?: RegExp; segredo?: boolean; teste?: boolean; e?: (linha: string, m: RegExpExecArray) => boolean };
+type Padrao = { regra: string; re: RegExp; so?: RegExp; segredo?: boolean; fraco?: boolean; teste?: boolean; e?: (linha: string, m: RegExpExecArray) => boolean };
 // os padrões de código (as mesmas ideias do Gitleaks e das regras OWASP do Semgrep, escritas aqui para rodar sem nada instalado)
 const PADROES: Padrao[] = [
   { regra: 'SEG-01', segredo: true, re: /\b(AKIA[0-9A-Z]{16})\b/g },                                                     // AWS
@@ -122,7 +151,8 @@ const PADROES: Padrao[] = [
   { regra: 'SEG-01', segredo: true, re: /\b(AIza[0-9A-Za-z_-]{35})\b/g },                                                // Google
   { regra: 'SEG-01', segredo: true, re: /\b(sk-(?:proj-|ant-)?[A-Za-z0-9_-]{32,})\b/g },                                 // OpenAI / Anthropic
   { regra: 'SEG-01', segredo: true, re: /(-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----)/g },
-  { regra: 'SEG-01', segredo: true, re: /\b((?:postgres(?:ql)?|mysql|mongodb(?:\+srv)?):\/\/[^:\s'"@/]+:[^@\s'"$<{]{4,}@[^\s'"]+)/g },  // endereço de banco com senha
+  { regra: 'SEG-01', segredo: true, re: /\b((?:postgres(?:ql)?|mysql|mongodb(?:\+srv)?):\/\/[^:\s'"@/]+:[^@\s'"$<{]{4,}@[^\s'"]+)/g,   // endereço de banco com senha
+    fraco: true, e: (_l, m) => { const u = m[1].match(/:\/\/([^:]+):([^@]+)@/); return !!u && !/^(senha|password|pass|minhasenha|suasenha|secret|\[?your-password\]?|x+|\*+|usuario|user)$/i.test(u[2]) && !/^(usuario|user|xxxx)$/i.test(u[1]) && !/xxxx|exemplo|example|seu-/i.test(m[1]); } },
   { regra: 'SEG-02', segredo: true, re: /\b(eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,})\b/g, e: (_l, m) => papelJwt(m[1]) === 'service_role' },
   { regra: 'SEG-03', segredo: true, re: /^\s*[\w.-]*(?:password|passwd|senha|secret|api[_-]?key|token)\s*[=:]\s*["']?([^\s"'#${}<>][^\s"'#]{5,})["']?\s*$/gim,
     so: /\.(properties|ya?ml|toml|ini|conf|cfg|env[\w.-]*|json)$|(^|\/)\.env/i, e: (l) => !/\$\{|\{\{|<|%\(|example|exemplo|changeme|change[_-]?me|troque|coloque|preencha|informe|digite|insira|substitua|aqui|here|sua[_-]?senha|minha[_-]?senha|senha[_-]?aqui|your[_-]|my[_-]?password|xxx|\*\*\*|placeholder|dummy|fake|sample|todo/i.test(l) },
@@ -134,7 +164,7 @@ const PADROES: Padrao[] = [
   { regra: 'INJ-03', re: /(?:child_process\.)?\bexec(?:Sync)?\s*\(\s*(?:`[^`]*\$\{|["'][^"']*["']\s*\+)/g },
   { regra: 'INJ-03', re: /Runtime\.getRuntime\(\)\.exec\(\s*[^)]*\+/g },
   { regra: 'INJ-03', re: /os\.system\(\s*(?:f["']|[^)]*\+)|subprocess\.\w+\([^)]*shell\s*=\s*True/g },
-  { regra: 'XSS-01', re: /\.(?:innerHTML|outerHTML)\s*\+?=\s*(?!\s*['"`][^'"`$]*['"`]\s*;?\s*$)[^;\n]*[A-Za-z_$]/g },
+  { regra: 'XSS-01', re: /\.(?:innerHTML|outerHTML)\s*\+?=\s*(?!\s*['"`][^'"`$]*['"`]\s*;?\s*$)[^;\n]*[A-Za-z_$]/g, e: (l) => /\+\s*[A-Za-z_$][\w$.]*\s*(?:\+|;|$)|\$\{\s*[A-Za-z_$][\w$.]*\s*\}/.test(l.replace(/(?:esc|escape|escapar|sanitiz\w*|DOMPurify\.sanitize|encodeURIComponent)\s*\([^()]*(?:\([^()]*\)[^()]*)*\)/gi, '""')) && !/^\s*[\w$.]+\.(?:inner|outer)HTML\s*=\s*[\w$.]+\([^)]*\)\s*;?\s*$/.test(l) },
   { regra: 'XSS-01', re: /dangerouslySetInnerHTML\s*=\s*\{\{\s*__html\s*:\s*(?!['"`])/g },
   { regra: 'XSS-01', re: /document\.write(?:ln)?\s*\(/g },
   { regra: 'XSS-01', re: /\bv-html\s*=/g },
@@ -150,6 +180,8 @@ const PADROES: Padrao[] = [
 // o "role" de dentro de um JWT do Supabase (só lê o meio do token; não confere assinatura, nem precisa)
 function papelJwt(t: string): string { try { const m = t.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'); return (JSON.parse(atob(m + '='.repeat((4 - m.length % 4) % 4))) || {}).role || ''; } catch { return ''; } }
 
+// arquivo já empacotado ou minificado (gerado por uma ferramenta): linhas enormes. Não é o código que as pessoas escrevem.
+export const empacotado = (t: string) => { if (t.length < 20000) return false; const L = t.split('\n'); return L.some(l => l.length > 5000) || t.length / L.length > 250; };
 // arquivos que são, eles mesmos, segredo
 const ARQ_SEGREDO = /(^|\/)(\.env(?:\.(?!example|sample|template|exemplo)[\w-]+)?|id_rsa|id_ed25519|[^/]+\.pem|[^/]+\.key|[^/]+\.p12|[^/]+\.pfx|credentials\.json|service-account[^/]*\.json)$/i;
 
@@ -159,10 +191,11 @@ export function analisarCodigo(arq: Arquivos, caminhos: string[], limite = 400):
   for (const c of caminhos) if (ARQ_SEGREDO.test(c) && !/example|sample|exemplo/i.test(c))
     add({ regra: 'SEG-04', gravidade: 'alta', titulo: REGRA('SEG-04').titulo, onde: c, trecho: '(o arquivo inteiro)', impressao: impressao('SEG-04', c, '') });
   for (const [caminho, txt] of arq) {
+    if (empacotado(txt)) continue;
     const teste = TESTE.test(caminho);
     for (const p of PADROES) {
       if (p.so ? !p.so.test(caminho) : !(CODIGO_FONTE.test(caminho) || /\.(html?|properties|ya?ml|env|toml|json)$|(^|\/)\.env/i.test(caminho))) continue;
-      if (teste && !p.segredo) continue;                 // em teste, só segredo de verdade interessa
+      if (teste && (!p.segredo || p.fraco)) continue;   // em teste, só chave com formato de verdade (AWS, GitHub...) interessa; endereço de banco de exemplo não
       p.re.lastIndex = 0; let m: RegExpExecArray | null, n = 0;
       while ((m = p.re.exec(txt)) && n < 20) {
         if (m[0] === '') { p.re.lastIndex++; continue; }
@@ -178,6 +211,51 @@ export function analisarCodigo(arq: Arquivos, caminhos: string[], limite = 400):
   }
   const ordem = { critica: 0, alta: 1, media: 2, baixa: 3 };
   return out.sort((a, b) => ordem[a.gravidade] - ordem[b.gravidade] || a.onde.localeCompare(b.onde));
+}
+
+// ---------- qualidade do código ----------
+const FONTE_QUA = /\.(ts|tsx|mts|js|jsx|mjs|cjs|vue|svelte|py|go|java|kt|cs|php|rb)$/i;
+const GERADO = /(^|\/)(generated|gen|migrations?|dist|build|vendor|\.min\.)|\.d\.ts$|-lock\.|\.pb\.|_pb2\.py$/i;
+const INICIO_FUNCAO = /^\s*(?:export\s+)?(?:async\s+)?(?:function\s+\w+\s*\(|(?:const|let)\s+\w+\s*=\s*(?:async\s*)?\([^)]*\)\s*=>\s*\{|(?:public|private|protected|static|\s)+[\w<>\[\],\s]+\s+\w+\s*\([^;]*\)\s*(?:throws [\w.,\s]+)?\{|def\s+\w+\s*\()/;
+export function analisarQualidade(arq: Arquivos, caminhos: string[], limite = 300): Achado[] {
+  const out: Achado[] = [];
+  const add = (regra: string, onde: string, trecho: string, extra: string) => { if (out.length >= limite) return; const r = REGRA(regra); out.push({ regra, gravidade: r.gravidade, titulo: r.titulo, onde, trecho: trecho.slice(0, 200), impressao: impressao(regra, onde.replace(/:\d+$/, ''), extra) }); };
+  const fontes = [...arq.keys()].filter(c => FONTE_QUA.test(c) && !GERADO.test(c));
+  const testes = caminhos.filter(c => TESTE.test(c) && FONTE_QUA.test(c));
+  if (fontes.length >= 5 && !testes.length) add('QUA-07', '(repositório inteiro)', fontes.length + ' arquivos de código e nenhum arquivo de teste', 'sem-testes');
+  const janelas = new Map<string, string>();   // 8 linhas normalizadas -> onde apareceram primeiro
+  const dup = new Set<string>();
+  for (const c of fontes) {
+    const txt = arq.get(c) || '', L = txt.split('\n');
+    if (TESTE.test(c) || empacotado(txt)) continue;
+    const util = L.filter(l => l.trim() && !COMENTARIO.test(l)).length;
+    if (util > 800) add('QUA-01', c, util + ' linhas de código', 'grande');
+    // funções longas: do início até a chave que fecha (ou, no Python, até voltar o recuo)
+    let longas = 0;
+    for (let i = 0; i < L.length && longas < 5; i++) {
+      if (!INICIO_FUNCAO.test(L[i]) || /^\s*(if|for|while|switch|catch|else|return)\b/.test(L[i])) continue;
+      let fim = i;
+      if (/^\s*def\s/.test(L[i])) { const rec = L[i].match(/^\s*/)![0].length; for (fim = i + 1; fim < L.length && (!L[fim].trim() || L[fim].match(/^\s*/)![0].length > rec); fim++); fim--; }
+      else { let n = 0, achou = false; for (let j = i; j < L.length; j++) { for (const ch of L[j].replace(/(["'`])(?:\\.|(?!\1).)*\1/g, '')) { if (ch === '{') { n++; achou = true; } else if (ch === '}') n--; } if (achou && n <= 0) { fim = j; break; } if (j - i > 2000) break; } }
+      const tam = fim - i + 1;
+      if (tam > 80) { longas++; const nome = (L[i].match(/(?:function\s+|def\s+|(?:const|let)\s+|\s)(\w+)\s*(?:=|\()/) || [])[1] || 'função'; add('QUA-02', c + ':' + (i + 1), nome + ': ' + tam + ' linhas', nome); i = fim; }
+    }
+    // catch vazio e except: pass
+    for (const m of txt.matchAll(/catch\s*(?:\([^)]*\))?\s*\{\s*\}|except[^:\n]*:\s*\n\s*pass\b/g)) add('QUA-04', c + ':' + linhaDe(txt, m.index!), trechoDe(txt, m.index!), trechoDe(txt, m.index!));
+    const todos = [...txt.matchAll(/(?:\/\/|#|\/\*|\*)\s*(TODO|FIXME|HACK|XXX)\b[:\s]*(.*)/g)];
+    if (todos.length) add('QUA-05', c + ':' + linhaDe(txt, todos[0].index!), todos.length + (todos.length === 1 ? ' marca: ' : ' marcas, a primeira: ') + (todos[0][1] + ' ' + todos[0][2]).trim().slice(0, 140), 'todo');
+    const dbg = [...txt.matchAll(/^\s*(?:console\.(?:log|debug)|System\.out\.println|e\.printStackTrace)\(/gm)];
+    if (dbg.length >= 3) add('QUA-06', c + ':' + linhaDe(txt, dbg[0].index!), dbg.length + ' mensagens de depuração no arquivo', 'debug');
+    // repetição: janelas de 8 linhas com conteúdo (sem linhas curtas como "}" ou imports)
+    const norm = L.map(l => l.trim().replace(/\s+/g, ' ')).map(l => (l.length < 12 || /^(import|from|package|using|#include|\}|\{|\)|\]|<\/)/.test(l)) ? '' : l);
+    for (let i = 0; i + 8 <= norm.length; i++) {
+      if (norm.slice(i, i + 8).some(l => !l)) continue;
+      const k = norm.slice(i, i + 8).join('\n'), onde = c + ':' + (i + 1), ja = janelas.get(k);
+      if (!ja) janelas.set(k, onde);
+      else if (!ja.startsWith(c + ':') && !dup.has(ja.replace(/:\d+$/, '') + '|' + c)) { dup.add(ja.replace(/:\d+$/, '') + '|' + c); add('QUA-03', onde, 'igual a ' + ja + ': ' + norm[i].slice(0, 100), ja.replace(/:\d+$/, '')); i += 7; }
+    }
+  }
+  return out;
 }
 
 // ---------- dependências (base pública OSV.dev, a mesma do GitHub e do Google) ----------
@@ -223,7 +301,7 @@ const SENSIVEL = /(^|_)(cpf|cnpj|rg|senha|password|passwd|pass_hash|token|secret
 const ESCRITA = ['INSERT', 'UPDATE', 'DELETE'];
 const comandos = (c: string) => ({ r: ['SELECT'], a: ['INSERT'], w: ['UPDATE'], d: ['DELETE'], '*': ['SELECT', 'INSERT', 'UPDATE', 'DELETE'] } as Record<string, string[]>)[c] || [];
 const aberta = (x?: string | null) => !x || /^\(?\s*true\s*\)?$/i.test(x.trim());
-export function analisarBanco(e: Estrutura): Achado[] {
+export function analisarBanco(e: Estrutura, opc: { mysql?: boolean } = {}): Achado[] {
   const out: Achado[] = [];
   const add = (regra: string, t: Tabela, trecho: string, extra = '', titulo?: string) => { const r = REGRA(regra); const onde = t.esquema + '.' + t.nome;
     out.push({ regra, gravidade: r.gravidade, titulo: titulo || r.titulo, onde, trecho: trecho.slice(0, 200), impressao: impressao(regra, onde, extra) }); };
@@ -232,11 +310,12 @@ export function analisarBanco(e: Estrutura): Achado[] {
     const priv = (papel: string) => (t.permissoes.find(p => p.papel === papel) || { privs: [] }).privs;
     const anon = priv('anon'), aut = priv('authenticated'), pub = priv('PUBLIC');
     const sens = t.colunas.filter(c => SENSIVEL.test(c.nome)).map(c => c.nome);
-    if (!t.rls) {
+    if (opc.mysql) { /* MySQL não tem RLS nem os papéis anon/authenticated: só as regras que valem para qualquer banco */ }
+    else if (!t.rls) {
       if (anon.length || pub.length) add('BD-01', t, 'anon pode: ' + (anon.length ? anon : pub).join(', ').toLowerCase() + ' · RLS desligada');
       else if (aut.length) add('BD-02', t, 'authenticated pode: ' + aut.join(', ').toLowerCase() + ' · RLS desligada');
     } else if (!t.regras.length && (anon.length || aut.length)) add('BD-09', t, 'RLS ligada, 0 regras');
-    for (const po of t.regras) {
+    for (const po of (opc.mysql ? [] : t.regras)) {
       const cmds = comandos(po.comando), papeis = po.papeis.length ? po.papeis : ['PUBLIC'];
       const paraTodos = papeis.some(p => p === 'anon' || p === 'PUBLIC');
       const expr = cmds.includes('SELECT') || cmds.includes('DELETE') || cmds.includes('UPDATE') ? po.usando : po.checa;
@@ -245,10 +324,19 @@ export function analisarBanco(e: Estrutura): Achado[] {
     }
     // visitantes leem dado sensível: sem RLS com SELECT, ou com uma regra de leitura aberta para anon
     const leAnon = (anon.includes('SELECT') || pub.includes('SELECT')) && (!t.rls || t.regras.some(po => (po.comando === 'r' || po.comando === '*') && po.permissiva && (po.papeis.length ? po.papeis : ['PUBLIC']).some(p => p === 'anon' || p === 'PUBLIC') && aberta(po.usando)));
-    if (leAnon && sens.length) add('BD-04', t, 'colunas: ' + sens.slice(0, 8).join(', '), sens.join(','));
-    if (pub.length) add('BD-06', t, 'PUBLIC pode: ' + pub.join(', ').toLowerCase());
+    if (!opc.mysql && leAnon && sens.length) add('BD-04', t, 'colunas: ' + sens.slice(0, 8).join(', '), sens.join(','));
+    if (!opc.mysql && pub.length) add('BD-06', t, 'PUBLIC pode: ' + pub.join(', ').toLowerCase());
     for (const c of t.colunas) if (/^(senha|password|passwd|pass)$/i.test(c.nome) && /text|char/i.test(c.tipo)) add('BD-07', t, 'coluna ' + c.nome + ' (' + c.tipo + ')', c.nome);
     if (!t.restricoes.some(r => r.tipo === 'p')) add('BD-08', t, 'sem primary key');
+    // arquitetura: chave estrangeira sem índice (no MySQL o banco já cria o índice sozinho) e coluna _id sem chave estrangeira
+    const fks = t.restricoes.filter(r => r.tipo === 'f');
+    if (!opc.mysql && Array.isArray(t.indices)) {
+      const cobre = (cols: string[]) => (t.indices || []).some(ix => cols.every((c, k) => ix[k] === c)) || t.restricoes.some(r => (r.tipo === 'p' || r.tipo === 'u') && cols.every((c, k) => r.cols[k] === c));
+      for (const fk of fks) if (!cobre(fk.cols)) add('ARQ-01', t, 'coluna ' + fk.cols.join(', ') + ' → ' + (fk.ref_tabela || '?'), fk.cols.join(','));
+    }
+    const comFk = new Set(fks.flatMap(f => f.cols));
+    for (const c of t.colunas) if (/^[a-z0-9_]+_id$/i.test(c.nome) && !comFk.has(c.nome) && /uuid|int|bigint|serial/i.test(c.tipo) && !t.restricoes.some(r => r.tipo === 'p' && r.cols.includes(c.nome)) && !/^(external|externo|stripe|google|github|gitlab|conexa|asaas|cliente_externo|session|sessao|trace|request|correlation|tenant)_/i.test(c.nome))
+      add('ARQ-02', t, 'coluna ' + c.nome + ' (' + c.tipo + ')', c.nome);
   }
   const ordem = { critica: 0, alta: 1, media: 2, baixa: 3 };
   return out.sort((a, b) => ordem[a.gravidade] - ordem[b.gravidade] || a.onde.localeCompare(b.onde));

@@ -2,7 +2,7 @@
 //   node --experimental-strip-types supabase/functions/diagramas-auto/seguranca.test.ts
 // Opcional: BANCO_URL=postgresql://... (ou BANCO_SOCKET=/tmp:55432/banco) (com o pacote postgres no NODE_PATH) para ler um banco de verdade com falhas plantadas.
 import { createRequire } from 'node:module';
-import { analisarCodigo, analisarBanco, dependenciasDe, analisarDependencias, nota, REGRAS } from './seguranca.ts';
+import { analisarCodigo, analisarBanco, analisarQualidade, dependenciasDe, analisarDependencias, nota, REGRAS } from './seguranca.ts';
 import { CONSULTA_BANCO, interessa } from './gerar.ts';
 import type { Estrutura } from './gerar.ts';
 
@@ -68,6 +68,38 @@ ok(tem(ab, 'BD-09', /logs$/) && tem(ab, 'BD-08', /logs$/), 'RLS sem regras e sem
 ok(!ab.some(a => /certa$/.test(a.onde)), 'tabela bem configurada não tem achado');
 ok(nota(ab) < nota(ab.filter(a => a.gravidade !== 'critica')), 'a nota cai com achado crítico');
 
+// qualidade do código
+{
+  const longa = 'function processarTudo(x) {\n' + Array.from({length: 90}, (_, k) => '  const v' + k + ' = x + ' + k + ';').join('\n') + '\n  return x;\n}\n';
+  const bloco = Array.from({length: 9}, (_, k) => '  total = total + calcularImpostoDoItem(item' + k + ', aliquota);').join('\n');
+  const q = new Map<string, string>([
+    ['src/servico.js', longa + 'try { salvar(); } catch (e) {}\n// TODO: falta validar o CPF\nconsole.log(1);\nconsole.log(2);\nconsole.log(3);\n' + bloco],
+    ['src/outro.js', 'function a(){\n' + bloco + '\n}'],
+    ['src/curto.js', 'export const soma = (a, b) => a + b;'], ['src/c.js', 'x'], ['src/d.js', 'y'], ['src/e.js', 'z'],
+  ]);
+  const aq = analisarQualidade(q, [...q.keys()]);
+  ok(tem(aq, 'QUA-02', /servico\.js:1$/) && !tem(aq, 'QUA-02', /curto/), 'função de mais de 80 linhas é achada; a curta não');
+  ok(tem(aq, 'QUA-04', /servico\.js/) && tem(aq, 'QUA-05', /servico\.js/) && tem(aq, 'QUA-06', /servico\.js/), 'catch vazio, TODO e console.log esquecido são achados');
+  ok(tem(aq, 'QUA-03', /outro\.js|servico\.js/), 'o mesmo bloco de 8 linhas em dois arquivos é achado como repetição');
+  ok(tem(aq, 'QUA-07', /repositório/), 'repositório sem nenhum teste é achado');
+  const comTeste = new Map(q); comTeste.set('src/__tests__/servico.test.js', 'test("x", () => {})');
+  ok(!tem(analisarQualidade(comTeste, [...comTeste.keys()]), 'QUA-07', /./), 'com um teste, o QUA-07 some');
+}
+// arquitetura do banco e MySQL
+{
+  const t2 = (nome: string, o: any) => Object.assign({ esquema: 'public', nome, tipo: 'r', rls: true, rls_forcado: false, nota: null, colunas: [{ nome: 'id', tipo: 'uuid' }], restricoes: [{ nome: nome + '_pkey', tipo: 'p', cols: ['id'], ref_esquema: null, ref_tabela: null, ref_cols: null }], permissoes: [], regras: [], indices: [['id']] }, o);
+  const ea = { papeis: [], tabelas: [
+    t2('pedidos', { colunas: [{ nome: 'id', tipo: 'uuid' }, { nome: 'cliente_id', tipo: 'uuid' }, { nome: 'loja_id', tipo: 'uuid' }, { nome: 'vendedor_id', tipo: 'uuid' }],
+      restricoes: [{ nome: 'pedidos_pkey', tipo: 'p', cols: ['id'] }, { nome: 'fk1', tipo: 'f', cols: ['cliente_id'], ref_tabela: 'clientes' }, { nome: 'fk2', tipo: 'f', cols: ['loja_id'], ref_tabela: 'lojas' }], indices: [['id'], ['loja_id']] }),
+  ] } as any;
+  const aa = analisarBanco(ea);
+  ok(aa.some(a => a.regra === 'ARQ-01' && /cliente_id/.test(a.trecho)) && !aa.some(a => a.regra === 'ARQ-01' && /loja_id/.test(a.trecho)), 'chave estrangeira sem índice é achada; com índice não');
+  ok(aa.some(a => a.regra === 'ARQ-02' && /vendedor_id/.test(a.trecho)) && !aa.some(a => a.regra === 'ARQ-02' && /cliente_id/.test(a.trecho)), 'coluna _id sem chave estrangeira é achada');
+  const em = { papeis: [], tabelas: [t2('usuarios', { rls: false, restricoes: [], colunas: [{ nome: 'id', tipo: 'int' }, { nome: 'senha', tipo: 'varchar(100)' }], permissoes: [{ papel: 'PUBLIC', privs: ['SELECT'] }], indices: undefined })] } as any;
+  const am = analisarBanco(em, { mysql: true });
+  ok(tem(am, 'BD-07', /usuarios/) && tem(am, 'BD-08', /usuarios/) && !am.some(a => /^BD-0[1-46]/.test(a.regra)), 'MySQL: senha em texto e falta de chave primária são achadas; as regras de RLS não se aplicam');
+}
+
 // banco de verdade: as falhas plantadas no Postgres local
 if (process.env.BANCO_URL || process.env.BANCO_SOCKET) {
   const postgres = createRequire(import.meta.url)('postgres');
@@ -79,13 +111,13 @@ if (process.env.BANCO_URL || process.env.BANCO_SOCKET) {
       create table teste_seg.aberta (id serial primary key, cpf text, senha text);
       create table teste_seg.protegida (id serial primary key, dono uuid); alter table teste_seg.protegida enable row level security;
       create policy dono on teste_seg.protegida for select to authenticated using (dono = gen_random_uuid());
-      create table teste_seg.escancarada (id serial primary key); alter table teste_seg.escancarada enable row level security;
+      create table teste_seg.escancarada (id serial primary key, aberta_id int references teste_seg.aberta(id)); alter table teste_seg.escancarada enable row level security;
       create policy todos on teste_seg.escancarada for insert to anon with check (true);
       do $$ begin if not exists (select 1 from pg_roles where rolname = 'anon') then create role anon; end if; if not exists (select 1 from pg_roles where rolname = 'authenticated') then create role authenticated; end if; end $$;
       grant select, insert on teste_seg.aberta to anon; grant select on teste_seg.protegida to authenticated; grant insert on teste_seg.escancarada to anon;`);
     const [l] = await sql.unsafe(CONSULTA_BANCO, [['teste_seg']]);
     const real = analisarBanco(l.estrutura);
-    ok(tem(real, 'BD-01', /aberta$/) && tem(real, 'BD-04', /aberta$/) && tem(real, 'BD-03', /escancarada$/) && !real.some(a => /protegida$/.test(a.onde)), 'banco de verdade: acha as falhas plantadas e deixa a tabela protegida em paz (' + real.map(a => a.regra + ' ' + a.onde).join(', ') + ')');
+    ok(tem(real, 'BD-01', /aberta$/) && tem(real, 'BD-04', /aberta$/) && tem(real, 'BD-03', /escancarada$/) && tem(real, 'ARQ-01', /escancarada$/) && !real.some(a => /protegida$/.test(a.onde)), 'banco de verdade: acha as falhas plantadas e deixa a tabela protegida em paz (' + real.map(a => a.regra + ' ' + a.onde).join(', ') + ')');
     await sql.unsafe('set client_min_messages = warning; drop schema teste_seg cascade');
   } finally { await sql.end(); }
 }

@@ -155,6 +155,12 @@ Na tela: Entregas, **Ligar repositório** (conectar a conta, escolher o reposit�
 
 `43_analise_seguranca.sql`: `analise_achados` (cada achado com regra, gravidade, onde, trecho com segredo mascarado, identidade estável, status aberto/corrigido/ignorado, motivo e item ligado) e `analise_rodadas` (o resumo de cada leitura). `analise_gravar` (só o robô, service_role) grava o que achou e marca como corrigido o que sumiu; `analise_marcar` (quem edita o ponto) ignora com motivo, volta a abrir e liga ao item. As regras ficam em `supabase/functions/diagramas-auto/seguranca.ts` (fonte única: a tela pega o mesmo catálogo no build). A tela: `fonte/seguranca.js` (aba Segurança).
 
+## Parte 44: análise ampliada e inventário do que já existe (aplicada no Supabase em 01/10/2026, em partes)
+
+`44_analise_completa.sql`: a nova `analise_gravar` faz o item ligado andar sozinho (quando a análise não acha mais o ponto, o critério "A análise de segurança não acha mais este ponto" fica marcado e o item vai para Pronto para testar; aceitar continua sendo do P.O.). A tabela `analise_inventario` guarda o que o robô leu do código e do banco (telas, APIs, tarefas agendadas e tabelas, com o grupo sugerido para o épico e os sinais de pronto ou inacabado). `analise_inventario_gravar` (só o robô) grava; `analise_inventario_ligar` (quem edita o ponto) liga cada linha ao item criado na importação. A leitura fica em `supabase/functions/diagramas-auto/inventario.ts`; as regras de qualidade (QUA) e de arquitetura do banco (ARQ) em `seguranca.ts`. A aba agora se chama Análise.
+
+**Falta em produção:** a linha final de `analise_inventario_gravar` que tira do inventário o que sumiu do código (o `delete ... and item_id is null`). A ferramenta usada aqui exige confirmação para comando que apaga, então essa função foi aplicada sem a limpeza. Para completar, rodar no SQL Editor do Supabase o trecho "o robô grava o inventário" de `44_analise_completa.sql`. Sem isso, nada quebra: só fica no inventário o que já foi removido do código.
+
 ## Parte 38: item completo pelo método do Product Owner (aplicada em 01/10/2026 como `ciclodev_38_item_completo_po` e `ciclodev_38b_sem_truncate`)
 
 `38_item_completo_po.sql`, só acrescenta (nenhuma coluna antiga muda de sentido):

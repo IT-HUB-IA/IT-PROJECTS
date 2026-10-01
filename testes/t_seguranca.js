@@ -63,6 +63,7 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   const rpcs = [];
   // analise_marcar roda de verdade no banco local, como o usuário logado
   await p.exposeFunction('__rpc', s => { const {fn, args} = JSON.parse(s); rpcs.push(fn);
+    if (fn === 'analise_inventario_ligar'){ try { return JSON.stringify({data:+psql(COMO + "select public.analise_inventario_ligar($j$" + JSON.stringify(args.p_pares) + "$j$::jsonb)").trim(), error:null}); } catch (e) { return JSON.stringify({data:null, error:{message:String(e.stderr || e.message).slice(0, 200)}}); } }
     if (fn === 'analise_marcar'){ const v = x => x == null ? 'null' : "'" + String(x).replace(/'/g, "''") + "'"; try { const r = psql(COMO + "select row_to_json(public.analise_marcar(" + v(args.p_id) + "::uuid, " + v(args.p_status) + "::text, " + v(args.p_motivo) + "::text, " + v(args.p_item) + "::uuid))").trim(); return JSON.stringify({data:JSON.parse(r), error:null}); }
       catch (e) { return JSON.stringify({data:null, error:{message:String(e.stderr || e.message).split('\n').find(l => /ERROR/.test(l)) || 'erro'}}); } }
     return JSON.stringify({data:'x', error:null}); });
@@ -105,6 +106,18 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   psql("select public.analise_gravar('" + app + "', 'aaaaaaaa-0000-0000-0000-000000000001', null, 'it-hub/bl-java', 'def5678', 120, $j$" + JSON.stringify(ach.filter(a => a.regra !== 'XSS-01')) + "$j$::jsonb)");
   await ver(); await p.evaluate(() => document.querySelector('[data-sg-filtro="corrigido"]').click()); await p.waitForTimeout(300);
   ok(await p.evaluate(() => document.querySelectorAll('.sg-ach').length === 1 && /Corrigido/.test(document.querySelector('.sg-ach').textContent)), 'o achado que sumiu do código aparece em Corrigidos, sozinho');
+  // o inventário: importar o que já existe como épicos e itens
+  psql("select public.analise_inventario_gravar('" + app + "', 'aaaaaaaa-0000-0000-0000-000000000001', null, 'it-hub/bl-java', $j$" + JSON.stringify([
+    {tipo:'api', chave:'api:GET /clientes', grupo:'Cliente', nome:'GET /clientes', onde:'ClienteController.java:4', sinais:{teste:true}},
+    {tipo:'api', chave:'api:POST /clientes/{id}/bloquear', grupo:'Cliente', nome:'POST /clientes/{id}/bloquear', onde:'ClienteController.java:6', sinais:{todo:1}},
+    {tipo:'tela', chave:'tela:/carteira', grupo:'Carteira', nome:'Tela /carteira', onde:'App.jsx:1', sinais:{}}]) + "$j$::jsonb)");
+  await ver(); await p.evaluate(() => { window.__tf.SG.filtro = 'aberto'; });
+  ok(await p.evaluate(() => /3<\/b> |3 ainda não viraram itens/.test(document.querySelector('.sg-inv').innerHTML) && !!document.querySelector('[data-sg-importar]')), 'a aba mostra o que já existe e o botão de importar');
+  await p.evaluate(() => document.querySelector('[data-sg-importar]').click()); await p.waitForTimeout(300);
+  await p.evaluate(() => [...document.querySelectorAll('dialog.modal[open] .modal-rod .btn')].pop().click()); await p.waitForTimeout(6000);
+  ok(conta("select string_agg(e.titulo || '>' || i.titulo || '>' || s.grupo, ' | ' order by i.titulo) from itens i join itens e on e.id = i.pai_id join status_fluxo s on s.id = i.status_id where i.descricao like 'Importado da análise%'") === 'Cliente>GET /clientes>review | Cliente>POST /clientes/{id}/bloquear>backlog | Carteira>Tela /carteira>review', 'importa em épicos: o que parece pronto vai para Pronto para testar, o que tem TODO fica em Criado');
+  ok(conta("select count(*) from analise_inventario where item_id is not null") === '3', 'e marca no inventário o que já virou item (não importa de novo)');
+  ok(conta("select count(*) from itens_criterios c join itens i on i.id = c.item_id where i.titulo = 'POST /clientes/{id}/bloquear' and c.texto like 'Conferir o que falta: 1 marca TODO%'") === '1', 'o item que precisa de análise leva o motivo como critério');
   ok(await p.evaluate(a => { const U = window.__tf.UI; U.sel = 'ws:' + window.__tf.D.ws.find(w => w.app === a).id; window.__tf.rOperacoes(); return !document.querySelector('.view-b[data-view="seguranca"]'); }, app), 'numa frente a aba Segurança não aparece (fica no projeto, produto e aplicação)');
   ok(!erros.length, 'sem erro na página' + (erros.length ? ': ' + erros.join(' | ') : ''));
   await b.close(); console.log(falhas ? falhas + ' FALHA(S)' : 'TUDO OK'); process.exit(falhas ? 1 : 0);
