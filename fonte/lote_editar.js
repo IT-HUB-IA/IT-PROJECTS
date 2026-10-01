@@ -10,10 +10,12 @@ const LE_CAMPOS = {'titulo':'titulo', 'novo titulo':'titulo', 'renomear':'titulo
   'prioridade':'prioridade', 'classe':'classe', 'nivel':'nivel', 'valor':'valor', 'pontos':'pontos', 'estimativa':'pontos', 'tipo':'tipo',
   'responsavel':'responsavel', 'prazo':'prazo', 'epico':'epico', 'versao':'versao', 'frente':'frente', 'posicao':'posicao',
   'aceite':'aceite', 'tirar aceite':'tiraraceite', 'trocar aceites':'trocaraceites', 'depende':'depende', 'tirar depende':'tirardepende', 'trocar depende':'trocardepende',
-  'arquivar':'arquivar', 'cancelar':'cancelar', 'reabrir':'reabrir', 'mudar aceito':'mudaraceito', 'meta':'meta'};
+  'arquivar':'arquivar', 'cancelar':'cancelar', 'reabrir':'reabrir', 'mudar aceito':'mudaraceito', 'meta':'meta',
+  'situacao':'situacao', 'status':'situacao', 'motivo':'motivo', 'inicio':'inicio', 'data de inicio':'inicio', 'onde':'onde', 'descricao':'descricao',
+  'horas':'horas', 'estimativa em horas':'horas', 'data alvo':'alvo', 'data prevista':'alvo', 'cliente ve':'clienteve', 'visibilidade':'clienteve', 'sprint':'sprint'};
 const LE_DET = ['quem', 'quero', 'para', 'historia', 'prioridade', 'classe', 'nivel', 'valor', 'pontos', 'tipo', 'responsavel', 'prazo'];
 const LE_PROTEGE = ['quem', 'quero', 'para', 'historia', 'aceite', 'tiraraceite', 'trocaraceites'];
-const LE_EXEMPLO = 'editar: BL-12\n  titulo: Cadastro do pagador com CPF\n  prioridade: Deve 2\n  pontos: 5\n  aceite: Mostra a data do cadastro\n  tirar aceite: Funciona no celular\n\neditar: Tela da lista da carteira\n  no épico: Carteira de clientes\n  versão: v1.1\n  posição: topo\n  depende: BL-12\n\neditar todos: épico Carteira de clientes\n  versão: v1.2\n\neditar: BL-20\n  cancelar: virou parte do BL-12';
+const LE_EXEMPLO = 'editar: BL-12\n  titulo: Cadastro do pagador com CPF\n  prioridade: Deve 2\n  pontos: 5\n  aceite: Mostra a data do cadastro\n  tirar aceite: Funciona no celular\n  situação: Pronto para testar\n  início: 05/10/2026\n  prazo: 15/10/2026\n\neditar: Tela da lista da carteira\n  no épico: Carteira de clientes\n  versão: v1.1\n  posição: topo\n  depende: BL-12\n\neditar todos: épico Carteira de clientes\n  versão: v1.2\n\neditar: BL-20\n  cancelar: virou parte do BL-12';
 const leNorm = s => ltNorm(s);
 const leCh = x => (typeof chaveDe === 'function' && chaveDe(x)) || '';
 const leNome = x => x ? ((leCh(x) ? leCh(x) + ' · ' : '') + x.titulo) : '';
@@ -27,6 +29,47 @@ function leAchar(ref, noEpico, lista, incluirArquivados){
   if (porTit.length === 1) return {x:porTit[0]};
   if (!porTit.length) return {erro:'"' + ref + '" não existe neste projeto: use a chave (BL-12) ou o título exato'};
   return {erro:'"' + ref + '" é ambíguo: ' + porTit.length + ' itens com esse título (' + porTit.slice(0, 5).map(leCh).filter(Boolean).join(', ') + '). Use a chave ou a linha "no épico:"'};
+}
+// situação: os nomes do método (Criado, Priorizado...), os do fluxo padrão (To Do...) e os do fluxo do projeto
+function leSituacao(txt){
+  const n = leNorm(txt);
+  const po = Object.entries(PO_SITU).find(([, nome]) => leNorm(nome) === n); if (po) return po[0] === 'voltou' ? {voltou:true, status:'todo'} : {status:po[0]};
+  const st = STATUS.find(x => leNorm(x.nome) === n || x.id === n); if (st) return {status:st.id};
+  const c = (typeof statusDoEscopo === 'function' ? statusDoEscopo(UI.sel) : D.statusCustom || []).find(x => leNorm(x.nome) === n); if (c) return {status:c.grupo, st:c.id};
+  return null;
+}
+// onde: "Aplicação › Frente", uma frente, uma aplicação, um produto, um projeto ou um cliente (como na coluna Onde da Lista)
+const LE_ONDE_TIPOS = {cliente:'clients', projeto:'projects', produto:'products', aplicacao:'apps', app:'apps', frente:'ws'};
+function leOnde(txt){
+  let v = String(txt || '').trim(), tipo = null;
+  const vivo = o => o && o.status !== 'archived';
+  const partes = v.split(/\s*[›>]\s*/).filter(Boolean);
+  // "projeto BL", "aplicação Java Fiscal": a primeira palavra diz o que é, a não ser que o nome inteiro já exista (ex.: "App celular do CEO")
+  const mt = /^(cliente|projeto|produto|aplicação|aplicacao|app|frente)\s+(.+)$/i.exec(v);
+  const existe = n => ['clients','projects','products','apps','ws'].some(c => (D[c] || []).some(o => vivo(o) && leNorm(o.nome) === leNorm(n)));
+  if (mt && partes.length < 2 && !existe(v)){ tipo = LE_ONDE_TIPOS[leNorm(mt[1])]; v = mt[2].trim(); }
+  if (partes.length >= 2){
+    const fr = partes.pop(), apn = partes.pop();
+    const aps = D.apps.filter(a => vivo(a) && leNorm(a.nome) === leNorm(apn)); if (!aps.length) return {erro:'a aplicação "' + apn + '" não existe'};
+    const ws = D.ws.filter(w => vivo(w) && aps.some(a => a.id === w.app) && leNorm(w.nome) === leNorm(fr));
+    if (ws.length === 1) return {ws:ws[0]}; return {erro:ws.length ? '"' + v + '" é ambíguo' : 'a aplicação "' + apn + '" não tem a frente "' + fr + '"'};
+  }
+  const achados = [];
+  Object.entries({clients:'cliente', projects:'projeto', products:'produto', apps:'aplicação', ws:'frente'}).forEach(([col, rot]) => { if (tipo && tipo !== col) return; (D[col] || []).forEach(o => { if (vivo(o) && leNorm(o.nome) === leNorm(v)) achados.push({col, rot, o}); }); });
+  if (!achados.length) return {erro:'"' + txt + '" não existe na estrutura: use o que a coluna Onde mostra (ex.: Java BL › Backend), ou o nome de uma frente, aplicação, produto, projeto ou cliente'};
+  if (achados.length > 1) return {erro:'"' + txt + '" é ambíguo (' + achados.map(a => a.rot).join(', ') + '): escreva antes o que é, como "onde: aplicação ' + v + '", ou use "Aplicação › Frente"'};
+  const a = achados[0]; if (a.col === 'ws') return {ws:a.o};
+  const apps = D.apps.filter(ap => vivo(ap) && (a.col === 'apps' ? ap.id === a.o.id : a.col === 'products' ? ap.product === a.o.id : a.col === 'projects' ? ap.project === a.o.id : (byId('projects', ap.project) || {}).client === a.o.id));
+  return {no:a, apps};
+}
+// para um item: a frente certa dentro do lugar pedido
+function leOndePara(x, r){
+  if (r.ws) return {ws:r.ws};
+  const atual = byId('ws', x.ws); if (atual && r.apps.some(a => a.id === atual.app)) return {ws:atual, igual:true};
+  if (r.apps.length !== 1) return {erro:r.apps.length ? r.no.rot + ' "' + r.no.o.nome + '" tem ' + r.apps.length + ' aplicações: diga qual, como "onde: ' + r.apps[0].nome + ' › ' + (atual ? atual.nome : 'Frente') + '"' : r.no.rot + ' "' + r.no.o.nome + '" não tem aplicação'};
+  const ws = D.ws.filter(w => w.app === r.apps[0].id && w.status !== 'archived'), mesmo = atual && ws.find(w => leNorm(w.nome) === leNorm(atual.nome));
+  if (mesmo) return {ws:mesmo}; if (ws.length === 1) return {ws:ws[0]};
+  return {erro:'a aplicação "' + r.apps[0].nome + '" tem ' + ws.length + ' frentes' + (ws.length ? ' (' + ws.map(w => w.nome).join(', ') + '): diga qual, como "onde: ' + r.apps[0].nome + ' › ' + ws[0].nome + '"' : '')};
 }
 function leLer(texto){
   const proj = leDoProjeto(), blocos = [], erros = [], avisos = [];
@@ -78,6 +121,16 @@ function leLer(texto){
       if (['trocaraceites','trocardepende','reabrir','mudaraceito'].includes(o.op)){ if (leNorm(o.val) !== 'sim') erro(o.linha, 'escreva "sim" para confirmar', b); return; }
       if (o.op === 'depende' || o.op === 'tirardepende'){ const r = leAchar(o.val, null, proj); if (r.erro) erro(o.linha, 'depende: ' + r.erro, b); else o.alvo = r.x; return; }
       if (o.op === 'arquivar' || o.op === 'cancelar'){ if (o.val.length > 500) erro(o.linha, 'o motivo passa de 500 letras', b); return; }
+      if (o.op === 'situacao'){ o.alvo = leSituacao(o.val); if (!o.alvo) erro(o.linha, 'situação "' + o.val + '" não existe neste projeto: use Criado, Priorizado, Em andamento, Pronto para testar, Aceito ou Voltou', b);
+        else if (o.alvo.voltou && !b.ops.some(m => m.op === 'motivo')) erro(o.linha, 'Voltou precisa do motivo: escreva embaixo "motivo: o que não ficou certo"', b); return; }
+      if (o.op === 'motivo'){ if (!b.ops.some(m => m.op === 'situacao' && leNorm(m.val) === 'voltou')) erro(o.linha, 'motivo: vale só com "situação: Voltou"', b); else if (o.val.length > 1000) erro(o.linha, 'o motivo passa de 1000 letras', b); return; }
+      if (o.op === 'inicio' || o.op === 'alvo'){ const rot = o.op === 'inicio' ? 'início' : 'data alvo'; if (['nenhum','nenhuma','sem data','sem inicio'].includes(leNorm(o.val))){ o.data = null; return; }
+        o.data = ltDataEntrega(o.val); if (!o.data) erro(o.linha, rot + ' "' + o.val + '" não vale: use dia/mês/ano (ex.: ' + rot + ': 05/10/2026)', b); return; }
+      if (o.op === 'onde'){ const r = leOnde(o.val); if (r.erro) erro(o.linha, 'onde: ' + r.erro, b); else o.alvo = r; return; }
+      if (o.op === 'descricao'){ if (o.val.length > 10000) erro(o.linha, 'a descrição passa de 10000 letras', b); return; }
+      if (o.op === 'horas'){ const n = Number(String(o.val).replace(',', '.').replace(/\s*h(oras)?$/i, '')); if (!isFinite(n) || n < 0 || n > 10000) erro(o.linha, 'horas "' + o.val + '" não vale: use um número de 0 a 10000 (ex.: horas: 6)', b); else o.num = n; return; }
+      if (o.op === 'clienteve'){ const n = leNorm(o.val); if (['sim','cliente','visivel','visivel ao cliente'].includes(n)) o.vis = 'cliente'; else if (['nao','interno','so interno'].includes(n)) o.vis = 'interno'; else erro(o.linha, 'cliente vê: escreva sim ou não', b); return; }
+      if (o.op === 'sprint'){ if (['nenhum','nenhuma','sem sprint','tirar'].includes(leNorm(o.val))){ o.alvo = null; return; } const sp = (typeof sprintsDoEscopo === 'function' ? sprintsDoEscopo(UI.sel) : D.sprints || []).find(x => leNorm(x.nome) === leNorm(o.val)); if (!sp) erro(o.linha, 'o sprint "' + o.val + '" não existe neste projeto', b); else o.alvo = sp; return; }
     });
     if (b.erros.length) return;
     // simula em cada item para mostrar o antes e o depois (e achar o que só aparece item a item)
@@ -121,18 +174,58 @@ function leAplicar(x, b, real, avisos, erros){
       x.coments = (x.coments || []).concat([{quem:eu(), txt:'Reaberto pelo Editar em lote.', quando:iso(HOJE), cliente:false}]); }
     else if (o.op === 'meta'){ if (x.tipo !== 'epic'){ erros.push('a meta é só do épico'); return; } x.meta = o.val; }
   });
+  const ini0 = x.ini;
   if (b.det && Object.keys(b.det).length){ const det = Object.assign({}, b.det); if (det.historia) delete det.historia; ltAplicar(x, det); }
+  x.ini = ini0;   // o prazo do lote não puxa o início sozinho: início depois do prazo é erro
+  b.ops.forEach(o => {
+    if (o.op === 'inicio') x.ini = o.data;
+    else if (o.op === 'alvo') x.alvo = o.data;
+    else if (o.op === 'descricao') x.desc = o.val;
+    else if (o.op === 'horas') x.est = o.num;
+    else if (o.op === 'clienteve') x.vis = o.vis;
+    else if (o.op === 'sprint') x.sprint = o.alvo ? o.alvo.id : undefined;
+    else if (o.op === 'onde'){ const r = leOndePara(x, o.alvo); if (r.erro){ erros.push(r.erro); return; } if (r.igual) return;
+      const ap = r.ws.app, pai = x.pai && byId('issues', x.pai);
+      if (pai && (byId('ws', pai.ws) || {}).app !== ap){ erros.push('o épico "' + pai.titulo + '" fica em outra aplicação: mova o épico, ou tire o item dele (épico: nenhum)'); return; }
+      if (x.tipo === 'epic' && D.issues.some(f => f.pai === x.id && !f.arquivado && (byId('ws', f.ws) || {}).app !== ap && !b.alvos.some(y => y.id === f.id))){ erros.push('o épico tem itens na aplicação de agora: mova os itens junto (editar todos: épico ' + x.titulo + ')'); return; }
+      x.ws = r.ws.id; }
+  });
+  if (x.ini && x.fim && x.ini > x.fim && b.ops.some(o => ['inicio','prazo'].includes(o.op))) erros.push('o início (' + fmtData(x.ini) + ') fica depois do prazo (' + fmtData(x.fim) + ')');
+  const so = b.ops.find(o => o.op === 'situacao'); if (so && so.alvo) leMudarSituacao(x, so.alvo, (b.ops.find(o => o.op === 'motivo') || {}).val, tem('mudaraceito'), real, avisos, erros);
 }
+// a situação pelas mesmas regras da tela: Aceitar e Devolver só o P.O. (sem P.O., qualquer um do time), Aceito só com todos os critérios marcados
+function leMudarSituacao(x, alvo, motivo, mudarAceito, real, avisos, erros){
+  const antes = poSituacao(x), novo = alvo.voltou ? 'voltou' : alvo.status;
+  if (novo === antes && (alvo.st || null) === (x.st || null)) return;
+  const metodo = poTemPO(x), po = metodo && poDoPO(x);
+  if (x.status === 'done' && novo !== 'done' && !mudarAceito){ erros.push('já foi aceito: para tirar de Aceito, escreva "mudar aceito: sim"'); return; }
+  if (novo === 'done' && metodo){
+    if (po && po.id !== eu()){ erros.push('só o P.O. do projeto (' + po.nome + ') aceita: leve para Pronto para testar'); return; }
+    const c = poCritConta(x); if (c.f < c.n){ erros.push('não vai para Aceito com ' + (c.n - c.f) + (c.n - c.f === 1 ? ' critério desmarcado' : ' critérios desmarcados')); return; }
+  }
+  if (alvo.voltou){
+    if (!metodo){ erros.push('Voltou é do método do P.O. (história, tarefa ou bug)'); return; }
+    if (po && po.id !== eu()){ erros.push('só o P.O. do projeto (' + po.nome + ') devolve'); return; }
+    if (x.status !== 'review'){ erros.push('só volta quem está em Pronto para testar (agora: ' + (PO_SITU[antes] || antes) + ')'); return; }
+    x.voltou = new Date().toISOString(); x.voltouMotivo = motivo || '';
+  } else if (['review','done'].includes(alvo.status)) x.voltou = null;
+  if (['doing','review','done'].includes(alvo.status) && ['backlog','todo'].includes(x.status) && poDepsAbertas(x).length) avisos.push('depende de ' + poDepsAbertas(x).map(y => y.titulo).join(', ') + ', que ainda não foi aceito');
+  x.status = alvo.status; if (alvo.st) x.st = alvo.st; else delete x.st;
+  x.feito = alvo.status === 'done' ? iso(HOJE) : null;
+  if (real && typeof registrar === 'function') registrar(alvo.status === 'done' ? 'concluiu' : 'status', x, x.titulo + ' → ' + (PO_SITU[novo] || stNome(alvo.status)));
+}
+const leSitNome = x => { const c = x.st && (D.statusCustom || []).find(y => y.id === x.st); return c ? c.nome : PO_SITU[poSituacao(x)] || stNome(x.status); };
 // o antes e o depois, campo a campo
 function leDiff(a, c){
-  const pes = id => { const p = id && pessoa(id); return p ? p.nome : ''; }, it = id => { const y = id && byId('issues', id); return y ? y.titulo : ''; }, mc = id => { const m = id && byId('marcos', id); return m ? m.nome : ''; }, wsn = id => { const w = id && byId('ws', id); return w ? w.nome : ''; };
+  const pes = id => { const p = id && pessoa(id); return p ? p.nome : ''; }, it = id => { const y = id && byId('issues', id); return y ? y.titulo : ''; }, mc = id => { const m = id && byId('marcos', id); return m ? m.nome : ''; }, wsn = id => { const w = id && byId('ws', id); return w ? w.nome : ''; }, spn = id => { const x = id && (D.sprints || []).find(y => y.id === id); return x ? x.nome : ''; };
   const deps = (x, fora) => poDeps(x).map(y => y.id).concat((x.links || []).filter(l => l.tipo === 'Is blocked by').map(l => l.alvo)).filter((v, k, l) => l.indexOf(v) === k && !(fora || []).includes(v)).map(it).sort().join(', ');
   const L = [['Título', a.titulo, c.titulo], ['Como', a.hQuem, c.hQuem], ['Quero', a.hQuero, c.hQuero], ['Para', a.hPara, c.hPara],
     ['Prioridade', poMoscowNome(a.moscow), poMoscowNome(c.moscow)], ['Nível', poNivel(a), poNivel(c)], ['Valor', a.valor || '', c.valor || ''], ['Pontos', a.pontos || '', c.pontos || ''],
-    ['Tipo', (PO_TIPOS.find(t => t[0] === poTipo(a)) || [, '', ''])[1], (PO_TIPOS.find(t => t[0] === poTipo(c)) || [, '', ''])[1]], ['Responsável', pes(a.resp), pes(c.resp)], ['Prazo', a.fim ? fmtData(a.fim) : '', c.fim ? fmtData(c.fim) : ''],
-    ['Épico', it(a.pai), it(c.pai)], ['Versão', mc(a.marco), mc(c.marco)], ['Frente', wsn(a.ws), wsn(c.ws)], ['Posição na fila', a.ordem, c.ordem],
+    ['Tipo', (PO_TIPOS.find(t => t[0] === poTipo(a)) || [, '', ''])[1], (PO_TIPOS.find(t => t[0] === poTipo(c)) || [, '', ''])[1]], ['Responsável', pes(a.resp), pes(c.resp)], ['Início', a.ini ? fmtData(a.ini) : '', c.ini ? fmtData(c.ini) : ''], ['Prazo', a.fim ? fmtData(a.fim) : '', c.fim ? fmtData(c.fim) : ''], ['Data alvo', a.alvo ? fmtData(a.alvo) : '', c.alvo ? fmtData(c.alvo) : ''],
+    ['Descrição', String(a.desc || '').slice(0, 160), String(c.desc || '').slice(0, 160)], ['Horas', a.est || '', c.est || ''], ['Cliente vê', a.vis === 'cliente' ? 'sim' : 'não', c.vis === 'cliente' ? 'sim' : 'não'], ['Sprint', spn(a.sprint), spn(c.sprint)],
+    ['Épico', it(a.pai), it(c.pai)], ['Versão', mc(a.marco), mc(c.marco)], ['Onde', caminhoTexto(a), caminhoTexto(c)], ['Posição na fila', a.ordem, c.ordem],
     ['Critérios', (a.crit || []).map(x => (x.f ? '✓ ' : '') + x.t).join(' | '), (c.crit || []).map(x => (x.f ? '✓ ' : '') + x.t).join(' | ')],
-    ['Depende de', deps(a), deps(c, c._depFora)], ['Situação', PO_SITU[a.status] || a.status, PO_SITU[c.status] || c.status],
+    ['Depende de', deps(a), deps(c, c._depFora)], ['Situação', leSitNome(a), leSitNome(c)],
     ['Arquivado', a.arquivado ? (a.resolucao === 'nao_sera_feito' ? 'cancelado' : 'sim') : 'não', c.arquivado ? (c.resolucao === 'nao_sera_feito' ? 'cancelado' : 'sim') : 'não'], ['Meta', a.meta || '', c.meta || '']];
   return L.filter(([, x, y]) => String(x == null ? '' : x) !== String(y == null ? '' : y)).map(([r, x, y]) => r === 'Posição na fila' ? [r, 'mudou de lugar', y > x ? 'mais para baixo' : 'mais para cima'] : [r, x, y]);
 }
@@ -204,6 +297,10 @@ function leAbrir(){
       linhaG('  prioridade: Deve 2 / nivel / valor / pontos', 'Troca <b>prioridade, nível, valor e pontos</b>') +
       linhaG('  tipo: Item / Bug / Melhoria / Tarefa / Decisão', 'Troca o <b>tipo</b>. Tarefa é a tarefa externa (não é desenvolvimento). Decisão é algo a decidir, com <b>prazo:</b> da decisão') +
       linhaG('  responsavel: Ana  /  prazo: 15/11/2026', 'Troca <b>responsável</b> e <b>prazo</b>') +
+      linhaG('  situação: Pronto para testar', 'Muda a <b>situação</b>: Criado, Priorizado, Em andamento, Pronto para testar, Aceito ou Voltou (com <code>motivo:</code>). Aceitar e devolver, só o P.O.') +
+      linhaG('  início: 05/10/2026  /  data alvo: 20/10/2026', 'Troca o <b>início</b> e a <b>data alvo</b>. Início depois do prazo é erro') +
+      linhaG('  onde: Java BL › Backend', 'Muda <b>onde</b> o item fica (a coluna Onde da Lista). Vale também uma frente, aplicação, produto, projeto ou cliente') +
+      linhaG('  descrição: / horas: 6 / cliente vê: sim / sprint: Sprint 3', 'Troca <b>descrição</b>, <b>horas</b>, se o <b>cliente vê</b> e o <b>sprint</b>') +
       linhaG('  aceite: texto  /  tirar aceite: texto', '<b>Acrescenta</b> ou <b>tira</b> um critério (tirar um marcado avisa)') +
       linhaG('  trocar aceites: sim', 'Tira todos os critérios antes dos <code>aceite:</code> do bloco (substitui)') +
       linhaG('  épico: Nome / versão: v1.2 / frente: Backend', '<b>Move</b> para outro épico, versão ou frente (<code>nenhum</code> / <code>nenhuma</code> tira)') +

@@ -186,6 +186,20 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
     ok(/já foi aceito/.test(pvA), 'item aceito: mudar a história sem pedido explícito é erro');
     const pvB = await abrir('editar: ' + dois + '\n  mudar aceito: sim\n  como: outra pessoa');
     ok(/volta para Priorizado/.test(pvB) && !/já foi aceito: a história/.test(pvB), 'com mudar aceito: sim, a prévia avisa que volta para Priorizado');
+    // situação, início, onde e o resto da janela do item
+    const pvS = await abrir('editar: ' + um + '\n  situação: Aceito\neditar: ' + dois + '\n  situação: Foguete\n  início: 32/13/2026\neditar: ' + tres + '\n  reabrir: sim\n  início: 20/10/2026\n  prazo: 15/10/2026\neditar: Ed tarefa\n  onde: Lugar que não existe');
+    ok(/critérios desmarcados/.test(pvS) && /situação "Foguete" não existe/.test(pvS) && /início "32\/13\/2026" não vale/.test(pvS) && /fica depois do prazo/.test(pvS) && /onde: "Lugar que não existe" não existe/.test(pvS) && /nada é gravado/.test(pvS), 'situação que não existe, Aceito com critério desmarcado, data fora do formato, início depois do prazo e onde que não existe são erro');
+    const outra = await p.evaluate(k => { const D = window.__tf.D; const x = D.issues.find(i => i.chave === k); const w = D.ws.find(y => y.id === x.ws); const o = D.ws.find(y => y.app === w.app && y.id !== w.id && y.status !== 'archived'); const a = D.apps.find(y => y.id === w.app); return o ? {txt:a.nome + ' › ' + o.nome, id:o.id} : null; }, um);
+    const pvOk = await abrir('editar: ' + um + '\n  situação: Pronto para testar\n  início: 05/10/2026\n  prazo: 15/10/2026\n  horas: 6\n  cliente vê: sim\n  descrição: Tela com filtro por loja' + (outra ? '\n  onde: ' + outra.txt : ''));
+    ok(/Situação/.test(pvOk) && /Pronto para testar/.test(pvOk) && /Início/.test(pvOk) && !/erro/.test(pvOk), 'a prévia mostra situação, início e os outros campos com antes e depois');
+    await gravar();
+    ok(conta("select s.grupo || '|' || i.inicio || '|' || i.prazo || '|' || i.estimativa_h::int || '|' || i.visivel_cliente || '|' || i.descricao from itens i join status_fluxo s on s.id = i.status_id where i.chave = '" + um + "'") === 'review|2026-10-05|2026-10-15|6|true|Tela com filtro por loja', 'grava situação, início, prazo, horas, cliente vê e descrição');
+    if (outra) ok(conta("select frente_id from itens where chave = '" + um + "'") === outra.id, 'onde: "Aplicação › Frente" muda o lugar do item');
+    ok(Number(conta("select count(*) from itens_historico h join itens i on i.id = h.item_id where i.chave = '" + um + "' and h.tipo = 'edicao' and h.texto like '%início:%' and h.texto like '%horas:%'")) >= 1 && Number(conta("select count(*) from itens_historico h join itens i on i.id = h.item_id where i.chave = '" + um + "' and h.tipo = 'situacao'")) >= 1, 'o histórico guarda o início, as horas e a mudança de situação');
+    const pvV = await abrir('editar: ' + um + '\n  situação: Voltou');
+    ok(/precisa do motivo/.test(pvV), 'Voltou sem motivo é erro');
+    await abrir('editar: ' + um + '\n  situação: Voltou\n  motivo: o filtro não pega a loja'); await gravar();
+    ok(conta("select (voltou_em is not null and voltou_motivo = 'o filtro não pega a loja')::text from itens where chave = '" + um + "'") === 'true', 'situação: Voltou com motivo devolve o item (como o botão Devolver)');
     // desfazer o último lote
     await abrir('editar: ' + um + '\n  pontos: 13'); await gravar();
     ok(conta("select pontos from itens where chave = '" + um + "'") === '13', 'gravou 13 pontos');

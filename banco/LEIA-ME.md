@@ -143,6 +143,10 @@ Na tela: Entregas, **Ligar repositório** (conectar a conta, escolher o reposit�
 
 `40_po_guia_projeto.sql`: coluna `itens.decisao` (tipo Decisão: tipo `task`, com o prazo da decisão no `prazo`; não conta nos pontos da versão) e, em `projetos`, `visao`, `sucesso`, `partes`, `riscos`, `riscos_nenhum` (o que o guia de 9 passos pergunta) e `po_limites` (limites do método por projeto: parado, aceite, grande, semanas; vazio = padrão 5/3/13/4). A tela: `fonte/po_guia.js`.
 
+## Parte 41: Editar em lote muda qualquer coluna (aplicada no Supabase em 01/10/2026 como `ciclodev_41_editar_lote_todas_colunas`)
+
+`41_editar_lote_todas_colunas.sql`: só troca a função `interno.po_historico_edicao` (o gatilho da parte 39 continua). O histórico de edição passa a guardar também descrição, horas, início, data alvo, cliente vê e sprint. A situação continua no histórico próprio (tipo `situacao`) e o lugar do item (onde) já estava (frente). A tela: `fonte/lote_editar.js` (campos situação, motivo, início, onde, descrição, horas, data alvo, cliente vê e sprint).
+
 ## Parte 38: item completo pelo método do Product Owner (aplicada em 01/10/2026 como `ciclodev_38_item_completo_po` e `ciclodev_38b_sem_truncate`)
 
 `38_item_completo_po.sql`, só acrescenta (nenhuma coluna antiga muda de sentido):
