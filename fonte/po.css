@@ -1,0 +1,96 @@
+/* ===== Item completo pelo método do P.O. (po.js) ===== */
+.po-cartao .po-campo{display:grid;gap:4px;padding:8px 0;border-bottom:1px solid var(--border-default)}
+.po-cartao .po-campo:last-child{border-bottom:0}
+.po-campo > span{font-size:12px;color:var(--text-secondary)}
+.po-campo .campo{width:100%;min-width:0}
+.po-cartao textarea.campo{resize:vertical;min-height:64px}
+.po-num{max-width:76px}
+.po-de{font-size:12px;color:var(--text-secondary);margin-left:6px;white-space:nowrap}
+.po-origem{padding:0 0 8px;font-size:13px;overflow-wrap:anywhere}
+.po-link{background:none;border:0;padding:0;font:inherit;font-size:12.5px;font-weight:600;color:var(--vermelho);cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.po-link:disabled{opacity:.5;cursor:default}
+.po-link:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+
+/* situação, P.O. e os botões Aceitar e Devolver (dentro do cartão Principal) */
+.po-situ{display:grid;gap:6px;padding:8px 0 10px;border-bottom:1px solid var(--border-default)}
+.po-situ-lin{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:12.5px}
+.po-situ-nome{font-weight:700;padding:2px 8px;border:1px solid currentColor;font-size:12px;letter-spacing:.02em}
+.po-s-backlog{color:#71717A}.po-s-todo{color:#1D4ED8}.po-s-doing{color:#B45309}.po-s-review{color:#7C3AED}.po-s-blocked{color:#B91C1C}.po-s-done{color:#15803D}.po-s-voltou{color:#C2410C}
+.po-situ-po{color:var(--text-secondary);overflow-wrap:anywhere;min-width:0}
+.po-acoes{display:flex;flex-wrap:wrap;gap:6px}
+.po-nota{margin:0;font-size:12.5px;color:var(--text-secondary)}
+.po-voltou{margin:0;font-size:12.5px;color:#C2410C;overflow-wrap:anywhere}
+.st.st-voltou{color:#C2410C}
+
+/* corpo do item */
+.po-frase{margin:0 0 10px;font-size:15px;line-height:1.5;font-style:italic;overflow-wrap:anywhere}
+.po-frase-vazia{color:var(--text-muted)}
+.po-hist-campos{display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:8px}
+@media (max-width:760px){ .po-hist-campos{grid-template-columns:minmax(0, 1fr)} }
+.po-crit{list-style:none;margin:0;padding:0}
+.po-crit-lin{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;padding:10px 14px;border-bottom:1px solid var(--border-default)}
+.po-crit-ck{display:flex;align-items:flex-start;gap:10px;flex:1 1 240px;min-width:0;cursor:pointer}
+.po-crit-ck input{margin-top:3px;flex:0 0 auto;width:16px;height:16px;accent-color:#15803D}
+.po-crit-txt{overflow-wrap:anywhere;min-width:0;line-height:1.45}
+.po-crit-lin.feito .po-crit-txt{color:var(--text-secondary)}
+.po-crit-txt .po-crit-quem{display:block;margin-top:2px;font-size:12px;color:#15803D}
+.po-crit-mover{display:flex;gap:2px;margin-left:auto}
+.po-crit-mover .ico-btn{width:28px;height:28px;font-size:13px}
+.po-crit-caixa .progresso{margin:0}
+.po-dod{margin-top:12px;padding:10px 14px;border-left:3px solid var(--vermelho);background:var(--preto-04);font-size:13px;display:grid;gap:4px;justify-items:start}
+.po-dod p{margin:0;line-height:1.5;overflow-wrap:anywhere}
+.po-des{display:grid;grid-template-columns:minmax(0, 2fr) minmax(0, 1fr);gap:12px}
+@media (max-width:760px){ .po-des{grid-template-columns:minmax(0, 1fr)} }
+.po-des-slot{display:grid;gap:6px;min-width:0;align-content:start}
+.po-des-nome{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text-secondary)}
+.po-des-img{display:block;padding:0;border:1px solid var(--border-default);background:var(--preto-04);cursor:zoom-in;max-width:100%}
+.po-des-img img{display:block;width:100%;max-height:260px;object-fit:contain}
+.po-des-vazio{display:grid;place-items:center;gap:4px;min-height:120px;border:1px dashed var(--text-muted);color:var(--text-secondary);font-size:13px;text-align:center;padding:12px;overflow-wrap:anywhere}
+.po-des-add{cursor:pointer}
+.po-des-add b{display:inline-flex;align-items:center;gap:6px;color:var(--text-primary)}
+.po-des-add:hover,.po-des-add:focus-within{border-color:var(--text-primary)}
+.po-des-acoes{display:flex;gap:12px}
+.po-des-grande{display:block;max-width:100%;max-height:75vh;margin:0 auto}
+.po-hist-lista{list-style:none;margin:0;padding:0;border:1px solid var(--border-default)}
+.po-hist-lin{display:grid;grid-template-columns:auto minmax(0, 1fr) auto;gap:4px 12px;padding:8px 12px;border-bottom:1px solid var(--border-default);font-size:13px;align-items:baseline}
+.po-hist-lin:last-child{border-bottom:0}
+.po-hist-quando{font-variant-numeric:tabular-nums;color:var(--text-secondary);white-space:nowrap;font-size:12px}
+.po-hist-txt{overflow-wrap:anywhere}
+.po-hist-quem{color:var(--text-secondary);font-size:12px;text-align:right;overflow-wrap:anywhere}
+@media (max-width:560px){ .po-hist-lin{grid-template-columns:minmax(0, 1fr)} .po-hist-quem{text-align:left} }
+.po-vazio{padding:10px 12px;color:var(--text-muted);font-size:13px}
+.po-hist-lista .po-vazio{border:0}
+
+/* listas: prioridade, estimativa e critérios */
+.po-chips{display:inline-flex;flex-wrap:wrap;gap:4px;align-items:center;min-width:0}
+.po-chip{display:inline-flex;align-items:center;height:20px;padding:0 6px;font-size:11px;font-weight:700;letter-spacing:.02em;border:1px solid currentColor;white-space:nowrap;line-height:1}
+.po-m-deve{color:#B91C1C}.po-m-deveria{color:#B45309}.po-m-poderia{color:#1D4ED8}.po-m-nao_tera{color:var(--text-muted)}
+.po-n{color:var(--text-secondary)}.po-n1{color:#fff;background:#B91C1C;border-color:#B91C1C}.po-n2{color:#B91C1C}
+.po-pts{color:var(--text-secondary)}
+.po-ck{color:var(--text-secondary)}.po-ck.ok{color:#15803D}
+.po-bug{color:#B91C1C}.po-mel{color:#7C3AED}
+.po-falta{color:#B45309;border-style:dashed}
+.po-pos{display:inline-grid;place-items:center;min-width:22px;height:20px;padding:0 4px;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;background:var(--preto-04);color:var(--text-secondary)}
+.po-filtros{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:flex-end;margin:0 0 12px}
+.po-f{display:grid;gap:2px;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text-secondary)}
+.po-f .sel{min-width:0;max-width:200px;font-size:13px;text-transform:none;letter-spacing:0;font-weight:400}
+.po-grupo li{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;justify-content:space-between}
+.po-li-tit{display:flex;gap:8px;align-items:center;min-width:0;flex:1 1 280px}
+.po-li-nome{overflow-wrap:anywhere;min-width:0}
+.po-li-dir{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;justify-content:flex-end;min-width:0}
+.po-li-onde{font-size:12px;overflow-wrap:anywhere}
+.po-ordenar{margin-right:6px}
+/* na Fila, o título longo quebra a linha em vez de cortar */
+.bj-linha{flex-wrap:wrap}
+.bj-linha .bj-linha-tit{white-space:normal;overflow:visible;overflow-wrap:anywhere;flex:1 1 220px}
+/* nomes das colunas do Quadro (Pronto para testar, Em andamento) não ficam cortados: os pontos descem para a linha de baixo */
+.bj-coluna .coluna-cab{flex-wrap:wrap}
+.bj-coluna .coluna-cab .bj-col-nome{min-width:min-content}
+/* Entregas: andamento por pontos, meta e Definição de Pronto */
+.en2-prog small b{font-variant-numeric:tabular-nums}
+.po-barra-pts{margin-top:6px}
+.po-barra-pts i{background:#15803D}
+.po-v-meta{margin:4px 0 0;font-size:12.5px;line-height:1.45;overflow-wrap:anywhere}
+.po-dod-txt{font-size:13.5px;line-height:1.55;overflow-wrap:anywhere;padding:0 0 8px}
+.po-dod-caixa .po-acoes{margin-top:8px}
+.po-dod-corpo{padding:14px 16px 16px;display:grid;gap:8px}

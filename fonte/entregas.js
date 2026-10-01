@@ -217,17 +217,19 @@ function enNovaVersao(){
   const novosFeitos = soltos.filter(i => !ult || (i.feito && i.feito > ult));
   const pendentes = issuesEm(chave).filter(i => i.status !== 'done' && !i.marco);
   modal('Nova versão', '<p class="sec tf-nota" style="margin-top:0">Uma versão junta o que vai para o ar de uma vez. Dela saem as notas de versão.</p>' +
-    '<div class="grade-form"><label class="lb">Nome<input class="campo" id="en-v-n" value="' + esc(enProximoNome(chave)) + '"></label><label class="lb">Previsão<input class="campo" type="date" id="en-v-d" value="' + iso(dAdd(HOJE, 14)) + '"></label>' +
-    '<label class="lb largo">Resumo (opcional)<input class="campo" id="en-v-r" placeholder="Ex.: cadastro de clientes e painel do CEO"></label></div>' +
+    '<div class="grade-form"><label class="lb">Nome<input class="campo" id="en-v-n" value="' + esc(enProximoNome(chave)) + '"></label><label class="lb">Data de entrega<input class="campo" type="date" id="en-v-d" required value="' + iso(dAdd(HOJE, 14)) + '"></label>' +
+    '<label class="lb largo">Resumo (opcional)<input class="campo" id="en-v-r" placeholder="Ex.: cadastro de clientes e painel do CEO"></label>' +
+    '<label class="lb largo">Meta da versão<input class="campo" id="en-v-m" maxlength="1000" placeholder="Ex.: o lojista publica anúncios sem ligar para o suporte"></label></div>' +
     '<div class="tf-opcoes">' + (novosFeitos.length ? '<label><input type="checkbox" id="en-v-f" checked> Ligar os ' + novosFeitos.length + ' itens concluídos desde a última versão</label>' : '') +
       (pendentes.length ? '<label><input type="checkbox" id="en-v-p"> Ligar também os ' + pendentes.length + ' itens em aberto sem versão</label>' : '') +
       '<label><input type="checkbox" id="en-v-c" checked> O cliente vê esta versão</label></div>',
     [{txt:'Cancelar', cls:'sec'}, {txt:'Criar versão', acao:dl => {
       const nome = $('#en-v-n', dl).value.trim(); if (!nome){ toast('Dê um nome à versão'); return false; }
+      if (!$('#en-v-d', dl).value){ toast('Escolha a data de entrega da versão'); return false; }
       if (enVersoes(chave).some(m => m.nome.toLowerCase() === nome.toLowerCase())){ toast('Já existe uma versão com esse nome'); return false; }
       const lig = [].concat($('#en-v-f', dl) && $('#en-v-f', dl).checked ? novosFeitos : [], $('#en-v-p', dl) && $('#en-v-p', dl).checked ? pendentes : []);
       tfComDesfazer('Versão ' + nome + ' criada' + (lig.length ? ', com ' + lig.length + ' itens.' : '.'), () => {
-        const m = {id:uid('mc'), no:chave, tipo:'release', nome, desc:$('#en-v-r', dl).value.trim(), data:$('#en-v-d', dl).value || iso(dAdd(HOJE, 14)), vis:$('#en-v-c', dl).checked, entregue:null, notas:''};
+        const m = {id:uid('mc'), no:chave, tipo:'release', nome, desc:$('#en-v-r', dl).value.trim(), data:$('#en-v-d', dl).value, vis:$('#en-v-c', dl).checked, entregue:null, notas:'', meta:$('#en-v-m', dl).value.trim()};
         D.marcos.push(m); lig.forEach(i => { i.marco = m.id; });
       });
       if (UI.view === 'entregas') rView();

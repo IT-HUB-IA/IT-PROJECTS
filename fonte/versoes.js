@@ -66,6 +66,7 @@ function vsSalvar(d, chave){
   const linhas = $$('.vs-linha', d).map(tr => ({tr, id:tr.dataset.vsId, nome:$('[data-vs-c="nome"]', tr).value.trim(), data:$('[data-vs-c="data"]', tr).value, desc:$('[data-vs-c="desc"]', tr).value.trim(), vis:$('[data-vs-c="vis"]', tr).checked}));
   const usadas = linhas.filter(l => l.id || l.nome || l.desc || l.data);
   for (const l of usadas) if (!l.nome) return mostrar(l.id ? 'Toda versão precisa de nome. Para tirar uma versão, use a lixeira na lista de versões.' : 'Uma linha nova está sem nome. Escreva o nome ou tire a linha no X.', $('[data-vs-c="nome"]', l.tr));
+  for (const l of usadas) if (!l.data) return mostrar('A versão ' + l.nome + ' está sem data de entrega. Toda versão precisa da data.', $('[data-vs-c="data"]', l.tr));
   const vistos = new Map(), outras = enVersoes(chave).filter(m => !usadas.some(l => l.id === m.id));
   for (const l of usadas){ const k = l.nome.toLowerCase(); if (vistos.has(k) || outras.some(m => m.nome.toLowerCase() === k)) return mostrar('O nome ' + l.nome + ' aparece duas vezes. Cada versão precisa de um nome diferente.', $('[data-vs-c="nome"]', l.tr)); vistos.set(k, 1); }
   const mudou = (m, l) => m.nome !== l.nome || (m.data || '') !== l.data || (m.desc || '') !== l.desc || (m.vis !== false) !== l.vis;

@@ -135,6 +135,27 @@ Na tela: Entregas, **Ligar repositório** (conectar a conta, escolher o reposit�
 - **`ciclodev_44_infra_na_aplicacao`** (30/09/2026): a aplicação também tem a aba Infraestrutura (`infra_no_ok`), com os desenhos do código ligado a ela. Publicar pelo repositório de uma aplicação pede os desenhos dela e do produto em que ela está (`infra_publicou`); "Atualizar agora" da aplicação lê só os repositórios dela, o do produto lê os dele e os das aplicações dele (`infra_auto_proximos`). A frente continua sem aba própria.
 - Regra da tela no mesmo dia: cada ponto vê só o que é dele e o que está dentro dele (versões, repositórios, publicações, ficha técnica); o projeto junta tudo. As 6 versões do projeto BL que eram do app MK - Plataformas (dentro de 40% (MK)) foram movidas para ele, com os itens ligados como estavam.
 
+## Parte 38: item completo pelo método do Product Owner (aplicada em 01/10/2026 como `ciclodev_38_item_completo_po` e `ciclodev_38b_sem_truncate`)
+
+`38_item_completo_po.sql`, só acrescenta (nenhuma coluna antiga muda de sentido):
+
+| Peça | Para que serve |
+|---|---|
+| `itens.historia_quem`, `historia_quero`, `historia_para` | A história: "Como [quem], quero [o quê], para [por quê]" |
+| `itens.moscow` (`deve`, `deveria`, `poderia`, `nao_tera`) e `itens.nivel` (1 a 5) | Prioridade. O nível anda junto com a `prioridade` antiga (1 highest, 2 high, 3 medium, 4 e 5 low), pelo gatilho `itens_po_regras`; os itens que já existiam ganharam o nível da prioridade deles |
+| `itens.valor` (1 a 10) e `valor_motivo` | Valor de negócio, para ordenar a fila (no empate, sobe quem tem mais valor por ponto) |
+| `itens.pontos` | Estimativa: agora 1, 2, 3, 5, 8, 13 e 20 (o 21 antigo continua aceito para não perder nada) |
+| `itens.melhoria`, `itens.origem_id` | Tipo no método: Item, Bug (`tipo = 'bug'`, com o item de origem) ou Melhoria (item novo ligado ao antigo) |
+| `itens.voltou_em`, `voltou_motivo` | Situação Voltou: o P.O. devolveu. Limpa quando volta para Pronto para testar ou é aceito |
+| `itens.meta` | A meta do épico |
+| `itens_criterios` | Critérios de aceite (caixa de marcar, ordem). Quem marcou e quando são gravados pelo banco (`marcado_por`, `marcado_em`) |
+| `itens_historico` | Cada mudança de situação e de critério, com quem e quando. **Só leitura** para a tela: só os gatilhos escrevem |
+| `marcos.meta` | A meta da versão (a data de entrega já era obrigatória) |
+| `projetos.po_id`, `projetos.definicao_pronto` | O P.O. do projeto e a Definição de Pronto |
+| `anexos.papel` (`desenho_computador`, `desenho_celular`) | O desenho do item |
+
+Regras que o banco garante: (1) história, tarefa e bug não vão para Aceito (grupo `done`) com critério desmarcado; (2) com P.O. definido, só ele aceita e devolve; publicação, PR mesclado e rotinas não aceitam sozinhos: o item para em Pronto para testar (`review`); sem P.O. e sem critérios, tudo como antes; (3) item aceito não muda história nem critérios (mudança depois de pronto é Melhoria, item novo); (4) só o P.O. atual passa o papel de P.O. para outra pessoa. As tabelas novas têm RLS e GRANT (nada para `anon`; sem TRUNCATE para `authenticated`). Testada no Postgres local (`99_teste_po_LOCAL.sql`: 35 de 35; os testes 93, 95, 96, 97, 99 de ficha, IA, infra, infra automática e portal continuam passando com a 38 por cima). A tela: `fonte/po.js` e `fonte/po.css`; teste da tela `testes/t_po.js`.
+
 ## Parte 37: o DevIT conduz guias no chat (aplicada em 30/09/2026 como `37_devit_guia`)
 
 `37_devit_guia.sql`: coluna `ia_mensagens.contexto` (jsonb). Na fala do DevIT guarda o guia, o passo e os botões oferecidos; na fala da pessoa, o botão que ela clicou. Junto vai a Edge Function `supabase/functions/devit` (implantar com **verify_jwt ligado**): o botão **Guia passo a passo** da Infraestrutura abre o chat e o DevIT conduz o guia de ligar banco (Supabase ou AWS), um passo por vez, com os botões Feito, Tenho uma dúvida e Deu erro. A base de conhecimento fica num arquivo só, `supabase/functions/_shared/devit_conhecimento.json`, que a função e a janela de guia da tela usam (o build põe na página). As dúvidas escritas são respondidas pela IA quando a variável `ANTHROPIC_API_KEY` da função devit existe (só com a base de conhecimento, nunca com a internet); sem ela, pelas perguntas frequentes da base. Endereço com senha nunca é mandado: a tela recusa, e a função mascara antes de chamar a IA. Só responde a quem tem a IA ligada. Testes: `node --experimental-strip-types supabase/functions/devit/logica.test.ts` e `testes/t_devit_chat.js` (a tela, o banco local e a lógica de verdade).

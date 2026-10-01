@@ -1535,7 +1535,7 @@ async function gravarNoBanco(){
   if (SYNC.chavesNovas){ SYNC.chavesNovas = false; if (!document.querySelector('dialog[open]')) rView(); }
   if (SYNC.deNovo){ SYNC.deNovo = false; return gravarNoBanco(); }
   // as automações rodam no banco: se mexeu em itens e há automação ligada, relê para mostrar o resultado
-  if (mexeuItens && D.automacoes.some(a => a.ativa !== false)) setTimeout(() => { if (!document.querySelector('dialog[open]') && !SYNC.rodando) carregarDoBanco(null).then(render); }, 600);
+  if (mexeuItens && D.automacoes.some(a => a.ativa !== false)) setTimeout(() => { if (!document.querySelector('dialog[open]') && !SYNC.rodando && !SYNC.pendente) carregarDoBanco(null).then(render); }, 600);   // com mudança nova esperando, não relê (perderia a mudança): a próxima gravação relê
 }
 if (COM_BANCO){
   salvar = function(){ if (!BANCO.carregado) return; SYNC.pendente = true; clearTimeout(SYNC.timer); SYNC.timer = setTimeout(gravarNoBanco, 350); };

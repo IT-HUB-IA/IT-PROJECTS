@@ -2548,6 +2548,27 @@ dialog.modal.lt-modal{width:min(1040px, calc(100vw - 32px));max-width:none}
 .rl-op small{color:var(--tinta-3);font-size:12px}
 .rl-op.desl{opacity:.5;cursor:not-allowed}
 .rl-dica{margin:0;font-size:12.5px}
+
+/* detalhes de cada item na prévia: história, prioridade, valor, pontos e critérios; erros por linha */
+.lt-lista ul li{display:block}
+.lt-it-tit{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline}
+.lt-it-tit > span:first-child{min-width:0;overflow-wrap:anywhere;font-weight:600}
+.lt-hist{margin:3px 0 0;font-size:12.5px;font-style:italic;color:var(--tinta-2);overflow-wrap:anywhere}
+.lt-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.lt-chip{font-size:11.5px;padding:1px 6px;border:1px solid var(--linha);overflow-wrap:anywhere}
+.lt-bug{border-color:#B91C1C;color:#B91C1C}
+.lt-melhoria{border-color:#7C3AED;color:#7C3AED}
+.lt-crit{margin:4px 0 0;padding-left:18px;font-size:12.5px;list-style:'☐ ';display:grid;gap:2px}
+.lt-crit li{display:list-item;overflow-wrap:anywhere}
+.lt-tag{font-size:11px;padding:1px 6px;background:var(--preto-04);color:var(--tinta-2)}
+.lt-tag-erro{background:#B91C1C;color:#fff}
+.lt-erros{margin:0 0 10px;padding:8px 10px;border:1px solid #B91C1C;border-left-width:3px;font-size:13px;color:#7F1D1D}
+.lt-erros ul{margin:4px 0 0;padding-left:18px;display:grid;gap:2px}
+.lt-erros li{overflow-wrap:anywhere}
+.lt-com-erro > .lt-it-tit > span:first-child, .lt-com-erro > .lt-ep b{color:#B91C1C;text-decoration:line-through}
+.lt-it-erros{margin:3px 0 0;padding-left:16px;font-size:12px;color:#B91C1C;list-style:disc}
+.lt-it-erros li{display:list-item}
+.lt-regras code{font-size:12px;background:var(--preto-04);padding:0 3px}
 /* Entregas: versões em tabela (versoes.js) */
 dialog.modal.vs-modal{width:min(1100px, calc(100vw - 32px));max-width:none}
 .vs-rolo{overflow-x:auto;border:1px solid var(--linha)}
@@ -2923,6 +2944,102 @@ textarea[data-ficha].fa-escondido{display:none}
 .ifv-b.sel{background:var(--preto);border-color:var(--preto);color:var(--branco)}
 .ifv-b:focus-visible{outline:2px solid var(--vermelho);outline-offset:2px}
 .ifv-dica{font-size:12px;color:var(--tinta-3)}
+/* ===== Item completo pelo método do P.O. (po.js) ===== */
+.po-cartao .po-campo{display:grid;gap:4px;padding:8px 0;border-bottom:1px solid var(--border-default)}
+.po-cartao .po-campo:last-child{border-bottom:0}
+.po-campo > span{font-size:12px;color:var(--text-secondary)}
+.po-campo .campo{width:100%;min-width:0}
+.po-cartao textarea.campo{resize:vertical;min-height:64px}
+.po-num{max-width:76px}
+.po-de{font-size:12px;color:var(--text-secondary);margin-left:6px;white-space:nowrap}
+.po-origem{padding:0 0 8px;font-size:13px;overflow-wrap:anywhere}
+.po-link{background:none;border:0;padding:0;font:inherit;font-size:12.5px;font-weight:600;color:var(--vermelho);cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.po-link:disabled{opacity:.5;cursor:default}
+.po-link:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+
+/* situação, P.O. e os botões Aceitar e Devolver (dentro do cartão Principal) */
+.po-situ{display:grid;gap:6px;padding:8px 0 10px;border-bottom:1px solid var(--border-default)}
+.po-situ-lin{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:12.5px}
+.po-situ-nome{font-weight:700;padding:2px 8px;border:1px solid currentColor;font-size:12px;letter-spacing:.02em}
+.po-s-backlog{color:#71717A}.po-s-todo{color:#1D4ED8}.po-s-doing{color:#B45309}.po-s-review{color:#7C3AED}.po-s-blocked{color:#B91C1C}.po-s-done{color:#15803D}.po-s-voltou{color:#C2410C}
+.po-situ-po{color:var(--text-secondary);overflow-wrap:anywhere;min-width:0}
+.po-acoes{display:flex;flex-wrap:wrap;gap:6px}
+.po-nota{margin:0;font-size:12.5px;color:var(--text-secondary)}
+.po-voltou{margin:0;font-size:12.5px;color:#C2410C;overflow-wrap:anywhere}
+.st.st-voltou{color:#C2410C}
+
+/* corpo do item */
+.po-frase{margin:0 0 10px;font-size:15px;line-height:1.5;font-style:italic;overflow-wrap:anywhere}
+.po-frase-vazia{color:var(--text-muted)}
+.po-hist-campos{display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:8px}
+@media (max-width:760px){ .po-hist-campos{grid-template-columns:minmax(0, 1fr)} }
+.po-crit{list-style:none;margin:0;padding:0}
+.po-crit-lin{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;padding:10px 14px;border-bottom:1px solid var(--border-default)}
+.po-crit-ck{display:flex;align-items:flex-start;gap:10px;flex:1 1 240px;min-width:0;cursor:pointer}
+.po-crit-ck input{margin-top:3px;flex:0 0 auto;width:16px;height:16px;accent-color:#15803D}
+.po-crit-txt{overflow-wrap:anywhere;min-width:0;line-height:1.45}
+.po-crit-lin.feito .po-crit-txt{color:var(--text-secondary)}
+.po-crit-txt .po-crit-quem{display:block;margin-top:2px;font-size:12px;color:#15803D}
+.po-crit-mover{display:flex;gap:2px;margin-left:auto}
+.po-crit-mover .ico-btn{width:28px;height:28px;font-size:13px}
+.po-crit-caixa .progresso{margin:0}
+.po-dod{margin-top:12px;padding:10px 14px;border-left:3px solid var(--vermelho);background:var(--preto-04);font-size:13px;display:grid;gap:4px;justify-items:start}
+.po-dod p{margin:0;line-height:1.5;overflow-wrap:anywhere}
+.po-des{display:grid;grid-template-columns:minmax(0, 2fr) minmax(0, 1fr);gap:12px}
+@media (max-width:760px){ .po-des{grid-template-columns:minmax(0, 1fr)} }
+.po-des-slot{display:grid;gap:6px;min-width:0;align-content:start}
+.po-des-nome{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text-secondary)}
+.po-des-img{display:block;padding:0;border:1px solid var(--border-default);background:var(--preto-04);cursor:zoom-in;max-width:100%}
+.po-des-img img{display:block;width:100%;max-height:260px;object-fit:contain}
+.po-des-vazio{display:grid;place-items:center;gap:4px;min-height:120px;border:1px dashed var(--text-muted);color:var(--text-secondary);font-size:13px;text-align:center;padding:12px;overflow-wrap:anywhere}
+.po-des-add{cursor:pointer}
+.po-des-add b{display:inline-flex;align-items:center;gap:6px;color:var(--text-primary)}
+.po-des-add:hover,.po-des-add:focus-within{border-color:var(--text-primary)}
+.po-des-acoes{display:flex;gap:12px}
+.po-des-grande{display:block;max-width:100%;max-height:75vh;margin:0 auto}
+.po-hist-lista{list-style:none;margin:0;padding:0;border:1px solid var(--border-default)}
+.po-hist-lin{display:grid;grid-template-columns:auto minmax(0, 1fr) auto;gap:4px 12px;padding:8px 12px;border-bottom:1px solid var(--border-default);font-size:13px;align-items:baseline}
+.po-hist-lin:last-child{border-bottom:0}
+.po-hist-quando{font-variant-numeric:tabular-nums;color:var(--text-secondary);white-space:nowrap;font-size:12px}
+.po-hist-txt{overflow-wrap:anywhere}
+.po-hist-quem{color:var(--text-secondary);font-size:12px;text-align:right;overflow-wrap:anywhere}
+@media (max-width:560px){ .po-hist-lin{grid-template-columns:minmax(0, 1fr)} .po-hist-quem{text-align:left} }
+.po-vazio{padding:10px 12px;color:var(--text-muted);font-size:13px}
+.po-hist-lista .po-vazio{border:0}
+
+/* listas: prioridade, estimativa e critérios */
+.po-chips{display:inline-flex;flex-wrap:wrap;gap:4px;align-items:center;min-width:0}
+.po-chip{display:inline-flex;align-items:center;height:20px;padding:0 6px;font-size:11px;font-weight:700;letter-spacing:.02em;border:1px solid currentColor;white-space:nowrap;line-height:1}
+.po-m-deve{color:#B91C1C}.po-m-deveria{color:#B45309}.po-m-poderia{color:#1D4ED8}.po-m-nao_tera{color:var(--text-muted)}
+.po-n{color:var(--text-secondary)}.po-n1{color:#fff;background:#B91C1C;border-color:#B91C1C}.po-n2{color:#B91C1C}
+.po-pts{color:var(--text-secondary)}
+.po-ck{color:var(--text-secondary)}.po-ck.ok{color:#15803D}
+.po-bug{color:#B91C1C}.po-mel{color:#7C3AED}
+.po-falta{color:#B45309;border-style:dashed}
+.po-pos{display:inline-grid;place-items:center;min-width:22px;height:20px;padding:0 4px;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;background:var(--preto-04);color:var(--text-secondary)}
+.po-filtros{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:flex-end;margin:0 0 12px}
+.po-f{display:grid;gap:2px;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text-secondary)}
+.po-f .sel{min-width:0;max-width:200px;font-size:13px;text-transform:none;letter-spacing:0;font-weight:400}
+.po-grupo li{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;justify-content:space-between}
+.po-li-tit{display:flex;gap:8px;align-items:center;min-width:0;flex:1 1 280px}
+.po-li-nome{overflow-wrap:anywhere;min-width:0}
+.po-li-dir{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;justify-content:flex-end;min-width:0}
+.po-li-onde{font-size:12px;overflow-wrap:anywhere}
+.po-ordenar{margin-right:6px}
+/* na Fila, o título longo quebra a linha em vez de cortar */
+.bj-linha{flex-wrap:wrap}
+.bj-linha .bj-linha-tit{white-space:normal;overflow:visible;overflow-wrap:anywhere;flex:1 1 220px}
+/* nomes das colunas do Quadro (Pronto para testar, Em andamento) não ficam cortados: os pontos descem para a linha de baixo */
+.bj-coluna .coluna-cab{flex-wrap:wrap}
+.bj-coluna .coluna-cab .bj-col-nome{min-width:min-content}
+/* Entregas: andamento por pontos, meta e Definição de Pronto */
+.en2-prog small b{font-variant-numeric:tabular-nums}
+.po-barra-pts{margin-top:6px}
+.po-barra-pts i{background:#15803D}
+.po-v-meta{margin:4px 0 0;font-size:12.5px;line-height:1.45;overflow-wrap:anywhere}
+.po-dod-txt{font-size:13.5px;line-height:1.55;overflow-wrap:anywhere;padding:0 0 8px}
+.po-dod-caixa .po-acoes{margin-top:8px}
+.po-dod-corpo{padding:14px 16px 16px;display:grid;gap:8px}
 
   .conteudo.sem-pad{padding:0;display:flex;flex-direction:column;flex:1}
   .conteudo.sem-pad > div{flex:1;display:flex;flex-direction:column}
@@ -7007,7 +7124,7 @@ async function gravarNoBanco(){
   if (SYNC.chavesNovas){ SYNC.chavesNovas = false; if (!document.querySelector('dialog[open]')) rView(); }
   if (SYNC.deNovo){ SYNC.deNovo = false; return gravarNoBanco(); }
   // as automações rodam no banco: se mexeu em itens e há automação ligada, relê para mostrar o resultado
-  if (mexeuItens && D.automacoes.some(a => a.ativa !== false)) setTimeout(() => { if (!document.querySelector('dialog[open]') && !SYNC.rodando) carregarDoBanco(null).then(render); }, 600);
+  if (mexeuItens && D.automacoes.some(a => a.ativa !== false)) setTimeout(() => { if (!document.querySelector('dialog[open]') && !SYNC.rodando && !SYNC.pendente) carregarDoBanco(null).then(render); }, 600);   // com mudança nova esperando, não relê (perderia a mudança): a próxima gravação relê
 }
 if (COM_BANCO){
   salvar = function(){ if (!BANCO.carregado) return; SYNC.pendente = true; clearTimeout(SYNC.timer); SYNC.timer = setTimeout(gravarNoBanco, 350); };
@@ -9256,17 +9373,19 @@ function enNovaVersao(){
   const novosFeitos = soltos.filter(i => !ult || (i.feito && i.feito > ult));
   const pendentes = issuesEm(chave).filter(i => i.status !== 'done' && !i.marco);
   modal('Nova versão', '<p class="sec tf-nota" style="margin-top:0">Uma versão junta o que vai para o ar de uma vez. Dela saem as notas de versão.</p>' +
-    '<div class="grade-form"><label class="lb">Nome<input class="campo" id="en-v-n" value="' + esc(enProximoNome(chave)) + '"></label><label class="lb">Previsão<input class="campo" type="date" id="en-v-d" value="' + iso(dAdd(HOJE, 14)) + '"></label>' +
-    '<label class="lb largo">Resumo (opcional)<input class="campo" id="en-v-r" placeholder="Ex.: cadastro de clientes e painel do CEO"></label></div>' +
+    '<div class="grade-form"><label class="lb">Nome<input class="campo" id="en-v-n" value="' + esc(enProximoNome(chave)) + '"></label><label class="lb">Data de entrega<input class="campo" type="date" id="en-v-d" required value="' + iso(dAdd(HOJE, 14)) + '"></label>' +
+    '<label class="lb largo">Resumo (opcional)<input class="campo" id="en-v-r" placeholder="Ex.: cadastro de clientes e painel do CEO"></label>' +
+    '<label class="lb largo">Meta da versão<input class="campo" id="en-v-m" maxlength="1000" placeholder="Ex.: o lojista publica anúncios sem ligar para o suporte"></label></div>' +
     '<div class="tf-opcoes">' + (novosFeitos.length ? '<label><input type="checkbox" id="en-v-f" checked> Ligar os ' + novosFeitos.length + ' itens concluídos desde a última versão</label>' : '') +
       (pendentes.length ? '<label><input type="checkbox" id="en-v-p"> Ligar também os ' + pendentes.length + ' itens em aberto sem versão</label>' : '') +
       '<label><input type="checkbox" id="en-v-c" checked> O cliente vê esta versão</label></div>',
     [{txt:'Cancelar', cls:'sec'}, {txt:'Criar versão', acao:dl => {
       const nome = $('#en-v-n', dl).value.trim(); if (!nome){ toast('Dê um nome à versão'); return false; }
+      if (!$('#en-v-d', dl).value){ toast('Escolha a data de entrega da versão'); return false; }
       if (enVersoes(chave).some(m => m.nome.toLowerCase() === nome.toLowerCase())){ toast('Já existe uma versão com esse nome'); return false; }
       const lig = [].concat($('#en-v-f', dl) && $('#en-v-f', dl).checked ? novosFeitos : [], $('#en-v-p', dl) && $('#en-v-p', dl).checked ? pendentes : []);
       tfComDesfazer('Versão ' + nome + ' criada' + (lig.length ? ', com ' + lig.length + ' itens.' : '.'), () => {
-        const m = {id:uid('mc'), no:chave, tipo:'release', nome, desc:$('#en-v-r', dl).value.trim(), data:$('#en-v-d', dl).value || iso(dAdd(HOJE, 14)), vis:$('#en-v-c', dl).checked, entregue:null, notas:''};
+        const m = {id:uid('mc'), no:chave, tipo:'release', nome, desc:$('#en-v-r', dl).value.trim(), data:$('#en-v-d', dl).value, vis:$('#en-v-c', dl).checked, entregue:null, notas:'', meta:$('#en-v-m', dl).value.trim()};
         D.marcos.push(m); lig.forEach(i => { i.marco = m.id; });
       });
       if (UI.view === 'entregas') rView();
@@ -11044,9 +11163,13 @@ if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {rO
      linha começando com - * •  = item dentro do épico de cima
      [Nome da frente] no fim    = em qual frente fica (o item herda a do épico)
      {Nome da versão} no fim    = em qual versão entra (o item herda a do épico); a versão já precisa existir em Entregas
+     linha "campo: valor" logo abaixo do item = detalhe do item (como, quero, para, aceite, prioridade, valor, pontos, tipo, origem);
+     logo abaixo do épico, "meta: ..." = a meta do épico. Valor inválido vira erro na prévia e o item dele fica de fora.
+   Item com o mesmo título num épico que já existe não duplica: recebe os campos novos, sem perder os que já tem.
    Antes de criar, mostra a prévia. Épico com o mesmo nome de um que já existe no projeto não é duplicado: os itens entram nele.
    Grava como se cada um fosse criado à mão (épico em A fazer, itens na Fila), com Desfazer. */
 const LT_EXEMPLO = 'Carteira de clientes [Database]\n- Cadastro do cliente\n- Cadastro das lojas\n- Tela da lista da carteira [Frontend]\n\nCatálogo e limite de publicação [Backend]\n- Limite total de anúncios\n- Anúncios publicados e saldo';
+const LT_EXEMPLO_COMPLETO = 'Carteira de clientes [Database]\nmeta: o lojista cuida da própria carteira sem ligar para o suporte\n- Cadastro do cliente\n  como: lojista\n  quero: cadastrar meus clientes com CPF e telefone\n  para: não perder o contato de quem já comprou\n  aceite: Salva nome, CPF e telefone\n  aceite: Avisa quando o CPF já está cadastrado\n  aceite: Funciona no celular\n  prioridade: Deve 2\n  valor: 8 é o que mais gera ligação no suporte\n  pontos: 5\n- Tela da lista da carteira [Frontend]\n  historia: Como lojista, quero ver todos os meus clientes numa lista, para achar um cliente rápido\n  aceite: Busca pelo nome ou pelo CPF\n  prioridade: Deveria 3\n  pontos: 3';
 const ltNorm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
 
 // as frentes que valem aqui: primeiro as do ponto escolhido na Estrutura, depois as do projeto
@@ -11058,6 +11181,49 @@ function ltFrentes(){
   const dentro = w => aqui.has(w.id) || (tipo === 'app' && w.app === id) || (tipo === 'product' && (byId('apps', w.app) || {}).product === id) || tipo === 'project' || (tipo === 'ws' && w.id === id);
   return doProjeto.filter(dentro).concat(doProjeto.filter(w => !dentro(w)));
 }
+// linhas de detalhe: "campo: valor", logo abaixo da linha do item (ou do épico, no caso da meta). O recuo é opcional.
+const LT_CAMPOS = {'como':'quem', 'quem':'quem', 'quero':'quero', 'o que':'quero', 'para':'para', 'por que':'para', 'porque':'para', 'historia':'historia',
+  'aceite':'aceite', 'criterio':'aceite', 'criterio de aceite':'aceite', 'prioridade':'prioridade', 'classe':'classe', 'moscow':'classe', 'nivel':'nivel',
+  'valor':'valor', 'pontos':'pontos', 'estimativa':'pontos', 'tipo':'tipo', 'origem':'origem', 'meta':'meta'};
+const LT_CLASSES = [['nao tera agora','nao_tera'], ['nao tera','nao_tera'], ['deveria','deveria'], ['deve','deve'], ['poderia','poderia']];
+const LT_SEQ = [1, 2, 3, 5, 8, 13, 20];
+const LT_ERRO_PRIO = 'use Deve, Deveria, Poderia ou Não terá agora, e o nível de 1 a 5 (ex.: prioridade: Deve 2)';
+function ltClasse(v){ const n = ltNorm(v); const c = LT_CLASSES.find(([k]) => n === k || n.startsWith(k + ' ') || n.startsWith(k + ',')); return c ? {classe:c[1], resto:n.slice(c[0].length).replace(/^[\s,;·-]+/, '').trim()} : null; }
+function ltDetalhe(campo, v, det, pj){
+  const txt = String(v || '').trim();
+  const max = (n, rot) => txt.length > n ? rot + ' passa de ' + n + ' letras' : '';
+  if (!txt) return 'falta o valor depois de "' + campo + ':"';
+  if (campo !== 'aceite' && campo in det) return '"' + campo + '" aparece duas vezes no mesmo item';
+  if (campo === 'quem' || campo === 'quero' || campo === 'para'){ const e = max(campo === 'quem' ? 300 : 500, 'o texto'); if (e) return e; det[campo] = txt; return ''; }
+  if (campo === 'historia'){
+    const m = /^como\s+(.+?),\s*quero\s+(.+?),\s*para\s+(.+?)\.?$/i.exec(txt);
+    if (!m) return 'a história precisa ser assim: Como [quem], quero [o quê], para [por quê]';
+    det.quem = m[1].trim(); det.quero = m[2].trim(); det.para = m[3].trim(); det.historia = true; return '';
+  }
+  if (campo === 'aceite'){ const e = max(500, 'o critério'); if (e) return e; (det.aceite = det.aceite || []).push(txt); return ''; }
+  if (campo === 'prioridade' || campo === 'classe'){
+    const c = ltClasse(txt);
+    if (!c){ if (campo === 'prioridade' && /^[1-5]$/.test(txt)){ det.nivel = +txt; det.prioridade = true; return ''; } return 'prioridade "' + txt + '" não existe: ' + LT_ERRO_PRIO; }
+    det.classe = c.classe; det[campo] = true;
+    if (c.resto){ if (campo === 'classe' || !/^[1-5]$/.test(c.resto)) return 'nível "' + c.resto + '" não existe: o nível vai de 1 a 5'; if ('nivel' in det) return '"nivel" aparece duas vezes no mesmo item'; det.nivel = +c.resto; }
+    return '';
+  }
+  if (campo === 'nivel'){ if (!/^[1-5]$/.test(txt)) return 'nível "' + txt + '" não existe: o nível vai de 1 a 5 (1 só emergência, 5 ideia sem detalhe)'; det.nivel = +txt; return ''; }
+  if (campo === 'valor'){
+    const m = /^(\d+)(?:\s*[-:,.]?\s*(.*))?$/.exec(txt);
+    if (!m || +m[1] < 1 || +m[1] > 10) return 'valor "' + txt + '" não vale: comece com um número de 1 a 10 (ex.: valor: 8 reduz as ligações)';
+    det.valor = +m[1]; if (m[2] && m[2].trim()){ if (m[2].trim().length > 300) return 'o motivo do valor passa de 300 letras'; det.valorMotivo = m[2].trim(); } return '';
+  }
+  if (campo === 'pontos'){ if (!/^\d+$/.test(txt) || !LT_SEQ.includes(+txt)) return 'estimativa "' + txt + '" fora da sequência: use 1, 2, 3, 5, 8, 13 ou 20'; det.pontos = +txt; return ''; }
+  if (campo === 'tipo'){ const t = {item:'item', bug:'bug', melhoria:'melhoria'}[ltNorm(txt)]; if (!t) return 'tipo "' + txt + '" não existe: use Item, Bug ou Melhoria'; det.tipo = t; return ''; }
+  if (campo === 'origem'){
+    const n = ltNorm(txt), noProj = pj ? issuesEm('project:' + pj.id).filter(i => !i.arquivado) : [];
+    const o = noProj.find(i => typeof chaveDe === 'function' && ltNorm(chaveDe(i)) === n) || noProj.find(i => ltNorm(i.titulo) === n);
+    if (!o) return 'origem "' + txt + '" não existe neste projeto: use a chave do item (ex.: BL-12)';
+    det.origem = o.id; det.origemNome = ((typeof chaveDe === 'function' && chaveDe(o)) || '') + ' ' + o.titulo; return '';
+  }
+  return '';
+}
 function ltLer(texto){
   const frentes = ltFrentes(), padrao = UI.sel.startsWith('ws:') ? UI.sel.slice(3) : primeiroWs(UI.sel);
   const pj = cadeia(UI.sel).project;
@@ -11065,11 +11231,27 @@ function ltLer(texto){
   const achaFrente = nome => { const n = ltNorm(nome); return frentes.find(w => ltNorm(w.nome) === n) || frentes.find(w => ltNorm(byId('apps', w.app).nome + ' › ' + w.nome) === n) || null; };
   const versoes = marcosDoEscopo(UI.sel);
   const achaVersao = nome => { const n = ltNorm(nome); return versoes.find(v => ltNorm(v.nome) === n) || null; };
-  const grupos = [], avisos = [], novasV = [];
-  let atual = null;
+  const grupos = [], avisos = [], novasV = [], erros = [];
+  let atual = null, alvo = null;   // alvo: o item (ou o épico) que recebe as linhas de detalhe
+  const erro = (k, msg, quem) => { const e = {linha:k + 1, msg}; erros.push(e); if (quem) (quem.erros = quem.erros || []).push(e); };
   String(texto || '').split(/\r?\n/).forEach((bruta, k) => {
     let l = bruta.trim(); if (!l) return;
     const item = /^[-*•–]\s*/.test(l); if (item) l = l.replace(/^[-*•–]\s*/, '').trim(); if (!l) return;
+    // linha de detalhe: um dos campos conhecidos, com dois pontos (recuo opcional)
+    const md = !item && /^([A-Za-zÀ-ÿ ]{2,22}):\s*(.*)$/.exec(l), campo = md && LT_CAMPOS[ltNorm(md[1])];
+    if (md && !campo && /^\s/.test(bruta)){ erro(k, 'campo "' + md[1].trim() + '" não existe. Use: como, quero, para, aceite, prioridade, valor, pontos, tipo, origem ou meta', alvo); return; }
+    if (campo){
+      if (campo === 'meta'){
+        if (!alvo || alvo.ehItem){ erro(k, 'a meta é do épico: escreva logo abaixo da linha do épico (sem traço)', alvo); return; }
+        if (alvo.meta != null){ erro(k, '"meta" aparece duas vezes no mesmo épico', alvo); return; }
+        if (md[2].trim().length > 1000){ erro(k, 'a meta passa de 1000 letras', alvo); return; }
+        if (!md[2].trim()){ erro(k, 'falta o valor depois de "meta:"', alvo); return; }
+        alvo.meta = md[2].trim(); return;
+      }
+      if (!alvo || !alvo.ehItem){ erro(k, 'esta linha é detalhe de item: coloque logo abaixo de uma linha que começa com -', alvo); return; }
+      const e = ltDetalhe(campo, md[2], alvo.det, pj); if (e) erro(k, e, alvo);
+      return;
+    }
     // [frente] e {versão} no fim da linha, em qualquer ordem
     let ws = null, mc = null, m;
     while ((m = /\s*(\[([^\]]+)\]|\{([^}]+)\})\s*$/.exec(l))){
@@ -11078,11 +11260,31 @@ function ltLer(texto){
       else { const v = achaVersao(m[3]); if (v) mc = v.id; else if (m[3].trim()){ const n = m[3].trim(); mc = LT_NOVA + n; if (!novasV.includes(n)) novasV.push(n); } }
     }
     if (!l) return;
-    if (!item){ const ja = epicsJa.find(e => ltNorm(e.titulo) === ltNorm(l)) || null; atual = {titulo:l, ws:ws || (ja ? ja.ws : padrao), mc:mc || (ja ? ja.marco || null : null), ja, itens:[]}; grupos.push(atual); return; }
-    if (!atual){ atual = {titulo:null, ws:padrao, mc:null, ja:null, itens:[]}; grupos.push(atual); }
-    atual.itens.push({titulo:l, ws:ws || atual.ws, mc:mc || atual.mc});
+    if (!item){ const ja = epicsJa.find(e => ltNorm(e.titulo) === ltNorm(l)) || null; atual = {titulo:l, ws:ws || (ja ? ja.ws : padrao), mc:mc || (ja ? ja.marco || null : null), ja, itens:[], linha:k + 1, meta:null, erros:[]}; grupos.push(atual); alvo = atual; return; }
+    if (!atual){ atual = {titulo:null, ws:padrao, mc:null, ja:null, itens:[], meta:null, erros:[]}; grupos.push(atual); }
+    const it = {titulo:l, ws:ws || atual.ws, mc:mc || atual.mc, ehItem:true, det:{}, erros:[], linha:k + 1};
+    if (l.length > 300) erro(k, 'o título passa de 300 letras', it);
+    if (atual.itens.some(x => ltNorm(x.titulo) === ltNorm(l))) erro(k, 'o item "' + l + '" aparece duas vezes no mesmo épico', it);
+    // o mesmo título num épico que já existe: não duplica, atualiza
+    if (atual.ja) it.ja = D.issues.find(x => x.pai === atual.ja.id && !x.arquivado && ltNorm(x.titulo) === ltNorm(l)) || null;
+    atual.itens.push(it); alvo = it;
   });
-  return {grupos, avisos, padrao, novasV};
+  // depois de ler tudo: o que só dá para conferir no fim
+  grupos.forEach(g => g.itens.forEach(it => {
+    if (it.det.tipo === 'bug' && !it.det.origem && !(it.ja && it.ja.origem)) erro(it.linha - 1, 'o Bug "' + it.titulo + '" precisa da origem: o item cujo critério não foi cumprido (ex.: origem: BL-12)', it);
+    if (it.ja && it.ja.status === 'done' && (it.det.quem || it.det.quero || it.det.para || (it.det.aceite || []).length))
+      erro(it.linha - 1, '"' + it.titulo + '" já foi aceito: a história e os critérios não mudam. Para mudar, crie um item novo com tipo: Melhoria', it);
+  }));
+  erros.sort((a, b) => a.linha - b.linha);
+  return {grupos, avisos, padrao, novasV, erros};
+}
+// o que cada item vai receber, para a prévia e para gravar
+const ltTemDet = det => Object.keys(det).some(k => k !== 'origemNome');
+function ltResumo(r){
+  let epNovos = 0, novos = 0, atualiza = 0, igual = 0, comErro = 0;
+  r.grupos.forEach(g => { if (g.erros.length){ comErro += 1 + g.itens.length; return; } if (g.titulo && !g.ja) epNovos++;
+    g.itens.forEach(i => { if (i.erros.length) comErro++; else if (i.ja){ if (ltTemDet(i.det)) atualiza++; else igual++; } else novos++; }); });
+  return {epNovos, novos, atualiza, igual, comErro};
 }
 const ltFrenteNome = id => { const w = byId('ws', id); return w ? w.nome : 'sem frente'; };
 const LT_NOVA = 'nova:';   // versão escrita no texto que ainda não existe: é criada junto, no projeto
@@ -11095,13 +11297,49 @@ function ltProximaVersao(){
   lidas.sort((x, y) => y.a - x.a || y.b - x.b || (y.c || 0) - (x.c || 0));
   const t = lidas[0]; return t.pre + t.a + '.' + (t.b + 1) + (t.c == null ? '' : '.0');
 }
+function ltDetHTML(det){
+  const p = [];
+  if (det.quem || det.quero || det.para) p.push('<p class="lt-hist">Como ' + esc(det.quem || '...') + ', quero ' + esc(det.quero || '...') + ', para ' + esc(det.para || '...') + '.</p>');
+  const chips = [];
+  if (det.tipo && det.tipo !== 'item') chips.push('<span class="lt-chip lt-' + det.tipo + '">' + (det.tipo === 'bug' ? 'Bug' : 'Melhoria') + (det.origemNome ? ' de ' + esc(det.origemNome.trim()) : '') + '</span>');
+  if (det.classe || det.nivel) chips.push('<span class="lt-chip">' + esc([det.classe ? ({deve:'Deve', deveria:'Deveria', poderia:'Poderia', nao_tera:'Não terá agora'})[det.classe] : '', det.nivel ? 'nível ' + det.nivel : ''].filter(Boolean).join(' · ')) + '</span>');
+  if (det.valor) chips.push('<span class="lt-chip">valor ' + det.valor + (det.valorMotivo ? ': ' + esc(det.valorMotivo) : '') + '</span>');
+  if (det.pontos) chips.push('<span class="lt-chip">' + det.pontos + ' pts</span>');
+  if (chips.length) p.push('<div class="lt-chips">' + chips.join('') + '</div>');
+  if ((det.aceite || []).length) p.push('<ul class="lt-crit">' + det.aceite.map(c => '<li>' + esc(c) + '</li>').join('') + '</ul>');
+  return p.join('');
+}
 function ltPreviaHTML(r){
-  const novos = r.grupos.filter(g => g.titulo && !g.ja).length, nItens = r.grupos.reduce((s, g) => s + g.itens.length, 0);
-  if (!r.grupos.length) return '<p class="lt-vazio">A prévia aparece aqui enquanto você escreve.</p>';
-  return '<p class="lt-conta"><b>' + novos + (novos === 1 ? ' épico novo' : ' épicos novos') + '</b> e <b>' + nItens + (nItens === 1 ? ' item' : ' itens') + '</b> vão ser criados.' + (r.novasV && r.novasV.length ? ' Junto, ' + (r.novasV.length === 1 ? 'a versão nova ' : 'as versões novas ') + '<b>' + r.novasV.map(esc).join(', ') + '</b>.' : '') + '</p>' +
+  if (!r.grupos.length && !(r.erros || []).length) return '<p class="lt-vazio">A prévia aparece aqui enquanto você escreve.</p>';
+  const s = ltResumo(r), partes = [];
+  if (s.epNovos) partes.push('<b>' + s.epNovos + (s.epNovos === 1 ? ' épico novo' : ' épicos novos') + '</b>');
+  if (s.novos) partes.push('<b>' + s.novos + (s.novos === 1 ? ' item novo' : ' itens novos') + '</b>');
+  if (s.atualiza) partes.push('<b>' + s.atualiza + (s.atualiza === 1 ? ' item atualizado' : ' itens atualizados') + '</b>');
+  const chaveDo = x => (typeof chaveDe === 'function' && chaveDe(x)) || '';
+  return '<p class="lt-conta">' + (partes.length ? partes.join(', ').replace(/, ([^,]*)$/, ' e $1') + (s.epNovos + s.novos === 1 && !s.atualiza ? ' vai ser criado.' : ' vão ser gravados.') : 'Nada para gravar ainda.') +
+      (r.novasV && r.novasV.length ? ' Junto, ' + (r.novasV.length === 1 ? 'a versão nova ' : 'as versões novas ') + '<b>' + r.novasV.map(esc).join(', ') + '</b>.' : '') +
+      (s.igual ? ' ' + s.igual + (s.igual === 1 ? ' item já existe e fica como está.' : ' itens já existem e ficam como estão.') : '') + '</p>' +
+    ((r.erros || []).length ? '<div class="lt-erros" role="alert"><b>' + r.erros.length + (r.erros.length === 1 ? ' erro' : ' erros') + (s.comErro ? ': ' + s.comErro + (s.comErro === 1 ? ' item fica de fora' : ' itens ficam de fora') + ' até corrigir' : '') + '</b><ul>' + r.erros.map(e => '<li>Linha ' + e.linha + ': ' + esc(e.msg) + '</li>').join('') + '</ul></div>' : '') +
     (r.avisos.length ? '<ul class="lt-avisos">' + r.avisos.map(a => '<li>' + esc(a) + '</li>').join('') + '</ul>' : '') +
-    '<ol class="lt-lista">' + r.grupos.map(g => '<li><div class="lt-ep">' + (g.titulo ? '<b>' + esc(g.titulo) + '</b>' + (g.ja ? '<small>já existe: os itens entram nele</small>' : '') : '<b class="lt-sem">Itens sem épico</b>') + '<span class="lt-fr">' + esc(ltFrenteNome(g.ws)) + '</span>' + ltVersao(g.mc) + '</div>' +
-      (g.itens.length ? '<ul>' + g.itens.map(i => '<li><span>' + esc(i.titulo) + '</span>' + (i.ws !== g.ws ? '<span class="lt-fr">' + esc(ltFrenteNome(i.ws)) + '</span>' : '') + (i.mc !== g.mc ? ltVersao(i.mc) : '') + '</li>').join('') + '</ul>' : '') + '</li>').join('') + '</ol>';
+    '<ol class="lt-lista">' + r.grupos.map(g => '<li' + (g.erros.length ? ' class="lt-com-erro"' : '') + '><div class="lt-ep">' + (g.titulo ? '<b>' + esc(g.titulo) + '</b>' + (g.ja ? '<small>já existe: os itens entram nele</small>' : '') : '<b class="lt-sem">Itens sem épico</b>') + '<span class="lt-fr">' + esc(ltFrenteNome(g.ws)) + '</span>' + ltVersao(g.mc) + '</div>' +
+      (g.meta ? '<p class="lt-hist">Meta: ' + esc(g.meta) + '</p>' : '') +
+      (g.itens.length ? '<ul>' + g.itens.map(i => '<li class="' + (i.erros.length ? 'lt-com-erro' : '') + '"><div class="lt-it-tit"><span>' + esc(i.titulo) + '</span>' +
+        (i.erros.length ? '<span class="lt-tag lt-tag-erro">com erro: fica de fora</span>' : i.ja ? '<span class="lt-tag">' + (ltTemDet(i.det) ? 'já existe' + (chaveDo(i.ja) ? ' (' + esc(chaveDo(i.ja)) + ')' : '') + ': atualiza' : 'já existe: fica como está') + '</span>' : '') +
+        (i.ws !== g.ws ? '<span class="lt-fr">' + esc(ltFrenteNome(i.ws)) + '</span>' : '') + (i.mc !== g.mc ? ltVersao(i.mc) : '') + '</div>' + ltDetHTML(i.det) +
+        (i.erros.length ? '<ul class="lt-it-erros">' + i.erros.map(e => '<li>Linha ' + e.linha + ': ' + esc(e.msg) + '</li>').join('') + '</ul>' : '') + '</li>').join('') + '</ul>' : '') + '</li>').join('') + '</ol>';
+}
+// grava os detalhes num item (novo ou que já existe): só o que veio no texto; nada do que já existe é apagado
+function ltAplicar(x, det){
+  if (det.quem) x.hQuem = det.quem; if (det.quero) x.hQuero = det.quero; if (det.para) x.hPara = det.para;
+  if (det.classe) x.moscow = det.classe;
+  if (det.nivel){ x.nivel = det.nivel; x.prio = ({1:'highest', 2:'high', 3:'medium', 4:'low', 5:'low'})[det.nivel]; }
+  if (det.valor) x.valor = det.valor; if (det.valorMotivo) x.valorMotivo = det.valorMotivo;
+  if (det.pontos) x.pontos = det.pontos;
+  if (det.origem) x.origem = det.origem;
+  if (det.tipo === 'melhoria') x.melhoria = true; else if (det.tipo === 'item') x.melhoria = false;
+  if (det.tipo === 'bug' && x.tipo !== 'bug' && typeof poMudarTipo === 'function') poMudarTipo(x, 'bug');
+  if (det.tipo && det.tipo !== 'bug' && x.tipo === 'bug' && typeof poMudarTipo === 'function') poMudarTipo(x, det.tipo);
+  if ((det.aceite || []).length){ const ja = new Set((x.crit || []).map(c => ltNorm(c.t))); x.crit = (x.crit || []).concat(det.aceite.filter(c => !ja.has(ltNorm(c))).map(t => ({t, f:false}))); }
 }
 function ltNovo(titulo, ws, tipo, status, pai, mc){
   const ni = novoIssue({titulo, status, ws, tipo, pai:pai || null}); if (mc) ni.marco = mc;
@@ -11116,6 +11354,7 @@ function ltAtalhosHTML(){
   const bt = (tipo, valor, txt, cls) => '<button type="button" class="lt-at' + (cls ? ' ' + cls : '') + '" data-lt-por="' + tipo + '" data-lt-valor="' + esc(valor) + '">' + txt + '</button>';
   return '<div class="lt-atalhos" role="toolbar" aria-label="Atalhos">' +
     '<div class="lt-at-g"><span>Linha nova</span>' + bt('epico', '', ICO.mais + 'Épico') + bt('item', '', ICO.mais + 'Item') + '</div>' +
+    '<div class="lt-at-g"><span>Detalhe do item</span>' + [['como', 'Como'], ['quero', 'Quero'], ['para', 'Para'], ['aceite', 'Critério'], ['prioridade', 'Prioridade'], ['valor', 'Valor'], ['pontos', 'Pontos'], ['tipo', 'Tipo'], ['meta', 'Meta do épico']].map(([k, n]) => bt('det', k, ICO.mais + n)).join('') + '</div>' +
     '<div class="lt-at-g"><span>Frente</span>' + frentes.map(n => bt('frente', n, esc(n))).join('') + '</div>' +
     '<div class="lt-at-g"><span>Versão</span>' + versoes.map(n => bt('versao', n, esc(n))).join('') + (versoes.includes(prox) ? '' : bt('versao', prox, ICO.mais + esc(prox) + ' (nova)', 'lt-at-nova')) + '</div></div>';
 }
@@ -11124,6 +11363,13 @@ function ltPor(ta, tipo, valor){
   const v = ta.value, pos = ta.selectionStart == null ? v.length : ta.selectionStart;
   const ini = v.lastIndexOf('\n', pos - 1) + 1, fimN = v.indexOf('\n', pos), fim = fimN < 0 ? v.length : fimN;
   let linha = v.slice(ini, fim), cursor;
+  if (tipo === 'det'){
+    // uma linha de detalhe logo abaixo da linha onde está o cursor (a meta sem recuo, logo abaixo do épico)
+    const antes = v.slice(0, fim), depois = v.slice(fim);
+    const novo = '\n' + (valor === 'meta' ? '' : '  ') + valor + ': ';
+    ta.value = antes + novo + depois; cursor = (antes + novo).length;
+    ta.focus(); ta.setSelectionRange(cursor, cursor); return;
+  }
   if (tipo === 'epico' || tipo === 'item'){
     const novo = tipo === 'item' ? '- ' : '';
     const antes = v.slice(0, fim), depois = v.slice(fim);
@@ -11146,21 +11392,28 @@ function ltAbrir(){
     ltAtalhosHTML() +
     '<textarea class="campo lt-texto" id="lt-t" rows="16" spellcheck="false" placeholder="' + esc(LT_EXEMPLO) + '"></textarea>' +
     '<div class="lt-regras"><p><b>Linha sem traço</b> vira épico.</p><p><b>Linha com - na frente</b> vira item dentro do épico de cima.</p><p>Para escolher a <b>frente</b> e a <b>versão</b>, clique na linha e depois no botão dela, em cima da caixa. O item fica na frente e na versão do épico, se não disser outra. Uma versão que ainda não existe é criada junto.</p>' +
-    '<div class="lt-ia"><button type="button" class="btn fant peq" data-lt-exemplo>Usar o exemplo</button></div>' +
+    '<p><b>Detalhes do item</b> (opcional): logo abaixo do item, uma linha por campo, no formato <code>campo: valor</code>. Campos: <code>como</code>, <code>quero</code>, <code>para</code>, <code>aceite</code> (um por critério), <code>prioridade</code> (Deve, Deveria, Poderia ou Não terá agora, e o nível de 1 a 5), <code>valor</code> (1 a 10), <code>pontos</code> (1, 2, 3, 5, 8, 13 ou 20), <code>tipo</code> (Item, Bug ou Melhoria) e <code>origem</code> (a chave do item, para o Bug). Logo abaixo do épico: <code>meta</code>.</p>' +
+    '<p>Item com o mesmo título num épico que já existe <b>não duplica</b>: recebe os campos novos e não perde nada. Linha com erro aparece na prévia e o item dela fica de fora.</p>' +
+    '<div class="lt-ia"><button type="button" class="btn fant peq" data-lt-exemplo>Usar o exemplo</button><button type="button" class="btn fant peq" data-lt-exemplo-completo>Exemplo com detalhes</button></div>' +
     '<div class="lt-ia"><b>Montar com um agente de IA</b><p>Baixe ou copie as instruções do formato, cole num chat com o agente, converse com ele e cole aqui o texto que ele devolver. As instruções já levam as frentes, versões e épicos deste projeto.</p>' +
     '<span><button type="button" class="btn sec peq" data-lt-ia-baixar>Baixar instruções</button><button type="button" class="btn sec peq" data-lt-ia-copiar>Copiar instruções</button></span></div></div></div>' +
-    '<div class="lt-dir"><span class="lb">Prévia</span><div class="lt-previa" aria-live="polite">' + ltPreviaHTML({grupos:[], avisos:[]}) + '</div></div></div>',
+    '<div class="lt-dir"><span class="lb">Prévia</span><div class="lt-previa" aria-live="polite">' + ltPreviaHTML({grupos:[], avisos:[], erros:[]}) + '</div></div></div>',
     [{txt:'Cancelar', cls:'sec'}, {txt:'Criar tudo', acao:dl => {
-      const r = ltLer($('#lt-t', dl).value); const nItens = r.grupos.reduce((s, g) => s + g.itens.length, 0);
-      const novos = r.grupos.filter(g => g.titulo && !g.ja).length;
-      if (!novos && !nItens){ toast('Escreva pelo menos um épico ou um item'); return false; }
-      tfComDesfazer((novos ? novos + (novos === 1 ? ' épico' : ' épicos') + (nItens ? ' e ' : '') : '') + (nItens ? nItens + (nItens === 1 ? ' item' : ' itens') : '') + ' criados' + (r.novasV.length ? ', com ' + r.novasV.length + (r.novasV.length === 1 ? ' versão nova' : ' versões novas') : '') + '.', () => {
+      const r = ltLer($('#lt-t', dl).value); const sr = ltResumo(r);
+      const novos = sr.epNovos, nItens = sr.novos;
+      if (!novos && !nItens && !sr.atualiza){ toast(r.erros.length ? 'Corrija os erros da prévia: nada foi gravado' : r.grupos.length ? 'Nada muda: tudo já existe como está' : 'Escreva pelo menos um épico ou um item'); return false; }
+      tfComDesfazer([novos ? novos + (novos === 1 ? ' épico' : ' épicos') : '', nItens ? nItens + (nItens === 1 ? ' item' : ' itens') : ''].filter(Boolean).join(' e ') + (novos || nItens ? ' criados' : '') +
+        (sr.atualiza ? (novos || nItens ? ', ' : '') + sr.atualiza + (sr.atualiza === 1 ? ' item atualizado' : ' itens atualizados') : '') + (r.novasV.length ? ', com ' + r.novasV.length + (r.novasV.length === 1 ? ' versão nova' : ' versões novas') : '') +
+        (sr.comErro ? '. ' + sr.comErro + (sr.comErro === 1 ? ' com erro ficou de fora' : ' com erro ficaram de fora') : '') + '.', () => {
         const pj = noDono(UI.sel), idNova = {};
         r.novasV.forEach(n => { const m = {id:uid('mc'), no:pj, tipo:'release', nome:n, desc:'', data:iso(dAdd(HOJE, 30)), vis:true, entregue:null, notas:''}; D.marcos.push(m); idNova[LT_NOVA + n] = m.id; });
         const vs = x => x && String(x).startsWith(LT_NOVA) ? idNova[x] || null : x;
-        r.grupos.forEach(g => { g.mc = vs(g.mc); g.itens.forEach(i => { i.mc = vs(i.mc); });
+        r.grupos.forEach(g => { if (g.erros.length) return; g.mc = vs(g.mc); g.itens.forEach(i => { i.mc = vs(i.mc); });
           const ep = g.titulo ? (g.ja && byId('issues', g.ja.id)) || ltNovo(g.titulo, g.ws, 'epic', 'todo', null, g.mc) : null;
-          g.itens.forEach(i => ltNovo(i.titulo, i.ws, ep ? 'story' : 'task', 'backlog', ep ? ep.id : null, i.mc));
+          if (ep && g.meta) ep.meta = g.meta;
+          g.itens.forEach(i => { if (i.erros.length) return;
+            if (i.ja){ const x = byId('issues', i.ja.id); if (x && ltTemDet(i.det)) ltAplicar(x, i.det); return; }
+            ltAplicar(ltNovo(i.titulo, i.ws, i.det.tipo === 'bug' ? 'bug' : ep ? 'story' : 'task', 'backlog', ep ? ep.id : null, i.mc), i.det); });
         });
       });
     }}]);
@@ -11170,6 +11423,7 @@ function ltAbrir(){
   const atualizar = () => { pv.innerHTML = ltPreviaHTML(ltLer(ta.value)); };
   ta.addEventListener('input', atualizar);
   $('[data-lt-exemplo]', dl).addEventListener('click', () => { ta.value = LT_EXEMPLO; atualizar(); ta.focus(); });
+  $('[data-lt-exemplo-completo]', dl).addEventListener('click', () => { ta.value = LT_EXEMPLO_COMPLETO; atualizar(); ta.focus(); });
   $('[data-lt-ia-baixar]', dl).addEventListener('click', () => exBaixar('CicloDev - criar em lote - instrucoes para IA - ' + (nomeDe(UI.sel) || 'geral'), '# Criar em lote no CicloDev: instruções para um agente de IA\n\n' + ciLoteMd()));
   $('[data-lt-ia-copiar]', dl).addEventListener('click', e => enCopiar('# Criar em lote no CicloDev: instruções para um agente de IA\n\n' + ciLoteMd(), e.currentTarget));
   // os botões de atalho não tiram o cursor da caixa: o clique não rouba o foco
@@ -11180,7 +11434,7 @@ function ltAbrir(){
 
 // o botão Criar em lote fica na barra Criar, no topo de todas as abas de itens (criar.js)
 document.addEventListener('click', e => { if (e.target.closest && e.target.closest('[data-lt-abrir]')){ e.preventDefault(); ltAbrir(); } });
-if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {ltLer, ltAbrir});
+if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {ltLer, ltAbrir, ltResumo, LT_EXEMPLO_COMPLETO});
 
 /* ===== Entregas: versões em forma de tabela =====
    Uma janela como uma planilha: cada linha é uma versão (nome, previsão, resumo, se o cliente vê).
@@ -11250,6 +11504,7 @@ function vsSalvar(d, chave){
   const linhas = $$('.vs-linha', d).map(tr => ({tr, id:tr.dataset.vsId, nome:$('[data-vs-c="nome"]', tr).value.trim(), data:$('[data-vs-c="data"]', tr).value, desc:$('[data-vs-c="desc"]', tr).value.trim(), vis:$('[data-vs-c="vis"]', tr).checked}));
   const usadas = linhas.filter(l => l.id || l.nome || l.desc || l.data);
   for (const l of usadas) if (!l.nome) return mostrar(l.id ? 'Toda versão precisa de nome. Para tirar uma versão, use a lixeira na lista de versões.' : 'Uma linha nova está sem nome. Escreva o nome ou tire a linha no X.', $('[data-vs-c="nome"]', l.tr));
+  for (const l of usadas) if (!l.data) return mostrar('A versão ' + l.nome + ' está sem data de entrega. Toda versão precisa da data.', $('[data-vs-c="data"]', l.tr));
   const vistos = new Map(), outras = enVersoes(chave).filter(m => !usadas.some(l => l.id === m.id));
   for (const l of usadas){ const k = l.nome.toLowerCase(); if (vistos.has(k) || outras.some(m => m.nome.toLowerCase() === k)) return mostrar('O nome ' + l.nome + ' aparece duas vezes. Cada versão precisa de um nome diferente.', $('[data-vs-c="nome"]', l.tr)); vistos.set(k, 1); }
   const mudou = (m, l) => m.nome !== l.nome || (m.data || '') !== l.data || (m.desc || '') !== l.desc || (m.vis !== false) !== l.vis;
@@ -13751,32 +14006,66 @@ function ciContexto(){
   const frentes = (typeof ltFrentes === 'function' ? ltFrentes() : []).map(w => { const a = byId('apps', w.app); return {nome:w.nome, app:a ? a.nome : ''}; });
   const versoes = (typeof marcosDoEscopo === 'function' ? marcosDoEscopo(UI.sel) : []).filter(m => m.tipo === 'release' && !m.entregue).map(m => m.nome);
   const epicos = pj ? issuesEm('project:' + pj.id).filter(i => i.tipo === 'epic' && !i.arquivado).map(i => i.titulo).slice(0, 80) : [];
-  return {onde:nomeDe(UI.sel), projeto:pj ? pj.nome : '', frentes, versoes, proxima:typeof ltProximaVersao === 'function' ? ltProximaVersao() : 'v0.1', epicos};
+  const itens = pj ? issuesEm('project:' + pj.id).filter(i => i.tipo !== 'epic' && i.tipo !== 'subtask' && !i.arquivado).slice(0, 120).map(i => { const ch = typeof chaveDe === 'function' ? chaveDe(i) : ''; const ep = i.pai && byId('issues', i.pai); return (ch ? ch + ': ' : '') + i.titulo + (ep ? ' (épico ' + ep.titulo + ')' : ''); }) : [];
+  return {onde:nomeDe(UI.sel), projeto:pj ? pj.nome : '', frentes, versoes, proxima:typeof ltProximaVersao === 'function' ? ltProximaVersao() : 'v0.1', epicos, itens};
 }
 function ciLoteMd(ctx){
   const c = ctx || ciContexto(), fr = c.frentes.map(f => f.nome).filter((n, k, a) => a.indexOf(n) === k);
+  const ex = typeof LT_EXEMPLO_COMPLETO === 'string' ? LT_EXEMPLO_COMPLETO : LT_EXEMPLO;
   return '## Formato do Criar em lote do CicloDev\n\n' +
-    'O CicloDev cria vários itens de uma vez a partir de um texto simples. Regras (siga exatamente):\n\n' +
+    'O CicloDev cria vários itens de uma vez a partir de um texto simples. O CicloDev segue o método de Product Owner: cada item pode ter história, critérios de aceite, prioridade, valor, estimativa e tipo. Siga as regras exatamente: o texto é lido linha por linha.\n\n' +
+    '### Linhas de estrutura\n\n' +
     '1. **Linha sem traço** vira um **épico** (uma entrega grande).\n' +
     '2. **Linha que começa com `- `** vira um **item** dentro do épico da linha de cima.\n' +
     '3. **Linha em branco** separa um épico do outro (opcional, só deixa mais fácil de ler).\n' +
     '4. **`[Nome da frente]` no fim da linha** diz em qual frente de trabalho fica. O item herda a frente do épico quando não diz outra.\n' +
-    '5. **`{Nome da versão}` no fim da linha** diz em qual versão entra. O item herda a versão do épico. Uma versão que ainda não existe é criada junto.\n' +
-    '6. Um épico com o mesmo nome de um que já existe no projeto **não é duplicado**: os itens entram nele.\n' +
-    '7. Só título. Não escreva descrição, prazo, prioridade nem responsável no texto: isso se ajusta depois, na tela.\n' +
-    '8. Títulos curtos e claros, começando com verbo ou com o nome da coisa (ex.: "Cadastro do cliente", "Validar CPF no cadastro").\n\n' +
-    '### Exemplo\n\n```\n' + LT_EXEMPLO + '\n```\n\n' +
+    '5. **`{Nome da versão}` no fim da linha** diz em qual versão entra. O item herda a versão do épico. Uma versão que ainda não existe é criada junto.\n\n' +
+    '### Linhas de detalhe (opcionais)\n\n' +
+    'Logo abaixo da linha do item, uma linha por campo, no formato `campo: valor`. Recue com dois espaços para ficar fácil de ler (o recuo é opcional). Os detalhes valem para o item da linha `- ` mais próxima acima.\n\n' +
+    '| Campo | O que é | Valores aceitos | Exemplo |\n|---|---|---|---|\n' +
+    '| `como` | História: quem usa | texto curto (até 300 letras) | `como: lojista` |\n' +
+    '| `quero` | História: o que a pessoa quer | texto curto (até 500 letras) | `quero: ver o saldo de anúncios` |\n' +
+    '| `para` | História: por que isso importa | texto curto (até 500 letras) | `para: saber quantos ainda posso publicar` |\n' +
+    '| `historia` | A história inteira numa linha (no lugar de como, quero e para) | `Como [quem], quero [o quê], para [por quê]` | `historia: Como lojista, quero ver o saldo, para decidir` |\n' +
+    '| `aceite` | Um critério de aceite. Repita a linha para cada critério, na ordem | texto (até 500 letras) | `aceite: Mostra o saldo atualizado` |\n' +
+    '| `prioridade` | Classe MoSCoW e, depois, o nível | `Deve`, `Deveria`, `Poderia` ou `Não terá agora`, seguido do nível de 1 a 5 | `prioridade: Deve 2` |\n' +
+    '| `nivel` | Só o nível, se não vier junto da prioridade | 1 a 5 | `nivel: 3` |\n' +
+    '| `valor` | Valor de negócio, e por que importa | número de 1 a 10, e depois o motivo | `valor: 8 reduz as ligações ao suporte` |\n' +
+    '| `pontos` | Estimativa | 1, 2, 3, 5, 8, 13 ou 20 | `pontos: 5` |\n' +
+    '| `tipo` | Tipo do item | `Item`, `Bug` ou `Melhoria` | `tipo: Bug` |\n' +
+    '| `origem` | O item de origem (obrigatório no Bug) | a chave do item, como BL-12 | `origem: BL-12` |\n' +
+    '| `meta` | **Do épico**: a meta da entrega. Logo abaixo da linha do épico, sem traço | texto (até 1000 letras) | `meta: o lojista publica sem ligar para o suporte` |\n\n' +
+    '**O nível de prioridade:** 1 só para emergência; 2 é o mais urgente do dia a dia; 3 é o ritmo normal; 4 pode esperar; 5 é ideia ainda sem detalhe.\n\n' +
+    '**Os tipos:** Item é algo novo que a pessoa vai ver ou usar. Bug é um critério de aceite que não foi cumprido: sempre com `origem:` apontando o item. Melhoria é mudança pedida depois que um item ficou pronto: é sempre um item novo (pode ter `origem:` com o item antigo), nunca uma mudança no item antigo.\n\n' +
+    '### Regras de leitura\n\n' +
+    '1. Um campo por linha. Não junte dois campos na mesma linha.\n' +
+    '2. Os critérios de aceite vão com `aceite:`, um por linha. **Não** use `- ` para critério: linha com `- ` vira item.\n' +
+    '3. Valor fora do aceito (prioridade que não existe, nível fora de 1 a 5, estimativa fora da sequência, valor fora de 1 a 10, campo que não existe, Bug sem origem) aparece como erro na prévia, com o número da linha, e **aquele item não é criado**. Os outros itens entram normalmente.\n' +
+    '4. Um épico com o mesmo nome de um que já existe no projeto **não é duplicado**: os itens entram nele.\n' +
+    '5. Um item com o mesmo título dentro de um épico que já existe **não é duplicado**: ele recebe os campos que vieram no texto, e nada do que ele já tem é apagado (os critérios novos se somam aos que já existem).\n' +
+    '6. Item que já foi aceito não muda a história nem os critérios: para mudar, crie um item novo com `tipo: Melhoria`.\n' +
+    '7. Títulos curtos e claros (até 300 letras), começando com verbo ou com o nome da coisa (ex.: "Cadastro do cliente", "Validar CPF no cadastro").\n' +
+    '8. Prazo e responsável não vão no texto: ajustam-se depois, na tela.\n' +
+    '9. O formato antigo, só com títulos, continua valendo: os detalhes são opcionais.\n\n' +
+    '### Exemplo só com títulos\n\n```\n' + LT_EXEMPLO + '\n```\n\n' +
+    '### Exemplo completo\n\n```\n' + ex + '\n```\n\n' +
+    '### Exemplo com Bug e Melhoria\n\n```\nCarteira de clientes\n- CPF repetido entra no cadastro\n  tipo: Bug\n  origem: BL-12\n  aceite: Avisa quando o CPF já está cadastrado\n  prioridade: Deve 2\n  pontos: 2\n- Exportar a carteira em planilha\n  tipo: Melhoria\n  origem: BL-12\n  como: lojista\n  quero: baixar a carteira em planilha\n  para: mandar para o meu contador\n  prioridade: Poderia 4\n  valor: 3\n  pontos: 3\n```\n\n' +
     '### Nomes que existem agora' + (c.onde ? ' (em ' + c.onde + ')' : '') + '\n\n' +
     '**Frentes de trabalho** (use exatamente um destes nomes dentro de `[ ]`):\n' + (fr.length ? fr.map(n => '- ' + n).join('\n') : '- (nenhuma frente ainda: crie uma na Estrutura antes)') + '\n\n' +
     '**Versões abertas** (use dentro de `{ }`; a próxima sugerida é `' + c.proxima + '`):\n' + (c.versoes.length ? c.versoes.map(n => '- ' + n).join('\n') : '- (nenhuma: pode usar {' + c.proxima + '} e ela é criada)') + '\n\n' +
     '**Épicos que já existem no projeto** (repetir o nome põe os itens dentro dele):\n' + (c.epicos.length ? c.epicos.map(n => '- ' + n).join('\n') : '- (nenhum ainda)') + '\n\n' +
+    (c.itens && c.itens.length ? '**Itens que já existem** (use a chave em `origem:`; repetir o título dentro do mesmo épico atualiza o item):\n' + c.itens.map(n => '- ' + n).join('\n') + '\n\n' : '') +
     '### Roteiro para o agente\n\n' +
-    'Você vai ajudar a pessoa a organizar o trabalho de "' + (c.projeto || c.onde || 'este projeto') + '" no CicloDev.\n\n' +
-    '1. Converse com a pessoa para entender o que precisa ser feito. Faça perguntas curtas, uma de cada vez, até entender as entregas (épicos) e as tarefas de cada uma (itens).\n' +
-    '2. Agrupe as tarefas em épicos que façam sentido para quem vai entregar. Reaproveite os épicos que já existem quando o assunto for o mesmo.\n' +
-    '3. Use só as frentes da lista acima. Se nenhuma servir, avise a pessoa em vez de inventar.\n' +
-    '4. Mostre um resumo e peça confirmação antes de gerar o texto final.\n' +
-    '5. No fim, entregue **só o texto no formato acima, dentro de um bloco de código**, sem comentários no meio, pronto para colar em **Criar em lote**.\n';
+    'Você vai ajudar a pessoa a organizar o trabalho de "' + (c.projeto || c.onde || 'este projeto') + '" no CicloDev, como um Product Owner faria.\n\n' +
+    '1. Converse com a pessoa para entender o que precisa ser feito. Faça perguntas curtas, uma de cada vez, até entender as entregas (épicos) e os itens de cada uma.\n' +
+    '2. Para cada item, descubra a história (quem usa, o que quer e por quê) e os critérios de aceite (o que precisa estar certo para aceitar). Critérios curtos, que dê para conferir com sim ou não.\n' +
+    '3. Combine a prioridade (Deve, Deveria, Poderia, Não terá agora e o nível de 1 a 5), o valor de negócio (1 a 10, com o motivo) e, se a pessoa souber, a estimativa em pontos.\n' +
+    '4. Os itens do topo (os mais importantes) devem ser os mais detalhados. Ideias ainda soltas podem ficar só com o título e `prioridade: Poderia 5`.\n' +
+    '5. Agrupe os itens em épicos que façam sentido para quem vai entregar. Reaproveite os épicos que já existem quando o assunto for o mesmo.\n' +
+    '6. Use só as frentes da lista acima. Se nenhuma servir, avise a pessoa em vez de inventar.\n' +
+    '7. Use só os valores aceitos da tabela. Na dúvida, deixe o campo de fora: ele pode ser preenchido depois, na tela.\n' +
+    '8. Mostre um resumo e peça confirmação antes de gerar o texto final.\n' +
+    '9. No fim, entregue **só o texto no formato acima, dentro de um bloco de código**, sem comentários no meio, pronto para colar em **Criar em lote**.\n';
 }
 function ciGeralMd(){
   const c = ciContexto(), l = (arr, f) => arr.map(f).join('\n');
@@ -13786,9 +14075,18 @@ function ciGeralMd(){
     '## Como o trabalho é organizado\n\n' +
     'A estrutura tem níveis, do maior para o menor: **Cliente › Projeto › Produto › Aplicação › Frente de trabalho**. Todo item mora numa frente de trabalho (por exemplo Frontend, Backend, Database), e aparece em todos os níveis de cima.\n\n' +
     '**Tipos de item:**\n' + l(TIPOS, t => '- **' + t.nome + '**: ' + t.expl) + '\n\nUm épico agrupa histórias e tarefas; uma sub-tarefa fica dentro de outro item.\n\n' +
-    '**Situações (status):**\n' + l(STATUS, s => '- **' + s.nome + '**: ' + s.expl) + '\n\nNo Criar em lote, o item novo começa em ' + stNome('backlog') + ' (na Fila) e o épico começa em ' + stNome('todo') + '.\n\n' +
-    '**Prioridades:**\n' + l(PRIOS, p => '- **' + p.nome + '**: ' + p.expl) + '\n\n' +
-    '**Campos de um item:** título, tipo, situação, prioridade, responsável, frente de trabalho, épico (pai), início e prazo, estimativa, checklist, comentários, anexos, versão em que entra e ligações com outros itens.\n\n' +
+    '**Situações (status):**\n' + l(STATUS, s => '- **' + s.nome + '**: ' + s.expl) + '\n- **Voltou**: o P.O. testou e devolveu, com o motivo\n\nNo Criar em lote, o item novo começa em ' + stNome('backlog') + ' (na Fila) e o épico começa em ' + stNome('todo') + '.\n\n' +
+    '**Prioridade (classe MoSCoW):**\n' + l(typeof PO_MOSCOW !== 'undefined' ? PO_MOSCOW : [], m => '- **' + m[1] + '**: ' + m[2]) + '\n\n' +
+    '**Nível de prioridade (de 1 a 5):**\n' + l(typeof PO_NIVEIS !== 'undefined' ? PO_NIVEIS : [], n => '- **' + n[1] + '**: ' + n[2]) + '\n\n' +
+    '**Tipo no método:**\n' + l(typeof PO_TIPOS !== 'undefined' ? PO_TIPOS : [], t => '- **' + t[1] + '**: ' + t[2]) + '\n\n' +
+    '**Campos de um item:** título, número (BL-xx, o identificador único), história (Como [quem], quero [o quê], para [por quê]), critérios de aceite (com caixa de marcar), desenho (computador e celular), prioridade (classe e nível), valor de negócio (1 a 10, com o motivo), estimativa em pontos (1, 2, 3, 5, 8, 13 ou 20), tipo (Item, Bug ou Melhoria, com o item de origem), situação, responsável, prazo, frente de trabalho, épico, versão, checklist, comentários, anexos e ligações com outros itens.\n\n' +
+    '## O método do Product Owner (P.O.)\n\n' +
+    '- **A fila (backlog)** fica na ordem que o P.O. combina: arrastando ou pela posição. Os do topo são os mais detalhados. O botão Ordenar pela prioridade ordena pela classe, pelo nível e pelo valor; no empate, sobe quem tem mais valor por ponto.\n' +
+    '- **O ciclo de vida:** Criado, Priorizado, Em andamento, Pronto para testar, Aceito e Voltou (quando o P.O. devolve). Cada mudança fica no histórico do item, com quem e quando.\n' +
+    '- **Só o P.O. aceita ou devolve** um item, quando o projeto tem P.O. definido. Um item **não vai para Aceito com critério de aceite desmarcado**.\n' +
+    '- **Bug** é um critério de aceite que não foi cumprido, ligado ao item de origem. **Melhoria** ou mudança de ideia depois de pronto é sempre um item novo, nunca uma mudança no item antigo: o item aceito não muda mais a história nem os critérios.\n' +
+    '- **O épico** tem a meta da entrega. **A versão** tem data de entrega e meta, e mostra quantos itens estão aceitos, quantos pontos e quanto falta.\n' +
+    '- **A Definição de Pronto** é um texto por projeto (ex.: sem bugs conhecidos, testado, aprovado pelo P.O.) que aparece como lembrete em todo item.\n\n' +
     '## As abas\n\nAs abas são jeitos diferentes de ver os **mesmos itens**. Criar em qualquer uma delas grava no mesmo lugar.\n\n' +
     '- **Painel**: o resumo do ponto escolhido (andamento, atrasos, avisos).\n- **Calendário**: os itens nos dias do prazo.\n- **Quadro**: os itens em colunas pela situação; arrastar muda a situação.\n- **Tabela**: os itens como numa planilha.\n- **Linha do tempo**: cada item vira uma barra do início ao prazo.\n- **Fila**: o que ainda não entrou no quadro, com os épicos ao lado.\n- **Infraestrutura**: desenhos da arquitetura, montados sozinhos do código e do banco.\n- **Ficha técnica**: as informações técnicas do sistema.\n\n' +
     '## Versões (Entregas)\n\nUma versão (ex.: v1.2) junta os itens que vão para o ar juntos. Quando é publicada em produção, fica marcada como entregue.\n\n' +
@@ -13799,6 +14097,553 @@ document.addEventListener('click', e => {
   if (e.target.closest && e.target.closest('[data-ia-instrucoes]')){ e.preventDefault(); exBaixar('CicloDev - instrucoes para IA - ' + (nomeDe(UI.sel) || 'geral'), ciGeralMd()); }
 });
 if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {ciGeralMd, ciLoteMd, ciContexto});
+
+/* ===== Item completo pelo método do Product Owner (P.O.) =====
+   Cada item ganha: história (Como [quem], quero [o quê], para [por quê]), critérios de aceite com caixa de marcar,
+   desenho (computador e celular), prioridade (classe MoSCoW + nível de 1 a 5), valor de negócio, estimativa em pontos
+   (1, 2, 3, 5, 8, 13, 20), tipo (Item, Bug, Melhoria) e o ciclo de vida com histórico.
+   O épico ganha a meta; a versão ganha a meta e o andamento; o projeto ganha o P.O. e a Definição de Pronto.
+   Banco: parte 38. As regras (critério desmarcado, só o P.O. aceita, item aceito não muda) valem no banco também. */
+
+/* ---------- vocabulário ---------- */
+// o ciclo de vida do item usa os mesmos 6 lugares de sempre (o id no banco não muda): só os nomes seguem o método
+[['backlog','Criado','escrito, ainda sem ordem de prioridade'],['todo','Priorizado','na ordem da fila, pronto para começar'],['doing','Em andamento','alguém está fazendo'],
+ ['review','Pronto para testar','feito, esperando o P.O. testar'],['blocked','Travado','parado, esperando algo'],['done','Aceito','testado e aceito pelo P.O.']]
+  .forEach(([id, nome, expl]) => { const s = STATUS.find(x => x.id === id); if (s){ s.nome = nome; s.expl = expl; } });
+Object.assign(GRUPO_NOME, {backlog:'Criado', todo:'Priorizado', doing:'Em andamento', review:'Pronto para testar', blocked:'Travado', done:'Aceito'});
+const PO_SITU = {backlog:'Criado', todo:'Priorizado', doing:'Em andamento', review:'Pronto para testar', blocked:'Travado', done:'Aceito', voltou:'Voltou'};
+const PO_MOSCOW = [['deve','Deve','sem isso a entrega não vale'],['deveria','Deveria','importante, mas dá para entregar sem'],['poderia','Poderia','bom ter, se sobrar tempo'],['nao_tera','Não terá agora','combinado que fica para depois']];
+const PO_NIVEIS = [[1,'1 · Emergência','só para emergência: largar tudo'],[2,'2 · Mais urgente','o mais urgente do dia a dia'],[3,'3 · Normal','no ritmo normal'],[4,'4 · Pode esperar','entra depois dos outros'],[5,'5 · Ideia','ideia ainda sem detalhe']];
+const PO_PONTOS = [1, 2, 3, 5, 8, 13, 20];
+const PO_TIPOS = [['item','Item','algo novo que a pessoa vai ver ou usar'],['bug','Bug','um critério de aceite que não foi cumprido'],['melhoria','Melhoria','mudança depois de pronto (sempre um item novo)']];
+const PO_PRIO_DE_NIVEL = {1:'highest', 2:'high', 3:'medium', 4:'low', 5:'low'};
+const PO_NIVEL_DE_PRIO = {highest:1, high:2, medium:3, low:4, lowest:5};
+const poMoscowNome = v => (PO_MOSCOW.find(m => m[0] === v) || [, ''])[1];
+const poNivel = i => i.nivel != null ? +i.nivel : (PO_NIVEL_DE_PRIO[i.prio] || 3);
+const poTemPO = i => i && !['epic','subtask'].includes(i.tipo);   // os campos do método valem para história, tarefa e bug
+const poTipo = i => i.tipo === 'bug' ? 'bug' : i.melhoria ? 'melhoria' : 'item';
+const poCrit = i => (i.crit || []);
+const poCritConta = i => { const c = poCrit(i); return {f:c.filter(x => x.f).length, n:c.length}; };
+const poGrupo = s => { const st = STATUS.find(x => x.id === s); if (st) return s; const c = (D.statusCustom || []).find(x => x.id === s); return c ? c.grupo : s; };
+const poVoltou = i => !!i.voltou && ['backlog','todo','doing'].includes(i.status);
+const poSituacao = i => poVoltou(i) ? 'voltou' : i.status;
+const poProjeto = i => { const ws = i && byId('ws', i.ws); const a = ws && byId('apps', ws.app); return a ? byId('projects', a.project) : null; };
+const poDoPO = i => { const pj = poProjeto(i); const p = pj && pj.po && pessoa(pj.po); return p && p.ativo !== false ? p : null; };
+const poSouPO = i => { const p = poDoPO(i); return !p || p.id === eu(); };
+const poAceito = i => i.status === 'done';
+const poHistoria = i => (i.hQuem || i.hQuero || i.hPara) ? 'Como ' + (i.hQuem || '...') + ', quero ' + (i.hQuero || '...') + ', para ' + (i.hPara || '...') + '.' : '';
+const poCh = x => { const c = typeof chaveDe === 'function' ? chaveDe(x) : ''; return c ? c + ' · ' : ''; };
+const poDataHora = v => { if (!v) return ''; const d = new Date(v); return isNaN(d) ? '' : d.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}) + ' ' + d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}); };
+
+/* ---------- banco: leitura e gravação dos campos novos ---------- */
+GRAVAR.splice(GRAVAR.findIndex(g => g[0] === 'itens_checklist') + 1, 0, ['itens_criterios', ['id']]);
+TABELAS_BANCO.push('itens_criterios');
+const _montarDadosPo = montarDados;
+montarDados = function(T, eu){
+  const d = _montarDadosPo(T, eu);
+  const rI = new Map((T.itens || []).map(r => [r.id, r]));
+  const crit = new Map(); (T.itens_criterios || []).slice().sort((a, b) => (a.ordem || 0) - (b.ordem || 0)).forEach(c => { if (!crit.has(c.item_id)) crit.set(c.item_id, []); crit.get(c.item_id).push({t:c.texto, f:!!c.feito, por:c.marcado_por || null, em:c.marcado_em || null, _id:c.id}); });
+  d.issues.forEach(i => { const r = rI.get(i.id) || {};
+    i.hQuem = r.historia_quem || ''; i.hQuero = r.historia_quero || ''; i.hPara = r.historia_para || '';
+    i.moscow = r.moscow || null; i.nivel = r.nivel == null ? null : +r.nivel; i.valor = r.valor == null ? null : +r.valor; i.valorMotivo = r.valor_motivo || '';
+    i.melhoria = !!r.melhoria; i.origem = r.origem_id || null; i.voltou = r.voltou_em || null; i.voltouMotivo = r.voltou_motivo || ''; i.meta = r.meta || '';
+    i.crit = crit.get(i.id) || []; });
+  const rP = new Map((T.projetos || []).map(r => [r.no_id, r]));
+  d.projects.forEach(p => { const r = rP.get(p.id) || {}; p.dod = r.definicao_pronto || ''; p.po = r.po_id || null; });
+  const rM = new Map((T.marcos || []).map(r => [r.id, r]));
+  d.marcos.forEach(m => { const r = rM.get(m.id) || {}; m.meta = r.meta || ''; });
+  const papel = new Map((T.anexos || []).filter(a => a.papel).map(a => [a.id, a.papel]));
+  d.issues.forEach(i => (i.refs || []).forEach(x => { const pp = x._id && papel.get(x._id); if (pp) x.papel = pp; }));
+  return d;
+};
+const _linhasDaTelaPo = linhasDaTela;
+linhasDaTela = function(d){
+  const L = _linhasDaTelaPo(d);
+  L.itens_criterios = L.itens_criterios || [];
+  const porId = new Map(d.issues.map(i => [i.id, i])), temItem = new Set((L.itens || []).map(r => r.id));
+  (L.itens || []).forEach(r => { const i = porId.get(r.id); if (!i) return;
+    // nível e prioridade antiga andam juntos: quem mudou a prioridade antiga (Tabela, automação) muda o nível
+    let n = i.nivel == null ? null : +i.nivel;
+    if (n == null || PO_PRIO_DE_NIVEL[n] !== (i.prio || 'medium')) n = PO_NIVEL_DE_PRIO[i.prio || 'medium'] || 3;
+    i.nivel = n; r.nivel = n; r.prioridade = PO_PRIO_DE_NIVEL[n];
+    if (!PO_PONTOS.includes(+i.pontos) && +i.pontos !== 21) r.pontos = null; else r.pontos = +i.pontos;
+    const txt = (v, max) => { const s = String(v || '').trim(); return s ? s.slice(0, max) : null; };
+    r.historia_quem = txt(i.hQuem, 300); r.historia_quero = txt(i.hQuero, 500); r.historia_para = txt(i.hPara, 500);
+    r.moscow = PO_MOSCOW.some(m => m[0] === i.moscow) ? i.moscow : null;
+    r.valor = +i.valor >= 1 && +i.valor <= 10 ? Math.round(+i.valor) : null; r.valor_motivo = txt(i.valorMotivo, 300);
+    r.melhoria = !!i.melhoria && i.tipo !== 'bug'; r.origem_id = i.origem && temItem.has(i.origem) && i.origem !== i.id ? i.origem : null;
+    r.voltou_em = i.voltou || null; r.voltou_motivo = i.voltou ? txt(i.voltouMotivo, 1000) : null; r.meta = txt(i.meta, 1000);
+    poCrit(i).forEach((c, k) => { if (String(c.t || '').trim()) L.itens_criterios.push({id:garantirId(c), item_id:i.id, texto:String(c.t).trim().slice(0, 500), feito:!!c.f, ordem:k}); });
+  });
+  const pp = new Map(d.projects.map(p => [p.id, p])), temPessoa = new Set(d.people.map(p => p.id));
+  (L.projetos || []).forEach(r => { const p = pp.get(r.no_id); if (!p) return; r.definicao_pronto = String(p.dod || '').trim().slice(0, 3000) || null; r.po_id = p.po && temPessoa.has(p.po) ? p.po : null; });
+  const mm = new Map(d.marcos.map(m => [m.id, m]));
+  (L.marcos || []).forEach(r => { const m = mm.get(r.id); r.meta = m && String(m.meta || '').trim() ? String(m.meta).trim().slice(0, 1000) : null; });
+  const papel = new Map(); d.issues.forEach(i => (i.refs || []).forEach(x => { if (x._id && x.papel) papel.set(x._id, x.papel); }));
+  (L.anexos || []).forEach(r => { if (r.item_id) r.papel = papel.get(r.id) || null; });
+  return L;
+};
+
+/* ---------- o histórico (vem do banco, que grava quem e quando) ---------- */
+const POH = {itens:{}, pedindo:{}};
+async function poHistCarregar(id){
+  const sb = window.ciclodevBanco; if (!sb || POH.pedindo[id]) return;
+  POH.pedindo[id] = true;
+  try {
+    const {data, error} = await sb.from('itens_historico').select('*').eq('item_id', id).order('criado_em', {ascending:true}).limit(300);
+    if (!error && Array.isArray(data)) POH.itens[id] = data.map(h => ({tipo:h.tipo, de:h.de, para:h.para, texto:h.texto, quem:h.pessoa_id, em:h.criado_em}));
+  } catch(e){ console.warn('Histórico', e); }
+  finally { POH.pedindo[id] = false; }
+  if (itemAberto === id) poHistDesenhar(id);
+}
+// mudança feita agora: aparece na hora e o banco confirma logo depois
+function poHistLocal(i, h){
+  POH.itens[i.id] = (POH.itens[i.id] || []).concat([Object.assign({quem:eu(), em:new Date().toISOString(), _local:true}, h)]);
+  if (window.ciclodevBanco) setTimeout(() => poHistCarregar(i.id), 2500);
+}
+function poHistTexto(h){
+  if (h.tipo === 'criterio'){
+    const t = '"' + (h.para || h.de || '') + '"';
+    return h.texto === 'marcou' ? 'Marcou o critério ' + t : h.texto === 'desmarcou' ? 'Desmarcou o critério ' + t : h.texto === 'tirou' ? 'Tirou o critério ' + t
+      : h.texto === 'mudou o texto' ? 'Mudou o critério "' + (h.de || '') + '" para "' + (h.para || '') + '"' : 'Criou o critério ' + t + (h.texto === 'criou marcado' ? ', já marcado' : '');
+  }
+  if (!h.de && h.texto === 'Criado') return 'Criou o item, em ' + (PO_SITU[h.para] || h.para);
+  if (h.para === 'voltou') return 'Devolveu: ' + (PO_SITU[h.de] || h.de || '?') + ' → Voltou' + (h.texto ? '. Motivo: ' + h.texto : '');
+  return (PO_SITU[h.de] || h.de || '?') + ' → ' + (PO_SITU[h.para] || h.para) + (h.texto ? ' (' + h.texto + ')' : '');
+}
+function poHistDesenhar(id){
+  const box = $('#gaveta-wrap .po-hist-lista'); if (!box) return;
+  const L = (POH.itens[id] || []).slice().reverse();
+  box.innerHTML = L.length ? L.map(h => { const p = h.quem && pessoa(h.quem);
+    return '<li class="po-hist-lin"><span class="po-hist-quando">' + esc(poDataHora(h.em)) + '</span><span class="po-hist-txt">' + esc(poHistTexto(h)) + '</span><span class="po-hist-quem">' + esc(p ? p.nome : h.quem ? 'Alguém' : 'O sistema') + '</span></li>'; }).join('')
+    : '<li class="po-vazio">' + (window.ciclodevBanco ? 'Carregando o histórico...' : 'As mudanças de situação e de critério aparecem aqui.') + '</li>';
+}
+
+/* ---------- regras ao mudar a situação (a tela avisa antes; o banco garante) ---------- */
+function poPodeAceitar(i, avisar){
+  if (!poTemPO(i)) return true;
+  const c = poCritConta(i);
+  if (c.f < c.n){ if (avisar) toast('Faltam ' + (c.n - c.f) + (c.n - c.f === 1 ? ' critério de aceite' : ' critérios de aceite') + ' para marcar em "' + i.titulo + '". Só vai para Aceito com todos marcados.'); return false; }
+  const po = poDoPO(i);
+  if (po && po.id !== eu()){ if (avisar) toast('Só o P.O. do projeto (' + po.nome + ') aceita um item. Leve para Pronto para testar.'); return false; }
+  return true;
+}
+const _mudarStatusPo = mudarStatus;
+mudarStatus = function(i, s){
+  const g = poGrupo(s);
+  if (g === 'done' && i.status !== 'done' && !poPodeAceitar(i, true)) return;
+  const antes = poSituacao(i);
+  if (g === 'review' || g === 'done') i.voltou = null;
+  const r = _mudarStatusPo.apply(this, arguments);
+  if (poSituacao(i) !== antes) poHistLocal(i, {tipo:'situacao', de:antes, para:poSituacao(i)});
+  return r;
+};
+// o selo da situação mostra "Voltou" quando o P.O. devolveu
+const _statusItemHTMLPo = statusItemHTML;
+statusItemHTML = function(i){ return poVoltou(i) ? '<span class="st st-voltou" title="O P.O. devolveu' + (i.voltouMotivo ? ': ' + esc(i.voltouMotivo) : '') + '">' + ICO_ST.todo + 'Voltou</span>' : _statusItemHTMLPo.apply(this, arguments); };
+
+/* ---------- a janela do item ---------- */
+const poSel = (campo, opcoes, atual, dis, vazio) => '<select class="sel d-sel" data-po="' + campo + '"' + dis + '>' + (vazio ? '<option value="">' + esc(vazio) + '</option>' : '') +
+  opcoes.map(([v, n, t]) => '<option value="' + esc(v) + '"' + (String(atual == null ? '' : atual) === String(v) ? ' selected' : '') + (t ? ' title="' + esc(t) + '"' : '') + '>' + esc(n) + '</option>').join('') + '</select>';
+const poLin = (rot, ctrl, tit) => '<div class="d-lin jn-lin"><span class="d-rot"' + (tit ? ' title="' + esc(tit) + '"' : '') + '>' + esc(rot) + '</span><span class="d-val">' + ctrl + '</span></div>';
+function poPosicao(i){
+  const fila = poFila(i); const k = fila.indexOf(i); return k < 0 ? null : k + 1;
+}
+// a fila do P.O.: os itens da mesma aplicação que ainda não foram aceitos, na ordem combinada
+function poFila(i){
+  const ws = byId('ws', i.ws); const app = ws && ws.app;
+  return D.issues.filter(x => !x.arquivado && poTemPO(x) && x.status !== 'done' && (byId('ws', x.ws) || {}).app === app).sort((a, b) => (+a.ordem || 0) - (+b.ordem || 0));
+}
+function poCartaoHTML(i, pode){
+  const dis = pode ? '' : ' disabled';
+  if (i.tipo === 'epic') return '<section class="g-cartao po-cartao"><h4>Produto</h4>' +
+    '<label class="po-campo"><span>Meta da entrega</span><textarea class="campo" rows="3" data-po="meta" maxlength="1000" placeholder="O que esta entrega resolve e como saber que deu certo"' + dis + '>' + esc(i.meta || '') + '</textarea></label></section>';
+  if (!poTemPO(i)) return '';
+  const tipo = poTipo(i), pos = poPosicao(i);
+  const origens = D.issues.filter(x => x.id !== i.id && !x.arquivado && poTemPO(x) && (byId('ws', x.ws) || {}).app === (byId('ws', i.ws) || {}).app);
+  const org = i.origem && byId('issues', i.origem);
+  return '<section class="g-cartao po-cartao"><h4>Produto</h4>' +
+    poLin('Tipo', poSel('tipo', PO_TIPOS, tipo, dis), PO_TIPOS.map(t => t[1] + ': ' + t[2]).join('. ')) +
+    (tipo !== 'item' ? poLin(tipo === 'bug' ? 'Item de origem' : 'Veio de', poSel('origem', origens.map(x => [x.id, poCh(x) + x.titulo]), i.origem || '', dis, tipo === 'bug' ? 'Escolha o item' : 'Nenhum'),
+      tipo === 'bug' ? 'O item cujo critério de aceite não foi cumprido' : 'O item que deu origem a esta melhoria') : '') +
+    (org ? '<div class="po-origem"><button type="button" class="po-link" data-abrir-item="' + org.id + '">' + esc(poCh(org) + org.titulo) + '</button></div>' : '') +
+    poLin('Prioridade', poSel('moscow', PO_MOSCOW, i.moscow, dis, 'Sem classe'), PO_MOSCOW.map(m => m[1] + ': ' + m[2]).join('. ')) +
+    poLin('Nível', poSel('nivel', PO_NIVEIS, poNivel(i), dis), PO_NIVEIS.map(n => n[1] + ': ' + n[2]).join('. ')) +
+    poLin('Valor', poSel('valor', [1,2,3,4,5,6,7,8,9,10].map(n => [n, n + (n === 10 ? ' (máximo)' : n === 1 ? ' (mínimo)' : '')]), i.valor, dis, 'Sem valor'), 'Valor de negócio de 1 a 10: ordena a fila. No empate, sobe quem tem mais valor por ponto') +
+    '<label class="po-campo"><span>Por que importa</span><input class="campo" data-po="valorMotivo" maxlength="300" placeholder="Ex.: reduz as ligações ao suporte" value="' + esc(i.valorMotivo || '') + '"' + dis + '></label>' +
+    poLin('Estimativa', poSel('pontos', PO_PONTOS.concat(+i.pontos === 21 ? [21] : []).map(n => [n, n + (n === 1 ? ' ponto' : ' pontos')]), i.pontos, dis, 'Sem pontos'), 'Pontos na sequência 1, 2, 3, 5, 8, 13, 20') +
+    (pos ? poLin('Posição na fila', '<input class="campo d-sel po-num" type="number" min="1" data-po="posicao" value="' + pos + '"' + dis + '><span class="po-de">de ' + poFila(i).length + '</span>', 'A ordem da fila, que o P.O. combina') : '') +
+  '</section>';
+}
+function poSituacaoHTML(i, pode){
+  if (!poTemPO(i)) return '';
+  const po = poDoPO(i), souPO = poSouPO(i), c = poCritConta(i);
+  let acoes = '';
+  if (pode && i.status === 'review') acoes = souPO
+    ? '<div class="po-acoes"><button type="button" class="btn peq" data-po-acao="aceitar"' + (c.f < c.n ? ' disabled title="Marque todos os critérios de aceite antes"' : '') + '>Aceitar</button><button type="button" class="btn sec peq" data-po-acao="devolver">Devolver</button></div>'
+    : '<p class="po-nota">Esperando o P.O. (' + esc(po.nome) + ') testar e aceitar.</p>';
+  else if (pode && i.status === 'done') acoes = '<div class="po-acoes"><button type="button" class="btn sec peq" data-po-acao="melhoria">Criar melhoria</button><button type="button" class="btn sec peq" data-po-acao="bug">Abrir bug</button></div>';
+  return '<div class="po-situ">' +
+    '<div class="po-situ-lin">' + (poVoltou(i) ? '<span class="po-situ-nome po-s-voltou">Voltou</span>' : '') +
+    '<span class="po-situ-po">P.O.: ' + (po ? '<b>' + esc(po.nome) + '</b>' : 'ninguém definido') + (pode ? ' <button type="button" class="po-link" data-po-acao="definir-po">' + (po ? 'trocar' : 'definir') + '</button>' : '') + '</span></div>' +
+    (poVoltou(i) && i.voltouMotivo ? '<p class="po-voltou">Voltou: ' + esc(i.voltouMotivo) + '</p>' : '') + acoes + '</div>';
+}
+function poHistoriaHTML(i, pode){
+  const trava = poAceito(i), dis = pode && !trava ? '' : ' disabled';
+  const frase = poHistoria(i);
+  return '<section class="g-sec jn-sec po-sec" data-po-sec="historia"><h4><span class="jn-sec-tit">História</span></h4><p class="jn-sec-ajuda">Quem usa, o que quer e por quê, numa frase curta</p>' +
+    '<p class="po-frase' + (frase ? '' : ' po-frase-vazia') + '">' + (frase ? esc(frase) : 'Como [quem], quero [o quê], para [por quê].') + '</p>' +
+    '<div class="po-hist-campos">' +
+      '<label class="po-campo"><span>Como</span><input class="campo" data-po="hQuem" maxlength="300" placeholder="quem usa (ex.: lojista)" value="' + esc(i.hQuem || '') + '"' + dis + '></label>' +
+      '<label class="po-campo"><span>quero</span><input class="campo" data-po="hQuero" maxlength="500" placeholder="o que a pessoa quer fazer" value="' + esc(i.hQuero || '') + '"' + dis + '></label>' +
+      '<label class="po-campo"><span>para</span><input class="campo" data-po="hPara" maxlength="500" placeholder="por que isso importa" value="' + esc(i.hPara || '') + '"' + dis + '></label>' +
+    '</div>' + (trava ? '<p class="po-nota">Item aceito: a história não muda mais. Para mudar, use Criar melhoria.</p>' : '') + '</section>';
+}
+function poCriteriosHTML(i, pode){
+  const trava = poAceito(i), ed = pode && !trava, c = poCritConta(i), L = poCrit(i);
+  const pj = poProjeto(i);
+  const quem = x => { const p = x.por && pessoa(x.por); return x.f ? 'marcado' + (p ? ' por ' + p.nome : '') + (x.em ? ' em ' + poDataHora(x.em) : '') : ''; };
+  return '<section class="g-sec jn-sec po-sec" data-po-sec="criterios"><h4><span class="jn-sec-tit">Critérios de aceite</span>' + (c.n ? '<span class="g-cont">' + c.f + ' de ' + c.n + '</span>' : '') + '</h4>' +
+    '<p class="jn-sec-ajuda">O que precisa estar certo para o P.O. aceitar. Só vai para Aceito com todos marcados</p>' +
+    '<div class="jn-caixa po-crit-caixa">' + (c.n ? '<div class="progresso"><i style="width:' + (c.f / c.n * 100) + '%"></i></div>' : '') +
+    (L.length ? '<ol class="po-crit">' + L.map((x, k) => '<li class="po-crit-lin' + (x.f ? ' feito' : '') + '">' +
+        '<label class="po-crit-ck"><input type="checkbox" data-po-crit="' + k + '"' + (x.f ? ' checked' : '') + (ed ? '' : ' disabled') + '><span class="po-crit-txt">' + esc(x.t) + (x.f ? '<small class="po-crit-quem">' + esc(quem(x)) + '</small>' : '') + '</span></label>' +
+        (ed ? '<span class="po-crit-mover"><button type="button" class="ico-btn" data-po-crit-mover="' + k + '|-1" aria-label="Subir"' + (k === 0 ? ' disabled' : '') + '>↑</button><button type="button" class="ico-btn" data-po-crit-mover="' + k + '|1" aria-label="Descer"' + (k === L.length - 1 ? ' disabled' : '') + '>↓</button><button type="button" class="ico-btn" data-po-crit-tirar="' + k + '" aria-label="Tirar o critério">' + ICO.fechar + '</button></span>' : '') +
+      '</li>').join('') + '</ol>' : '<p class="jn-vazio">Nenhum critério ainda.</p>') +
+    (ed ? '<form class="g-add jn-add-linha" data-po-form="crit"><input class="campo" name="t" maxlength="500" placeholder="+ Escreva um critério de aceite e aperte Enter"><button class="btn sec peq" type="submit">Adicionar</button></form>' : '') + '</div>' +
+    (trava ? '<p class="po-nota">Item aceito: os critérios não mudam mais. Para mudar, use Criar melhoria.</p>' : '') +
+    '<div class="po-dod"><b>Definição de Pronto' + (pj ? ' de ' + esc(pj.nome) : '') + '</b>' + (pj && pj.dod ? '<p>' + esc(pj.dod).replace(/\n/g, '<br>') + '</p>' : '<p class="po-frase-vazia">Ainda não escrita para este projeto.</p>') +
+      (pode && pj ? '<button type="button" class="po-link" data-po-acao="dod">' + (pj.dod ? 'Editar' : 'Escrever') + '</button>' : '') + '</div></section>';
+}
+function poDesenhoHTML(i, pode){
+  const slot = (papel, nome) => { const x = (i.refs || []).find(r => r.papel === papel); const url = x && (x.url || x._ver);
+    return '<div class="po-des-slot"><span class="po-des-nome">' + nome + '</span>' +
+      (x ? (url ? '<button type="button" class="po-des-img" data-po-des-ver="' + papel + '" aria-label="Ampliar o desenho de ' + nome.toLowerCase() + '"><img src="' + esc(url) + '" alt="Desenho de ' + esc(nome.toLowerCase()) + '"></button>' : '<span class="po-des-vazio">' + esc(x.nome) + '<small>carregando...</small></span>') +
+        (pode ? '<span class="po-des-acoes"><label class="po-link">Trocar<input type="file" accept="image/*" data-po-des="' + papel + '" hidden></label><button type="button" class="po-link" data-po-des-tirar="' + papel + '">Tirar</button></span>' : '')
+      : (pode ? '<label class="po-des-vazio po-des-add"><input type="file" accept="image/*" data-po-des="' + papel + '" hidden><b>' + ICO.mais + 'Escolher imagem</b><small>PNG ou JPG</small></label>' : '<span class="po-des-vazio">Sem desenho</span>')) + '</div>'; };
+  return '<section class="g-sec jn-sec po-sec" data-po-sec="desenho"><h4><span class="jn-sec-tit">Desenho</span></h4><p class="jn-sec-ajuda">Como a tela deve ficar, no computador e no celular</p>' +
+    '<div class="po-des">' + slot('desenho_computador', 'Computador') + slot('desenho_celular', 'Celular') + '</div></section>';
+}
+const poHistSecHTML = () => '<section class="g-sec jn-sec po-sec" data-po-sec="historico"><h4><span class="jn-sec-tit">Histórico de mudanças</span></h4><p class="jn-sec-ajuda">Cada mudança de situação e de critério, com quem fez e quando. Nada é apagado</p><ul class="po-hist-lista"></ul></section>';
+
+const _abrirItemPo = abrirItem;
+abrirItem = function(id){
+  const r = _abrirItemPo.apply(this, arguments);
+  try { poGaveta(byId('issues', id)); } catch(e){ console.warn('P.O.', e); }
+  return r;
+};
+function poGaveta(i){
+  const g = $('#gaveta-wrap .gaveta'); if (!g || !i || g.dataset.po) return; g.dataset.po = '1';
+  const pri = $('.g-principal', g), lat = $('.g-lateral', g); if (!pri || !lat) return;
+  const pode = podeEditar();
+  const principal = $(':scope > .g-cartao', lat);
+  // cartão Produto logo depois do Principal; a situação com o P.O. e os botões Aceitar e Devolver dentro do Principal
+  if (principal){
+    principal.insertAdjacentHTML('afterend', poCartaoHTML(i, pode));
+    const linSt = $('[data-g="status"]', principal); const lin = linSt && linSt.closest('.d-lin');
+    if (lin && poTemPO(i)) lin.insertAdjacentHTML('afterend', poSituacaoHTML(i, pode));
+    // a prioridade antiga vira Prioridade e Nível no cartão Produto (os dois andam juntos)
+    if (poTemPO(i)){ const pr = $('[data-g="prio"]', principal); if (pr) pr.closest('.d-lin').remove(); const rs = lin && $('.d-rot', lin); if (rs) rs.textContent = 'Situação'; }
+    const he = $('[data-g="est"]', lat); const rh = he && he.closest('.d-lin') && $('.d-rot', he.closest('.d-lin')); if (rh && poTemPO(i)) rh.textContent = 'Horas estimadas';
+  }
+  // os pontos ficam só no cartão Produto (na sequência nova)
+  if (poTemPO(i)) $$('[data-bj-campo="pontos"]', lat).forEach(s => { const l = s.closest('.d-lin'); if (l) l.remove(); });
+  // corpo: história, critérios e desenho logo depois da descrição; o histórico antes dos comentários
+  const desc = $$(':scope > .g-sec', pri).find(s => s.dataset.smSec === 'Descrição') || $(':scope > .g-sec', pri);
+  if (poTemPO(i) && desc){
+    const dc = desc.nextElementSibling && desc.nextElementSibling.classList.contains('dc-sec') ? desc.nextElementSibling : desc;
+    dc.insertAdjacentHTML('afterend', poHistoriaHTML(i, pode) + poCriteriosHTML(i, pode) + poDesenhoHTML(i, pode));
+    const com = $$(':scope > .g-sec', pri).find(s => s.dataset.smSec === 'Comments');
+    if (com) com.insertAdjacentHTML('beforebegin', poHistSecHTML()); else pri.insertAdjacentHTML('beforeend', poHistSecHTML());
+    poHistDesenhar(i.id);
+    if (window.ciclodevBanco && !POH.itens[i.id]) poHistCarregar(i.id);
+    // os desenhos não se repetem na lista de anexos
+    (i.refs || []).forEach((x, k) => { if (!x.papel) return; const b = $('[data-tirar-ref="issue:' + i.id + '|' + k + '"]', pri); const el = b && b.closest('.ref'); if (el) el.hidden = true; });
+  }
+}
+// reabrir a janela sem perder o lugar da rolagem
+function poReabrir(i){
+  const g = $('#gaveta-wrap .gaveta'); const rolos = g ? $$('*', g).filter(x => x.scrollTop > 0).map(x => [x.className, x.scrollTop]).concat(g.scrollTop ? [['__g', g.scrollTop]] : []) : [];
+  abrirItem(i.id);
+  const g2 = $('#gaveta-wrap .gaveta'); if (!g2) return;
+  rolos.forEach(([c, t]) => { if (c === '__g') g2.scrollTop = t; else { const el = $$('*', g2).find(x => x.className === c); if (el) el.scrollTop = t; } });
+}
+
+/* ---------- mudanças na janela ---------- */
+function poMudarTipo(i, novo){
+  if (novo === poTipo(i)) return true;
+  if (novo === 'bug'){
+    if (D.issues.some(x => x.pai === i.id && !x.arquivado && x.tipo !== 'subtask')){ toast('Este item tem subitens que não são subtarefas: não dá para virar Bug.'); return false; }
+    const pai = i.pai && byId('issues', i.pai);
+    if (pai && !['epic','story'].includes(pai.tipo)){ toast('Um Bug fica dentro de um épico ou de uma história.'); return false; }
+    i.tipo = 'bug'; i.melhoria = false;
+  } else {
+    if (i.tipo === 'bug'){ const pai = i.pai && byId('issues', i.pai); i.tipo = pai && pai.tipo === 'story' ? 'task' : 'story'; }
+    i.melhoria = novo === 'melhoria';
+  }
+  return true;
+}
+function poPorPosicao(i, pos){
+  const fila = poFila(i).filter(x => x !== i); const k = Math.max(0, Math.min(fila.length, Math.round(+pos) - 1));
+  fila.splice(k, 0, i); fila.forEach((x, n) => { x.ordem = n + 1; });
+}
+document.addEventListener('change', e => {
+  const t = e.target; if (!t || !t.matches) return;
+  const i = itemAberto && byId('issues', itemAberto); if (!i) return;
+  if (t.matches('[data-po]')){
+    const c = t.dataset.po, v = t.value;
+    if (c === 'tipo'){ if (!poMudarTipo(i, v)){ poReabrir(i); return; } if (v === 'bug' && !i.origem) toast('Escolha o item de origem: o Bug é um critério de aceite que não foi cumprido nele.'); }
+    else if (c === 'nivel'){ i.nivel = +v || 3; i.prio = PO_PRIO_DE_NIVEL[i.nivel]; }
+    else if (c === 'valor' || c === 'pontos') i[c] = v ? +v : null;
+    else if (c === 'moscow' || c === 'origem') i[c] = v || null;
+    else if (c === 'posicao'){ poPorPosicao(i, v); }
+    else if (['hQuem','hQuero','hPara','valorMotivo','meta'].includes(c)){
+      if (poAceito(i) && c.startsWith('h')){ toast('Item aceito: a história não muda mais. Use Criar melhoria.'); poReabrir(i); return; }
+      i[c] = String(v || '').trim();
+    }
+    salvar(); poReabrir(i); if (typeof rView === 'function' && c !== 'meta' && !c.startsWith('h') && c !== 'valorMotivo') rView();
+    return;
+  }
+  if (t.matches('[data-po-crit]')){
+    const x = poCrit(i)[+t.dataset.poCrit]; if (!x) return;
+    if (poAceito(i)){ toast('Item aceito: os critérios não mudam mais.'); poReabrir(i); return; }
+    x.f = t.checked; x.por = t.checked ? eu() : null; x.em = new Date().toISOString();
+    poHistLocal(i, {tipo:'criterio', para:x.t, texto:x.f ? 'marcou' : 'desmarcou'});
+    salvar(); poReabrir(i); rView(); return;
+  }
+  if (t.matches('[data-po-des]') && t.files && t.files[0]){
+    const f = t.files[0]; if (!/^image\//.test(f.type)){ toast('Escolha uma imagem (PNG ou JPG).'); return; }
+    lerArquivo(f).then(ref => {
+      ref.papel = t.dataset.poDes; if (!ref.url) Object.defineProperty(ref, '_ver', {value:URL.createObjectURL(f), enumerable:false, writable:true});
+      i.refs = (i.refs || []).filter(x => x.papel !== ref.papel).concat([ref]);
+      registrar('editou', i, i.titulo + ': desenho de ' + (ref.papel === 'desenho_celular' ? 'celular' : 'computador'));
+      salvar(); poReabrir(i); toast('Desenho guardado.');
+    });
+  }
+});
+document.addEventListener('submit', e => {
+  const f = e.target; if (!f.matches || !f.matches('[data-po-form="crit"]')) return; e.preventDefault();
+  const i = itemAberto && byId('issues', itemAberto); if (!i) return;
+  const t = String(f.t.value || '').trim(); if (!t) return;
+  if (poAceito(i)){ toast('Item aceito: os critérios não mudam mais. Use Criar melhoria.'); return; }
+  i.crit = poCrit(i).concat([{t:t.slice(0, 500), f:false}]);
+  poHistLocal(i, {tipo:'criterio', para:t, texto:'criou'});
+  salvar(); poReabrir(i); rView();
+  const ni = $('#gaveta-wrap [data-po-form="crit"] input'); if (ni) ni.focus();
+});
+document.addEventListener('click', e => {
+  const t = e.target.closest ? e.target.closest('[data-po-crit-mover],[data-po-crit-tirar],[data-po-acao],[data-po-des-tirar],[data-po-des-ver]') : null; if (!t) return;
+  const i = itemAberto && byId('issues', itemAberto); if (!i) return;
+  if (t.dataset.poCritMover){ const [k, d] = t.dataset.poCritMover.split('|').map(Number); const L = poCrit(i).slice(); const j = k + d; if (j < 0 || j >= L.length) return; [L[k], L[j]] = [L[j], L[k]]; i.crit = L; salvar(); poReabrir(i); return; }
+  if (t.dataset.poCritTirar != null){ const k = +t.dataset.poCritTirar; const x = poCrit(i)[k]; if (!x) return;
+    tfComDesfazer('Critério tirado.', () => { i.crit = poCrit(i).filter((_, n) => n !== k); poHistLocal(i, {tipo:'criterio', de:x.t, texto:'tirou'}); }); poReabrir(i); return; }
+  if (t.dataset.poDesTirar){ const papel = t.dataset.poDesTirar; tfComDesfazer('Desenho tirado.', () => { i.refs = (i.refs || []).filter(x => x.papel !== papel); }); poReabrir(i); return; }
+  if (t.dataset.poDesVer){ const x = (i.refs || []).find(r => r.papel === t.dataset.poDesVer); const url = x && (x.url || x._ver); if (url) modal(t.dataset.poDesVer === 'desenho_celular' ? 'Desenho: celular' : 'Desenho: computador', '<img class="po-des-grande" src="' + esc(url) + '" alt="">', [{txt:'Fechar'}]); return; }
+  const a = t.dataset.poAcao;
+  if (a === 'aceitar'){ if (!poPodeAceitar(i, true)) return; mudarStatus(i, 'done'); salvar(); poReabrir(i); rView(); return; }
+  if (a === 'devolver'){
+    modal('Devolver "' + i.titulo + '"', '<label class="lb">O que não ficou certo<textarea class="campo" id="po-motivo" rows="4" maxlength="1000" placeholder="Ex.: o saldo não bate com o extrato"></textarea></label><p class="sec">O item volta para a equipe com a situação Voltou. Fica no histórico.</p>',
+      [{txt:'Cancelar', cls:'sec'}, {txt:'Devolver', acao:d => { const m = $('#po-motivo', d).value.trim(); if (!m){ toast('Escreva o que não ficou certo'); return false; }
+        const antes = poSituacao(i); i.voltou = new Date().toISOString(); i.voltouMotivo = m;
+        _mudarStatusPo(i, 'todo'); poHistLocal(i, {tipo:'situacao', de:antes, para:'voltou', texto:m}); salvar(); poReabrir(i); rView(); }}]);
+    return;
+  }
+  if (a === 'melhoria' || a === 'bug') return poNovoDeOrigem(i, a);
+  if (a === 'dod'){ const pj = poProjeto(i); if (pj) poEditarDod(pj, () => poReabrir(i)); return; }
+  if (a === 'definir-po'){ const pj = poProjeto(i); if (pj) poEditarPO(pj, () => poReabrir(i)); return; }
+});
+// melhoria ou bug a partir de um item aceito: sempre um item novo, ligado ao antigo
+function poNovoDeOrigem(i, tipo){
+  const crits = poCrit(i);
+  modal(tipo === 'bug' ? 'Abrir bug de "' + i.titulo + '"' : 'Criar melhoria de "' + i.titulo + '"',
+    '<label class="lb">Título<input class="campo" id="po-nt" maxlength="300" value="' + esc(tipo === 'bug' ? 'Bug: ' : 'Melhoria: ') + '"></label>' +
+    (tipo === 'bug' && crits.length ? '<label class="lb">Qual critério de aceite não foi cumprido<select class="sel" id="po-nc">' + crits.map((c, k) => '<option value="' + k + '">' + esc(c.t) + '</option>').join('') + '</select></label>' : '') +
+    '<p class="sec">' + (tipo === 'bug' ? 'O bug fica ligado a ' : 'A melhoria é um item novo, ligado a ') + esc(poCh(i) + i.titulo) + '. O item aceito não muda.</p>',
+    [{txt:'Cancelar', cls:'sec'}, {txt:'Criar', acao:d => {
+      const t = $('#po-nt', d).value.trim().replace(/^(Bug|Melhoria):\s*$/, ''); if (!t){ toast('Escreva o título'); return false; }
+      const ep = i.tipo === 'epic' ? i : (i.pai && byId('issues', i.pai)); const paiOk = ep && ['epic','story'].includes(ep.tipo) ? ep.id : null;
+      const ni = novoIssue({titulo:t, ws:i.ws, tipo:tipo === 'bug' ? 'bug' : (paiOk && byId('issues', paiOk).tipo === 'story' ? 'task' : (paiOk ? 'story' : 'task')), status:'backlog', pai:paiOk, prio:i.prio});
+      ni.origem = i.id; ni.melhoria = tipo === 'melhoria'; ni.nivel = poNivel(i); ni.moscow = i.moscow || null; ni.marco = i.marco;
+      const nc = $('#po-nc', d); if (tipo === 'bug' && nc){ const c = crits[+nc.value]; if (c) ni.crit = [{t:c.t, f:false}]; ni.desc = 'Critério de aceite não cumprido em ' + (chaveDe(i) || i.titulo) + ': ' + (c ? c.t : ''); }
+      if (typeof garantirBoard === 'function') garantirBoard({issues:[ni], boards:D.boards, equipes:D.equipes});
+      ni.ordem = Math.max(0, ...D.issues.map(x => +x.ordem || 0)) + 1;
+      D.issues.push(ni); registrar('criou', ni); salvar(); rView(); abrirItem(ni.id); toast(tipo === 'bug' ? 'Bug aberto, ligado ao item de origem.' : 'Melhoria criada como item novo.');
+    }}]);
+}
+function poEditarDod(pj, depois){
+  modal('Definição de Pronto: ' + pj.nome, '<label class="lb">O que todo item precisa ter para ser aceito<textarea class="campo" id="po-dod" rows="7" maxlength="3000" placeholder="Ex.:\n- Sem bugs conhecidos\n- Testado no computador e no celular\n- Aprovado pelo P.O.">' + esc(pj.dod || '') + '</textarea></label><p class="sec">Aparece como lembrete em todos os itens do projeto.</p>',
+    [{txt:'Cancelar', cls:'sec'}, {txt:'Guardar', acao:d => { pj.dod = $('#po-dod', d).value.trim(); salvar(); toast('Definição de Pronto guardada.'); if (depois) depois(); }}]);
+}
+function poEditarPO(pj, depois){
+  const atual = pj.po && pessoa(pj.po);
+  if (atual && atual.ativo !== false && atual.id !== eu()){ toast('Só o P.O. atual (' + atual.nome + ') passa o papel para outra pessoa.'); return; }
+  const equipe = D.people.filter(p => p.ativo !== false);
+  modal('P.O. de ' + pj.nome, '<label class="lb">Quem é o P.O. (Product Owner)<select class="sel" id="po-quem"><option value="">Ninguém (qualquer um do time aceita, como antes)</option>' +
+    equipe.map(p => '<option value="' + esc(p.id) + '"' + (p.id === pj.po ? ' selected' : '') + '>' + esc(p.nome) + '</option>').join('') + '</select></label><p class="sec">Só o P.O. aceita ou devolve os itens deste projeto. Depois de definido, só ele passa o papel para outra pessoa.</p>',
+    [{txt:'Cancelar', cls:'sec'}, {txt:'Guardar', acao:d => { pj.po = $('#po-quem', d).value || null; salvar(); toast(pj.po ? 'P.O. definido: ' + pessoa(pj.po).nome + '.' : 'Projeto sem P.O.'); if (depois) depois(); if (typeof rView === 'function') rView(); }}]);
+}
+
+/* ---------- Quadro, Lista e Fila: prioridade, estimativa e critérios à vista; filtrar e ordenar ---------- */
+const PO_MOSCOW_CURTO = {deve:'Deve', deveria:'Deveria', poderia:'Poderia', nao_tera:'Não terá'};
+const poOrdemMoscow = v => ({deve:0, deveria:1, poderia:2, nao_tera:3})[v] ?? 4;
+// a ordem pela prioridade: classe, nível, valor e, no empate, quem tem mais valor por ponto
+const poCompararPrioridade = (a, b) => poOrdemMoscow(a.moscow) - poOrdemMoscow(b.moscow) || poNivel(a) - poNivel(b) || (+b.valor || 0) - (+a.valor || 0) ||
+  ((+b.valor || 0) / (+b.pontos || 1)) - ((+a.valor || 0) / (+a.pontos || 1)) || (+a.ordem || 0) - (+b.ordem || 0);
+function poChipsHTML(i, curto){
+  if (!poTemPO(i)) return '';
+  const c = poCritConta(i), n = poNivel(i);
+  return '<span class="po-chips">' +
+    (i.moscow ? '<span class="po-chip po-m-' + i.moscow + '" title="Prioridade: ' + esc(poMoscowNome(i.moscow)) + '">' + esc(PO_MOSCOW_CURTO[i.moscow]) + '</span>' : '') +
+    '<span class="po-chip po-n po-n' + n + '" title="Nível ' + esc(PO_NIVEIS[n - 1][1]) + '">N' + n + '</span>' +
+    (curto ? '' : (i.pontos ? '<span class="po-chip po-pts" title="Estimativa">' + i.pontos + ' pts</span>' : '')) +
+    (c.n ? '<span class="po-chip po-ck' + (c.f === c.n ? ' ok' : '') + '" title="Critérios de aceite marcados: ' + c.f + ' de ' + c.n + '">✓ ' + c.f + ' de ' + c.n + '</span>' : '') +
+    (i.tipo === 'bug' ? '<span class="po-chip po-bug">Bug</span>' : i.melhoria ? '<span class="po-chip po-mel">Melhoria</span>' : '') + '</span>';
+}
+const _cartaoHTMLPo = cartaoHTML;
+cartaoHTML = function(i){ const h = _cartaoHTMLPo.apply(this, arguments); return h.replace('<div class="bj-badges">', '<div class="bj-badges">' + poChipsHTML(i, true)); };
+const _linhaBacklogPo = linhaBacklog;
+linhaBacklog = function(i){
+  const h = _linhaBacklogPo.apply(this, arguments); if (!poTemPO(i)) return h;
+  const pos = poPosicao(i), falta = pos && pos <= 5 && (!poHistoria(i) || !poCritConta(i).n);
+  return h.replace('<button type="button" class="bj-linha-tit"', (pos ? '<span class="po-pos" title="Posição na fila">' + pos + '</span>' : '') + '<button type="button" class="bj-linha-tit"')
+    .replace('<span class="bj-linha-dir">', (falta ? '<span class="po-chip po-falta" title="Os primeiros da fila precisam de história e critérios de aceite">falta detalhe</span>' : '') + poChipsHTML(i, true) + '<span class="bj-linha-dir">');
+};
+// filtros do método: prioridade, nível, tipo e situação; e a ordem da lista
+UI.poF = UI.poF || {}; 
+const _ferramentasPo = ferramentasHTML;
+ferramentasHTML = function(extra){
+  const f = UI.poF || {}, s = (k, rot, ops) => '<label class="po-f"><span>' + rot + '</span><select class="sel" data-po-f="' + k + '"><option value="">Todos</option>' + ops.map(([v, n]) => '<option value="' + esc(v) + '"' + (String(f[k] || '') === String(v) ? ' selected' : '') + '>' + esc(n) + '</option>').join('') + '</select></label>';
+  const ordem = ['list'].includes(UI.view) ? '<label class="po-f"><span>Ordenar</span><select class="sel" data-po-f="ordem">' + [['', 'Ordem da fila'], ['prioridade', 'Prioridade'], ['valor', 'Valor'], ['pontos', 'Estimativa']].map(([v, n]) => '<option value="' + v + '"' + ((f.ordem || '') === v ? ' selected' : '') + '>' + n + '</option>').join('') + '</select></label>' : '';
+  const ativo = ['moscow','nivel','tipo','situ'].some(k => f[k]);
+  return _ferramentasPo(extra) + '<div class="po-filtros" role="group" aria-label="Filtrar pelo método do P.O.">' +
+    s('moscow', 'Prioridade', PO_MOSCOW.map(m => [m[0], m[1]])) + s('nivel', 'Nível', PO_NIVEIS.map(n => [n[0], n[1]])) + s('tipo', 'Tipo', PO_TIPOS.map(t => [t[0], t[1]])) +
+    s('situ', 'Situação', Object.entries(PO_SITU)) + ordem + (ativo ? '<button type="button" class="btn fant peq" data-po-f-limpar>Limpar</button>' : '') + '</div>';
+};
+const _listaFiltradaPo = listaFiltrada;
+listaFiltrada = function(){
+  let l = _listaFiltradaPo.apply(this, arguments);
+  const f = UI.poF || {};
+  if (f.moscow) l = l.filter(i => poTemPO(i) && i.moscow === f.moscow);
+  if (f.nivel) l = l.filter(i => poTemPO(i) && poNivel(i) === +f.nivel);
+  if (f.tipo) l = l.filter(i => poTemPO(i) && poTipo(i) === f.tipo);
+  if (f.situ) l = l.filter(i => poSituacao(i) === f.situ);
+  if (f.ordem === 'prioridade') l = l.slice().sort(poCompararPrioridade);
+  else if (f.ordem === 'valor') l = l.slice().sort((a, b) => (+b.valor || 0) - (+a.valor || 0) || poCompararPrioridade(a, b));
+  else if (f.ordem === 'pontos') l = l.slice().sort((a, b) => (+b.pontos || 0) - (+a.pontos || 0) || poCompararPrioridade(a, b));
+  return l;
+};
+document.addEventListener('change', e => { const t = e.target; if (!t.matches || !t.matches('[data-po-f]')) return; UI.poF = Object.assign({}, UI.poF, {[t.dataset.poF]:t.value || ''}); salvarUI(); rView(); });
+document.addEventListener('click', e => { if (e.target.closest && e.target.closest('[data-po-f-limpar]')){ UI.poF = {ordem:(UI.poF || {}).ordem || ''}; salvarUI(); rView(); } });
+// Lista: agrupada pela situação do ciclo de vida, com prioridade, estimativa e critérios em cada linha
+vList = function(){
+  const l = listaFiltrada();
+  const grupos = ['backlog','todo','doing','voltou','review','blocked','done'];
+  return ferramentasHTML('') + (l.length ? '' : '<p class="vazio-linha">Nenhum item com esses filtros.</p>') + grupos.map(g => {
+    const its = l.filter(i => poSituacao(i) === g); if (!its.length) return '';
+    const pts = its.reduce((s, i) => s + (+i.pontos || 0), 0);
+    return '<div class="grupo-lista po-grupo"><h3>' + (g === 'voltou' ? '<span class="st st-voltou">' + ICO_ST.todo + 'Voltou</span>' : stHTML(g)) + '<span class="rotulo-mini">' + its.length + (its.length === 1 ? ' item' : ' itens') + (pts ? ' · ' + pts + ' pts' : '') + '</span></h3><ul>' +
+      its.map(i => { const ch = chaveDe(i); return '<li data-abrir-item="' + i.id + '"><span class="po-li-tit">' + tipoHTML(i.tipo) + (ch ? '<span class="bj-chave">' + esc(ch) + '</span>' : '') + '<span class="po-li-nome">' + esc(i.titulo) + '</span></span>' +
+        '<span class="po-li-dir">' + poChipsHTML(i) + '<span class="sec po-li-onde">' + esc(caminhoTexto(i)) + '</span>' + avatar(i.resp) + '</span></li>'; }).join('') + '</ul></div>';
+  }).join('');
+};
+// Fila: botão para pôr na ordem da prioridade (o P.O. ajusta depois, arrastando ou pela posição)
+const _vBacklogPo = vBacklog;
+vBacklog = function(){
+  const h = _vBacklogPo.apply(this, arguments);
+  return h.replace('eles vão para a coluna A fazer do Quadro.', 'eles vão para a coluna Priorizado do Quadro. Os do topo da fila devem ser os mais detalhados (história e critérios de aceite).')
+    .replace(/<button type="button" class="btn [^"]*" data-bj-acao="mover-board"/, m => (podeEditar() ? '<button type="button" class="btn sec peq po-ordenar" data-po-ordenar title="Ordena pela classe, pelo nível e pelo valor; no empate, sobe quem tem mais valor por ponto">Ordenar pela prioridade</button>' : '') + m);
+};
+document.addEventListener('click', e => {
+  if (!(e.target.closest && e.target.closest('[data-po-ordenar]'))) return;
+  const its = issuesEm(UI.sel).filter(i => !i.arquivado && poTemPO(i) && i.status !== 'done');
+  if (!its.length){ toast('Não há itens para ordenar aqui.'); return; }
+  tfComDesfazer('Fila ordenada pela prioridade (' + its.length + (its.length === 1 ? ' item' : ' itens') + ').', () => {
+    const base = Math.min(...its.map(i => +i.ordem || 0));
+    its.slice().sort(poCompararPrioridade).forEach((i, k) => { i.ordem = base + k + 1; });
+  });
+});
+
+/* ---------- Entregas: andamento da versão por itens aceitos e por pontos, a meta e a Definição de Pronto ---------- */
+function poAndamentoVersao(m){
+  const its = issuesEm(m.no || UI.sel).filter(i => i.marco === m.id && !i.arquivado && i.tipo !== 'epic');
+  const ac = its.filter(i => i.status === 'done'), pts = its.reduce((s, i) => s + (+i.pontos || 0), 0), ptsAc = ac.reduce((s, i) => s + (+i.pontos || 0), 0);
+  return {n:its.length, ac:ac.length, pts, ptsAc, semPts:its.filter(i => !i.pontos).length};
+}
+const _enHTMLPo = enHTML;
+enHTML = function(chave){
+  const h = _enHTMLPo.apply(this, arguments);
+  const box = document.createElement('div'); box.innerHTML = h; const pode = podeEditar();
+  $$('.en2-v', box).forEach(li => { const b = $('[data-en-notas]', li); const m = b && byId('marcos', b.dataset.enNotas); if (!m) return;
+    const a = poAndamentoVersao(m), prog = $('.en2-prog', li);
+    if (prog) prog.innerHTML = a.n ? '<div class="rl-barra fina" title="Itens aceitos"><i style="width:' + (a.ac / a.n * 100) + '%"></i></div><small><b>' + a.ac + ' de ' + a.n + '</b> itens aceitos</small>' +
+      (a.pts ? '<div class="rl-barra fina po-barra-pts" title="Pontos aceitos"><i style="width:' + (a.ptsAc / a.pts * 100) + '%"></i></div><small><b>' + a.ptsAc + ' de ' + a.pts + '</b> pontos · faltam ' + (a.pts - a.ptsAc) + '</small>' : '<small>sem pontos estimados</small>') +
+      (a.semPts && a.pts ? '<small class="po-nota">' + a.semPts + (a.semPts === 1 ? ' item sem estimativa' : ' itens sem estimativa') + '</small>' : '') : '<small>sem itens ligados</small>';
+    const nome = $('.en2-v-nome > div', li);
+    if (nome) nome.insertAdjacentHTML('beforeend', m.meta ? '<p class="po-v-meta"><b>Meta:</b> ' + esc(m.meta) + (pode ? ' <button type="button" class="po-link" data-po-v-meta="' + m.id + '">mudar</button>' : '') + '</p>'
+      : pode ? '<p class="po-v-meta"><button type="button" class="po-link" data-po-v-meta="' + m.id + '">Escrever a meta</button></p>' : '');
+  });
+  const pj = cadeia(chave).project;
+  const col = $$('.en2-col', box)[1];
+  if (pj && col) col.insertAdjacentHTML('afterbegin', '<section class="en2-caixa po-dod-caixa"><header><h3>Definição de Pronto</h3><p>O que todo item de ' + esc(pj.nome) + ' precisa ter para ser aceito. Aparece como lembrete em cada item.</p></header>' +
+    '<div class="po-dod-corpo">' + (pj.dod ? '<div class="po-dod-txt">' + esc(pj.dod).replace(/\n/g, '<br>') + '</div>' : '<p class="po-nota">Ainda não escrita.</p>') +
+    '<p class="po-nota">P.O. do projeto: ' + (pj.po && pessoa(pj.po) ? '<b>' + esc(pessoa(pj.po).nome) + '</b>' : 'ninguém definido') + '</p>' +
+    (pode ? '<div class="po-acoes"><button type="button" class="btn sec peq" data-po-dod-proj="' + pj.id + '">' + (pj.dod ? 'Editar' : 'Escrever') + '</button><button type="button" class="btn fant peq" data-po-po-proj="' + pj.id + '">' + (pj.po ? 'Trocar o P.O.' : 'Definir o P.O.') + '</button></div>' : '') + '</div></section>');
+  return box.innerHTML;
+};
+document.addEventListener('click', e => {
+  const t = e.target.closest ? e.target.closest('[data-po-v-meta],[data-po-dod-proj],[data-po-po-proj]') : null; if (!t) return;
+  if (t.dataset.poVMeta){ const m = byId('marcos', t.dataset.poVMeta); if (!m) return;
+    modal('Meta da versão ' + m.nome, '<label class="lb">O que esta versão precisa entregar<textarea class="campo" id="po-vm" rows="4" maxlength="1000" placeholder="Ex.: o lojista publica anúncios sem ligar para o suporte">' + esc(m.meta || '') + '</textarea></label>',
+      [{txt:'Cancelar', cls:'sec'}, {txt:'Guardar', acao:d => { m.meta = $('#po-vm', d).value.trim(); salvar(); rView(); }}]); return; }
+  const pj = byId('projects', t.dataset.poDodProj || t.dataset.poPoProj); if (!pj) return;
+  if (t.dataset.poDodProj) poEditarDod(pj, () => rView()); else poEditarPO(pj, () => rView());
+});
+
+/* ---------- exportação (.md): os campos do método em todo item, épico e ponto da Estrutura ---------- */
+function poExLinhas(i){
+  if (i.tipo === 'epic') return exLinha('Meta da entrega', i.meta || '');
+  if (!poTemPO(i)) return '';
+  const c = poCritConta(i), org = i.origem && byId('issues', i.origem), pos = poPosicao(i);
+  return exLinha('Situação no ciclo', PO_SITU[poSituacao(i)] + (poVoltou(i) && i.voltouMotivo ? ' (motivo: ' + i.voltouMotivo + ')' : '')) +
+    exLinha('Tipo no método', PO_TIPOS.find(t => t[0] === poTipo(i))[1]) + exLinha(poTipo(i) === 'bug' ? 'Item de origem' : 'Veio de', org ? exNomeItem(org) : '') +
+    exLinha('Classe (MoSCoW)', poMoscowNome(i.moscow)) + exLinha('Nível', PO_NIVEIS[poNivel(i) - 1][1]) +
+    exLinha('Valor de negócio', i.valor ? i.valor + ' de 10' + (i.valorMotivo ? ' · ' + i.valorMotivo : '') : (i.valorMotivo || '')) +
+    exLinha('Estimativa (pontos)', i.pontos || '') + exLinha('Critérios de aceite', c.n ? c.f + ' de ' + c.n + ' marcados' : '') + exLinha('Posição na fila', pos || '') +
+    exLinha('P.O.', poDoPO(i) ? poDoPO(i).nome : '');
+}
+const _exSituacaoPo = exSituacao;
+exSituacao = function(i){ return _exSituacaoPo.apply(this, arguments).replace(/\n$/, poExLinhas(i) + '\n'); };
+const _exCorpoItemPo = exCorpoItem;
+exCorpoItem = function(i, nh){
+  const o = _exCorpoItemPo.apply(this, arguments); if (!poTemPO(i)) return o;
+  const h = '#'.repeat(nh), add = [];
+  if (poHistoria(i)) add.push(h + ' História\n\n' + poHistoria(i) + '\n');
+  const L = poCrit(i);
+  if (L.length) add.push(h + ' Critérios de aceite\n\n' + L.map(c => '- [' + (c.f ? 'x' : ' ') + '] ' + c.t + (c.f && (c.por || c.em) ? ' _(marcado' + (c.por ? ' por ' + exPessoa(c.por) : '') + (c.em ? ' em ' + exData(c.em) : '') + ')_' : '')).join('\n') + '\n');
+  const des = (i.refs || []).filter(x => x.papel);
+  if (des.length) add.push(h + ' Desenho\n\n' + des.map(x => '- ' + (x.papel === 'desenho_celular' ? 'Celular' : 'Computador') + ': ' + x.nome).join('\n') + '\n');
+  const pj = poProjeto(i); if (pj && pj.dod) add.push(h + ' Definição de Pronto do projeto\n\n' + pj.dod + '\n');
+  if (!add.length) return o;
+  const k = o.indexOf('\n' + h + ' ', 1);
+  return k < 0 ? o + '\n' + add.join('\n') : o.slice(0, k + 1) + add.join('\n') + '\n' + o.slice(k + 1);
+};
+const _exNoMdPo = exNoMd;
+exNoMd = function(chave){
+  let md = _exNoMdPo.apply(this, arguments); if (!md) return md;
+  const pj = chave !== 'all' && chave.split(':')[0] !== 'client' ? cadeia(chave).project : null;
+  if (pj){
+    const bloco = '## Método do P.O.\n\n' + exLinha('P.O. do projeto', pj.po ? exPessoa(pj.po) : 'ninguém definido') + '\n**Definição de Pronto:**\n\n' + (pj.dod || '_Ainda não escrita._') + '\n\n';
+    const k = md.indexOf('\n## ', md.indexOf('## Identificação') + 5); md = k < 0 ? md + bloco : md.slice(0, k + 1) + bloco + md.slice(k + 1);
+  }
+  const vs = typeof enVersoes === 'function' && chave.split(':')[0] !== 'client' ? enVersoes(chave) : [];
+  if (vs.length) md += '\n## Andamento das versões\n\n' + vs.map(v => { const a = poAndamentoVersao(v); return '- **' + v.nome + '** · entrega ' + exData(v.data) + (v.meta ? ' · meta: ' + v.meta : '') + ' · ' + a.ac + ' de ' + a.n + ' itens aceitos · ' + a.ptsAc + ' de ' + a.pts + ' pontos (faltam ' + (a.pts - a.ptsAc) + ')'; }).join('\n') + '\n';
+  const fila = issuesEm(chave).filter(i => !i.arquivado && poTemPO(i)).sort((a, b) => (a.status === 'done') - (b.status === 'done') || (+a.ordem || 0) - (+b.ordem || 0));
+  if (fila.length) md += '\n## Backlog (na ordem do P.O.)\n\n| # | Item | Tipo | Situação | Classe | Nível | Valor | Pontos | Critérios |\n|---|---|---|---|---|---|---|---|---|\n' +
+    fila.map((i, k) => { const c = poCritConta(i); return '| ' + (i.status === 'done' ? '' : k + 1) + ' | ' + exNomeItem(i).replace(/\|/g, '/') + ' | ' + PO_TIPOS.find(t => t[0] === poTipo(i))[1] + ' | ' + PO_SITU[poSituacao(i)] + ' | ' + (poMoscowNome(i.moscow) || '') + ' | ' + poNivel(i) + ' | ' + (i.valor || '') + ' | ' + (i.pontos || '') + ' | ' + (c.n ? c.f + '/' + c.n : '') + ' |'; }).join('\n') + '\n';
+  return md;
+};
+
+if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {exItemMd, exNoMd, abrirItem, mudarStatus, poFila, poCritConta, poSituacao, poPodeAceitar, POH, poHistCarregar});
 
 abrirModulo(UI.modulo);
 })();
