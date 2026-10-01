@@ -105,3 +105,8 @@ dialog.modal.lt-modal{width:min(1240px, calc(100vw - 32px));max-width:none}
 .lt-guia .lt-nota{padding:8px 14px 12px}
 @media (max-width:860px){ .lt-grade{grid-template-columns:minmax(0, 1fr)} .lt-at-g{grid-template-columns:minmax(0, 1fr)} .lt-guia-t td:first-child{white-space:normal} }
 .lt-dep{border-color:#B45309;color:#B45309}
+.lt-lote-info{margin:0 0 8px;font-size:13px;color:var(--tinta-2)}
+.lt-ordem{margin:0 0 10px;padding:10px 12px;border:1px solid #B45309;border-left-width:4px;background:#FFF7ED;color:#7C2D12;font-size:13px}
+.lt-ordem b{display:block;font-size:14px;margin-bottom:4px}
+.lt-ordem p{margin:0;line-height:1.5}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .lt-ordem{background:transparent;color:#FDBA74} }

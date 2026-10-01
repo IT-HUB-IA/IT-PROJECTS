@@ -62,6 +62,8 @@ function ciLoteMd(ctx){
     '| `tipo` | Tipo do item | `Item`, `Bug` ou `Melhoria` | `tipo: Bug` |\n' +
     '| `origem` | O item de origem (obrigatório no Bug) | a chave de um item que já existe (BL-12), o título de um item (que já existe ou que está neste mesmo texto) ou a posição do item neste texto (`#3` é o 3º item, contando de cima) | `origem: BL-12`, `origem: Cadastro do cliente`, `origem: #1` |\n' +
     '| `depende` | O item só pode começar depois de outro. Repita a linha para cada item de que ele depende | a chave de um item que já existe (BL-12), o título de um item (que já existe ou que está neste texto) ou a posição neste texto (`#3`) | `depende: BL-12`, `depende: Cadastro do cliente`, `depende: #1` |\n' +
+    '| `lote` | O nome deste lote (primeira linha do texto, sem recuo) | texto | `lote: Backend` |\n' +
+    '| `depois de` | De quais lotes este vem depois (logo abaixo de `lote:`) | nomes separados por vírgula | `depois de: Database` |\n' +
     '| `meta` | **Do épico**: a meta da entrega. Logo abaixo da linha do épico, sem traço. **Da versão**: logo abaixo da linha `versão:` | texto (até 1000 letras) | `meta: o lojista publica sem ligar para o suporte` |\n' +
     '| `versão` | Declara uma versão (linha sem recuo, em qualquer lugar do texto) | o nome da versão | `versão: v1.3` |\n' +
     '| `entrega` | **Da versão**: a data de entrega, logo abaixo da linha `versão:`. Obrigatória em versão nova | dia/mês/ano ou ano-mês-dia | `entrega: 15/11/2026` |\n' +
@@ -74,6 +76,13 @@ function ciLoteMd(ctx){
     '- Versão **nova** sem `entrega:` é erro: ela e os itens que apontam para ela ficam de fora até corrigir.\n' +
     '- Na tela, a data de entrega também é obrigatória (Entregas › Nova versão e Editar em tabela), e a meta fica na própria versão, em Entregas.\n\n' +
     '```\nversão: v1.3\n  entrega: 15/11/2026\n  meta: o lojista cuida da carteira sozinho\n\nCarteira de clientes {v1.3}\n- Cadastro do cliente\n```\n\n' +
+    '### Vários lotes: a ordem em que são colados\n\n' +
+    'Quando o trabalho é grande, divida em vários textos (um por frente, por exemplo Database, Backend, Integrações e Frontend). A regra é: **cada lote é colado depois dos lotes de que ele depende**. Um item só pode apontar (`depende:` ou `origem:`) para um item que já existe no projeto ou que está no mesmo texto. Se apontar para um item de um lote que ainda não foi colado, a prévia mostra o aviso **Cole antes o lote ...** e o Criar tudo não grava nada desse lote (para ele não entrar pela metade) até o lote anterior ser colado.\n\n' +
+    '1. Monte os lotes na ordem das dependências: primeiro o que não depende de ninguém (em geral as decisões e o banco), depois o que usa ele (o servidor), depois as integrações e por último as telas.\n' +
+    '2. Comece cada texto com duas linhas, sem recuo: `lote: Nome deste lote` e `depois de: Nome do lote anterior` (vários separados por vírgula). O primeiro lote não tem `depois de:`.\n' +
+    '3. Numere os arquivos na ordem de colar: `01-database.txt`, `02-backend.txt`, `03-integracoes.txt`, `04-frontend.txt`.\n' +
+    '4. Ao entregar, diga em uma linha a ordem de colar e espere a pessoa confirmar que cada lote foi gravado antes do próximo.\n\n' +
+    '```\nlote: Backend\ndepois de: Database\n\nCadastro de pagadores [Backend] {v0.1}\n- Cadastrar pagador com lojas\n  depende: Criar tabela de loja\n```\n\n' +
     '### Ordem do backlog\n\n' +
     '**A ordem das linhas vira a ordem da fila.** Os itens novos entram no fim da fila do projeto, um depois do outro, na mesma ordem em que aparecem no texto (de cima para baixo). Itens que já existem e só são atualizados **não mudam de lugar**. Por isso, escreva primeiro os mais importantes. Depois, o P.O. ajusta a ordem na tela (arrastando, pela posição no item ou com Ordenar pela prioridade).\n\n' +
     '### Situação, histórico e Definição de Pronto\n\n' +
@@ -113,7 +122,8 @@ function ciLoteMd(ctx){
     '6. Use só as frentes da lista acima. Se nenhuma servir, avise a pessoa em vez de inventar.\n' +
     '7. Use só os valores aceitos da tabela. Na dúvida, deixe o campo de fora: ele pode ser preenchido depois, na tela.\n' +
     '8. Mostre um resumo e peça confirmação antes de gerar o texto final.\n' +
-    '9. No fim, entregue **só o texto no formato acima, dentro de um bloco de código**, sem comentários no meio, pronto para colar em **Criar em lote**.\n';
+    '9. Se o trabalho for dividido em vários lotes, siga a seção Vários lotes: cada texto começa com `lote:` e `depois de:`, e os arquivos vão numerados na ordem de colar.\n' +
+    '10. No fim, entregue **só o texto no formato acima, dentro de um bloco de código**, sem comentários no meio, pronto para colar em **Criar em lote**.\n';
 }
 function ciGeralMd(){
   const c = ciContexto(), l = (arr, f) => arr.map(f).join('\n');

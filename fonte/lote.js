@@ -26,7 +26,7 @@ function ltFrentes(){
 const LT_CAMPOS = {'como':'quem', 'quem':'quem', 'quero':'quero', 'o que':'quero', 'para':'para', 'por que':'para', 'porque':'para', 'historia':'historia',
   'aceite':'aceite', 'criterio':'aceite', 'criterio de aceite':'aceite', 'prioridade':'prioridade', 'classe':'classe', 'moscow':'classe', 'nivel':'nivel',
   'valor':'valor', 'pontos':'pontos', 'estimativa':'pontos', 'tipo':'tipo', 'origem':'origem', 'meta':'meta',
-  'depende':'depende', 'depende de':'depende', 'dependencia':'depende', 'versao':'versao', 'entrega':'entrega', 'data de entrega':'entrega', 'pronto':'pronto', 'definicao de pronto':'pronto'};
+  'lote':'lote', 'nome do lote':'lote', 'depois de':'depoisde', 'vem depois de':'depoisde', 'depende':'depende', 'depende de':'depende', 'dependencia':'depende', 'versao':'versao', 'entrega':'entrega', 'data de entrega':'entrega', 'pronto':'pronto', 'definicao de pronto':'pronto'};
 // data de entrega: 15/11/2026 ou 2026-11-15
 function ltDataEntrega(v){ const s = String(v || '').trim(); let m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s); if (!m){ const b = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(s); if (b) m = [null, b[3], b[2].padStart(2, '0'), b[1].padStart(2, '0')]; }
   if (!m) return null; const d = new Date(+m[1], +m[2] - 1, +m[3]); return d.getFullYear() === +m[1] && d.getMonth() === +m[2] - 1 && d.getDate() === +m[3] ? m[1] + '-' + m[2] + '-' + m[3] : null; }
@@ -72,7 +72,7 @@ function ltLer(texto){
   const achaFrente = nome => { const n = ltNorm(nome); return frentes.find(w => ltNorm(w.nome) === n) || frentes.find(w => ltNorm(byId('apps', w.app).nome + ' › ' + w.nome) === n) || null; };
   const versoes = ltVersoesDoProjeto();
   const achaVersao = nome => { const n = ltNorm(nome); return versoes.find(v => ltNorm(v.nome) === n) || null; };
-  const grupos = [], avisos = [], novasV = [], erros = [], vdecl = [], pronto = [];
+  const grupos = [], avisos = [], novasV = [], erros = [], vdecl = [], pronto = [], loteInfo = {nome:'', depois:[]};
   let atual = null, alvo = null;   // alvo: o item (ou o épico) que recebe as linhas de detalhe
   const erro = (k, msg, quem) => { const e = {linha:k + 1, msg}; erros.push(e); if (quem) (quem.erros = quem.erros || []).push(e); };
   String(texto || '').split(/\r?\n/).forEach((bruta, k) => {
@@ -83,6 +83,9 @@ function ltLer(texto){
     if (md && !campo && /^\s/.test(bruta)){ erro(k, 'campo "' + md[1].trim() + '" não existe. Use: como, quero, para, aceite, prioridade, valor, pontos, tipo, origem, meta, versão, entrega ou pronto', alvo); return; }
     if (campo){
       // a Definição de Pronto do projeto: uma linha por regra, em qualquer lugar do texto
+      // o nome deste lote e de quais lotes ele vem depois (quando o trabalho é dividido em vários textos)
+      if (campo === 'lote'){ if (md[2].trim()) loteInfo.nome = md[2].trim().slice(0, 120); return; }
+      if (campo === 'depoisde'){ md[2].split(/[,;]/).map(x => x.trim()).filter(Boolean).forEach(x => { if (!loteInfo.depois.some(y => ltNorm(y) === ltNorm(x))) loteInfo.depois.push(x.slice(0, 120)); }); return; }
       if (campo === 'pronto'){ const t = md[2].trim(); if (!t){ erro(k, 'falta o valor depois de "pronto:"'); return; } if (t.length > 300){ erro(k, 'a regra da Definição de Pronto passa de 300 letras'); return; } if (!pronto.some(x => ltNorm(x) === ltNorm(t))) pronto.push(t); return; }
       // uma versão: "versão: v1.3" e, logo abaixo, "entrega: 15/11/2026" e "meta: ..."
       if (campo === 'versao'){
@@ -147,8 +150,9 @@ function ltLer(texto){
     const o = noProj.find(i => typeof chaveDe === 'function' && ltNorm(chaveDe(i)) === n) || noProj.find(i => ltNorm(i.titulo) === n);
     if (o) return o.id === (it.ja && it.ja.id) ? null : {id:o.id, nome:((typeof chaveDe === 'function' && chaveDe(o)) || '') + ' ' + o.titulo};
     const d = todos.find(x => x !== it && ltNorm(x.titulo) === n); return d ? {lote:d, nome:d.titulo + ' (deste texto)'} : null; };
+  const faltam = new Set();
   todos.forEach(it => (it.det.dependeTxt || []).forEach(txt => { const r = acharRef(it, txt);
-    if (!r){ erro(it.linha - 1, 'depende "' + txt + '" não existe neste projeto nem neste texto: use a chave (BL-12), o título do item ou a posição no texto (#3)', it); return; }
+    if (!r){ faltam.add(txt); erro(it.linha - 1, 'depende "' + txt + '" não existe neste projeto nem neste texto: use a chave (BL-12), o título do item ou a posição no texto (#3)', it); return; }
     if (r.lote && r.lote.erros.length){ erro(it.linha - 1, 'o item "' + r.lote.titulo + '" de que este depende tem erro e fica de fora: corrija ele primeiro', it); return; }
     (it.det.depende = it.det.depende || []).push(r); }));
   todos.forEach(it => { const txt = it.det.origemTxt; if (!txt) return; const n = ltNorm(txt);
@@ -167,7 +171,7 @@ function ltLer(texto){
       erro(it.linha - 1, '"' + it.titulo + '" já foi aceito: a história e os critérios não mudam. Para mudar, crie um item novo com tipo: Melhoria', it);
   }));
   erros.sort((a, b) => a.linha - b.linha);
-  return {grupos, avisos, padrao, novasV:novasV.filter(n => !vdecl.some(v => ltNorm(v.nome) === ltNorm(n) && v.erros.length)), erros, vdecl, pronto};
+  return {loteInfo, faltam:[...(typeof faltam !== 'undefined' ? faltam : [])], grupos, avisos, padrao, novasV:novasV.filter(n => !vdecl.some(v => ltNorm(v.nome) === ltNorm(n) && v.erros.length)), erros, vdecl, pronto};
 }
 // o que cada item vai receber, para a prévia e para gravar
 const ltTemDet = det => Object.keys(det).some(k => !['origemNome','origemTxt','origemLote','dependeTxt'].includes(k));
@@ -220,6 +224,9 @@ function ltPreviaHTML(r){
   return '<p class="lt-conta">' + (partes.length ? partes.join(', ').replace(/, ([^,]*)$/, ' e $1') + (s.epNovos + s.novos === 1 && !s.atualiza ? ' vai ser criado.' : ' vão ser gravados.') : 'Nada para gravar ainda.') +
       (r.novasV && r.novasV.length ? ' Junto, ' + (r.novasV.length === 1 ? 'a versão nova ' : 'as versões novas ') + '<b>' + r.novasV.map(esc).join(', ') + '</b>.' : '') +
       (s.igual ? ' ' + s.igual + (s.igual === 1 ? ' item já existe e fica como está.' : ' itens já existem e ficam como estão.') : '') + '</p>' +
+    (r.loteInfo && (r.loteInfo.nome || r.loteInfo.depois.length) ? '<p class="lt-lote-info">' + (r.loteInfo.nome ? 'Lote <b>' + esc(r.loteInfo.nome) + '</b>' : 'Este lote') + (r.loteInfo.depois.length ? ' vem depois de <b>' + r.loteInfo.depois.map(esc).join(', ') + '</b>' : '') + '.</p>' : '') +
+    ((r.faltam || []).length ? '<div class="lt-ordem" role="alert"><b>Cole antes ' + (r.loteInfo && r.loteInfo.depois.length ? 'o lote ' + r.loteInfo.depois.map(esc).join(' e o lote ') : 'o lote que cria estes itens') + '</b>' +
+      '<p>Este texto depende de ' + r.faltam.length + (r.faltam.length === 1 ? ' item que ainda não existe' : ' itens que ainda não existem') + ' neste projeto (por exemplo: ' + r.faltam.slice(0, 3).map(t => '"' + esc(t) + '"').join(', ') + '). Quando o trabalho é dividido em vários textos, cada um é colado na ordem: primeiro o que cria os itens de que os outros dependem. Cancele, cole o outro lote, clique em Criar tudo e depois volte com este. Enquanto isso, este lote não grava (para não entrar pela metade).</p></div>' : '') +
     ((r.erros || []).length ? '<div class="lt-erros" role="alert"><b>' + r.erros.length + (r.erros.length === 1 ? ' erro' : ' erros') + (s.comErro ? ': ' + s.comErro + (s.comErro === 1 ? ' item fica de fora' : ' itens ficam de fora') + ' até corrigir' : '') + '</b><ul>' + r.erros.map(e => '<li>Linha ' + e.linha + ': ' + esc(e.msg) + '</li>').join('') + '</ul></div>' : '') +
     (r.avisos.length ? '<ul class="lt-avisos">' + r.avisos.map(a => '<li>' + esc(a) + '</li>').join('') + '</ul>' : '') +
     ((r.vdecl || []).length ? '<div class="lt-bloco"><b>Versões</b><ul>' + r.vdecl.map(v => '<li class="' + (v.erros.length ? 'lt-com-erro' : '') + '"><div class="lt-it-tit"><span>' + esc(v.nome) + '</span><span class="lt-tag">' + (v.erros.length ? 'com erro: fica de fora' : v.ja ? (v.entrega || v.meta ? 'já existe: atualiza' : 'já existe') : 'nova') + '</span></div>' +
@@ -328,12 +335,14 @@ function ltAbrir(){
       linhaG('  pontos: 5', '<b>Estimativa</b>: 1, 2, 3, 5, 8, 13 ou 20') +
       linhaG('  tipo: Bug  /  origem: #1', '<b>Tipo</b> Item, Bug ou Melhoria. A origem é a chave (BL-12), o título ou a posição no texto (#1)') +
       linhaG('  depende: #1  /  BL-12', 'O item só começa depois de outro: a chave, o título ou a posição no texto. Uma linha por item') +
+      linhaG('lote: Backend  /  depois de: Database', 'No começo do texto: o nome do lote e de qual lote ele vem depois. <b>Cole primeiro</b> o lote de que este depende') +
       linhaG('meta: ...', 'Logo abaixo do épico (ou da versão): a <b>meta</b>') +
       linhaG('versão: v1.3  /  entrega: 15/11/2026', '<b>Versão nova</b>, com a data de entrega (obrigatória)') +
       linhaG('pronto: Testado no celular', 'Uma regra da <b>Definição de Pronto</b> do projeto') +
     '</tbody></table></div><p class="lt-nota">Item com o mesmo título num épico que já existe não duplica: recebe os campos novos e não perde nada.</p></details>',
     [{txt:'Cancelar', cls:'sec'}, {txt:'Criar tudo', acao:dl => {
       const r = ltLer($('#lt-t', dl).value); const sr = ltResumo(r);
+      if ((r.faltam || []).length){ toast('Cole antes ' + (r.loteInfo && r.loteInfo.depois.length ? 'o lote ' + r.loteInfo.depois.join(' e o lote ') : 'o lote que cria os itens de que este depende') + '. Nada foi gravado, para o lote não entrar pela metade.'); return false; }
       const novos = sr.epNovos, nItens = sr.novos;
       if (!novos && !nItens && !sr.atualiza && !sr.versoes && !sr.pronto){ toast(r.erros.length ? 'Corrija os erros da prévia: nada foi gravado' : r.grupos.length ? 'Nada muda: tudo já existe como está' : 'Escreva pelo menos um épico ou um item'); return false; }
       const feitos = [novos ? novos + (novos === 1 ? ' épico' : ' épicos') + ' criado' + (novos === 1 ? '' : 's') : '', nItens ? nItens + (nItens === 1 ? ' item criado' : ' itens criados') : '',
