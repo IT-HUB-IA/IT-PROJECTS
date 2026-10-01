@@ -180,3 +180,4 @@ textarea[data-ficha].fa-escondido{display:none}
 .ifv-b.sel{background:var(--preto);border-color:var(--preto);color:var(--branco)}
 .ifv-b:focus-visible{outline:2px solid var(--vermelho);outline-offset:2px}
 .ifv-dica{font-size:12px;color:var(--tinta-3)}
+.ifr-fonte-dica{margin:0;font-size:12px;line-height:1.45;color:var(--preto);border-left:2px solid var(--vermelho);padding-left:8px}

@@ -111,7 +111,8 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
     ['postgresql://postgres.abcdefghijklmnop:[YOUR-PASSWORD]@aws-0-sa-east-1.pooler.supabase.com:5432/postgres', /YOUR-PASSWORD/],
     ['postgresql://postgres.abcdefghijklmnop:Senha123@aws-0-sa-east-1.pooler.supabase.com:5432/postgres', /não o postgres/],
     ['postgresql://leitura_ciclodev:Senha123@aws-0-sa-east-1.pooler.supabase.com:5432/postgres', /código do projeto/],
-    ['postgresql://postgres:Senha123@db.abcdefghijklmnop.supabase.co:5432/postgres', /conexão direta/]];
+    ['postgresql://postgres:Senha123@db.abcdefghijklmnop.supabase.co:5432/postgres', /conexão direta/],
+    ['postgresql://leitura_ciclodev.abcdefghijklmnop:Ab@aws-0-sa-east-1.pooler.supabase.com:5432/postgres', /só 2 caracteres/]];
   for (const [u, re] of ruins){ const r = await salvar(u); ok(r.aberta && re.test(r.toast) && !rpcs.includes('infra_banco_salvar'), 'recusa antes de salvar: ' + (r.toast || '(sem aviso)')); }
   const r = await salvar('postgresql://leitura_ciclodev.abcdefghijklmnop:SenhaForte123@aws-0-sa-east-1.pooler.supabase.com:5432/postgres');
   ok(!r.aberta && rpcs.includes('infra_banco_salvar'), 'o endereço certo do Session pooler salva');

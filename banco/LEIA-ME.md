@@ -147,6 +147,10 @@ Na tela: Entregas, **Ligar repositório** (conectar a conta, escolher o reposit�
 
 `41_editar_lote_todas_colunas.sql`: só troca a função `interno.po_historico_edicao` (o gatilho da parte 39 continua). O histórico de edição passa a guardar também descrição, horas, início, data alvo, cliente vê e sprint. A situação continua no histórico próprio (tipo `situacao`) e o lugar do item (onde) já estava (frente). A tela: `fonte/lote_editar.js` (campos situação, motivo, início, onde, descrição, horas, data alvo, cliente vê e sprint).
 
+## Parte 42: data da última troca do endereço do banco (aplicada no Supabase em 01/10/2026 como `ciclodev_42_banco_trocado_em`)
+
+`42_banco_trocado_em.sql`: coluna `infra_bancos.conexao_trocada_em`, preenchida pela `infra_banco_salvar` (mesma assinatura) sempre que o endereço é gravado ou trocado, e copiada da área escondida para os bancos que já existiam. A tela mostra "Endereço salvo em ..." no card do banco, para saber se o Trocar foi gravado. A senha continua só em `interno.infra_bancos_conexao`.
+
 ## Parte 38: item completo pelo método do Product Owner (aplicada em 01/10/2026 como `ciclodev_38_item_completo_po` e `ciclodev_38b_sem_truncate`)
 
 `38_item_completo_po.sql`, só acrescenta (nenhuma coluna antiga muda de sentido):

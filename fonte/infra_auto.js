@@ -23,7 +23,7 @@ async function ifrAutoCarregar(){
   const nos = ifrNosDoCodigo(UI.sel);
   const [rp, bc, pd] = await Promise.all([
     sb.from('repositorios').select('id, no_id, provedor, nome, branch_principal, ativo').in('no_id', nos),
-    sb.from('infra_bancos').select('id, no_id, nome, provedor, motor, esquemas, servidor, ativo, ultima_leitura_em, ultima_mudanca_em, ultimo_erro').eq('no_id', no),
+    sb.from('infra_bancos').select('id, no_id, nome, provedor, motor, esquemas, servidor, ativo, ultima_leitura_em, ultima_mudanca_em, ultimo_erro, conexao_trocada_em').eq('no_id', no),
     sb.from('infra_automacoes').select('id, origem, status, referencia, criado_em, concluido_em, erro, resumo, diagramas').eq('no_id', no).order('criado_em', {ascending:false}).limit(5)
   ]);
   if (IFR_AUTO.no !== no) return;
@@ -73,7 +73,9 @@ function ifrAutoHTML(){
         const selo = !x.ativo ? ifrSelo('cinza', 'Desligado') : x.ultimo_erro ? ifrSelo('erro', 'Não conectou') : x.ultima_leitura_em ? ifrSelo('ok', 'Lido ' + ifrQuando(x.ultima_leitura_em)) : ifrSelo('cinza', 'Aguardando leitura');
         return '<div class="ifr-fonte' + (x.ultimo_erro ? ' com-erro' : '') + '"><div class="ifr-fonte-cab"><b>' + esc(x.nome) + '</b>' + selo + '</div>' +
           '<p class="ifr-fonte-meta">' + esc(qual(x)) + '</p>' + (x.servidor ? '<p class="ifr-fonte-host" title="Servidor">' + esc(x.servidor) + '</p>' : '') +
+          (x.conexao_trocada_em ? '<p class="ifr-fonte-meta" data-ifr-trocado>Endereço salvo em ' + esc(fmtData(x.conexao_trocada_em.slice(0, 10))) + ' às ' + esc(new Date(x.conexao_trocada_em).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})) + '</p>' : '') +
           (x.ultimo_erro ? '<div class="ifr-fonte-erro"><b>' + esc(ifrErroAmigavel(x.ultimo_erro)) + '</b><small>' + esc(x.ultimo_erro) + (x.ultima_leitura_em ? ' · tentativa ' + esc(ifrQuando(x.ultima_leitura_em)) : '') + '</small>' +
+            (/password authentication/.test(x.ultimo_erro) && x.conexao_trocada_em ? '<p class="ifr-fonte-dica">O CicloDev ainda usa a senha do endereço salvo em ' + esc(fmtData(x.conexao_trocada_em.slice(0, 10))) + '. Se você criou ou trocou a senha no banco depois disso, clique em <b>Trocar</b> e cole o endereço com a senha nova. Se a data não mudar depois de salvar, a troca não foi gravada.</p>' : '') +
             '<button type="button" class="btn peq" data-ifr-guia>Resolver com o DevIT</button></div>'
             : x.ultima_mudanca_em ? '<p class="ifr-fonte-meta">Estrutura mudou ' + esc(ifrQuando(x.ultima_mudanca_em)) + '</p>' : '') +
           (pode ? '<div class="ifr-fonte-acoes"><button type="button" class="ifr-lnk" data-ifr-banco="' + x.id + '">Trocar</button><button type="button" class="ifr-lnk" data-ifr-banco-tirar="' + x.id + '">Desligar</button></div>' : '') + '</div>'; }).join('')
@@ -205,6 +207,8 @@ function ifrBancoModal(id, provInicial){
     if (url && motor === 'postgres' && !/^postgres(ql)?:\/\//.test(url)){ toast('O endereço precisa começar com postgresql://'); return false; }
     if (url && motor === 'mysql' && !/^mysql:\/\//.test(url)){ toast('O endereço precisa começar com mysql://'); return false; }
     if (url && prov === 'supabase'){ const erro = ifrConferirSupabase(url); if (erro){ toast(erro); return false; } }
+    if (url){ const sm = String(url).match(/^[a-z][a-z0-9+.-]*:\/\/[^:@\/]+:(.*)@[^@]+$/i), senha = sm ? sm[1] : ''; let real = senha; try { real = decodeURIComponent(senha); } catch(e){}
+      if (sm && real.length < 8){ toast('A senha no endereço tem só ' + real.length + (real.length === 1 ? ' caractere' : ' caracteres') + '. Use a mesma senha que você criou para o usuário leitura_ciclodev no banco (pelo menos 8). Nada foi salvo.'); return false; } }
     if (url && prov !== 'aws') url = ifrCodificarSenha(url);
     const esq = $('#ifr-b-esq', dl).value.split(',').map(s => s.trim()).filter(Boolean);
     if (!esq.length){ toast(motor === 'mysql' ? 'Diga qual banco (database) ler.' : 'Diga quais esquemas ler.'); return false; }
