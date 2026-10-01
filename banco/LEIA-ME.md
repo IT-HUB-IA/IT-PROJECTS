@@ -135,6 +135,10 @@ Na tela: Entregas, **Ligar repositório** (conectar a conta, escolher o reposit�
 - **`ciclodev_44_infra_na_aplicacao`** (30/09/2026): a aplicação também tem a aba Infraestrutura (`infra_no_ok`), com os desenhos do código ligado a ela. Publicar pelo repositório de uma aplicação pede os desenhos dela e do produto em que ela está (`infra_publicou`); "Atualizar agora" da aplicação lê só os repositórios dela, o do produto lê os dele e os das aplicações dele (`infra_auto_proximos`). A frente continua sem aba própria.
 - Regra da tela no mesmo dia: cada ponto vê só o que é dele e o que está dentro dele (versões, repositórios, publicações, ficha técnica); o projeto junta tudo. As 6 versões do projeto BL que eram do app MK - Plataformas (dentro de 40% (MK)) foram movidas para ele, com os itens ligados como estavam.
 
+## Parte 39: Editar em lote e Tarefa externa (aplicada em 01/10/2026 como `ciclodev_39a_tarefa_externa` e o gatilho `itens_po_historico_edicao`)
+
+`39_editar_em_lote.sql`: coluna `itens.externa` (Tarefa externa: tipo `task`, não é desenvolvimento e não conta nos pontos da versão) e o gatilho `itens_po_historico_edicao`, que grava em `itens_historico` (tipo novo `edicao`) cada mudança de título, história, prioridade, nível, valor, pontos, tipo, responsável, prazo, épico, versão, frente, arquivado e resolução, com o antes e o depois e quem mudou. Vale para toda edição (tela ou Editar em lote). A tela: `fonte/lote_editar.js`.
+
 ## Parte 38: item completo pelo método do Product Owner (aplicada em 01/10/2026 como `ciclodev_38_item_completo_po` e `ciclodev_38b_sem_truncate`)
 
 `38_item_completo_po.sql`, só acrescenta (nenhuma coluna antiga muda de sentido):

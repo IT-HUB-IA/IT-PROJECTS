@@ -25,7 +25,7 @@ function ltFrentes(){
 // linhas de detalhe: "campo: valor", logo abaixo da linha do item (ou do épico, no caso da meta). O recuo é opcional.
 const LT_CAMPOS = {'como':'quem', 'quem':'quem', 'quero':'quero', 'o que':'quero', 'para':'para', 'por que':'para', 'porque':'para', 'historia':'historia',
   'aceite':'aceite', 'criterio':'aceite', 'criterio de aceite':'aceite', 'prioridade':'prioridade', 'classe':'classe', 'moscow':'classe', 'nivel':'nivel',
-  'valor':'valor', 'pontos':'pontos', 'estimativa':'pontos', 'tipo':'tipo', 'origem':'origem', 'meta':'meta',
+  'responsavel':'responsavel', 'prazo':'prazo', 'valor':'valor', 'pontos':'pontos', 'estimativa':'pontos', 'tipo':'tipo', 'origem':'origem', 'meta':'meta',
   'lote':'lote', 'nome do lote':'lote', 'depois de':'depoisde', 'vem depois de':'depoisde', 'depende':'depende', 'depende de':'depende', 'dependencia':'depende', 'versao':'versao', 'entrega':'entrega', 'data de entrega':'entrega', 'pronto':'pronto', 'definicao de pronto':'pronto'};
 // data de entrega: 15/11/2026 ou 2026-11-15
 function ltDataEntrega(v){ const s = String(v || '').trim(); let m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s); if (!m){ const b = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(s); if (b) m = [null, b[3], b[2].padStart(2, '0'), b[1].padStart(2, '0')]; }
@@ -60,7 +60,12 @@ function ltDetalhe(campo, v, det, pj){
     det.valor = +m[1]; if (m[2] && m[2].trim()){ if (m[2].trim().length > 300) return 'o motivo do valor passa de 300 letras'; det.valorMotivo = m[2].trim(); } return '';
   }
   if (campo === 'pontos'){ if (!/^\d+$/.test(txt) || !LT_SEQ.includes(+txt)) return 'estimativa "' + txt + '" fora da sequência: use 1, 2, 3, 5, 8, 13 ou 20'; det.pontos = +txt; return ''; }
-  if (campo === 'tipo'){ const t = {item:'item', bug:'bug', melhoria:'melhoria'}[ltNorm(txt)]; if (!t) return 'tipo "' + txt + '" não existe: use Item, Bug ou Melhoria'; det.tipo = t; return ''; }
+  if (campo === 'tipo'){ const t = {item:'item', bug:'bug', melhoria:'melhoria', tarefa:'tarefa', 'tarefa externa':'tarefa'}[ltNorm(txt)]; if (!t) return 'tipo "' + txt + '" não existe: use Item, Bug, Melhoria ou Tarefa'; det.tipo = t; return ''; }
+  if (campo === 'responsavel'){ const n = ltNorm(txt); if (['ninguem','nenhum','sem responsavel'].includes(n)){ det.resp = '-'; return ''; }
+    const ps = D.people.filter(p => p.ativo !== false && p.acesso !== 'stakeholder'); const ex = ps.filter(p => ltNorm(p.nome) === n), com = ps.filter(p => ltNorm(p.nome).startsWith(n));
+    const achou = ex.length === 1 ? ex : com; if (achou.length !== 1) return achou.length ? 'responsável "' + txt + '" é ambíguo: ' + achou.map(p => p.nome).join(', ') : 'responsável "' + txt + '" não está no time';
+    det.resp = achou[0].id; det.respNome = achou[0].nome; return ''; }
+  if (campo === 'prazo'){ const d = ltDataEntrega(txt); if (!d) return 'prazo "' + txt + '" não vale: use dia/mês/ano (ex.: prazo: 15/11/2026)'; det.prazo = d; return ''; }
   if (campo === 'origem'){ det.origemTxt = txt; return ''; }
   if (campo === 'depende'){ det.dependeTxt = det.dependeTxt || []; if (!det.dependeTxt.some(x => ltNorm(x) === ltNorm(txt))) det.dependeTxt.push(txt); return ''; }   // pode repetir: uma linha por item   // conferida no fim: pode ser um item que está mais abaixo no mesmo texto
   return '';
@@ -203,7 +208,9 @@ function ltDetHTML(det){
   const p = [];
   if (det.quem || det.quero || det.para) p.push('<p class="lt-hist">Como ' + esc(det.quem || '...') + ', quero ' + esc(det.quero || '...') + ', para ' + esc(det.para || '...') + '.</p>');
   const chips = [];
-  if (det.tipo && det.tipo !== 'item') chips.push('<span class="lt-chip lt-' + det.tipo + '">' + (det.tipo === 'bug' ? 'Bug' : 'Melhoria') + (det.origemNome ? ' de ' + esc(det.origemNome.trim()) : '') + '</span>');
+  if (det.resp) chips.push('<span class="lt-chip">responsável: ' + esc(det.resp === '-' ? 'ninguém' : det.respNome) + '</span>');
+  if (det.prazo) chips.push('<span class="lt-chip">prazo ' + esc(fmtData(det.prazo)) + '</span>');
+  if (det.tipo && det.tipo !== 'item') chips.push('<span class="lt-chip lt-' + det.tipo + '">' + (det.tipo === 'bug' ? 'Bug' : det.tipo === 'tarefa' ? 'Tarefa externa' : 'Melhoria') + (det.origemNome ? ' de ' + esc(det.origemNome.trim()) : '') + '</span>');
   if (det.classe || det.nivel) chips.push('<span class="lt-chip">' + esc([det.classe ? ({deve:'Deve', deveria:'Deveria', poderia:'Poderia', nao_tera:'Não terá agora'})[det.classe] : '', det.nivel ? 'nível ' + det.nivel : ''].filter(Boolean).join(' · ')) + '</span>');
   if (det.valor) chips.push('<span class="lt-chip">valor ' + det.valor + (det.valorMotivo ? ': ' + esc(det.valorMotivo) : '') + '</span>');
   if (det.pontos) chips.push('<span class="lt-chip">' + det.pontos + ' pts</span>');
@@ -245,6 +252,8 @@ function ltDepender(x, alvoId){
   const ja = x.links.some(l => l.alvo === alvoId && l.tipo === 'Is blocked by') || ((byId('issues', alvoId) || {}).links || []).some(l => l.alvo === x.id && l.tipo === 'Blocks');
   if (!ja) x.links.push({tipo:'Is blocked by', alvo:alvoId});
 }
+// os itens que já existem e o lote vai mexer (para o Desfazer o último lote)
+function ltTocados(r){ const L = []; r.grupos.forEach(g => { if (g.ja) L.push(g.ja.id); g.itens.forEach(i => { if (i.ja) L.push(i.ja.id); }); }); return L; }
 // grava os detalhes num item (novo ou que já existe): só o que veio no texto; nada do que já existe é apagado
 function ltAplicar(x, det){
   if (det.quem) x.hQuem = det.quem; if (det.quero) x.hQuero = det.quero; if (det.para) x.hPara = det.para;
@@ -253,7 +262,10 @@ function ltAplicar(x, det){
   if (det.valor) x.valor = det.valor; if (det.valorMotivo) x.valorMotivo = det.valorMotivo;
   if (det.pontos) x.pontos = det.pontos;
   if (det.origem) x.origem = det.origem;
-  if (det.tipo === 'melhoria') x.melhoria = true; else if (det.tipo === 'item') x.melhoria = false;
+  if (det.tipo === 'melhoria'){ x.melhoria = true; x.externa = false; } else if (det.tipo === 'item'){ x.melhoria = false; x.externa = false; }
+  if (det.tipo === 'tarefa'){ if (x.tipo === 'task') { x.externa = true; x.melhoria = false; } else if (typeof poMudarTipo === 'function') poMudarTipo(x, 'tarefa'); }
+  if (det.resp) x.resp = det.resp === '-' ? null : det.resp;
+  if (det.prazo){ x.fim = det.prazo; x.alvo = det.prazo; if (x.ini && x.ini > det.prazo) x.ini = det.prazo; }
   if (det.tipo === 'bug' && x.tipo !== 'bug' && typeof poMudarTipo === 'function') poMudarTipo(x, 'bug');
   if (det.tipo && det.tipo !== 'bug' && x.tipo === 'bug' && typeof poMudarTipo === 'function') poMudarTipo(x, det.tipo);
   (det.depende || []).forEach(d => { if (d.id) ltDepender(x, d.id); });
@@ -347,7 +359,7 @@ function ltAbrir(){
       if (!novos && !nItens && !sr.atualiza && !sr.versoes && !sr.pronto){ toast(r.erros.length ? 'Corrija os erros da prévia: nada foi gravado' : r.grupos.length ? 'Nada muda: tudo já existe como está' : 'Escreva pelo menos um épico ou um item'); return false; }
       const feitos = [novos ? novos + (novos === 1 ? ' épico' : ' épicos') + ' criado' + (novos === 1 ? '' : 's') : '', nItens ? nItens + (nItens === 1 ? ' item criado' : ' itens criados') : '',
         sr.atualiza ? sr.atualiza + (sr.atualiza === 1 ? ' item atualizado' : ' itens atualizados') : '', sr.versoes ? sr.versoes + (sr.versoes === 1 ? ' versão' : ' versões') : '', sr.pronto ? 'Definição de Pronto atualizada' : ''].filter(Boolean);
-      tfComDesfazer(feitos.join(', ').replace(/, ([^,]*)$/, ' e $1') + (sr.comErro ? '. ' + sr.comErro + (sr.comErro === 1 ? ' com erro ficou de fora' : ' com erro ficaram de fora') : '') + '.', () => {
+      tfComDesfazer(feitos.join(', ').replace(/, ([^,]*)$/, ' e $1') + (sr.comErro ? '. ' + sr.comErro + (sr.comErro === 1 ? ' com erro ficou de fora' : ' com erro ficaram de fora') : '') + '.', () => leRegistrar('Criar em lote', feitos.join(', '), ltTocados(r), () => {
         const pj = noDono(UI.sel), idNova = {};
         const decl = n => (r.vdecl || []).find(v => ltNorm(v.nome) === ltNorm(n) && !v.erros.length);
         r.novasV.forEach(n => { const v = decl(n); if (!v || !v.entrega) return; const m = {id:uid('mc'), no:pj, tipo:'release', nome:v.nome, desc:'', data:v.entrega, vis:true, entregue:null, notas:'', meta:v.meta || ''}; D.marcos.push(m); idNova[ltNorm(n)] = m.id; });
@@ -361,12 +373,12 @@ function ltAbrir(){
           if (ep && g.meta) ep.meta = g.meta;
           g.itens.forEach(i => { if (i.erros.length) return;
             if (i.ja){ const x = byId('issues', i.ja.id); i._feito = x; if (x && ltTemDet(i.det)) ltAplicar(x, i.det); return; }
-            const ni = ltNovo(i.titulo, i.ws, i.det.tipo === 'bug' ? 'bug' : ep ? 'story' : 'task', 'backlog', ep ? ep.id : null, i.mc); i._feito = ni; ltAplicar(ni, i.det); });
+            const ni = ltNovo(i.titulo, i.ws, i.det.tipo === 'bug' ? 'bug' : i.det.tipo === 'tarefa' ? 'task' : ep ? 'story' : 'task', 'backlog', ep ? ep.id : null, i.mc); i._feito = ni; ltAplicar(ni, i.det); });
         });
         // origem apontando para um item deste mesmo texto: liga depois que todos existem
         r.grupos.forEach(g => g.itens.forEach(i => { const o = i.det.origemLote; if (i._feito && o && o._feito && o._feito !== i._feito) i._feito.origem = o._feito.id;
           (i.det.depende || []).forEach(d => { if (d.lote && d.lote._feito && i._feito) ltDepender(i._feito, d.lote._feito.id); }); }));
-      });
+      }));
     }}]);
   const dl = document.querySelector('dialog.modal:last-of-type'); if (!dl) return;
   dl.classList.add('lt-modal');

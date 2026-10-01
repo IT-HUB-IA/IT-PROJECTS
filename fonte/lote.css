@@ -110,3 +110,17 @@ dialog.modal.lt-modal{width:min(1240px, calc(100vw - 32px));max-width:none}
 .lt-ordem b{display:block;font-size:14px;margin-bottom:4px}
 .lt-ordem p{margin:0;line-height:1.5}
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .lt-ordem{background:transparent;color:#FDBA74} }
+
+/* Editar em lote: antes e depois */
+.le-bloco{border:1px solid var(--linha);margin:0 0 10px;padding:8px 10px;display:grid;gap:6px}
+.le-bloco-tit{font-size:13px;overflow-wrap:anywhere}
+.le-item{display:grid;gap:4px}
+.le-item-tit{font-weight:600;font-size:13px;overflow-wrap:anywhere}
+.le-dif{width:100%;border-collapse:collapse;font-size:12.5px;table-layout:fixed}
+.le-dif th{text-align:left;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--tinta-3);padding:3px 6px}
+.le-dif td{padding:4px 6px;border-top:1px solid var(--linha);vertical-align:top;overflow-wrap:anywhere}
+.le-dif td:first-child{width:24%;color:var(--tinta-2)}
+.le-dif td:nth-child(2){color:var(--tinta-3);text-decoration:line-through}
+.le-dif td:nth-child(3){font-weight:600}
+.le-vazio{color:var(--tinta-3)}
+.le-desfazer{border:1px dashed var(--linha)}

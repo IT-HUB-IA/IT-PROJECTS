@@ -59,7 +59,9 @@ function ciLoteMd(ctx){
     '| `nivel` | Só o nível, se não vier junto da prioridade | 1 a 5 | `nivel: 3` |\n' +
     '| `valor` | Valor de negócio, e por que importa | número de 1 a 10, e depois o motivo | `valor: 8 reduz as ligações ao suporte` |\n' +
     '| `pontos` | Estimativa | 1, 2, 3, 5, 8, 13 ou 20 | `pontos: 5` |\n' +
-    '| `tipo` | Tipo do item | `Item`, `Bug` ou `Melhoria` | `tipo: Bug` |\n' +
+    '| `tipo` | Tipo do item | `Item`, `Bug`, `Melhoria` ou `Tarefa` (tarefa externa, que não é desenvolvimento) | `tipo: Bug` |\n' +
+    '| `responsavel` | Quem faz (para a Tarefa externa e para qualquer item) | o nome de alguém do time | `responsavel: Ana` |\n' +
+    '| `prazo` | O prazo | dia/mês/ano | `prazo: 15/11/2026` |\n' +
     '| `origem` | O item de origem (obrigatório no Bug) | a chave de um item que já existe (BL-12), o título de um item (que já existe ou que está neste mesmo texto) ou a posição do item neste texto (`#3` é o 3º item, contando de cima) | `origem: BL-12`, `origem: Cadastro do cliente`, `origem: #1` |\n' +
     '| `depende` | O item só pode começar depois de outro. Repita a linha para cada item de que ele depende | a chave de um item que já existe (BL-12), o título de um item (que já existe ou que está neste texto) ou a posição neste texto (`#3`) | `depende: BL-12`, `depende: Cadastro do cliente`, `depende: #1` |\n' +
     '| `lote` | O nome deste lote (primeira linha do texto, sem recuo) | texto | `lote: Backend` |\n' +
@@ -112,6 +114,44 @@ function ciLoteMd(ctx){
     '**Definição de Pronto de ' + (c.projeto || 'este projeto') + '** (hoje):\n' + (c.dod ? c.dod.split('\n').map(l => l.trim()).filter(Boolean).map(l => (l.startsWith('-') ? l : '- ' + l)).join('\n') : '- (ainda não escrita: pode mandar linhas pronto:)') + '\n\n' +
     '**P.O. do projeto:** ' + (c.po || 'ninguém definido (qualquer um do time aceita)') + '\n\n' +
     (c.itens && c.itens.length ? '**Itens que já existem** (use a chave em `origem:`; repetir o título dentro do mesmo épico atualiza o item):\n' + c.itens.map(n => '- ' + n).join('\n') + '\n\n' : '') +
+    '## Editar em lote (ajustar o que já existe)\n\n' +
+    'Fica em **Editar em lote**, ao lado de Em lote. Serve para corrigir, mover, renomear, cancelar e mudar muitos itens de uma vez. **Não cria itens** (para criar, use o Criar em lote).\n\n' +
+    '### Sintaxe\n\n' +
+    '- Cada bloco começa com **`editar: BL-12`** (a chave) ou **`editar: Título exato`**. Se houver mais de um item com o mesmo título, a linha seguinte é `no épico: Nome do épico`.\n' +
+    '- Para vários itens de uma vez: **`editar todos: épico Nome`**, `editar todos: versão v1.1` ou `editar todos: frente Backend`.\n' +
+    '- Embaixo, **uma mudança por linha**, no formato `campo: valor` (o recuo é opcional). Só escreva o que muda.\n' +
+    '- Linha que começa com `#` é comentário e é ignorada.\n\n' +
+    '| Campo | O que faz | Valores |\n|---|---|---|\n' +
+    '| `titulo` | Renomeia (só com um item, nunca em editar todos) | texto até 300 letras |\n' +
+    '| `como`, `quero`, `para`, `historia` | Troca a história | como no Criar em lote |\n' +
+    '| `prioridade`, `nivel`, `valor`, `pontos` | Troca prioridade, nível, valor e pontos | os mesmos do Criar em lote |\n' +
+    '| `tipo` | Troca o tipo | Item, Bug, Melhoria ou Tarefa |\n' +
+    '| `responsavel`, `prazo` | Troca o responsável e o prazo | nome de alguém do time (ou `ninguém`); dia/mês/ano |\n' +
+    '| `aceite` | Acrescenta um critério (igual a um que já existe é ignorado) | texto |\n' +
+    '| `tirar aceite` | Tira um critério, pelo texto | o texto do critério |\n' +
+    '| `trocar aceites` | Tira todos os critérios antes de pôr os `aceite:` do bloco (substitui) | `sim` |\n' +
+    '| `épico`, `versão`, `frente` | Move para outro épico, versão ou frente | o nome (ou a chave do épico); `nenhum` / `nenhuma` tira |\n' +
+    '| `posição` | Muda o lugar na fila | `topo`, `fim`, `depois de BL-12`, `antes de BL-12` |\n' +
+    '| `depende`, `tirar depende` | Acrescenta ou tira uma dependência | a chave ou o título |\n' +
+    '| `trocar depende` | Tira todas as dependências antes das `depende:` do bloco | `sim` |\n' +
+    '| `arquivar`, `cancelar` | Arquiva ou cancela (não será feito), com o motivo guardado nos comentários. Nada é apagado | o motivo |\n' +
+    '| `reabrir` | Reabre um item arquivado ou cancelado | `sim` |\n' +
+    '| `mudar aceito` | Permite mudar história e critérios de um item já aceito (ele volta para Priorizado) | `sim` |\n' +
+    '| `meta` | A meta do épico (só quando o alvo é um épico) | texto |\n\n' +
+    '### Exemplos\n\n' +
+    '```\n# renomear e trocar prioridade e pontos\neditar: BL-12\n  titulo: Cadastro do pagador com CPF\n  prioridade: Deve 2\n  valor: 9 é o que mais trava o analista\n  pontos: 5\n\n# corrigir a história\neditar: BL-12\n  como: analista\n  quero: cadastrar o pagador com CPF e telefone\n  para: não perder o contato\n\n# critérios: acrescentar, tirar, substituir todos\neditar: BL-12\n  aceite: Mostra a data do cadastro\n  tirar aceite: Funciona no celular\neditar: BL-14\n  trocar aceites: sim\n  aceite: Salva nome e CPF\n  aceite: Avisa CPF repetido\n\n# achar pelo título dentro do épico\neditar: Tela da lista da carteira\n  no épico: Carteira de clientes\n  versão: v1.1\n  frente: Frontend\n\n# mover de épico e mudar a posição na fila\neditar: BL-30\n  épico: Cadastro de pagadores\n  posição: depois de BL-12\n\n# dependências\neditar: BL-31\n  depende: BL-12\n  tirar depende: BL-9\neditar: BL-32\n  trocar depende: sim\n  depende: BL-30\n\n# cancelar, arquivar e reabrir\neditar: BL-20\n  cancelar: virou parte do BL-12\neditar: BL-21\n  arquivar: fica para depois do lançamento\neditar: BL-22\n  reabrir: sim\n\n# vários de uma vez\neditar todos: épico Carteira de clientes\n  versão: v1.2\neditar todos: frente Backend\n  responsavel: Ana\n\n# item já aceito: só com pedido explícito\neditar: BL-5\n  mudar aceito: sim\n  aceite: Mostra o saldo por loja\n\n# tarefa externa\neditar: BL-40\n  tipo: Tarefa\n  responsavel: William\n  prazo: 15/10/2026\n```\n\n' +
+    '### Regras de segurança\n\n' +
+    '1. **A prévia é obrigatória.** Ela mostra, para cada item, uma tabela com o campo, o antes e o depois, e o total de itens afetados.\n' +
+    '2. **Com qualquer erro, nada é gravado**: item que não existe, título ambíguo (dois itens com o mesmo título sem `no épico:`), versão ou frente que não existe, valor inválido, campo desconhecido, critério a tirar que não existe.\n' +
+    '3. **Item aceito é protegido**: mudar a história ou os critérios dele é erro, a não ser com `mudar aceito: sim` (a prévia avisa e o item volta para Priorizado). O caminho normal é criar uma Melhoria.\n' +
+    '4. Tirar um critério **marcado como cumprido** (com `tirar aceite:` ou `trocar aceites:`) mostra um aviso na prévia.\n' +
+    '5. **Nada é apagado**: arquivar e cancelar só escondem o item, com o motivo nos comentários; `reabrir: sim` traz de volta.\n' +
+    '6. **Tudo vai para o histórico** de cada item: o banco grava quem mudou, quando e o que mudou (antes e depois).\n' +
+    '7. **Desfazer o último lote**: o botão aparece no topo do Criar em lote e do Editar em lote e volta os itens a como estavam antes do último lote (criar ou editar).\n' +
+    '8. Use sempre a **chave** (BL-12) quando souber: é o jeito sem erro de achar o item.\n\n' +
+    '## Tarefa externa\n\n' +
+    'É um tipo para o que **não é desenvolvimento** (ex.: marcar o vínculo da 40% no sistema do BL, pedir um acesso, mandar um documento). No Criar em lote: `tipo: Tarefa`, com `responsavel:` e `prazo:`. Aparece na Lista, no Quadro e na Fila com a marca **Externa** e **não conta nos pontos da versão**.\n\n' +
+    '```\nPendências fora do sistema\n- Marcar o vínculo da 40% no sistema do BL\n  tipo: Tarefa\n  responsavel: William\n  prazo: 10/10/2026\n  aceite: O vínculo aparece no cadastro do BL\n```\n\n' +
     '### Roteiro para o agente\n\n' +
     'Você vai ajudar a pessoa a organizar o trabalho de "' + (c.projeto || c.onde || 'este projeto') + '" no CicloDev, como um Product Owner faria.\n\n' +
     '1. Converse com a pessoa para entender o que precisa ser feito. Faça perguntas curtas, uma de cada vez, até entender as entregas (épicos) e os itens de cada uma.\n' +
@@ -121,7 +161,7 @@ function ciLoteMd(ctx){
     '5. Se a entrega for numa versão nova, declare a versão com `versão:` e `entrega:` (a data é obrigatória). Agrupe os itens em épicos que façam sentido para quem vai entregar. Reaproveite os épicos que já existem quando o assunto for o mesmo.\n' +
     '6. Use só as frentes da lista acima. Se nenhuma servir, avise a pessoa em vez de inventar.\n' +
     '7. Use só os valores aceitos da tabela. Na dúvida, deixe o campo de fora: ele pode ser preenchido depois, na tela.\n' +
-    '8. Mostre um resumo e peça confirmação antes de gerar o texto final.\n' +
+    '8. Mostre um resumo e peça confirmação antes de gerar o texto final. Para **ajustar** o que já existe, gere um texto do Editar em lote (com a chave de cada item), nunca um Criar em lote repetido.\n' +
     '9. Se o trabalho for dividido em vários lotes, siga a seção Vários lotes: cada texto começa com `lote:` e `depois de:`, e os arquivos vão numerados na ordem de colar.\n' +
     '10. No fim, entregue **só o texto no formato acima, dentro de um bloco de código**, sem comentários no meio, pronto para colar em **Criar em lote**.\n';
 }

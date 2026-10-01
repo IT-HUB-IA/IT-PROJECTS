@@ -15,13 +15,13 @@ const PO_SITU = {backlog:'Criado', todo:'Priorizado', doing:'Em andamento', revi
 const PO_MOSCOW = [['deve','Deve','sem isso a entrega não vale'],['deveria','Deveria','importante, mas dá para entregar sem'],['poderia','Poderia','bom ter, se sobrar tempo'],['nao_tera','Não terá agora','combinado que fica para depois']];
 const PO_NIVEIS = [[1,'1 · Emergência','só para emergência: largar tudo'],[2,'2 · Mais urgente','o mais urgente do dia a dia'],[3,'3 · Normal','no ritmo normal'],[4,'4 · Pode esperar','entra depois dos outros'],[5,'5 · Ideia','ideia ainda sem detalhe']];
 const PO_PONTOS = [1, 2, 3, 5, 8, 13, 20];
-const PO_TIPOS = [['item','Item','algo novo que a pessoa vai ver ou usar'],['bug','Bug','um critério de aceite que não foi cumprido'],['melhoria','Melhoria','mudança depois de pronto (sempre um item novo)']];
+const PO_TIPOS = [['item','Item','algo novo que a pessoa vai ver ou usar'],['bug','Bug','um critério de aceite que não foi cumprido'],['melhoria','Melhoria','mudança depois de pronto (sempre um item novo)'],['tarefa','Tarefa externa','algo que não é desenvolvimento (ex.: marcar um vínculo em outro sistema); não conta nos pontos da versão']];
 const PO_PRIO_DE_NIVEL = {1:'highest', 2:'high', 3:'medium', 4:'low', 5:'low'};
 const PO_NIVEL_DE_PRIO = {highest:1, high:2, medium:3, low:4, lowest:5};
 const poMoscowNome = v => (PO_MOSCOW.find(m => m[0] === v) || [, ''])[1];
 const poNivel = i => i.nivel != null ? +i.nivel : (PO_NIVEL_DE_PRIO[i.prio] || 3);
 const poTemPO = i => i && !['epic','subtask'].includes(i.tipo);   // os campos do método valem para história, tarefa e bug
-const poTipo = i => i.tipo === 'bug' ? 'bug' : i.melhoria ? 'melhoria' : 'item';
+const poTipo = i => i.tipo === 'bug' ? 'bug' : i.externa ? 'tarefa' : i.melhoria ? 'melhoria' : 'item';
 const poCrit = i => (i.crit || []);
 const poCritConta = i => { const c = poCrit(i); return {f:c.filter(x => x.f).length, n:c.length}; };
 const poGrupo = s => { const st = STATUS.find(x => x.id === s); if (st) return s; const c = (D.statusCustom || []).find(x => x.id === s); return c ? c.grupo : s; };
@@ -51,7 +51,7 @@ montarDados = function(T, eu){
   d.issues.forEach(i => { const r = rI.get(i.id) || {};
     i.hQuem = r.historia_quem || ''; i.hQuero = r.historia_quero || ''; i.hPara = r.historia_para || '';
     i.moscow = r.moscow || null; i.nivel = r.nivel == null ? null : +r.nivel; i.valor = r.valor == null ? null : +r.valor; i.valorMotivo = r.valor_motivo || '';
-    i.melhoria = !!r.melhoria; i.origem = r.origem_id || null; i.voltou = r.voltou_em || null; i.voltouMotivo = r.voltou_motivo || ''; i.meta = r.meta || '';
+    i.melhoria = !!r.melhoria; i.externa = !!r.externa; i.origem = r.origem_id || null; i.voltou = r.voltou_em || null; i.voltouMotivo = r.voltou_motivo || ''; i.meta = r.meta || '';
     i.crit = crit.get(i.id) || []; });
   const rP = new Map((T.projetos || []).map(r => [r.no_id, r]));
   d.projects.forEach(p => { const r = rP.get(p.id) || {}; p.dod = r.definicao_pronto || ''; p.po = r.po_id || null; });
@@ -76,7 +76,7 @@ linhasDaTela = function(d){
     r.historia_quem = txt(i.hQuem, 300); r.historia_quero = txt(i.hQuero, 500); r.historia_para = txt(i.hPara, 500);
     r.moscow = PO_MOSCOW.some(m => m[0] === i.moscow) ? i.moscow : null;
     r.valor = +i.valor >= 1 && +i.valor <= 10 ? Math.round(+i.valor) : null; r.valor_motivo = txt(i.valorMotivo, 300);
-    r.melhoria = !!i.melhoria && i.tipo !== 'bug'; r.origem_id = i.origem && temItem.has(i.origem) && i.origem !== i.id ? i.origem : null;
+    r.melhoria = !!i.melhoria && i.tipo !== 'bug'; r.externa = !!i.externa && i.tipo === 'task'; r.origem_id = i.origem && temItem.has(i.origem) && i.origem !== i.id ? i.origem : null;
     r.voltou_em = i.voltou || null; r.voltou_motivo = i.voltou ? txt(i.voltouMotivo, 1000) : null; r.meta = txt(i.meta, 1000);
     poCrit(i).forEach((c, k) => { if (String(c.t || '').trim()) L.itens_criterios.push({id:garantirId(c), item_id:i.id, texto:String(c.t).trim().slice(0, 500), feito:!!c.f, ordem:k}); });
   });
@@ -107,6 +107,7 @@ function poHistLocal(i, h){
   if (window.ciclodevBanco) setTimeout(() => poHistCarregar(i.id), 2500);
 }
 function poHistTexto(h){
+  if (h.tipo === 'edicao') return 'Editou: ' + (h.texto || '');
   if (h.tipo === 'criterio'){
     const t = '"' + (h.para || h.de || '') + '"';
     return h.texto === 'marcou' ? 'Marcou o critério ' + t : h.texto === 'desmarcou' ? 'Desmarcou o critério ' + t : h.texto === 'tirou' ? 'Tirou o critério ' + t
@@ -291,10 +292,13 @@ function poMudarTipo(i, novo){
     if (D.issues.some(x => x.pai === i.id && !x.arquivado && x.tipo !== 'subtask')){ toast('Este item tem subitens que não são subtarefas: não dá para virar Bug.'); return false; }
     const pai = i.pai && byId('issues', i.pai);
     if (pai && !['epic','story'].includes(pai.tipo)){ toast('Um Bug fica dentro de um épico ou de uma história.'); return false; }
-    i.tipo = 'bug'; i.melhoria = false;
+    i.tipo = 'bug'; i.melhoria = false; i.externa = false;
+  } else if (novo === 'tarefa'){
+    if (D.issues.some(x => x.pai === i.id && !x.arquivado && x.tipo !== 'subtask')){ toast('Este item tem subitens que não são subtarefas: não dá para virar Tarefa externa.'); return false; }
+    i.tipo = 'task'; i.melhoria = false; i.externa = true;
   } else {
-    if (i.tipo === 'bug'){ const pai = i.pai && byId('issues', i.pai); i.tipo = pai && pai.tipo === 'story' ? 'task' : 'story'; }
-    i.melhoria = novo === 'melhoria';
+    if (i.tipo === 'bug' || i.externa){ const pai = i.pai && byId('issues', i.pai); i.tipo = pai && pai.tipo === 'story' ? 'task' : (pai ? 'story' : 'task'); }
+    i.melhoria = novo === 'melhoria'; i.externa = false;
   }
   return true;
 }
@@ -415,7 +419,7 @@ function poChipsHTML(i, curto){
     (curto ? '' : (i.pontos ? '<span class="po-chip po-pts" title="Estimativa">' + i.pontos + ' pts</span>' : '')) +
     (c.n ? '<span class="po-chip po-ck' + (c.f === c.n ? ' ok' : '') + '" title="Critérios de aceite marcados: ' + c.f + ' de ' + c.n + '">✓ ' + c.f + ' de ' + c.n + '</span>' : '') +
     (poDepsAbertas(i).length ? '<span class="po-chip po-dep" title="Depende de ' + esc(poDepsAbertas(i).map(x => poCh(x) + x.titulo).join(', ')) + ', ainda não aceito">depende</span>' : '') +
-    (i.tipo === 'bug' ? '<span class="po-chip po-bug">Bug</span>' : i.melhoria ? '<span class="po-chip po-mel">Melhoria</span>' : '') + '</span>';
+    (i.tipo === 'bug' ? '<span class="po-chip po-bug">Bug</span>' : i.externa ? '<span class="po-chip po-ext" title="Tarefa externa: não é desenvolvimento e não conta nos pontos">Externa</span>' : i.melhoria ? '<span class="po-chip po-mel">Melhoria</span>' : '') + '</span>';
 }
 const _cartaoHTMLPo = cartaoHTML;
 cartaoHTML = function(i){ const h = _cartaoHTMLPo.apply(this, arguments); return h.replace('<div class="bj-badges">', '<div class="bj-badges">' + poChipsHTML(i, true)); };
@@ -483,7 +487,7 @@ document.addEventListener('click', e => {
 
 /* ---------- Entregas: andamento da versão por itens aceitos e por pontos, a meta e a Definição de Pronto ---------- */
 function poAndamentoVersao(m){
-  const its = issuesEm(m.no || UI.sel).filter(i => i.marco === m.id && !i.arquivado && i.tipo !== 'epic');
+  const its = issuesEm(m.no || UI.sel).filter(i => i.marco === m.id && !i.arquivado && i.tipo !== 'epic' && !i.externa);   // tarefa externa não conta
   const ac = its.filter(i => i.status === 'done'), pts = its.reduce((s, i) => s + (+i.pontos || 0), 0), ptsAc = ac.reduce((s, i) => s + (+i.pontos || 0), 0);
   return {n:its.length, ac:ac.length, pts, ptsAc, semPts:its.filter(i => !i.pontos).length};
 }

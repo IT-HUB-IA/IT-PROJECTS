@@ -152,6 +152,48 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
     ok(await p.evaluate(() => { const d = document.querySelector('#gaveta-wrap .po-deps'); return !!d && /Dep base/.test(d.textContent) && d.classList.contains('po-deps-aviso') && /ainda não foi aceito/.test(d.textContent); }), 'a janela do item mostra Depende de, com aviso porque a dependência ainda não foi aceita');
     await p.evaluate(() => { const b = document.querySelector('[data-fechar-gaveta]'); if (b) b.click(); document.querySelectorAll('dialog.modal').forEach(d => { d.close(); d.remove(); }); });
   })();
+  // ---------- Editar em lote e Tarefa externa ----------
+  await (async () => {
+    const espera = async () => { await p.waitForTimeout(600); await p.waitForFunction(() => !window.ciclodevSync.rodando && !window.ciclodevSync.pendente, null, {timeout: 30000}); await p.waitForTimeout(300); };
+    const fechar = () => p.evaluate(() => document.querySelectorAll('dialog.modal').forEach(d => { d.close(); d.remove(); }));
+    // base: cria pelo lote
+    await fechar(); await p.evaluate(() => window.__tf.ltAbrir()); await p.waitForTimeout(300);
+    await p.evaluate(t => { const ta = document.querySelector('#lt-t'); ta.value = t; ta.dispatchEvent(new Event('input')); }, 'Ed épico A\n- Ed um\n  aceite: Critério 1\n  aceite: Critério 2\n- Ed dois\n- Ed três\n- Ed repetido\nEd épico B\n- Ed repetido\n- Ed tarefa\n  tipo: Tarefa\n  prazo: 20/10/2026');
+    await p.click('dialog.lt-modal .modal-rod .btn:not(.sec)'); await espera();
+    ok(conta("select (tipo = 'task' and externa and prazo = '2026-10-20')::text from itens where titulo = 'Ed tarefa'") === 'true', 'tipo: Tarefa cria a tarefa externa, com prazo');
+    const ch = t => conta("select chave from itens where titulo = '" + t + "'");
+    const abrir = async t => { await fechar(); await p.evaluate(() => window.__tf.leAbrir()); await p.waitForTimeout(300);
+      await p.evaluate(t => { const ta = document.querySelector('#le-t'); ta.value = t; ta.dispatchEvent(new Event('input')); }, t); await p.waitForTimeout(400); return p.evaluate(() => document.querySelector('.le-previa').textContent); };
+    const gravar = async () => { await p.click('dialog.le-modal .modal-rod .btn:not(.sec)'); await espera(); };
+    // erros: ambíguo, não existe, valor inválido
+    const pvE = await abrir('editar: Ed repetido\n  pontos: 3\neditar: Item que não existe\n  pontos: 2\neditar: ' + ch('Ed um') + '\n  pontos: 4');
+    ok(/ambíguo: 2 itens/.test(pvE) && /não existe neste projeto/.test(pvE) && /fora da sequência/.test(pvE) && /nada é gravado/.test(pvE), 'Editar em lote: título ambíguo, item que não existe e valor inválido são erro, e nada grava');
+    // edição completa
+    const um = ch('Ed um'), dois = ch('Ed dois'), tres = ch('Ed três');
+    const pv = await abrir('editar: ' + um + '\n  titulo: Ed um renomeado\n  prioridade: Deve 2\n  pontos: 8\n  aceite: Critério 3\n  tirar aceite: Critério 1\n\neditar: Ed repetido\n  no épico: Ed épico B\n  épico: Ed épico A\n  posição: topo\n  depende: ' + dois + '\n\neditar: ' + tres + '\n  cancelar: virou parte do outro\n\neditar todos: épico Ed épico A\n  responsavel: William');
+    ok(/Antes/.test(pv) && /Ed um renomeado/.test(pv) && /Critério 1 \| Critério 2/.test(pv) && /itens afetados/.test(pv) && !/erro/.test(pv), 'a prévia mostra o antes e o depois e o total de itens afetados: ' + (pv.match(/\d+ itens? afetados?/) || [''])[0]);
+    await gravar();
+    ok(conta("select titulo || '|' || moscow || '|' || pontos || '|' || (select string_agg(texto, ',' order by ordem) from itens_criterios c where c.item_id = i.id) from itens i where chave = '" + um + "'") === 'Ed um renomeado|deve|8|Critério 2,Critério 3', 'renomeia, troca prioridade e pontos, acrescenta e tira critério');
+    ok(conta("select count(*) from itens i join itens e on e.id = i.pai_id where i.titulo = 'Ed repetido' and e.titulo = 'Ed épico A'") === '2', 'move o item de épico (achado pelo título dentro do épico)');
+    ok(conta("select count(*) from itens_ligacoes l join itens a on a.id = l.origem_id where a.chave = '" + dois + "' and l.tipo = 'bloqueia'") === '1', 'acrescenta a dependência');
+    ok(conta("select (arquivado_em is not null and resolucao = 'nao_sera_feito')::text from itens where chave = '" + tres + "'") === 'true', 'cancela com motivo, sem apagar');
+    ok(conta("select count(*) from itens i join itens e on e.id = i.pai_id join pessoas p on p.id = i.responsavel_id where e.titulo = 'Ed épico A' and p.nome = 'William'") >= '4', 'editar todos: épico muda todos os itens dele');
+    ok(Number(conta("select count(*) from itens_historico h join itens i on i.id = h.item_id where h.tipo = 'edicao' and i.chave = '" + um + "' and h.texto like '%título:%' and h.pessoa_id is not null")) >= 1, 'o histórico guarda quem e o que mudou (título antes e depois)');
+    // item aceito protegido
+    psql("update itens set status_id = (select id from status_fluxo where no_id is null and chave = 'done') where chave = '" + dois + "'");
+    await p.evaluate(() => window.ciclodevCarregarBanco(null)); await p.waitForTimeout(800);
+    const pvA = await abrir('editar: ' + dois + '\n  como: outra pessoa');
+    ok(/já foi aceito/.test(pvA), 'item aceito: mudar a história sem pedido explícito é erro');
+    const pvB = await abrir('editar: ' + dois + '\n  mudar aceito: sim\n  como: outra pessoa');
+    ok(/volta para Priorizado/.test(pvB) && !/já foi aceito: a história/.test(pvB), 'com mudar aceito: sim, a prévia avisa que volta para Priorizado');
+    // desfazer o último lote
+    await abrir('editar: ' + um + '\n  pontos: 13'); await gravar();
+    ok(conta("select pontos from itens where chave = '" + um + "'") === '13', 'gravou 13 pontos');
+    await fechar(); await p.evaluate(() => window.__tf.leDesfazer()); await p.waitForTimeout(300);
+    await p.evaluate(() => [...document.querySelectorAll('dialog.modal[open] .modal-rod .btn')].pop().click()); await espera();
+    ok(conta("select pontos from itens where chave = '" + um + "'") === '8', 'Desfazer o último lote volta os pontos para 8');
+    await fechar();
+  })();
   // ---------- Quadro, Lista e Fila ----------
   await (async () => {
   const ver = async v => { await p.evaluate(([v, a]) => { const U = window.__tf.UI; U.sel = 'app:' + a; U.view = v; window.__tf.rOperacoes(); }, [v, app]); await p.waitForTimeout(500); };
