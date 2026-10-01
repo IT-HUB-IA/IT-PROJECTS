@@ -32,16 +32,23 @@ const tfErro = e => (e && (e.message || e.error_description || e.details)) || St
 function tfAviso(msg, botoes, ms){
   let a = $('#tf-aviso');
   if (!a){ a = document.createElement('div'); a.id = 'tf-aviso'; a.className = 'tf-aviso'; a.setAttribute('role', 'status'); a.setAttribute('aria-live', 'polite'); document.body.appendChild(a); }
-  const t = $('#toast'); if (t) t.hidden = true;
   a.innerHTML = '<span class="tf-aviso-txt">' + esc(msg) + '</span>' + (botoes || []).map((b, k) => '<button type="button" class="tf-aviso-b" data-tf-aviso="' + k + '">' + esc(b.txt) + '</button>').join('') +
     '<button type="button" class="tf-aviso-x" data-tf-aviso-x aria-label="Fechar aviso">' + ICO.fechar + '</button>';
   a.hidden = false; a._botoes = botoes || [];
-  clearTimeout(a._t); a._t = setTimeout(() => { a.hidden = true; }, ms || 8000);
+  clearTimeout(a._t); a._t = setTimeout(() => { a.hidden = true; tfEmpilharAvisos(); }, ms || 8000);
+  tfEmpilharAvisos();
 }
+// os dois avisos do rodapé (o comum e o que tem Desfazer) nunca ficam um em cima do outro: o comum sobe
+function tfEmpilharAvisos(){
+  const t = $('#toast'), a = $('#tf-aviso'); if (!t) return;
+  t.style.bottom = a && !a.hidden ? (24 + a.offsetHeight + 8) + 'px' : '';
+}
+const _toastTf = toast;
+toast = function(){ const r = _toastTf.apply(this, arguments); tfEmpilharAvisos(); return r; };
 document.addEventListener('click', e => {
   const a = $('#tf-aviso'); if (!a || a.hidden) return;
-  const b = e.target.closest('[data-tf-aviso]'); if (b){ const bt = a._botoes[+b.dataset.tfAviso]; a.hidden = true; if (bt && bt.acao) bt.acao(); return; }
-  if (e.target.closest('[data-tf-aviso-x]')) a.hidden = true;
+  const b = e.target.closest('[data-tf-aviso]'); if (b){ const bt = a._botoes[+b.dataset.tfAviso]; a.hidden = true; tfEmpilharAvisos(); if (bt && bt.acao) bt.acao(); return; }
+  if (e.target.closest('[data-tf-aviso-x]')){ a.hidden = true; tfEmpilharAvisos(); }
 });
 
 /* ---------- desfazer: guarda uma foto dos dados antes da ação ---------- */
