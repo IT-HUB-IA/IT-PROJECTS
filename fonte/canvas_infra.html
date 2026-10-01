@@ -87,8 +87,15 @@
   #svg-arestas{position:absolute;left:-20000px;top:-20000px;width:40000px;height:40000px;overflow:visible;pointer-events:none;z-index:500}
   #camada-nos,#camada-rotulos{position:absolute;left:0;top:0}
   #camada-rotulos{z-index:5000}
-  #svg-fantasma{position:absolute;left:-20000px;top:-20000px;width:40000px;height:40000px;overflow:visible;pointer-events:none;z-index:4000;opacity:.16}
-  #svg-fantasma .aresta{stroke-width:1.6}
+  #svg-fantasma{position:absolute;left:-20000px;top:-20000px;width:40000px;height:40000px;overflow:visible;pointer-events:none;z-index:4000}
+  #svg-fantasma .aresta{stroke-width:1.6;opacity:.55;transition:opacity .15s}
+  /* passar o mouse num card ou grupo (ou selecionar): as linhas dele acendem por cima de tudo, as outras apagam */
+  body.foco-no #g-arestas g[data-aresta]:not(.foco) .aresta{opacity:.1}
+  body.foco-no #svg-fantasma .aresta{opacity:.05}
+  #svg-fantasma .aresta.foco{opacity:1 !important;stroke-width:2.6}
+  #g-arestas g.foco .aresta{stroke-width:3}
+  body.foco-no .rotulo-aresta:not(.foco),body.foco-no .rotulo-ponta:not(.foco){opacity:.12}
+  .rotulo-aresta.foco{border-color:var(--ouro2);z-index:2}
   body.sem-fantasma #svg-fantasma{display:none}
 
   /* ---------- nós ---------- */
@@ -336,8 +343,29 @@
   #busca-n.nada{color:#FF8D8F}
   #busca .bb{width:30px;height:30px}
   #busca .bb svg{width:16px;height:16px}
-  .no.achado{box-shadow:0 0 0 3px rgba(42,157,191,.55), 0 14px 34px -20px #000}
-  .no.achado.sel{box-shadow:0 0 0 4px rgba(255,107,111,.6), 0 0 34px 6px rgba(255,107,111,.25)}
+  #busca{flex-wrap:wrap}
+  #busca-lista{flex:1 1 100%;max-height:min(420px, 55vh);overflow:auto;margin:4px -6px -5px -12px;border-top:1px solid var(--linha2);padding:4px}
+  #busca-lista[hidden]{display:none}
+  .br-grupo{font:700 10.5px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--tinta3);padding:8px 10px 4px}
+  .br-it{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:2px 8px;align-items:center;width:100%;text-align:left;background:none;border:0;border-radius:7px;padding:7px 10px;color:var(--tinta);cursor:pointer;font:inherit}
+  .br-it:hover,.br-it.atual{background:rgba(229,72,77,.14)}
+  .br-it.atual{box-shadow:inset 2px 0 0 var(--ouro)}
+  .br-it svg{width:16px;height:16px;color:var(--tinta2)}
+  .br-tit{font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .br-tipo{font:600 10px var(--mono);letter-spacing:.1em;color:var(--tinta3);text-transform:uppercase}
+  .br-lin{grid-column:2 / 4;font:12px var(--mono);color:var(--tinta2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .br-it mark{background:rgba(255,196,0,.28);color:#FFE08A;border-radius:3px;padding:0 1px}
+  .br-mais{padding:8px 10px;font-size:12px;color:var(--tinta3)}
+  /* com a busca aberta: o que achou brilha, o resto apaga */
+  body.buscando .no:not(.achado):not(.t-grupo){opacity:.22;filter:saturate(.4);transition:opacity .25s, filter .25s}
+  body.buscando .no.t-grupo:not(.achado){opacity:.45}
+  body.buscando .aresta, body.buscando svg.arestas path{opacity:.25}
+  .no.achado{box-shadow:0 0 0 2px #FFC400, 0 0 18px 4px rgba(255,196,0,.45), 0 0 46px 10px rgba(255,196,0,.18);animation:brilhoBusca 1.8s ease-in-out infinite}
+  .no.achado.sel{box-shadow:0 0 0 3px #FFC400, 0 0 26px 8px rgba(255,196,0,.6), 0 0 70px 18px rgba(255,196,0,.25)}
+  @keyframes brilhoBusca{50%{box-shadow:0 0 0 2px #FFC400, 0 0 28px 8px rgba(255,196,0,.6), 0 0 64px 16px rgba(255,196,0,.24)}}
+  @media (prefers-reduced-motion: reduce){ .no.achado{animation:none} }
+  .no li.linha-achada{background:rgba(255,196,0,.18);box-shadow:inset 3px 0 0 #FFC400;border-radius:4px}
+  .no li.linha-achada .tb-n,.no li.linha-achada .tp-texto{color:#FFE08A;font-weight:700}
   .t-texto.achado{box-shadow:none;outline:2px solid rgba(42,157,191,.7);outline-offset:4px}
 
   /* ---------- painel de propriedades ---------- */
@@ -484,11 +512,12 @@
   <canvas id="minimapa" aria-label="Minimapa"></canvas>
   <div id="busca" class="flut" role="search" hidden>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
-    <input id="busca-in" type="search" placeholder="Buscar card por título ou texto" aria-label="Buscar card" autocomplete="off">
+    <input id="busca-in" type="search" placeholder="Buscar tabela, coluna, arquivo, módulo, serviço..." aria-label="Buscar no desenho" autocomplete="off">
     <span id="busca-n" aria-live="polite"></span>
     <button class="bb" id="busca-ant" title="Anterior (Shift + Enter ou ↑)" aria-label="Anterior"></button>
     <button class="bb" id="busca-prox" title="Próximo (Enter ou ↓)" aria-label="Próximo"></button>
     <button class="bb" id="busca-x" title="Fechar (Esc)" aria-label="Fechar busca"></button>
+    <div id="busca-lista" role="listbox" aria-label="Resultados da busca" hidden></div>
   </div>
   <aside id="painel" class="flut" aria-label="Propriedades" hidden></aside>
   <div id="menu" role="menu" hidden></div>
@@ -1112,7 +1141,7 @@ function htmlPainel(){
   return h;
 }
 function irParaNo(q, id){
-  const ir = () => { const n = no(id); if (!n) return; buscaRes = [id]; buscaI = 0; irParaAchado(); };
+  const ir = () => { const n = no(id); if (!n) return; buscaRes = [{q:atualId, id, n, linhas:[], noTitulo:true}]; buscaI = 0; irParaAchado(); };
   if (q && q !== atualId && quadros[q]){ entrarNoQuadro(q); setTimeout(ir, 60); } else ir();
 }
 setInterval(() => { if (Q && Q.nodes.some(n => n.tipo === 'painel') && !interagindo()) render(); }, 60000);
@@ -1393,6 +1422,7 @@ function render(){
     el.style.zIndex = n.tipo === 'grupo' ? String(1 + i) : String(1000 + i);
     el.classList.toggle('sel', sel.has(n.id));
     el.classList.toggle('achado', achados.has(n.id));
+    if (el._linhasAch || achLinhas.has(n.id)){ const L = achLinhas.get(n.id); el.querySelectorAll('li[data-lid], li[data-tid]').forEach(li => li.classList.toggle('linha-achada', !!L && L.has(li.dataset.lid || li.dataset.tid))); el._linhasAch = !!L; }
     i++;
   }
   for (const [id, el] of elsNo) if (!vivos.has(id)){ el.remove(); elsNo.delete(id); }
@@ -1459,7 +1489,20 @@ function rotuloPonta(p, lado, txt, s){
   const x = p.x + d[0] * 26 + (d[0] === 0 ? 14 : 0), y = p.y + d[1] * 24 + (d[1] === 0 ? -13 : 0);
   return '<div class="rotulo-ponta' + (s ? ' sel' : '') + '" style="left:' + x + 'px;top:' + y + 'px">' + esc(txt) + '</div>';
 }
+// cards em foco: o do mouse (e, num grupo, todos os de dentro), os selecionados e os achados na busca
+let focoLinhas = new Set(), focoMouse = null;
+function dentroDoGrupo(g){ const sg = tam(g); return Q.nodes.filter(n => n.id !== g.id && n.tipo !== 'grupo' && n.x >= g.x && n.y >= g.y && n.x + tam(n).w <= g.x + sg.w && n.y + tam(n).h <= g.y + sg.h).map(n => n.id); }
+function calcularFoco(){
+  const f = new Set(); const add = n => { if (!n) return; f.add(n.id); if (n.tipo === 'grupo') dentroDoGrupo(n).forEach(i => f.add(i)); };
+  if (focoMouse) add(no(focoMouse));
+  else { sel.forEach(id => add(no(id))); if (!f.size) achados.forEach(id => add(no(id))); }
+  focoLinhas = f; document.body.classList.toggle('foco-no', f.size > 0 && Q.edges.some(a => f.has(a.de) || f.has(a.para)));
+}
+vp.addEventListener('pointerover', e => { const el = e.target.closest && e.target.closest('.no'); const id = el ? el.dataset.id : null; if (id === focoMouse || (e.buttons && id)) return; focoMouse = id; calcularFoco(); renderArestas(); });
+vp.addEventListener('pointerleave', () => { if (!focoMouse) return; focoMouse = null; calcularFoco(); renderArestas(); });
 function renderArestas(){
+  if (focoMouse && !no(focoMouse)) focoMouse = null;
+  calcularFoco();
   let h = '', r = '', f = '';
   for (const a of Q.edges){
     const A = no(a.de), B = no(a.para);
@@ -1472,11 +1515,12 @@ function renderArestas(){
     const fimU = a.fim ? pontaURL(a.fim, mk) : (a.setas !== 'nenhuma' ? 'url(#m-' + mk + ')' : ''), iniU = a.inicio ? pontaURL(a.inicio, mk) : (a.setas === 'ambas' ? 'url(#m-' + mk + ')' : '');
     const me = fimU ? ' marker-end="' + fimU + '"' : '';
     const ms = iniU ? ' marker-start="' + iniU + '"' : '';
-    if (a.rotuloInicio) r += rotuloPonta(p1, a.deLado, a.rotuloInicio, s);
-    if (a.rotuloFim) r += rotuloPonta(p2, a.paraLado, a.rotuloFim, s);
-    h += '<g data-aresta="' + esc(a.id) + '"' + (s ? ' class="sel"' : '') + '><path class="aresta-hit" d="' + c.d + '"/><path class="aresta' + (a.tracejada ? ' trac' : '') + '" d="' + c.d + '" stroke="' + hex + '"' + me + ms + '/></g>';
-    f += '<path class="aresta' + (a.tracejada ? ' trac' : '') + '" d="' + c.d + '" stroke="' + hex + '"/>';
-    if (a.rotulo) r += '<div class="rotulo-aresta' + (s ? ' sel' : '') + '" data-aresta="' + esc(a.id) + '" style="left:' + c.meio.x + 'px;top:' + c.meio.y + 'px">' + esc(a.rotulo) + (a.nota ? '<i class="rot-nota" title="Tem anotação"></i>' : '') + '</div>';
+    if (a.rotuloInicio) r += rotuloPonta(p1, a.deLado, a.rotuloInicio, s).replace('class="rotulo-ponta', 'class="rotulo-ponta' + fo);
+    if (a.rotuloFim) r += rotuloPonta(p2, a.paraLado, a.rotuloFim, s).replace('class="rotulo-ponta', 'class="rotulo-ponta' + fo);
+    const fo = focoLinhas.size && (focoLinhas.has(a.de) || focoLinhas.has(a.para)) ? ' foco' : '';
+    h += '<g data-aresta="' + esc(a.id) + '"' + (s || fo ? ' class="' + (s ? 'sel' : '') + fo + '"' : '') + '><path class="aresta-hit" d="' + c.d + '"/><path class="aresta' + (a.tracejada ? ' trac' : '') + '" d="' + c.d + '" stroke="' + hex + '"' + me + ms + '/></g>';
+    f += '<path class="aresta' + (a.tracejada ? ' trac' : '') + fo + '" d="' + c.d + '" stroke="' + hex + '"/>';
+    if (a.rotulo) r += '<div class="rotulo-aresta' + (s ? ' sel' : '') + fo + '" data-aresta="' + esc(a.id) + '" style="left:' + c.meio.x + 'px;top:' + c.meio.y + 'px">' + esc(a.rotulo) + (a.nota ? '<i class="rot-nota" title="Tem anotação"></i>' : '') + '</div>';
     else if (a.nota) r += '<div class="nota-aresta" data-aresta="' + esc(a.id) + '" title="Anotação da linha" style="left:' + c.meio.x + 'px;top:' + c.meio.y + 'px">' + ico('nota') + '</div>';
   }
   gAr.innerHTML = h;
@@ -2828,13 +2872,17 @@ function textoDoNo(n){
           (n.topicos || []).map(t => (t.texto || '') + ' ' + (t.nota || '')).join(' '),
           n.tipo === 'quadro' && quadros[n.quadroId] ? quadros[n.quadroId].nome : ''].join(' \n ');
 }
+// o que é cada card, para a lista de resultados
+const ROT_BUSCA = {tabela:'Tabela', modulo:'Módulo', empresa:'Sistema', departamento:'Pessoa', banco:'Banco', servico:'Serviço', cartao:'Cartão', texto:'Texto', grupo:'Grupo', quadro:'Quadro', diagrama:'Desenho', fluxo:'Passo', sequencia:'Sequência', painel:'Painel'};
+let achLinhas = new Map();   // card -> ids das linhas de dentro que bateram (colunas, arquivos, tópicos)
 function abrirBusca(){
-  const b = $('#busca'); b.hidden = false;
+  const b = $('#busca'); b.hidden = false; document.body.classList.add('buscando');
   const inp = $('#busca-in'); inp.focus(); inp.select();
-  if (inp.value.trim()) buscar(false);
+  if (inp.value.trim()) buscar(false); else document.body.classList.remove('buscando');
 }
 function fecharBusca(){
-  $('#busca').hidden = true; achados = new Set(); buscaRes = []; buscaI = -1;
+  $('#busca').hidden = true; $('#busca-lista').hidden = true; document.body.classList.remove('buscando');
+  achados = new Set(); achLinhas = new Map(); buscaRes = []; buscaI = -1;
   render(); vp.focus();
 }
 function mostrarContagem(){
@@ -2843,18 +2891,59 @@ function mostrarContagem(){
   el.textContent = !q ? '' : (buscaRes.length ? (buscaI + 1) + ' de ' + buscaRes.length : 'Nenhum');
   $('#busca-ant').disabled = buscaRes.length < 2; $('#busca-prox').disabled = buscaRes.length < 2;
 }
+// o que dentro do card bateu: colunas e operações da tabela, tópicos (arquivos do módulo), participantes e passos
+function linhasQueBatem(n, q){
+  const r = [], v = (id, rot, txt) => { if (normalizar_(txt).includes(q)) r.push({id, rot, txt}); };
+  (n.linhas || []).forEach(l => v(l.id, 'coluna', l.nome + (l.tipo ? ' ' + l.tipo : '')));
+  (n.operacoes || []).forEach(l => v(l.id, 'operação', l.nome + (l.tipo ? ' ' + l.tipo : '')));
+  (n.topicos || []).forEach(t => v(t.id, n.tipo === 'modulo' ? 'arquivo' : 'tópico', (t.texto || '') + (t.nota ? ' · ' + t.nota : '')));
+  (n.participantes || []).forEach(p => v(p.id, 'participante', p.nome || ''));
+  (n.passos || []).forEach(p => v(p.id, 'passo', p.texto || ''));
+  return r;
+}
+function nomeDoCard(n){ return n.tipo === 'quadro' ? ((quadros[n.quadroId] || {}).nome || n.titulo || 'Quadro') : n.tipo === 'diagrama' && diag(n.diagramaId) ? diag(n.diagramaId).nome : (n.titulo || String(n.texto || '').split('\n')[0] || ROT_BUSCA[n.tipo] || 'Card'); }
 function buscar(viajar){
   const q = normalizar_($('#busca-in').value.trim());
   const atual = buscaRes[buscaI];
-  if (!q){ buscaRes = []; buscaI = -1; achados = new Set(); mostrarContagem(); render(); return; }
-  buscaRes = Q.nodes.filter(n => normalizar_(textoDoNo(n)).includes(q))
-    .sort((a, b) => (a.y - b.y) || (a.x - b.x)).map(n => n.id);
-  achados = new Set(buscaRes);
-  const k = buscaRes.indexOf(atual);
+  const lista = $('#busca-lista');
+  if (!q){ buscaRes = []; buscaI = -1; achados = new Set(); achLinhas = new Map(); lista.hidden = true; document.body.classList.remove('buscando'); mostrarContagem(); render(); return; }
+  document.body.classList.add('buscando');
+  // em todos os quadros do desenho: o quadro aberto primeiro, depois os outros
+  const ids = [atualId].concat(Object.keys(quadros).filter(k => k !== atualId));
+  buscaRes = [];
+  ids.forEach(qid => { const qd = quadros[qid]; if (!qd) return;
+    qd.nodes.slice().sort((a, b) => (a.y - b.y) || (a.x - b.x)).forEach(n => {
+      const linhas = linhasQueBatem(n, q), noTitulo = normalizar_(nomeDoCard(n)).includes(q);
+      if (linhas.length || noTitulo || normalizar_(textoDoNo(n)).includes(q)) buscaRes.push({q:qid, id:n.id, n, linhas, noTitulo});
+    }); });
+  // primeiro o que bateu no nome do card
+  buscaRes.sort((a, b) => (a.q === atualId ? 0 : 1) - (b.q === atualId ? 0 : 1) || (b.noTitulo - a.noTitulo));
+  marcarAchados();
+  const k = atual ? buscaRes.findIndex(r => r.q === atual.q && r.id === atual.id) : -1;
   buscaI = buscaRes.length ? (k >= 0 ? k : 0) : -1;
-  mostrarContagem(); render();
+  mostrarContagem(); desenharLista(q); render();
   clearTimeout(timerBusca);
-  if (viajar !== false && buscaI >= 0) timerBusca = setTimeout(() => irParaAchado(), 260);
+  if (viajar !== false && buscaI >= 0) timerBusca = setTimeout(() => irParaAchado(), 320);
+}
+function marcarAchados(){
+  achados = new Set(buscaRes.filter(r => r.q === atualId).map(r => r.id));
+  achLinhas = new Map(buscaRes.filter(r => r.q === atualId && r.linhas.length).map(r => [r.id, new Set(r.linhas.map(l => l.id))]));
+}
+const realcar = (txt, q) => { const t = String(txt || ''), nt = normalizar_(t), k = nt.indexOf(q); return k < 0 ? esc(t) : esc(t.slice(0, k)) + '<mark>' + esc(t.slice(k, k + q.length)) + '</mark>' + esc(t.slice(k + q.length)); };
+function desenharLista(q){
+  const lista = $('#busca-lista');
+  if (!buscaRes.length){ lista.innerHTML = '<div class="br-mais">Nada com "' + esc($('#busca-in').value.trim()) + '" neste desenho.</div>'; lista.hidden = false; return; }
+  let h = '', grupo = null; const MAX = 80;
+  buscaRes.slice(0, MAX).forEach((r, k) => {
+    if (r.q !== grupo){ grupo = r.q; h += '<div class="br-grupo">' + esc(r.q === atualId ? 'Neste quadro' : 'Em ' + ((quadros[r.q] || {}).nome || 'outro quadro')) + '</div>'; }
+    const t = TIPOS[r.n.tipo] || TIPOS.cartao, l = r.linhas[0];
+    h += '<button type="button" class="br-it' + (k === buscaI ? ' atual' : '') + '" role="option" data-br="' + k + '">' + ico(r.n.icone && ICO[r.n.icone] ? r.n.icone : t.icone) +
+      '<span class="br-tit">' + realcar(nomeDoCard(r.n), q) + '</span><span class="br-tipo">' + esc(r.n.rotuloTipo || ROT_BUSCA[r.n.tipo] || t.rotulo) + '</span>' +
+      (l ? '<span class="br-lin">' + esc(l.rot) + ': ' + realcar(l.txt, q) + (r.linhas.length > 1 ? ' · e mais ' + (r.linhas.length - 1) : '') + '</span>' : '') + '</button>';
+  });
+  if (buscaRes.length > MAX) h += '<div class="br-mais">E mais ' + (buscaRes.length - MAX) + '. Escreva mais para filtrar.</div>';
+  lista.innerHTML = h; lista.hidden = false;
+  const at = lista.querySelector('.br-it.atual'); if (at) at.scrollIntoView({block:'nearest'});
 }
 function passoBusca(d){
   if (!buscaRes.length) return;
@@ -2862,13 +2951,22 @@ function passoBusca(d){
   mostrarContagem(); irParaAchado();
 }
 function irParaAchado(){
-  const n = no(buscaRes[buscaI]); if (!n) return;
-  sel = new Set([n.id]); render(); renderPainel();
-  const s = tam(n), r = vp.getBoundingClientRect();
-  const k = clamp(Math.min(1.15, (r.width * 0.55) / Math.max(s.w, 1), (r.height * 0.55) / Math.max(s.h, 1)), 0.12, 1.4);
-  const alvo = {k, x: r.width / 2 - (n.x + s.w / 2) * k, y: r.height / 2 - (n.y + s.h / 2) * k};
-  viajarPara(alvo);
+  const r = buscaRes[buscaI]; if (!r) return;
+  const ir = () => {
+    marcarAchados();
+    const n = no(r.id); if (!n) return;
+    sel = new Set([n.id]); render(); renderPainel();
+    lista_atual();
+    const s = tam(n), rv = vp.getBoundingClientRect();
+    const k = clamp(Math.min(1.15, (rv.width * 0.55) / Math.max(s.w, 1), (rv.height * 0.55) / Math.max(s.h, 1)), 0.12, 1.4);
+    viajarPara({k, x: rv.width / 2 - (n.x + s.w / 2) * k, y: rv.height / 2 - (n.y + s.h / 2) * k});
+  };
+  if (r.q !== atualId && quadros[r.q]){ const inp = $('#busca-in').value; entrarNoQuadro(r.q); $('#busca').hidden = false; $('#busca-in').value = inp; document.body.classList.add('buscando'); setTimeout(ir, 60); } else ir();
 }
+function lista_atual(){ const l = $('#busca-lista'); if (!l) return; l.querySelectorAll('.br-it').forEach(b => b.classList.toggle('atual', +b.dataset.br === buscaI)); const at = l.querySelector('.br-it.atual'); if (at) at.scrollIntoView({block:'nearest'}); }
+// para os testes automáticos (só leitura do estado e montar um quadro de exemplo)
+window.__cvTeste = {get Q(){ return Q; }, get quadros(){ return quadros; }, get atualId(){ return atualId; }, render, entrarNoQuadro};
+$('#busca-lista').addEventListener('click', e => { const b = e.target.closest('[data-br]'); if (!b) return; buscaI = +b.dataset.br; mostrarContagem(); irParaAchado(); });
 function viajarPara(alvo){
   cancelAnimationFrame(animVista);
   const ini = {x: view.x, y: view.y, k: view.k};
