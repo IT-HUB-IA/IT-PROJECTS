@@ -121,7 +121,7 @@ function pgHojeHTML(chave){
 const _rViewPg = rView;
 rView = function(){
   const r = _rViewPg.apply(this, arguments);
-  try { if ((UI.view === 'dashboard' || UI.view === 'backlog') && UI.modulo === 'operacoes' && cadeia(UI.sel).project){ const c = $('#ops-corpo'); if (c && !$('.pg-hoje', c)) c.insertAdjacentHTML('afterbegin', pgHojeHTML(UI.sel)); } } catch(e){ console.warn('P.O. hoje', e); }
+  try { if (UI.view === 'backlog' && UI.modulo === 'operacoes' && cadeia(UI.sel).project){ const c = $('#ops-corpo'); if (c && !$('.pg-hoje', c)) c.insertAdjacentHTML('afterbegin', pgHojeHTML(UI.sel)); } } catch(e){ console.warn('P.O. hoje', e); }
   return r;
 };
 document.addEventListener('click', e => {

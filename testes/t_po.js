@@ -211,12 +211,18 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   // ---------- O CicloDev como P.O.: O que fazer hoje, Preparado, ordem sugerida, previsão ----------
   await (async () => {
     await p.evaluate(() => document.querySelectorAll('dialog.modal').forEach(d => { d.close(); d.remove(); }));
-    const r = await p.evaluate(a => { const D = window.__tf.D, U = window.__tf.UI; U.sel = 'app:' + a; U.view = 'dashboard'; window.__tf.rOperacoes();
+    const r = await p.evaluate(a => { const D = window.__tf.D, U = window.__tf.UI; U.sel = 'app:' + a; U.view = 'calendar'; U.calModo = 'semana'; window.__tf.rOperacoes();
       const ws = new Set(D.ws.filter(w => w.app === a).map(w => w.id)); const its = D.issues.filter(i => ws.has(i.ws) && i.tipo === 'story' && !i.arquivado && i.status !== 'done');
       const i = its[0]; i.hQuem = 'a'; i.hQuero = 'b'; i.hPara = 'c'; i.crit = [{t:'x', f:false}]; i.moscow = 'deve'; i.valor = 5; i.pontos = 3; const rel = D.marcos.find(m => m.tipo === 'release'); i.marco = rel ? rel.id : i.marco; const semV = Object.assign({}, i, {marco:null}); const j = its[1]; if (j){ j.pontos = 20; j.hQuem = ''; }
       return {ok:window.__tf.pgPreparo(i).ok, semVersao:!window.__tf.pgPreparo(semV).ok, grande:j ? window.__tf.pgPreparo(j).grande : true, hoje:!!document.querySelector('#ops-corpo .pg-hoje'), acoes:window.__tf.pgAcoes('app:' + a).length}; }, app);
     ok(r.ok && r.semVersao && r.grande, 'selo Preparado: item completo fica preparado; sem versão não; item de 20 pontos é grande demais');
-    ok(r.hoje && r.acoes > 0, 'o Painel mostra O que fazer hoje com sugestões (' + r.acoes + ')');
+    const lugar = await p.evaluate(a => { const U = window.__tf.UI; U.sel = 'app:' + a; U.view = 'dashboard'; window.__tf.rOperacoes(); const noPainel = !!document.querySelector('#ops-corpo .pg-hoje');
+      U.view = 'calendar'; window.__tf.rOperacoes(); const lado = document.querySelector('#ops-corpo .cl-grade.com-lado'); const cal = lado && lado.querySelector('.cl-principal'), card = lado && lado.querySelector('.cl-lado .pg-hoje');
+      return {noPainel, ok:!!(cal && card && cal.getBoundingClientRect().left < card.getBoundingClientRect().left)}; }, app);
+    ok(!lugar.noPainel && lugar.ok, 'O que fazer hoje saiu do Painel e fica à direita do calendário');
+    for (const m of ['mes', 'semana', 'dia', 'agenda']){ const t = await p.evaluate(m => { const U = window.__tf.UI; U.calModo = m; window.__tf.rOperacoes(); return {h:!!document.querySelector('.cl-cab h3'), nums:document.querySelectorAll('.cl-nums .cl-num').length}; }, m); ok(t.h && t.nums === 5, 'calendário no modo ' + m + ': cabeçalho e os 5 números do período'); }
+    await p.evaluate(() => { window.__tf.UI.calModo = 'semana'; window.__tf.rOperacoes(); });
+    ok(r.hoje && r.acoes > 0, 'o Calendário mostra O que fazer hoje à direita, com sugestões (' + r.acoes + ')');
     await p.evaluate(a => { const U = window.__tf.UI; U.sel = 'app:' + a; U.view = 'backlog'; window.__tf.rOperacoes(); }, app); await p.waitForTimeout(300);
     await p.click('[data-po-ordenar]'); await p.waitForTimeout(300);
     ok(await p.evaluate(() => /Por que está aqui/.test((document.querySelector('dialog.modal[open]') || {}).textContent || '')), 'Ordenar pela prioridade abre a ordem sugerida com o porquê de cada lugar e o Aplicar');
@@ -226,7 +232,7 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
       const j = Object.assign({}, D.issues.find(i => ws.has(i.ws) && i.hQuero === 'b'), {pontos:20}); const antes = window.__tf.pgPreparo(j).grande; pj.poLimites = {grande:21}; const depois = window.__tf.pgPreparo(j).grande; pj.poLimites = {}; return {antes, depois}; }, app);
     ok(lim.antes && !lim.depois, 'limite de pontos por projeto: com limite 21, o item de 20 pontos deixa de ser grande demais');
     // guia Montar o projeto
-    await p.evaluate(a => { const U = window.__tf.UI; U.sel = 'app:' + a; U.view = 'dashboard'; window.__tf.rOperacoes(); }, app); await p.waitForTimeout(300);
+    await p.evaluate(a => { const U = window.__tf.UI; U.sel = 'app:' + a; U.view = 'calendar'; U.calModo = 'semana'; window.__tf.rOperacoes(); }, app); await p.waitForTimeout(300);
     await p.click('[data-pg-guia]'); await p.waitForTimeout(400);
     ok(await p.evaluate(() => /9 passos curtos/.test(document.querySelector('dialog.pg-guia-modal[open]').textContent) && document.querySelectorAll('dialog.pg-guia-modal .pg-g-lado li').length === 9), 'o guia Montar o projeto abre com a abertura e os 9 passos');
     await p.evaluate(() => document.querySelector('dialog.pg-guia-modal [data-pg-g-ir="0"]').click()); await p.waitForTimeout(200);

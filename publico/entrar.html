@@ -3154,6 +3154,138 @@ dialog.modal.pg-guia-modal{width:min(1000px, calc(100vw - 32px));max-width:none}
 .pg-g-conf.ok{color:#15803D;font-weight:700}
 .pg-g-faq{display:grid;gap:6px;font-size:13px;padding:10px 12px;background:var(--preto-04)}
 .pg-g-faq p{margin:4px 0 0}
+/* ===== Calendário (visual novo) ===== */
+.cl-grade{display:grid;gap:20px;align-items:start}
+.cl-grade.com-lado{grid-template-columns:minmax(0,1fr) 320px}
+@media (max-width:1280px){ .cl-grade.com-lado{grid-template-columns:minmax(0,1fr)} }
+.cl-principal{min-width:0;display:grid;gap:14px}
+.cl-lado{position:sticky;top:12px;min-width:0}
+.cl-lado .pg-hoje{margin:0;padding:18px;border:0;border-top:4px solid var(--vermelho);background:var(--branco);box-shadow:0 1px 0 #E6E6EA,0 12px 32px -18px rgba(5,5,6,.35)}
+.cl-lado .pg-hoje header{display:grid;gap:10px}
+.cl-lado .pg-hoje header b{font-family:var(--font-display);font-size:20px;letter-spacing:-.01em}
+.cl-lado .pg-hoje ol{padding:0;list-style:none;counter-reset:pgh;gap:0}
+.cl-lado .pg-hoje li{counter-increment:pgh;position:relative;display:grid;gap:8px;padding:12px 0 12px 34px;border-top:1px solid #EDEDF0}
+.cl-lado .pg-hoje li::before{content:counter(pgh);position:absolute;left:0;top:12px;width:22px;height:22px;display:grid;place-items:center;background:var(--preto);color:var(--branco);font:700 12px/1 var(--font-display)}
+.cl-lado .pg-hoje li:first-child::before{background:var(--vermelho)}
+.cl-lado .pg-hoje li > div{flex:none}
+
+/* cabeçalho */
+.cl-cab{display:flex;align-items:flex-end;gap:12px 16px;flex-wrap:wrap;margin:0}
+.cl-tit{display:grid;gap:2px;min-width:240px}
+.cl-tit small{font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--vermelho)}
+.cl-tit h3{margin:0;font-family:var(--font-display);font-size:32px;font-weight:700;letter-spacing:-.03em;line-height:1.05}
+.cl-tit h3::first-letter{text-transform:uppercase}
+.cl-nav{display:inline-flex}
+.cl-nav .btn{height:36px;min-width:36px;justify-content:center;margin-left:-1px}
+.cl-seg{border-color:var(--preto)}
+.cl-seg button{height:36px;padding:0 16px;font-size:13px;border-right-color:#E2E2E6}
+.cl-seg button:hover{background:#F4F4F6}
+.cl-seg button[aria-pressed="true"]{background:var(--preto);color:var(--branco)}
+
+/* números do período */
+.cl-nums{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+@media (max-width:900px){ .cl-nums{grid-template-columns:repeat(3,minmax(0,1fr))} }
+.cl-num{display:grid;gap:2px;padding:10px 14px;background:var(--branco);border:1px solid #E6E6EA;border-top:3px solid var(--preto)}
+.cl-num b{font-family:var(--font-display);font-size:26px;line-height:1.1;font-variant-numeric:tabular-nums}
+.cl-num span{font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--text-secondary)}
+.cl-num.ruim{border-top-color:var(--vermelho)} .cl-num.ruim b{color:var(--vermelho)}
+.cl-num.bom{border-top-color:var(--st-done)}
+
+.cl-corpo{background:var(--branco);border:1px solid #E2E2E6;box-shadow:0 12px 32px -22px rgba(5,5,6,.35);overflow-x:auto}
+
+/* cores da situação */
+.cl-todo,.cl-backlog{--c:var(--st-todo)} .cl-backlog{--c:var(--st-backlog)}
+.cl-doing{--c:var(--st-doing)} .cl-review{--c:var(--st-review)} .cl-blocked{--c:var(--st-blocked)}
+.cl-done{--c:var(--st-done)} .cl-atraso{--c:var(--vermelho)}
+
+/* itens */
+.ev.cl-ev{display:grid;gap:1px;padding:5px 8px;border:0;border-left:3px solid var(--c,var(--grafite));background:color-mix(in srgb,var(--c,var(--grafite)) 13%,var(--branco));font-size:12px;line-height:1.3;cursor:pointer;transition:transform var(--dur) var(--ease-out),box-shadow var(--dur) var(--ease-out)}
+.ev.cl-ev:hover{transform:translateY(-1px);box-shadow:0 6px 14px -8px rgba(5,5,6,.45)}
+.cl-ev-t{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cl-ev-m{font-size:11px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ev.cl-ev.cl-done .cl-ev-t{text-decoration:line-through;color:var(--grafite)}
+.ev.cl-ev.cl-atraso{background:color-mix(in srgb,var(--vermelho) 12%,var(--branco))}
+.ev.cl-ev.cl-atraso .cl-ev-t::before{content:'! ';color:var(--vermelho);font-weight:800}
+.ev.cl-marco{border:0;background:var(--preto);color:var(--branco);font-size:11.5px;font-weight:700;padding:4px 8px;letter-spacing:.01em}
+.ev.cl-marco.rc-ev-release{background:var(--st-review)}
+
+/* mês */
+.cl-mes{border:0;min-width:620px}
+.cl-mes .dsem{background:var(--preto);color:var(--branco);border-color:var(--preto);padding:10px 12px;font-size:11px;letter-spacing:.2em}
+.cl-mes .dsem.fds{color:var(--nevoa)}
+.cl-dia{min-height:118px;padding:6px;overflow:hidden;gap:5px;border-color:#ECECEF;transition:background var(--dur) var(--ease-out)}
+.cl-dia:hover{background:#FAFAFB}
+.cl-dia.fds{background:#FAFAFB}
+.cl-dia.fora{background:#F6F6F8} .cl-dia.fora > *{opacity:.45}
+.cl-dia-cab{display:flex;align-items:center;gap:6px;min-height:26px}
+.cl-dia .dn{font-family:var(--font-display);font-size:18px;font-weight:700;line-height:1;min-width:26px}
+.cl-dia.passou:not(.hoje) .dn{color:var(--text-secondary);font-weight:500}
+.cl-dia.hoje{background:color-mix(in srgb,var(--vermelho) 4%,var(--branco));box-shadow:inset 0 3px 0 var(--vermelho)}
+.cl-dia.hoje .dn{background:var(--vermelho);color:var(--branco);padding:4px 6px}
+.cl-hoje-tag{font-size:10px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--vermelho)}
+.cl-carga{display:inline-block;width:36px;height:3px;background:#ECECEF;margin-left:auto;position:relative}
+.cl-carga i{position:absolute;inset:0 auto 0 0;background:var(--nevoa)}
+.cl-mais{align-self:flex-start;border:0;background:none;padding:2px 0;font:700 11.5px var(--font-body);color:var(--vermelho);cursor:pointer}
+.cl-mais:hover{text-decoration:underline}
+.cl-dia.sobre{outline:2px dashed var(--vermelho);outline-offset:-4px;background:color-mix(in srgb,var(--vermelho) 5%,var(--branco))}
+
+/* semana e dia */
+.cl-semana{border:0;grid-template-columns:58px repeat(var(--dias,7),minmax(84px,1fr))}
+.cl-semana .h,.cl-semana .cel,.cl-semana .topo,.cl-semana .dia-todo{border-color:#ECECEF}
+.cl-semana .cl-canto{background:var(--preto);border-color:var(--preto)}
+.cl-semana .topo.cl-topo{display:grid;gap:2px;padding:10px 12px;background:var(--preto);color:var(--branco);border-color:#26262A !important;position:sticky;top:0;z-index:3}
+.cl-semana .cl-topo .cl-sem{font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--nevoa)}
+.cl-semana .cl-topo .cl-n{font-family:var(--font-display);font-size:28px;font-weight:700;line-height:1}
+.cl-semana .cl-topo.fds .cl-n{color:var(--nevoa)}
+.cl-semana .topo.cl-topo.hoje{background:var(--vermelho);box-shadow:none}
+.cl-semana .cl-topo.hoje .cl-sem{color:var(--branco)}
+.cl-carga-l{display:flex;align-items:center;gap:8px;margin-top:4px}
+.cl-semana .cl-topo .cl-carga{margin:0;background:rgba(255,255,255,.22)}
+.cl-semana .cl-topo .cl-carga i{background:var(--branco)}
+.cl-semana .cl-topo .carga-dia{color:rgba(255,255,255,.75);font-size:11px}
+.cl-semana .h{padding:6px 8px 0;font-size:11px;font-weight:600;color:var(--text-secondary)}
+.cl-h-prazo{display:flex;align-items:flex-start;justify-content:flex-end;font-weight:800 !important;letter-spacing:.12em;text-transform:uppercase;font-size:10px !important;color:var(--vermelho) !important}
+.cl-semana .dia-todo{min-height:56px;padding:6px;gap:4px;background:#FAFAFB;border-bottom:2px solid #E2E2E6}
+.cl-semana .dia-todo.sobre{outline:2px dashed var(--vermelho);outline-offset:-3px}
+.cl-semana .cel{height:var(--alt,48px);background-image:linear-gradient(to bottom,transparent calc(50% - .5px),#F3F3F5 calc(50% - .5px),#F3F3F5 calc(50% + .5px),transparent calc(50% + .5px));cursor:cell}
+.cl-semana .cel:hover{background-color:#F7F7F9}
+.cl-semana .cel.fds,.cl-semana .dia-todo.fds{background-color:#F8F8FA}
+.cl-semana .cel.hoje{background-color:color-mix(in srgb,var(--vermelho) 3%,var(--branco))}
+.cl-agora{position:absolute;left:0;right:0;height:2px;background:var(--vermelho);z-index:2;pointer-events:none}
+.cl-agora::before{content:'';position:absolute;left:-5px;top:-4px;width:10px;height:10px;background:var(--vermelho);border-radius:50%}
+.ev.cl-bloco{display:grid;align-content:start;gap:1px;padding:4px 8px;background:var(--preto);color:var(--branco);border:0;border-left:3px solid var(--vermelho);font-size:12px;box-shadow:0 8px 18px -10px rgba(5,5,6,.6);cursor:pointer}
+.ev.cl-bloco b{font-size:10.5px;letter-spacing:.06em;color:var(--nevoa);font-variant-numeric:tabular-nums}
+.ev.cl-bloco span{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* agenda */
+.cl-agenda{border:0}
+.cl-ag-dia{grid-template-columns:132px minmax(0,1fr) !important;border-color:#ECECEF !important}
+.cl-ag-data{display:grid;align-content:start;justify-items:start;gap:2px;padding:14px 16px;background:#FAFAFB !important;border-right:1px solid #ECECEF}
+.cl-ag-data .cl-sem{font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--text-secondary)}
+.cl-ag-data .cl-n{font-family:var(--font-display);font-size:34px;font-weight:700;line-height:1}
+.cl-ag-data .cl-mes-c{font-size:12px;text-transform:uppercase;letter-spacing:.14em;color:var(--text-secondary)}
+.cl-ag-dia.hoje .cl-ag-data{background:var(--vermelho) !important;color:var(--branco)}
+.cl-ag-dia.hoje .cl-ag-data .cl-sem,.cl-ag-dia.hoje .cl-ag-data .cl-mes-c,.cl-ag-dia.hoje .cl-hoje-tag{color:var(--branco)}
+.cl-ag-dia.passou .cl-ag-data .cl-n{color:var(--text-secondary)}
+.cl-ag-it{grid-template-columns:12px minmax(0,1fr) 150px 40px !important;gap:14px !important;padding:12px 16px !important;border-left:3px solid transparent}
+.cl-ag-it:hover{border-left-color:var(--c,var(--preto))}
+.cl-ponto{width:10px;height:10px;background:var(--c,var(--grafite))}
+.cl-ag-tit{display:grid;gap:2px;font-weight:600;min-width:0}
+.cl-ag-tit small{font-weight:400;font-size:12px;color:var(--text-secondary)}
+.cl-ag-st{font-size:12px;font-weight:700;color:var(--c,var(--grafite))}
+.cl-ag-it.cl-done .cl-ag-tit{text-decoration:line-through;color:var(--grafite)}
+@media (max-width:720px){ .cl-ag-dia{grid-template-columns:1fr !important} .cl-ag-it{grid-template-columns:12px minmax(0,1fr) !important} .cl-ag-st,.cl-ag-av{display:none} }
+
+/* legenda */
+.cl-leg{margin:0;align-items:center}
+.cl-l{width:14px !important;height:10px !important;border:0 !important;background:var(--c)}
+.cl-l.cl-marco-l{background:var(--preto)}
+.cl-dica{margin-left:auto;color:var(--text-secondary)}
+
+.cl-semana .topo.cl-topo{padding:8px 10px}
+.cl-semana .cl-topo .carga-dia{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cl-lado .pg-hoje li small{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.cl-cab .espaco{flex:1 1 0}
 
   .conteudo.sem-pad{padding:0;display:flex;flex-direction:column;flex:1}
   .conteudo.sem-pad > div{flex:1;display:flex;flex-direction:column}
@@ -15490,7 +15622,7 @@ function pgHojeHTML(chave){
 const _rViewPg = rView;
 rView = function(){
   const r = _rViewPg.apply(this, arguments);
-  try { if ((UI.view === 'dashboard' || UI.view === 'backlog') && UI.modulo === 'operacoes' && cadeia(UI.sel).project){ const c = $('#ops-corpo'); if (c && !$('.pg-hoje', c)) c.insertAdjacentHTML('afterbegin', pgHojeHTML(UI.sel)); } } catch(e){ console.warn('P.O. hoje', e); }
+  try { if (UI.view === 'backlog' && UI.modulo === 'operacoes' && cadeia(UI.sel).project){ const c = $('#ops-corpo'); if (c && !$('.pg-hoje', c)) c.insertAdjacentHTML('afterbegin', pgHojeHTML(UI.sel)); } } catch(e){ console.warn('P.O. hoje', e); }
   return r;
 };
 document.addEventListener('click', e => {
@@ -15667,6 +15799,95 @@ document.addEventListener('change', e => {
 new MutationObserver(() => { if ($('dialog.pg-guia-modal[open]')) setTimeout(pgGuiaDesenhar, 50); }).observe(document.body, {childList:true});
 
 if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {cadeia, pgGuiaAbrir, pgGuiaProgresso, pgLimites, pgPreparo, pgAcoes, pgPrevisao, pgOrdemSugerida, abrirItem, mudarStatus});
+
+/* ===== Calendário (visual novo) =====
+   Mês, semana, dia e agenda com o mesmo comportamento de antes (arrastar para mudar o prazo, clicar no horário
+   vazio para reservar um bloco, puxar a borda do bloco), num desenho mais claro:
+   - cabeçalho com o período em destaque e os números do período (prazos, atrasados, entregas, horas previstas);
+   - dias com o número grande, a barra de carga do dia, hoje em vermelho e o fim de semana mais apagado;
+   - na semana e no dia, a linha da hora de agora;
+   - itens com a cor da situação e o responsável;
+   - à direita, quando há um projeto escolhido, a lista "O que fazer hoje" (que saiu do Painel). */
+const CL_HORAS = Array.from({length:12}, (_, k) => 8 + k);
+const CL_ALT = 48;   // altura de uma hora, em px
+const clStatusCor = i => i.status === 'done' ? 'done' : atrasado(i) ? 'atraso' : i.status;
+const clNomeSt = i => (typeof PO_SITU !== 'undefined' && poTemPO(i) ? PO_SITU[poSituacao(i)] : null) || stNome(i.status);
+function clEv(i, compacto){
+  const p = pessoa(i.resp);
+  return '<div class="ev cl-ev cl-' + clStatusCor(i) + '" draggable="' + podeEditar() + '" data-item="' + i.id + '" title="' + esc(i.titulo + ' · ' + clNomeSt(i) + (p ? ' · ' + p.nome : '')) + '">' +
+    '<span class="cl-ev-t">' + esc(i.titulo) + '</span>' + (compacto ? '' : '<span class="cl-ev-m">' + esc(clNomeSt(i)) + (p ? ' · ' + esc(ini(p.nome)) : '') + '</span>') + '</div>';
+}
+function clMarcos(di){
+  const ms = typeof marcosDoEscopo === 'function' ? marcosDoEscopo(UI.sel) : [];
+  return ms.filter(m => m.data === di).map(m => '<div class="ev marco cl-marco rc-ev-' + m.tipo + '" title="' + esc((m.tipo === 'release' ? 'Versão' : 'Marco') + ': ' + m.nome) + '">◆ ' + esc(m.nome) + '</div>').join('') +
+    D.projects.filter(p => p.alvo === di).map(p => '<div class="ev marco cl-marco" title="Entrega prevista do projeto">◆ Entrega: ' + esc(p.nome) + '</div>').join('');
+}
+function clNumeros(l, dias){
+  const set = new Set(dias.map(iso)), its = l.filter(i => set.has(i.fim));
+  const ms = (typeof marcosDoEscopo === 'function' ? marcosDoEscopo(UI.sel) : []).filter(m => set.has(m.data)).length;
+  const horas = dias.reduce((s, d) => s + cargaDoDia(iso(d)), 0);
+  const n = (v, rot, cls) => '<div class="cl-num' + (cls ? ' ' + cls : '') + '"><b>' + v + '</b><span>' + rot + '</span></div>';
+  return '<div class="cl-nums">' + n(its.length, its.length === 1 ? 'prazo' : 'prazos') + n(its.filter(i => atrasado(i)).length, 'atrasados', its.some(i => atrasado(i)) ? 'ruim' : '') +
+    n(its.filter(i => i.status === 'done').length, 'concluídos', 'bom') + n(ms, ms === 1 ? 'entrega' : 'entregas') + n(Math.round(horas) + 'h', 'previstas') + '</div>';
+}
+vCalendar = function(){
+  const ref = parse(UI.calRef) || HOJE, hoje = iso(HOJE), agora = new Date();
+  const l = listaFiltrada();
+  const modos = [['mes','Mês'],['semana','Semana'],['dia','Dia'],['agenda','Agenda']];
+  const fds = d => d.getDay() === 0 || d.getDay() === 6;
+  let titulo = '', sub = '', corpo = '', dias = [];
+  if (UI.calModo === 'mes'){
+    titulo = MESES[ref.getMonth()]; sub = String(ref.getFullYear());
+    const primeiro = new Date(ref.getFullYear(), ref.getMonth(), 1), ini0 = dAdd(primeiro, -primeiro.getDay());
+    dias = Array.from({length:new Date(ref.getFullYear(), ref.getMonth() + 1, 0).getDate()}, (_, k) => new Date(ref.getFullYear(), ref.getMonth(), k + 1));
+    const cargas = Array.from({length:42}, (_, k) => cargaDoDia(iso(dAdd(ini0, k)))), maxC = Math.max(8, ...cargas);
+    corpo = '<div class="mes cl-mes">' + DSEM.map((d, k) => '<div class="dsem' + (k === 0 || k === 6 ? ' fds' : '') + '">' + d + '</div>').join('');
+    for (let k = 0; k < 42; k++){
+      const d = dAdd(ini0, k), di = iso(d), its = l.filter(i => i.fim === di);
+      corpo += '<div class="dia cl-dia' + (d.getMonth() !== ref.getMonth() ? ' fora' : '') + (di === hoje ? ' hoje' : '') + (fds(d) ? ' fds' : '') + (di < hoje ? ' passou' : '') + '" data-soltar-data="' + di + '">' +
+        '<div class="cl-dia-cab"><span class="dn">' + d.getDate() + '</span>' + (di === hoje ? '<span class="cl-hoje-tag">Hoje</span>' : '') + (cargas[k] >= 1 ? '<span class="cl-carga" title="' + cargas[k].toFixed(0) + 'h previstas"><i style="width:' + Math.min(100, cargas[k] / maxC * 100) + '%"></i></span>' : '') + '</div>' +
+        clMarcos(di) + its.slice(0, 3).map(i => clEv(i, true)).join('') +
+        (its.length > 3 ? '<button class="cl-mais" type="button" data-cal-dia="' + di + '">+' + (its.length - 3) + ' itens</button>' : '') + '</div>';
+    }
+    corpo += '</div>';
+  } else if (UI.calModo === 'semana' || UI.calModo === 'dia'){
+    dias = UI.calModo === 'dia' ? [ref] : Array.from({length:7}, (_, k) => dAdd(ref, k - ref.getDay()));
+    if (UI.calModo === 'dia'){ titulo = DSEM[ref.getDay()] + ', ' + ref.getDate(); sub = MESES[ref.getMonth()] + ' de ' + ref.getFullYear(); }
+    else { const a = dias[0], b = dias[6]; titulo = a.getDate() + (a.getMonth() !== b.getMonth() ? ' de ' + MESES[a.getMonth()] : '') + ' a ' + b.getDate() + ' de ' + MESES[b.getMonth()]; sub = 'Semana · ' + b.getFullYear(); }
+    const cargas = dias.map(d => cargaDoDia(iso(d))), maxC = Math.max(8, ...cargas);
+    corpo = '<div class="semana cl-semana" style="--dias:' + dias.length + ';--alt:' + CL_ALT + 'px"><div class="topo cl-canto"></div>' +
+      dias.map((d, k) => { const di = iso(d); return '<div class="topo cl-topo' + (di === hoje ? ' hoje' : '') + (fds(d) ? ' fds' : '') + '"><span class="cl-sem">' + DSEM[d.getDay()] + '</span><span class="cl-n">' + d.getDate() + '</span>' +
+        '<span class="cl-carga-l"><span class="cl-carga" title="' + cargas[k].toFixed(0) + 'h previstas"><i style="width:' + Math.min(100, cargas[k] / maxC * 100) + '%"></i></span><small class="carga-dia">' + cargas[k].toFixed(0) + 'h</small></span></div>'; }).join('') +
+      '<div class="h cl-h-prazo">Prazo</div>' + dias.map(d => '<div class="dia-todo' + (fds(d) ? ' fds' : '') + '" data-soltar-data="' + iso(d) + '">' + clMarcos(iso(d)) + l.filter(i => i.fim === iso(d)).map(i => clEv(i)).join('') + '</div>').join('');
+    CL_HORAS.forEach(hh => {
+      corpo += '<div class="h">' + String(hh).padStart(2, '0') + ':00</div>';
+      dias.forEach(d => {
+        const di = iso(d), blocos = l.filter(i => i.bloco && i.bloco.data === di && parseInt(i.bloco.ini, 10) === hh);
+        const linha = di === hoje && agora.getHours() === hh ? '<span class="cl-agora" style="top:' + (agora.getMinutes() / 60 * CL_ALT) + 'px" aria-hidden="true"></span>' : '';
+        corpo += '<div class="cel' + (fds(d) ? ' fds' : '') + (di === hoje ? ' hoje' : '') + '" data-bloco-dia="' + di + '" data-bloco-hora="' + hh + '">' + linha + blocos.map(i => { const [h1, m1] = i.bloco.ini.split(':').map(Number), [h2, m2] = i.bloco.fim.split(':').map(Number); const dur = Math.max(0.5, (h2 + m2 / 60) - (h1 + m1 / 60));
+          return '<div class="ev bloco bloco-abs cl-bloco" data-abrir-item="' + i.id + '" style="top:' + (m1 / 60 * CL_ALT) + 'px;height:' + (dur * CL_ALT - 3) + 'px"><b>' + esc(i.bloco.ini + '–' + i.bloco.fim) + '</b><span>' + esc(i.titulo) + '</span></div>'; }).join('') + '</div>';
+      });
+    });
+    corpo += '</div>';
+  } else {
+    titulo = 'Próximos dias'; sub = 'Agenda';
+    const ds = [...new Set(l.filter(i => i.fim && parse(i.fim) >= dAdd(HOJE, -7)).map(i => i.fim))].sort().slice(0, 20);
+    dias = ds.map(parse);
+    corpo = ds.length ? '<div class="agenda cl-agenda">' + ds.map(di => { const d = parse(di), its = l.filter(i => i.fim === di);
+      return '<div class="ag-dia cl-ag-dia' + (di === hoje ? ' hoje' : '') + (di < hoje ? ' passou' : '') + '"><div class="cl-ag-data"><span class="cl-sem">' + DSEM[d.getDay()] + '</span><span class="cl-n">' + d.getDate() + '</span><span class="cl-mes-c">' + MESES[d.getMonth()].slice(0, 3) + '</span>' + (di === hoje ? '<span class="cl-hoje-tag">Hoje</span>' : '') + '</div>' +
+        '<div class="ag-itens">' + its.map(i => '<div class="ag-it cl-ag-it cl-' + clStatusCor(i) + '" data-abrir-item="' + i.id + '"><i class="cl-ponto" aria-hidden="true"></i><span class="cl-ag-tit">' + esc(i.titulo) + '<small>' + esc(caminhoTexto(i)) + '</small></span><span class="cl-ag-st">' + esc(clNomeSt(i)) + '</span><span class="cl-ag-av">' + avatar(i.resp) + '</span></div>').join('') + '</div></div>'; }).join('') + '</div>'
+      : '<p class="vazio-linha">Nenhum prazo daqui para frente com esses filtros.</p>';
+  }
+  const cab = '<div class="cal-cab cl-cab"><div class="cl-tit"><small>' + esc(sub) + '</small><h3>' + esc(titulo) + '</h3></div>' +
+    '<div class="cl-nav"><button class="btn sec peq" type="button" data-cal-nav="-1" aria-label="Anterior">‹</button><button class="btn sec peq" type="button" data-cal-nav="0">Hoje</button><button class="btn sec peq" type="button" data-cal-nav="1" aria-label="Próximo">›</button></div>' +
+    '<span class="espaco"></span><div class="seg cl-seg" role="group" aria-label="Modo do calendário">' + modos.map(([k, n]) => '<button type="button" data-cal-modo="' + k + '" aria-pressed="' + (UI.calModo === k) + '">' + n + '</button>').join('') + '</div></div>';
+  const leg = '<div class="legenda cl-leg"><span><i class="cl-l cl-todo"></i>A fazer</span><span><i class="cl-l cl-doing"></i>Em andamento</span><span><i class="cl-l cl-review"></i>Pronto para testar</span><span><i class="cl-l cl-done"></i>Concluído</span><span><i class="cl-l cl-atraso"></i>Atrasado</span><span><i class="cl-l cl-marco-l"></i>Entrega ou marco</span>' +
+    '<span class="cl-dica">' + (UI.calModo === 'semana' || UI.calModo === 'dia' ? 'Clique num horário vazio para reservar um bloco; puxe a borda de baixo do bloco para mudar a duração.' : 'Arraste um item para outro dia para mudar o prazo.') + '</span></div>';
+  const pj = cadeia(UI.sel).project, lado = pj && typeof pgHojeHTML === 'function' ? '<aside class="cl-lado">' + pgHojeHTML(UI.sel) + '</aside>' : '';
+  return ferramentasHTML() + '<div class="cl-grade' + (lado ? ' com-lado' : '') + '"><div class="cl-principal">' + cab + clNumeros(l, dias) + '<div class="cl-corpo">' + corpo + '</div>' + leg + '</div>' + lado + '</div>';
+};
+// a linha de agora anda sozinha, sem redesenhar o calendário inteiro
+setInterval(() => { if (UI.view !== 'calendar' || !$('.cl-semana')) return; const l = $('.cl-agora'); const a = new Date(); if (l && l.parentElement && +l.parentElement.dataset.blocoHora === a.getHours()) l.style.top = (a.getMinutes() / 60 * CL_ALT) + 'px'; else if ((l || ($('.cl-semana .cel.hoje') && CL_HORAS.includes(a.getHours()))) && !$('dialog[open]') && !$('#gaveta-wrap .gaveta')) rView(); }, 60000);
 
 abrirModulo(UI.modulo);
 })();
