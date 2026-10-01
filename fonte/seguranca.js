@@ -109,7 +109,7 @@ async function sgImportarAgora(lista){
   const sb = sgBanco(); if (!sb) return;
   const revisao = 'review', criados = [], epicos = {};
   for (const x of lista){
-    const w = sgFrente(x.no_id); if (!w) continue;
+    const w = sgFrentePara(x.no_id, frAssuntoInventario(x)); if (!w) continue;
     const ap = w.app, chaveEp = ap + '|' + x.grupo;
     let ep = epicos[chaveEp] || D.issues.find(i => i.tipo === 'epic' && !i.arquivado && i.titulo.toLowerCase() === x.grupo.toLowerCase() && (byId('ws', i.ws) || {}).app === ap);
     if (!ep){ ep = novoIssue({titulo:x.grupo.slice(0, 300), ws:w.id, tipo:'epic', status:'todo'}); ep.desc = 'Épico criado pela importação do que já existe no sistema (análise automática do código e do banco).'; if (typeof garantirBoard === 'function') garantirBoard({issues:[ep], boards:D.boards, equipes:D.equipes}); D.issues.push(ep); registrar('criou', ep); }
@@ -136,11 +136,13 @@ function sgFrente(noId){
   const atual = UI.sel.startsWith('app:') ? D.ws.find(w => w.app === UI.sel.slice(4)) : null;
   return (ws.find(w => /back|banco|seguran|database/i.test(w.nome)) || ws[0] || atual || null);
 }
+// a frente do assunto (tela vai para Frontend, tabela para Database...) na aplicação do ponto; sem ela, a de sempre
+function sgFrentePara(noId, assunto){ const b = sgFrente(noId); if (!b) return null; return (assunto && frenteSugerida(b.app, '', assunto)) || b; }
 async function sgCriarItens(achados){
   const sb = sgBanco(); if (!sb) return 0;
   let n = 0;
   for (const a of achados){
-    const w = sgFrente(a.no_id); if (!w){ toast('Não achei uma frente para criar o item de ' + a.onde); continue; }
+    const w = sgFrentePara(a.no_id, frAssuntoAchado(a)); if (!w){ toast('Não achei uma frente para criar o item de ' + a.onde); continue; }
     const r = sgRegra(a.regra);
     const ni = novoIssue({titulo:('Segurança: ' + a.titulo + ' (' + a.onde.replace(/^.*\//, '') + ')').slice(0, 300), ws:w.id, tipo:'bug', status:'backlog', prio:a.gravidade === 'critica' ? 'highest' : a.gravidade === 'alta' ? 'high' : 'medium'});
     ni.desc = 'Achado da análise de segurança automática (' + a.regra + ').\n\nOnde: ' + a.rotulo + ' · ' + a.onde + (a.trecho ? '\nTrecho: ' + a.trecho : '') + '\n\nPor que importa: ' + r.porque + '\n\nComo corrigir: ' + r.correcao + '\n\nFonte: ' + r.fonte;

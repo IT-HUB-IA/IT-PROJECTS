@@ -2,7 +2,7 @@
    Cola ou digita a lista inteira de uma vez, como no Trello e no ClickUp:
      linha sem traço            = épico
      linha começando com - * •  = item dentro do épico de cima
-     [Nome da frente] no fim    = em qual frente fica (o item herda a do épico)
+     [Nome da frente] no fim    = em qual frente fica (sem ela: a frente do assunto do texto, senão a do épico)
      {Nome da versão} no fim    = em qual versão entra (o item herda a do épico); a versão já precisa existir em Entregas
      linha "campo: valor" logo abaixo do item = detalhe do item (como, quero, para, aceite, prioridade, valor, pontos, tipo, origem);
      logo abaixo do épico, "meta: ..." = a meta do épico. Valor inválido vira erro na prévia e o item dele fica de fora.
@@ -13,6 +13,9 @@ const LT_EXEMPLO = 'Carteira de clientes [Database]\n- Cadastro do cliente\n- Ca
 const LT_EXEMPLO_COMPLETO = 'Carteira de clientes [Database]\nmeta: o lojista cuida da própria carteira sem ligar para o suporte\n- Cadastro do cliente\n  como: lojista\n  quero: cadastrar meus clientes com CPF e telefone\n  para: não perder o contato de quem já comprou\n  aceite: Salva nome, CPF e telefone\n  aceite: Avisa quando o CPF já está cadastrado\n  aceite: Funciona no celular\n  prioridade: Deve 2\n  valor: 8 é o que mais gera ligação no suporte\n  pontos: 5\n- Tela da lista da carteira [Frontend]\n  historia: Como lojista, quero ver todos os meus clientes numa lista, para achar um cliente rápido\n  aceite: Busca pelo nome ou pelo CPF\n  prioridade: Deveria 3\n  pontos: 3';
 const ltNorm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
 
+// sem [frente] na linha: a frente do assunto do texto (tela, integração, tabela...) na mesma aplicação da frente de base
+function ltFrenteDoAssunto(base, texto){ if (UI.sel.startsWith('ws:')) return null;   // escolheu uma frente na Estrutura: tudo fica nela
+  const w = base && byId('ws', base); const f = w && typeof frenteSugerida === 'function' ? frenteSugerida(w.app, texto) : null; return f ? f.id : null; }
 // as frentes que valem aqui: primeiro as do ponto escolhido na Estrutura, depois as do projeto
 function ltFrentes(){
   const pj = cadeia(UI.sel).project; if (!pj) return [];
@@ -130,9 +133,9 @@ function ltLer(texto){
       else { const v = achaVersao(m[3]); if (v) mc = v.id; else if (m[3].trim()){ const n = m[3].trim(); mc = LT_NOVA + n; if (!novasV.includes(n)) novasV.push(n); } }
     }
     if (!l) return;
-    if (!item){ const ja = epicsJa.find(e => ltNorm(e.titulo) === ltNorm(l)) || null; atual = {titulo:l, ws:ws || (ja ? ja.ws : padrao), mc:mc || (ja ? ja.marco || null : null), ja, itens:[], linha:k + 1, meta:null, erros:[]}; grupos.push(atual); alvo = atual; return; }
+    if (!item){ const ja = epicsJa.find(e => ltNorm(e.titulo) === ltNorm(l)) || null; atual = {titulo:l, ws:ws || (ja ? ja.ws : ltFrenteDoAssunto(padrao, l) || padrao), mc:mc || (ja ? ja.marco || null : null), ja, itens:[], linha:k + 1, meta:null, erros:[]}; grupos.push(atual); alvo = atual; return; }
     if (!atual){ atual = {titulo:null, ws:padrao, mc:null, ja:null, itens:[], meta:null, erros:[]}; grupos.push(atual); }
-    const it = {titulo:l, ws:ws || atual.ws, mc:mc || atual.mc, ehItem:true, det:{}, erros:[], linha:k + 1};
+    const it = {titulo:l, ws:ws || ltFrenteDoAssunto(atual.ws, l) || atual.ws, mc:mc || atual.mc, ehItem:true, det:{}, erros:[], linha:k + 1};
     if (l.length > 300) erro(k, 'o título passa de 300 letras', it);
     if (atual.itens.some(x => ltNorm(x.titulo) === ltNorm(l))) erro(k, 'o item "' + l + '" aparece duas vezes no mesmo épico', it);
     // o mesmo título num épico que já existe: não duplica, atualiza
@@ -340,7 +343,7 @@ function ltAbrir(){
     '<details class="lt-guia"><summary>Como escrever: o formato em uma tabela</summary><div class="lt-guia-rolo"><table class="lt-guia-t"><thead><tr><th>Escreva</th><th>O que acontece</th></tr></thead><tbody>' +
       linhaG('Carteira de clientes', 'Linha sem traço vira <b>épico</b>. Com o mesmo nome de um que já existe, os itens entram nele') +
       linhaG('- Cadastro do cliente', 'Linha com traço vira <b>item</b> do épico de cima. A ordem das linhas vira a ordem da fila') +
-      linhaG('[Frontend]  {v1.3}', 'No fim da linha: a <b>frente</b> e a <b>versão</b>. O item herda as do épico') +
+      linhaG('[Frontend]  {v1.3}', 'No fim da linha: a <b>frente</b> e a <b>versão</b>. Sem frente, o item vai para a do assunto (tela → Frontend, webhook → Integrações, tabela → Database...) ou herda a do épico') +
       linhaG('  como: / quero: / para:', 'A <b>história</b> do item, logo abaixo dele') +
       linhaG('  aceite: Salva o CPF', 'Um <b>critério de aceite</b> por linha. Repetido é ignorado') +
       linhaG('  prioridade: Deve 2', '<b>Prioridade</b>: Deve, Deveria, Poderia ou Não terá agora, e o nível de 1 a 5') +

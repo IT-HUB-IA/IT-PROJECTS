@@ -5777,7 +5777,7 @@ function criarDentro(chave){
       let nova;
       if (o === 'project'){ nova = {id:uid('pj'), client:id, nome:n, status:'active', motivo:'', origem:'greenfield', inicio:iso(HOJE), alvo:iso(dAdd(HOJE, 90))}; D.projects.push(nova); nova = 'project:' + nova.id; }
       else if (o === 'product'){ const pr = {id:uid('pr'), project:id, client:byId('projects', id).client, nome:n, status:'active'}; D.products.push(pr); nova = 'product:' + pr.id; }
-      else if (o === 'app'){ const proj = tipo === 'project' ? id : byId('products', id).project; const ap = {id:uid('ap'), project:proj, product: tipo === 'product' ? id : null, nome:n, plataforma:$('#cd-p', d).value, status:'active'}; D.apps.push(ap); ['Frontend','Backend','Database'].forEach(wn => D.ws.push({id:uid('ws'), app:ap.id, nome:wn, status:'active', wip:3})); nova = 'app:' + ap.id; }
+      else if (o === 'app'){ const proj = tipo === 'project' ? id : byId('products', id).project; const ap = {id:uid('ap'), project:proj, product: tipo === 'product' ? id : null, nome:n, plataforma:$('#cd-p', d).value, status:'active'}; D.apps.push(ap); criarFrentesPadrao(ap.id); nova = 'app:' + ap.id; }
       else { const w = {id:uid('ws'), app:id, nome:n, status:'active', wip:3}; D.ws.push(w); nova = 'ws:' + w.id; }
       UI.abertos[chave] = true; UI.sel = nova; salvar(); salvarUI(); rOperacoes(); toast('Criado: ' + n);
     }}]);
@@ -11479,11 +11479,85 @@ rConfig = function(){
 };
 if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {rOperacoes, rcTrabalhoHTML});
 
+// ===== Frentes de trabalho padrão e para onde cada item vai sozinho =====
+// Toda aplicação nova nasce com estas frentes. Quando o item não diz a frente, o CicloDev olha o texto
+// (título, e o tipo do que foi lido do código) e põe na frente do assunto, desde que a aplicação tenha essa frente.
+// A ordem da lista é a ordem de prioridade na hora de decidir: o assunto mais específico ganha (uma "tela de integração" vai para Integrações).
+const FRENTES_PADRAO = [
+  {nome:'Frontend', chave:'frontend', nomes:/^(front|frontend|front-end|telas?|interface)$/,
+    re:/\b(tela|telas|pagina|paginas|botao|botoes|layout|formulario|modal|janela|menu|aba|abas|filtro|campo|grafico|dashboard|painel|css|html|responsiv\w*|componente\w*|front|frontend|react|vue|angular|celular|mobile)\b/},
+  {nome:'Backend', chave:'backend', nomes:/^(back|backend|back-end|servidor|api|apis)$/,
+    re:/\b(api|apis|endpoint\w*|rota|rotas|servico|servicos|regra de negocio|regras de negocio|calculo\w*|validacao|validacoes|validar|job|jobs|fila|filas|worker|cron|agendad\w*|processamento|back|backend|controller|spring|express|edge function)\b/},
+  {nome:'Database', chave:'database', nomes:/^(database|banco|banco de dados|dados|db|bd)$/,
+    re:/\b(tabela|tabelas|banco|schema|migration|migrations|migracao|sql|indice|indices|rls|trigger|gatilho\w*|view|views|procedure|rpc|coluna|colunas|backup|postgres|mysql|database)\b/},
+  {nome:'Integrações', chave:'integracoes', nomes:/^(integra\w*)$/,
+    re:/\b(integra\w*|webhook\w*|terceiro\w*|externo\w*|conexa|whats\w*|gmail|e-?mail\w*|sms|gateway|pix|boleto\w*|pagamento\w*|oauth|sso|sincroniz\w*|sync|sftp|ftp|sdk|crm|erp externo|mercado pago|stripe|asaas|github|gitlab|correios|receita federal|nota fiscal|nfe|nfse)\b/},
+  {nome:'Infraestrutura', chave:'infraestrutura', nomes:/^(infra\w*|devops|deploy|operacao)$/,
+    re:/\b(deploy|servidor\w*|vps|docker|kubernetes|pipeline|ci|cd|dominio|dns|ssl|https|hospedagem|nginx|monitora\w*|logs?|ambiente\w*|vercel|aws|cloudflare|infra\w*|devops)\b/},
+  {nome:'Segurança', chave:'seguranca', nomes:/^(seguranca|security|appsec)$/,
+    re:/\b(seguranca|vulnerab\w*|senha\w*|segredo\w*|token\w*|criptograf\w*|permiss\w*|nivel de acesso|niveis de acesso|lgpd|owasp|xss|injection|injecao|csrf|autentica\w*|2fa)\b/},
+  {nome:'Testes', chave:'testes', nomes:/^(testes?|qa|qualidade)$/,
+    re:/\b(teste|testes|qa|homologa\w*|e2e|cobertura|regressao|automatiza\w* de teste)\b/},
+  {nome:'Design', chave:'design', nomes:/^(design|ux|ui|ux\/ui|ui\/ux)$/,
+    re:/\b(design|prototipo\w*|figma|identidade visual|ux|ui|wireframe\w*|marca|logo\w*|paleta|tipografia)\b/},
+  {nome:'Documentação', chave:'documentacao', nomes:/^(documenta\w*|docs?)$/,
+    re:/\b(documenta\w*|manual do usuario|readme|changelog|tutorial\w*)\b/}
+];
+// a ordem de decisão (mais específico primeiro); a ordem de criação segue FRENTES_PADRAO
+const FR_ORDEM_DECISAO = ['integracoes', 'seguranca', 'testes', 'infraestrutura', 'documentacao', 'design', 'database', 'frontend', 'backend'];
+const frNorm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
+// cria as frentes padrão de uma aplicação (as que ela ainda não tem)
+function criarFrentesPadrao(appId){
+  const ja = D.ws.filter(w => w.app === appId && w.status !== 'archived').map(w => frChave(w.nome));
+  FRENTES_PADRAO.forEach(f => { if (!ja.includes(f.chave)) D.ws.push({id:uid('ws'), app:appId, nome:f.nome, status:'active', wip:3}); });
+}
+// de qual assunto padrão é a frente (pelo nome dela), ou null
+function frChave(nome){ const n = frNorm(nome); const f = FRENTES_PADRAO.find(x => x.nomes.test(n)); return f ? f.chave : null; }
+// o assunto do texto, ou null quando nada bate
+function frAssunto(texto){
+  const t = ' ' + frNorm(texto) + ' ';
+  for (const k of FR_ORDEM_DECISAO){ const f = FRENTES_PADRAO.find(x => x.chave === k); if (f.re.test(t)) return k; }
+  return null;
+}
+// a frente certa para o texto entre as frentes de UMA aplicação; null quando o texto não diz ou a aplicação não tem essa frente
+function frenteSugerida(appId, texto, assunto){
+  const k = assunto || frAssunto(texto); if (!k || !appId) return null;
+  return D.ws.find(w => w.app === appId && w.status !== 'archived' && frChave(w.nome) === k) || null;
+}
+// o assunto do que a análise leu do código e do banco
+function frAssuntoInventario(x){
+  const t = (x.nome || '') + ' ' + (x.grupo || '') + ' ' + (x.onde || '');
+  const k = frAssunto(t);
+  if (k === 'integracoes' || k === 'seguranca' || k === 'testes') return k;
+  return {tela:'frontend', api:'backend', job:'backend', tabela:'database', modulo:null, integracao:'integracoes'}[x.tipo] || k;
+}
+// o assunto de um achado da análise (pela regra e pelo arquivo)
+function frAssuntoAchado(a){
+  const r = String(a.regra || '');
+  if (/^(BD|ARQ)-/.test(r)) return 'database';
+  if (/^QUA-/.test(r)) return /\.(jsx|tsx|vue|svelte|html?|css)\b/i.test(a.onde || '') ? 'frontend' : 'backend';
+  return 'seguranca';
+}
+// janela Novo item: enquanto a pessoa escreve o título, o "Onde" vai para a frente do assunto (até ela mesma escolher outra)
+const _novoItemFr = novoItem;
+novoItem = function(){
+  _novoItemFr.apply(this, arguments);
+  const t = $('#ni-t'), s = $('#ni-ws'); if (!t || !s || UI.sel.startsWith('ws:')) return;
+  let escolheu = false; s.addEventListener('change', () => { escolheu = true; });
+  t.addEventListener('input', () => {
+    if (escolheu) return;
+    const k = frAssunto(t.value); if (!k) return;
+    const atual = byId('ws', s.value), ops = [...s.options].map(o => byId('ws', o.value)).filter(Boolean);
+    const w = ops.find(x => atual && x.app === atual.app && frChave(x.nome) === k) || ops.find(x => frChave(x.nome) === k);
+    if (w && w.id !== s.value) s.value = w.id;
+  });
+};
+
 /* ===== Fila: criar em lote =====
    Cola ou digita a lista inteira de uma vez, como no Trello e no ClickUp:
      linha sem traço            = épico
      linha começando com - * •  = item dentro do épico de cima
-     [Nome da frente] no fim    = em qual frente fica (o item herda a do épico)
+     [Nome da frente] no fim    = em qual frente fica (sem ela: a frente do assunto do texto, senão a do épico)
      {Nome da versão} no fim    = em qual versão entra (o item herda a do épico); a versão já precisa existir em Entregas
      linha "campo: valor" logo abaixo do item = detalhe do item (como, quero, para, aceite, prioridade, valor, pontos, tipo, origem);
      logo abaixo do épico, "meta: ..." = a meta do épico. Valor inválido vira erro na prévia e o item dele fica de fora.
@@ -11494,6 +11568,9 @@ const LT_EXEMPLO = 'Carteira de clientes [Database]\n- Cadastro do cliente\n- Ca
 const LT_EXEMPLO_COMPLETO = 'Carteira de clientes [Database]\nmeta: o lojista cuida da própria carteira sem ligar para o suporte\n- Cadastro do cliente\n  como: lojista\n  quero: cadastrar meus clientes com CPF e telefone\n  para: não perder o contato de quem já comprou\n  aceite: Salva nome, CPF e telefone\n  aceite: Avisa quando o CPF já está cadastrado\n  aceite: Funciona no celular\n  prioridade: Deve 2\n  valor: 8 é o que mais gera ligação no suporte\n  pontos: 5\n- Tela da lista da carteira [Frontend]\n  historia: Como lojista, quero ver todos os meus clientes numa lista, para achar um cliente rápido\n  aceite: Busca pelo nome ou pelo CPF\n  prioridade: Deveria 3\n  pontos: 3';
 const ltNorm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
 
+// sem [frente] na linha: a frente do assunto do texto (tela, integração, tabela...) na mesma aplicação da frente de base
+function ltFrenteDoAssunto(base, texto){ if (UI.sel.startsWith('ws:')) return null;   // escolheu uma frente na Estrutura: tudo fica nela
+  const w = base && byId('ws', base); const f = w && typeof frenteSugerida === 'function' ? frenteSugerida(w.app, texto) : null; return f ? f.id : null; }
 // as frentes que valem aqui: primeiro as do ponto escolhido na Estrutura, depois as do projeto
 function ltFrentes(){
   const pj = cadeia(UI.sel).project; if (!pj) return [];
@@ -11611,9 +11688,9 @@ function ltLer(texto){
       else { const v = achaVersao(m[3]); if (v) mc = v.id; else if (m[3].trim()){ const n = m[3].trim(); mc = LT_NOVA + n; if (!novasV.includes(n)) novasV.push(n); } }
     }
     if (!l) return;
-    if (!item){ const ja = epicsJa.find(e => ltNorm(e.titulo) === ltNorm(l)) || null; atual = {titulo:l, ws:ws || (ja ? ja.ws : padrao), mc:mc || (ja ? ja.marco || null : null), ja, itens:[], linha:k + 1, meta:null, erros:[]}; grupos.push(atual); alvo = atual; return; }
+    if (!item){ const ja = epicsJa.find(e => ltNorm(e.titulo) === ltNorm(l)) || null; atual = {titulo:l, ws:ws || (ja ? ja.ws : ltFrenteDoAssunto(padrao, l) || padrao), mc:mc || (ja ? ja.marco || null : null), ja, itens:[], linha:k + 1, meta:null, erros:[]}; grupos.push(atual); alvo = atual; return; }
     if (!atual){ atual = {titulo:null, ws:padrao, mc:null, ja:null, itens:[], meta:null, erros:[]}; grupos.push(atual); }
-    const it = {titulo:l, ws:ws || atual.ws, mc:mc || atual.mc, ehItem:true, det:{}, erros:[], linha:k + 1};
+    const it = {titulo:l, ws:ws || ltFrenteDoAssunto(atual.ws, l) || atual.ws, mc:mc || atual.mc, ehItem:true, det:{}, erros:[], linha:k + 1};
     if (l.length > 300) erro(k, 'o título passa de 300 letras', it);
     if (atual.itens.some(x => ltNorm(x.titulo) === ltNorm(l))) erro(k, 'o item "' + l + '" aparece duas vezes no mesmo épico', it);
     // o mesmo título num épico que já existe: não duplica, atualiza
@@ -11821,7 +11898,7 @@ function ltAbrir(){
     '<details class="lt-guia"><summary>Como escrever: o formato em uma tabela</summary><div class="lt-guia-rolo"><table class="lt-guia-t"><thead><tr><th>Escreva</th><th>O que acontece</th></tr></thead><tbody>' +
       linhaG('Carteira de clientes', 'Linha sem traço vira <b>épico</b>. Com o mesmo nome de um que já existe, os itens entram nele') +
       linhaG('- Cadastro do cliente', 'Linha com traço vira <b>item</b> do épico de cima. A ordem das linhas vira a ordem da fila') +
-      linhaG('[Frontend]  {v1.3}', 'No fim da linha: a <b>frente</b> e a <b>versão</b>. O item herda as do épico') +
+      linhaG('[Frontend]  {v1.3}', 'No fim da linha: a <b>frente</b> e a <b>versão</b>. Sem frente, o item vai para a do assunto (tela → Frontend, webhook → Integrações, tabela → Database...) ou herda a do épico') +
       linhaG('  como: / quero: / para:', 'A <b>história</b> do item, logo abaixo dele') +
       linhaG('  aceite: Salva o CPF', 'Um <b>critério de aceite</b> por linha. Repetido é ignorado') +
       linhaG('  prioridade: Deve 2', '<b>Prioridade</b>: Deve, Deveria, Poderia ou Não terá agora, e o nível de 1 a 5') +
@@ -14470,7 +14547,7 @@ function ciLoteMd(ctx){
     '1. **Linha sem traço** vira um **épico** (uma entrega grande).\n' +
     '2. **Linha que começa com `- `** vira um **item** dentro do épico da linha de cima.\n' +
     '3. **Linha em branco** separa um épico do outro (opcional, só deixa mais fácil de ler).\n' +
-    '4. **`[Nome da frente]` no fim da linha** diz em qual frente de trabalho fica. O item herda a frente do épico quando não diz outra.\n' +
+    '4. **`[Nome da frente]` no fim da linha** diz em qual frente de trabalho fica. Quando a linha não diz, o CicloDev põe na frente do assunto, se a aplicação tiver essa frente: tela, botão ou página vai para Frontend; API, rota ou regra para Backend; tabela ou migration para Database; webhook, WhatsApp, e-mail, pagamento ou sistema de terceiro para Integrações; deploy, servidor ou domínio para Infraestrutura; senha, permissão ou LGPD para Segurança; teste para Testes; protótipo ou Figma para Design; manual ou changelog para Documentação. Se o texto não deixa claro, o item herda a frente do épico. Na dúvida, escreva a frente.\n' +
     '5. **`{Nome da versão}` no fim da linha** diz em qual versão entra. O item herda a versão do épico. Uma versão que ainda não existe precisa ser declarada no texto, com a data de entrega (veja Versões, abaixo).\n\n' +
     '### Linhas de detalhe (opcionais)\n\n' +
     'Logo abaixo da linha do item, uma linha por campo, no formato `campo: valor`. Recue com dois espaços para ficar fácil de ler (o recuo é opcional). Os detalhes valem para o item da linha `- ` mais próxima acima.\n\n' +
@@ -16173,7 +16250,7 @@ async function sgImportarAgora(lista){
   const sb = sgBanco(); if (!sb) return;
   const revisao = 'review', criados = [], epicos = {};
   for (const x of lista){
-    const w = sgFrente(x.no_id); if (!w) continue;
+    const w = sgFrentePara(x.no_id, frAssuntoInventario(x)); if (!w) continue;
     const ap = w.app, chaveEp = ap + '|' + x.grupo;
     let ep = epicos[chaveEp] || D.issues.find(i => i.tipo === 'epic' && !i.arquivado && i.titulo.toLowerCase() === x.grupo.toLowerCase() && (byId('ws', i.ws) || {}).app === ap);
     if (!ep){ ep = novoIssue({titulo:x.grupo.slice(0, 300), ws:w.id, tipo:'epic', status:'todo'}); ep.desc = 'Épico criado pela importação do que já existe no sistema (análise automática do código e do banco).'; if (typeof garantirBoard === 'function') garantirBoard({issues:[ep], boards:D.boards, equipes:D.equipes}); D.issues.push(ep); registrar('criou', ep); }
@@ -16200,11 +16277,13 @@ function sgFrente(noId){
   const atual = UI.sel.startsWith('app:') ? D.ws.find(w => w.app === UI.sel.slice(4)) : null;
   return (ws.find(w => /back|banco|seguran|database/i.test(w.nome)) || ws[0] || atual || null);
 }
+// a frente do assunto (tela vai para Frontend, tabela para Database...) na aplicação do ponto; sem ela, a de sempre
+function sgFrentePara(noId, assunto){ const b = sgFrente(noId); if (!b) return null; return (assunto && frenteSugerida(b.app, '', assunto)) || b; }
 async function sgCriarItens(achados){
   const sb = sgBanco(); if (!sb) return 0;
   let n = 0;
   for (const a of achados){
-    const w = sgFrente(a.no_id); if (!w){ toast('Não achei uma frente para criar o item de ' + a.onde); continue; }
+    const w = sgFrentePara(a.no_id, frAssuntoAchado(a)); if (!w){ toast('Não achei uma frente para criar o item de ' + a.onde); continue; }
     const r = sgRegra(a.regra);
     const ni = novoIssue({titulo:('Segurança: ' + a.titulo + ' (' + a.onde.replace(/^.*\//, '') + ')').slice(0, 300), ws:w.id, tipo:'bug', status:'backlog', prio:a.gravidade === 'critica' ? 'highest' : a.gravidade === 'alta' ? 'high' : 'medium'});
     ni.desc = 'Achado da análise de segurança automática (' + a.regra + ').\n\nOnde: ' + a.rotulo + ' · ' + a.onde + (a.trecho ? '\nTrecho: ' + a.trecho : '') + '\n\nPor que importa: ' + r.porque + '\n\nComo corrigir: ' + r.correcao + '\n\nFonte: ' + r.fonte;

@@ -45,7 +45,7 @@ function ciLoteMd(ctx){
     '1. **Linha sem traço** vira um **épico** (uma entrega grande).\n' +
     '2. **Linha que começa com `- `** vira um **item** dentro do épico da linha de cima.\n' +
     '3. **Linha em branco** separa um épico do outro (opcional, só deixa mais fácil de ler).\n' +
-    '4. **`[Nome da frente]` no fim da linha** diz em qual frente de trabalho fica. O item herda a frente do épico quando não diz outra.\n' +
+    '4. **`[Nome da frente]` no fim da linha** diz em qual frente de trabalho fica. Quando a linha não diz, o CicloDev põe na frente do assunto, se a aplicação tiver essa frente: tela, botão ou página vai para Frontend; API, rota ou regra para Backend; tabela ou migration para Database; webhook, WhatsApp, e-mail, pagamento ou sistema de terceiro para Integrações; deploy, servidor ou domínio para Infraestrutura; senha, permissão ou LGPD para Segurança; teste para Testes; protótipo ou Figma para Design; manual ou changelog para Documentação. Se o texto não deixa claro, o item herda a frente do épico. Na dúvida, escreva a frente.\n' +
     '5. **`{Nome da versão}` no fim da linha** diz em qual versão entra. O item herda a versão do épico. Uma versão que ainda não existe precisa ser declarada no texto, com a data de entrega (veja Versões, abaixo).\n\n' +
     '### Linhas de detalhe (opcionais)\n\n' +
     'Logo abaixo da linha do item, uma linha por campo, no formato `campo: valor`. Recue com dois espaços para ficar fácil de ler (o recuo é opcional). Os detalhes valem para o item da linha `- ` mais próxima acima.\n\n' +

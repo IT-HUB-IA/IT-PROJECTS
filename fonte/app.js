@@ -1743,7 +1743,7 @@ function criarDentro(chave){
       let nova;
       if (o === 'project'){ nova = {id:uid('pj'), client:id, nome:n, status:'active', motivo:'', origem:'greenfield', inicio:iso(HOJE), alvo:iso(dAdd(HOJE, 90))}; D.projects.push(nova); nova = 'project:' + nova.id; }
       else if (o === 'product'){ const pr = {id:uid('pr'), project:id, client:byId('projects', id).client, nome:n, status:'active'}; D.products.push(pr); nova = 'product:' + pr.id; }
-      else if (o === 'app'){ const proj = tipo === 'project' ? id : byId('products', id).project; const ap = {id:uid('ap'), project:proj, product: tipo === 'product' ? id : null, nome:n, plataforma:$('#cd-p', d).value, status:'active'}; D.apps.push(ap); ['Frontend','Backend','Database'].forEach(wn => D.ws.push({id:uid('ws'), app:ap.id, nome:wn, status:'active', wip:3})); nova = 'app:' + ap.id; }
+      else if (o === 'app'){ const proj = tipo === 'project' ? id : byId('products', id).project; const ap = {id:uid('ap'), project:proj, product: tipo === 'product' ? id : null, nome:n, plataforma:$('#cd-p', d).value, status:'active'}; D.apps.push(ap); criarFrentesPadrao(ap.id); nova = 'app:' + ap.id; }
       else { const w = {id:uid('ws'), app:id, nome:n, status:'active', wip:3}; D.ws.push(w); nova = 'ws:' + w.id; }
       UI.abertos[chave] = true; UI.sel = nova; salvar(); salvarUI(); rOperacoes(); toast('Criado: ' + n);
     }}]);
