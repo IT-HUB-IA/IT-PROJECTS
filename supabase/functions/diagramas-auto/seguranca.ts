@@ -125,7 +125,7 @@ const PADROES: Padrao[] = [
   { regra: 'SEG-01', segredo: true, re: /\b((?:postgres(?:ql)?|mysql|mongodb(?:\+srv)?):\/\/[^:\s'"@/]+:[^@\s'"$<{]{4,}@[^\s'"]+)/g },  // endereço de banco com senha
   { regra: 'SEG-02', segredo: true, re: /\b(eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,})\b/g, e: (_l, m) => papelJwt(m[1]) === 'service_role' },
   { regra: 'SEG-03', segredo: true, re: /^\s*[\w.-]*(?:password|passwd|senha|secret|api[_-]?key|token)\s*[=:]\s*["']?([^\s"'#${}<>][^\s"'#]{5,})["']?\s*$/gim,
-    so: /\.(properties|ya?ml|toml|ini|conf|cfg|env[\w.-]*|json)$|(^|\/)\.env/i, e: (l) => !/\$\{|\{\{|<|%\(|example|exemplo|changeme|troque|xxx|\*\*\*|placeholder|your[_-]/i.test(l) },
+    so: /\.(properties|ya?ml|toml|ini|conf|cfg|env[\w.-]*|json)$|(^|\/)\.env/i, e: (l) => !/\$\{|\{\{|<|%\(|example|exemplo|changeme|change[_-]?me|troque|coloque|preencha|informe|digite|insira|substitua|aqui|here|sua[_-]?senha|minha[_-]?senha|senha[_-]?aqui|your[_-]|my[_-]?password|xxx|\*\*\*|placeholder|dummy|fake|sample|todo/i.test(l) },
   { regra: 'INJ-01', re: /(?:executeQuery|executeUpdate|execute|createQuery|createNativeQuery|prepareStatement|query|raw|\$queryRawUnsafe|\$executeRawUnsafe)\s*\(\s*["'`][^"'`]*\b(?:select|insert|update|delete|where)\b[^"'`]*["'`]\s*\+/gi },
   { regra: 'INJ-01', re: /(?:query|execute|raw|createQuery|sql)\s*\(\s*`[^`]*\b(?:select|insert|update|delete|where)\b[^`]*\$\{/gi },
   { regra: 'INJ-01', re: /["`]\s*(?:select|update|delete from|insert into)\b[^"`;]*\bwhere\b[^"`;]*["`]\s*\+\s*[A-Za-z_]/gi },

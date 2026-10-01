@@ -15,7 +15,7 @@ const svc = 'eyJhbGciOiJIUzI1NiJ9.' + btoa(JSON.stringify({ role: 'service_role'
 const anon = 'eyJhbGciOiJIUzI1NiJ9.' + btoa(JSON.stringify({ role: 'anon', iss: 'supabase' })).replace(/=+$/, '') + '.assinaturaQualquerComMaisDeVinteLetras';
 const arq = new Map<string, string>([
   ['src/main/java/bl/ClienteDao.java', 'class ClienteDao {\n  List<Cliente> buscar(String cpf) {\n    return stmt.executeQuery("select * from clientes where cpf = \'" + cpf + "\'");\n  }\n  ok(String id){ ps = con.prepareStatement("select * from clientes where id = ?"); }\n  String h = MessageDigest.getInstance("MD5");\n}'],
-  ['src/main/resources/application.properties', 'spring.datasource.url=jdbc:postgresql://db:5432/bl\nspring.datasource.password=SenhaReal123\nspring.datasource.username=${DB_USER}\napp.token=${TOKEN}'],
+  ['src/main/resources/application.properties', 'spring.datasource.url=jdbc:postgresql://db:5432/bl\nspring.datasource.password=SenhaReal123\nspring.datasource.username=${DB_USER}\napp.token=${TOKEN}\nspring.datasource.password=COLOQUE_SUA_SENHA_AQUI'],
   ['web/src/supabase.js', "export const sb = createClient(url, '" + svc + "');\nexport const pub = createClient(url, '" + anon + "');\nconst aws = 'AKIAABCDEFGHIJKLMNOP';"],
   ['web/src/tela.js', 'el.innerHTML = "<b>" + nome + "</b>";\nel.innerHTML = "";\nok.textContent = nome;\nconst t = Math.random().toString(36); // token de convite\nfetch("http://api.parceiro.com.br/v1");\nfetch("http://localhost:3000");\nconsole.log("login", senha);\ncors({ origin: "*" });'],
   ['web/src/node.js', 'const https = require("https"); new https.Agent({ rejectUnauthorized: false });\nconst q = await db.query(`select * from pedidos where id = ${id}`);\nconst ok = await db.query("select * from pedidos where id = $1", [id]);\nexec(`ls ${pasta}`);\nconst dados = jwt.decode(token);'],
@@ -27,7 +27,7 @@ const caminhos = [...arq.keys(), '.env', '.env.example', 'certs/servidor.key'];
 const ac = analisarCodigo(arq, caminhos);
 ok(tem(ac, 'INJ-01', /ClienteDao\.java:3$/) && !tem(ac, 'INJ-01', /ClienteDao\.java:5$/), 'SQL montado com + no Java é achado; o prepareStatement com ? não');
 ok(tem(ac, 'INJ-01', /node\.js:2$/) && !tem(ac, 'INJ-01', /node\.js:3$/), 'SQL com ${} no Node é achado; com $1 não');
-ok(tem(ac, 'SEG-03', /application\.properties:2$/) && !tem(ac, 'SEG-03', /application\.properties:3$/), 'senha escrita no application.properties é achada; ${DB_USER} não');
+ok(tem(ac, 'SEG-03', /application\.properties:2$/) && !tem(ac, 'SEG-03', /application\.properties:3$/) && !tem(ac, 'SEG-03', /application\.properties:5$/), 'senha escrita no application.properties é achada; ${DB_USER} e o texto de exemplo COLOQUE_SUA_SENHA_AQUI não');
 ok(tem(ac, 'SEG-02', /supabase\.js:1$/) && !tem(ac, 'SEG-02', /supabase\.js:2$/), 'chave service_role do Supabase é achada; a anon (pública) não');
 ok(tem(ac, 'SEG-01', /supabase\.js:3$/), 'chave da AWS é achada');
 ok(!ac.some(a => a.trecho.includes('AKIAABCDEFGHIJKLMNOP') || a.trecho.includes('SenhaReal123')), 'o segredo nunca aparece inteiro no achado (vem mascarado)');
