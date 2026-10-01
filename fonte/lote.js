@@ -242,23 +242,31 @@ function ltNovo(titulo, ws, tipo, status, pai, mc){
 // botões em cima da caixa: épico, item, cada frente, cada versão e a próxima versão
 function ltAtalhosHTML(){
   const frentes = ltFrentes().map(w => w.nome).filter((n, k, a) => a.indexOf(n) === k);
-  const versoes = ltVersoesDoProjeto().filter(m => m.tipo === 'release').map(m => m.nome), prox = ltProximaVersao();
-  const bt = (tipo, valor, txt, cls) => '<button type="button" class="lt-at' + (cls ? ' ' + cls : '') + '" data-lt-por="' + tipo + '" data-lt-valor="' + esc(valor) + '">' + txt + '</button>';
-  return '<div class="lt-atalhos" role="toolbar" aria-label="Atalhos">' +
-    '<div class="lt-at-g"><span>Linha nova</span>' + bt('epico', '', ICO.mais + 'Épico') + bt('item', '', ICO.mais + 'Item') + '</div>' +
-    '<div class="lt-at-g"><span>Detalhe do item</span>' + [['como', 'Como'], ['quero', 'Quero'], ['para', 'Para'], ['aceite', 'Critério'], ['prioridade', 'Prioridade'], ['valor', 'Valor'], ['pontos', 'Pontos'], ['tipo', 'Tipo'], ['meta', 'Meta do épico']].map(([k, n]) => bt('det', k, ICO.mais + n)).join('') + '</div>' +
-    '<div class="lt-at-g"><span>Frente</span>' + frentes.map(n => bt('frente', n, esc(n))).join('') + '</div>' +
-    '<div class="lt-at-g"><span>Versão</span>' + versoes.map(n => bt('versao', n, esc(n))).join('') + (versoes.includes(prox) ? '' : bt('versao', prox, ICO.mais + esc(prox) + ' (nova)', 'lt-at-nova')) + '</div></div>';
+  const versoes = ltVersoesDoProjeto().filter(m => m.tipo === 'release' && !m.entregue).map(m => m.nome), prox = ltProximaVersao();
+  const bt = (tipo, valor, txt, tit) => '<button type="button" class="lt-at" data-lt-por="' + tipo + '" data-lt-valor="' + esc(valor) + '"' + (tit ? ' title="' + esc(tit) + '"' : '') + '>' + txt + '</button>';
+  const grupo = (rot, dica, botoes) => botoes ? '<div class="lt-at-g"><span class="lt-at-rot" title="' + esc(dica) + '">' + rot + '</span><div class="lt-at-bts">' + botoes + '</div></div>' : '';
+  return '<div class="lt-atalhos" role="toolbar" aria-label="Atalhos para escrever">' +
+    grupo('Linha nova', 'Acrescenta uma linha embaixo da linha onde está o cursor', bt('epico', '', ICO.mais + 'Épico') + bt('item', '', ICO.mais + 'Item') + bt('nova-versao', prox, ICO.mais + 'Versão nova', 'Versão ' + prox + ', com a data de entrega') + bt('pronto', '', ICO.mais + 'Regra de pronto', 'Uma regra da Definição de Pronto do projeto')) +
+    grupo('Detalhe do item', 'Acrescenta, embaixo do item, uma linha campo: valor', [['como', 'Como'], ['quero', 'Quero'], ['para', 'Para'], ['aceite', 'Critério'], ['prioridade', 'Prioridade'], ['valor', 'Valor'], ['pontos', 'Pontos'], ['tipo', 'Tipo'], ['origem', 'Origem']].map(([k, n]) => bt('det', k, n)).join('')) +
+    grupo('Épico ou versão', 'Embaixo da linha do épico ou da versão', bt('det', 'meta', 'Meta') + bt('det', 'entrega', 'Data de entrega')) +
+    grupo('Frente da linha', 'Põe [frente] no fim da linha onde está o cursor', frentes.map(n => bt('frente', n, esc(n))).join('')) +
+    grupo('Versão da linha', 'Põe {versão} no fim da linha onde está o cursor', versoes.map(n => bt('versao', n, esc(n))).join('')) + '</div>';
 }
 // põe o atalho na linha onde está o cursor: troca a frente ou a versão que já estiver no fim da linha
 function ltPor(ta, tipo, valor){
   const v = ta.value, pos = ta.selectionStart == null ? v.length : ta.selectionStart;
   const ini = v.lastIndexOf('\n', pos - 1) + 1, fimN = v.indexOf('\n', pos), fim = fimN < 0 ? v.length : fimN;
   let linha = v.slice(ini, fim), cursor;
+  if (tipo === 'nova-versao' || tipo === 'pronto'){
+    const antes = v.slice(0, fim), depois = v.slice(fim), sep = antes.trim() ? '\n' : '';
+    const novo = tipo === 'pronto' ? sep + 'pronto: ' : sep + 'versão: ' + valor + '\n  entrega: ';
+    ta.value = antes + novo + depois; cursor = (antes + novo).length;
+    ta.focus(); ta.setSelectionRange(cursor, cursor); return;
+  }
   if (tipo === 'det'){
     // uma linha de detalhe logo abaixo da linha onde está o cursor (a meta sem recuo, logo abaixo do épico)
     const antes = v.slice(0, fim), depois = v.slice(fim);
-    const novo = '\n' + (valor === 'meta' ? '' : '  ') + valor + ': ';
+    const novo = '\n' + (valor === 'meta' ? '' : '  ') + valor + ': ';   // meta sem recuo (do épico); entrega com recuo (da versão)
     ta.value = antes + novo + depois; cursor = (antes + novo).length;
     ta.focus(); ta.setSelectionRange(cursor, cursor); return;
   }
@@ -280,17 +288,30 @@ function ltPor(ta, tipo, valor){
 function ltAbrir(){
   if (!podeEditar()) return;
   if (!ltFrentes().length){ toast('Crie antes uma frente de trabalho numa aplicação (Estrutura › aplicação › ⋯ › Criar dentro)'); return; }
-  modal('Criar em lote', '<div class="lt-grade"><div class="lt-esq"><label class="lb" for="lt-t">Escreva ou cole a lista</label>' +
-    ltAtalhosHTML() +
-    '<textarea class="campo lt-texto" id="lt-t" rows="16" spellcheck="false" placeholder="' + esc(LT_EXEMPLO) + '"></textarea>' +
-    '<div class="lt-regras"><p><b>Linha sem traço</b> vira épico.</p><p><b>Linha com - na frente</b> vira item dentro do épico de cima.</p><p>Para escolher a <b>frente</b> e a <b>versão</b>, clique na linha e depois no botão dela, em cima da caixa. O item fica na frente e na versão do épico, se não disser outra. Uma versão que ainda não existe é criada junto.</p>' +
-    '<p><b>Detalhes do item</b> (opcional): logo abaixo do item, uma linha por campo, no formato <code>campo: valor</code>. Campos: <code>como</code>, <code>quero</code>, <code>para</code>, <code>aceite</code> (um por critério), <code>prioridade</code> (Deve, Deveria, Poderia ou Não terá agora, e o nível de 1 a 5), <code>valor</code> (1 a 10), <code>pontos</code> (1, 2, 3, 5, 8, 13 ou 20), <code>tipo</code> (Item, Bug ou Melhoria) e <code>origem</code> (a chave, o título ou a posição no texto, como <code>#1</code>). Logo abaixo do épico: <code>meta</code>.</p>' +
-    '<p><b>Versão nova</b>: <code>versão: v1.3</code> e, logo abaixo, <code>entrega: 15/11/2026</code> (obrigatória) e <code>meta:</code>. <b>Definição de Pronto</b>: uma linha <code>pronto:</code> por regra. A ordem das linhas vira a ordem da fila; critério repetido é ignorado.</p>' +
-    '<p>Item com o mesmo título num épico que já existe <b>não duplica</b>: recebe os campos novos e não perde nada. Linha com erro aparece na prévia e o item dela fica de fora.</p>' +
-    '<div class="lt-ia"><button type="button" class="btn fant peq" data-lt-exemplo>Usar o exemplo</button><button type="button" class="btn fant peq" data-lt-exemplo-completo>Exemplo com detalhes</button></div>' +
-    '<div class="lt-ia"><b>Montar com um agente de IA</b><p>Baixe ou copie as instruções do formato, cole num chat com o agente, converse com ele e cole aqui o texto que ele devolver. As instruções já levam as frentes, versões e épicos deste projeto.</p>' +
-    '<span><button type="button" class="btn sec peq" data-lt-ia-baixar>Baixar instruções</button><button type="button" class="btn sec peq" data-lt-ia-copiar>Copiar instruções</button></span></div></div></div>' +
-    '<div class="lt-dir"><span class="lb">Prévia</span><div class="lt-previa" aria-live="polite">' + ltPreviaHTML({grupos:[], avisos:[], erros:[]}) + '</div></div></div>',
+  const linhaG = (ex, txt) => '<tr><td><code>' + esc(ex) + '</code></td><td>' + txt + '</td></tr>';
+  modal('Criar em lote',
+    '<div class="lt-topo"><div class="lt-topo-t"><b>Montar com um agente de IA</b><span>Baixe ou copie as instruções, converse com o agente e cole aqui o texto que ele devolver. Elas já levam as frentes, versões, épicos e itens deste projeto.</span></div>' +
+      '<div class="lt-topo-b"><button type="button" class="btn peq" data-lt-ia-baixar>Baixar instruções</button><button type="button" class="btn sec peq" data-lt-ia-copiar>Copiar instruções</button>' +
+      '<span class="lt-topo-sep" aria-hidden="true"></span><button type="button" class="btn fant peq" data-lt-exemplo>Exemplo simples</button><button type="button" class="btn fant peq" data-lt-exemplo-completo>Exemplo completo</button></div></div>' +
+    '<div class="lt-grade"><section class="lt-esq"><h3 class="lt-passo"><span>1</span><label for="lt-t">Escreva ou cole o texto</label></h3>' +
+      ltAtalhosHTML() +
+      '<textarea class="campo lt-texto" id="lt-t" rows="16" spellcheck="false" placeholder="' + esc(LT_EXEMPLO) + '"></textarea></section>' +
+    '<section class="lt-dir"><h3 class="lt-passo"><span>2</span>Confira a prévia</h3><div class="lt-previa" aria-live="polite">' + ltPreviaHTML({grupos:[], avisos:[], erros:[]}) + '</div>' +
+      '<p class="lt-nota">Nada é gravado antes de <b>Criar tudo</b>. Linha com erro aparece em vermelho e o item dela fica de fora.</p></section></div>' +
+    '<details class="lt-guia"><summary>Como escrever: o formato em uma tabela</summary><div class="lt-guia-rolo"><table class="lt-guia-t"><thead><tr><th>Escreva</th><th>O que acontece</th></tr></thead><tbody>' +
+      linhaG('Carteira de clientes', 'Linha sem traço vira <b>épico</b>. Com o mesmo nome de um que já existe, os itens entram nele') +
+      linhaG('- Cadastro do cliente', 'Linha com traço vira <b>item</b> do épico de cima. A ordem das linhas vira a ordem da fila') +
+      linhaG('[Frontend]  {v1.3}', 'No fim da linha: a <b>frente</b> e a <b>versão</b>. O item herda as do épico') +
+      linhaG('  como: / quero: / para:', 'A <b>história</b> do item, logo abaixo dele') +
+      linhaG('  aceite: Salva o CPF', 'Um <b>critério de aceite</b> por linha. Repetido é ignorado') +
+      linhaG('  prioridade: Deve 2', '<b>Prioridade</b>: Deve, Deveria, Poderia ou Não terá agora, e o nível de 1 a 5') +
+      linhaG('  valor: 8 menos suporte', '<b>Valor</b> de 1 a 10 e o motivo') +
+      linhaG('  pontos: 5', '<b>Estimativa</b>: 1, 2, 3, 5, 8, 13 ou 20') +
+      linhaG('  tipo: Bug  /  origem: #1', '<b>Tipo</b> Item, Bug ou Melhoria. A origem é a chave (BL-12), o título ou a posição no texto (#1)') +
+      linhaG('meta: ...', 'Logo abaixo do épico (ou da versão): a <b>meta</b>') +
+      linhaG('versão: v1.3  /  entrega: 15/11/2026', '<b>Versão nova</b>, com a data de entrega (obrigatória)') +
+      linhaG('pronto: Testado no celular', 'Uma regra da <b>Definição de Pronto</b> do projeto') +
+    '</tbody></table></div><p class="lt-nota">Item com o mesmo título num épico que já existe não duplica: recebe os campos novos e não perde nada.</p></details>',
     [{txt:'Cancelar', cls:'sec'}, {txt:'Criar tudo', acao:dl => {
       const r = ltLer($('#lt-t', dl).value); const sr = ltResumo(r);
       const novos = sr.epNovos, nItens = sr.novos;

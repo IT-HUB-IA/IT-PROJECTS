@@ -220,8 +220,8 @@ function poDesenhoHTML(i, pode){
     return '<div class="po-des-slot"><span class="po-des-nome">' + nome + '</span>' +
       (x ? (url ? '<button type="button" class="po-des-img" data-po-des-ver="' + papel + '" aria-label="Ampliar o desenho de ' + nome.toLowerCase() + '"><img src="' + esc(url) + '" alt="Desenho de ' + esc(nome.toLowerCase()) + '"></button>' : '<span class="po-des-vazio">' + esc(x.nome) + '<small>carregando...</small></span>') +
         (pode ? '<span class="po-des-acoes"><label class="po-link">Trocar<input type="file" accept="image/*" data-po-des="' + papel + '" hidden></label><button type="button" class="po-link" data-po-des-tirar="' + papel + '">Tirar</button></span>' : '')
-      : (pode ? '<label class="po-des-vazio po-des-add"><input type="file" accept="image/*" data-po-des="' + papel + '" hidden><b>' + ICO.mais + 'Escolher imagem</b><small>PNG ou JPG</small></label>' : '<span class="po-des-vazio">Sem desenho</span>')) + '</div>'; };
-  return '<section class="g-sec jn-sec po-sec" data-po-sec="desenho"><h4><span class="jn-sec-tit">Desenho</span></h4><p class="jn-sec-ajuda">Como a tela deve ficar, no computador e no celular</p>' +
+      : (pode ? '<label class="po-des-vazio po-des-add"><input type="file" accept="image/*" data-po-des="' + papel + '" hidden><b>' + ICO.mais + 'Anexar imagem</b><small>PNG ou JPG</small></label>' : '<span class="po-des-vazio">Sem desenho</span>')) + '</div>'; };
+  return '<section class="g-sec jn-sec po-sec" data-po-sec="desenho"><h4><span class="jn-sec-tit">Desenho da tela</span></h4><p class="jn-sec-ajuda">Como a tela deve ficar, no computador e no celular</p>' +
     '<div class="po-des">' + slot('desenho_computador', 'Computador') + slot('desenho_celular', 'Celular') + '</div></section>';
 }
 const poHistSecHTML = () => '<section class="g-sec jn-sec po-sec" data-po-sec="historico"><h4><span class="jn-sec-tit">Histórico de mudanças</span></h4><p class="jn-sec-ajuda">Cada mudança de situação e de critério, com quem fez e quando. Nada é apagado</p><ul class="po-hist-lista"></ul></section>';
