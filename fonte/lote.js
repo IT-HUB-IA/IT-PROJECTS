@@ -26,7 +26,7 @@ function ltFrentes(){
 const LT_CAMPOS = {'como':'quem', 'quem':'quem', 'quero':'quero', 'o que':'quero', 'para':'para', 'por que':'para', 'porque':'para', 'historia':'historia',
   'aceite':'aceite', 'criterio':'aceite', 'criterio de aceite':'aceite', 'prioridade':'prioridade', 'classe':'classe', 'moscow':'classe', 'nivel':'nivel',
   'valor':'valor', 'pontos':'pontos', 'estimativa':'pontos', 'tipo':'tipo', 'origem':'origem', 'meta':'meta',
-  'versao':'versao', 'entrega':'entrega', 'data de entrega':'entrega', 'pronto':'pronto', 'definicao de pronto':'pronto'};
+  'depende':'depende', 'depende de':'depende', 'dependencia':'depende', 'versao':'versao', 'entrega':'entrega', 'data de entrega':'entrega', 'pronto':'pronto', 'definicao de pronto':'pronto'};
 // data de entrega: 15/11/2026 ou 2026-11-15
 function ltDataEntrega(v){ const s = String(v || '').trim(); let m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s); if (!m){ const b = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(s); if (b) m = [null, b[3], b[2].padStart(2, '0'), b[1].padStart(2, '0')]; }
   if (!m) return null; const d = new Date(+m[1], +m[2] - 1, +m[3]); return d.getFullYear() === +m[1] && d.getMonth() === +m[2] - 1 && d.getDate() === +m[3] ? m[1] + '-' + m[2] + '-' + m[3] : null; }
@@ -38,7 +38,7 @@ function ltDetalhe(campo, v, det, pj){
   const txt = String(v || '').trim();
   const max = (n, rot) => txt.length > n ? rot + ' passa de ' + n + ' letras' : '';
   if (!txt) return 'falta o valor depois de "' + campo + ':"';
-  if (campo !== 'aceite' && campo in det) return '"' + campo + '" aparece duas vezes no mesmo item';
+  if (campo !== 'aceite' && campo !== 'depende' && campo in det) return '"' + campo + '" aparece duas vezes no mesmo item';
   if (campo === 'quem' || campo === 'quero' || campo === 'para'){ const e = max(campo === 'quem' ? 300 : 500, 'o texto'); if (e) return e; det[campo] = txt; return ''; }
   if (campo === 'historia'){
     const m = /^como\s+(.+?),\s*quero\s+(.+?),\s*para\s+(.+?)\.?$/i.exec(txt);
@@ -61,7 +61,8 @@ function ltDetalhe(campo, v, det, pj){
   }
   if (campo === 'pontos'){ if (!/^\d+$/.test(txt) || !LT_SEQ.includes(+txt)) return 'estimativa "' + txt + '" fora da sequência: use 1, 2, 3, 5, 8, 13 ou 20'; det.pontos = +txt; return ''; }
   if (campo === 'tipo'){ const t = {item:'item', bug:'bug', melhoria:'melhoria'}[ltNorm(txt)]; if (!t) return 'tipo "' + txt + '" não existe: use Item, Bug ou Melhoria'; det.tipo = t; return ''; }
-  if (campo === 'origem'){ det.origemTxt = txt; return ''; }   // conferida no fim: pode ser um item que está mais abaixo no mesmo texto
+  if (campo === 'origem'){ det.origemTxt = txt; return ''; }
+  if (campo === 'depende'){ det.dependeTxt = det.dependeTxt || []; if (!det.dependeTxt.some(x => ltNorm(x) === ltNorm(txt))) det.dependeTxt.push(txt); return ''; }   // pode repetir: uma linha por item   // conferida no fim: pode ser um item que está mais abaixo no mesmo texto
   return '';
 }
 function ltLer(texto){
@@ -140,6 +141,16 @@ function ltLer(texto){
   // origem: a chave (BL-12) ou o título de um item que já existe, ou um item deste mesmo texto (pelo título ou pela posição: #3 é o 3º item do texto)
   const todos = []; grupos.forEach(g => g.itens.forEach(it => todos.push(it)));
   const noProj = pj ? issuesEm('project:' + pj.id).filter(i => !i.arquivado) : [];
+  // depende: a mesma busca da origem (chave, título ou posição no texto)
+  const acharRef = (it, txt) => { const n = ltNorm(txt), pos = /^#\s*(\d+)$/.exec(txt.trim());
+    if (pos){ const a = todos[+pos[1] - 1]; return a && a !== it ? {lote:a, nome:a.titulo + ' (' + txt.trim() + ' deste texto)'} : null; }
+    const o = noProj.find(i => typeof chaveDe === 'function' && ltNorm(chaveDe(i)) === n) || noProj.find(i => ltNorm(i.titulo) === n);
+    if (o) return o.id === (it.ja && it.ja.id) ? null : {id:o.id, nome:((typeof chaveDe === 'function' && chaveDe(o)) || '') + ' ' + o.titulo};
+    const d = todos.find(x => x !== it && ltNorm(x.titulo) === n); return d ? {lote:d, nome:d.titulo + ' (deste texto)'} : null; };
+  todos.forEach(it => (it.det.dependeTxt || []).forEach(txt => { const r = acharRef(it, txt);
+    if (!r){ erro(it.linha - 1, 'depende "' + txt + '" não existe neste projeto nem neste texto: use a chave (BL-12), o título do item ou a posição no texto (#3)', it); return; }
+    if (r.lote && r.lote.erros.length){ erro(it.linha - 1, 'o item "' + r.lote.titulo + '" de que este depende tem erro e fica de fora: corrija ele primeiro', it); return; }
+    (it.det.depende = it.det.depende || []).push(r); }));
   todos.forEach(it => { const txt = it.det.origemTxt; if (!txt) return; const n = ltNorm(txt);
     const pos = /^#\s*(\d+)$/.exec(txt.trim());
     if (pos){ const alvoL = todos[+pos[1] - 1]; if (!alvoL || alvoL === it){ erro(it.linha - 1, 'origem "' + txt + '": não há ' + (alvoL === it ? 'outro ' : '') + 'item nessa posição no texto (#1 é o primeiro item)', it); return; } it.det.origemLote = alvoL; it.det.origemNome = alvoL.titulo + ' (' + txt.trim() + ' deste texto)'; return; }
@@ -159,7 +170,7 @@ function ltLer(texto){
   return {grupos, avisos, padrao, novasV:novasV.filter(n => !vdecl.some(v => ltNorm(v.nome) === ltNorm(n) && v.erros.length)), erros, vdecl, pronto};
 }
 // o que cada item vai receber, para a prévia e para gravar
-const ltTemDet = det => Object.keys(det).some(k => !['origemNome','origemTxt','origemLote'].includes(k));
+const ltTemDet = det => Object.keys(det).some(k => !['origemNome','origemTxt','origemLote','dependeTxt'].includes(k));
 function ltResumo(r){
   let epNovos = 0, novos = 0, atualiza = 0, igual = 0, comErro = 0;
   r.grupos.forEach(g => { if (g.erros.length){ comErro += 1 + g.itens.length; return; } if (g.titulo && !g.ja) epNovos++;
@@ -192,6 +203,7 @@ function ltDetHTML(det){
   if (det.classe || det.nivel) chips.push('<span class="lt-chip">' + esc([det.classe ? ({deve:'Deve', deveria:'Deveria', poderia:'Poderia', nao_tera:'Não terá agora'})[det.classe] : '', det.nivel ? 'nível ' + det.nivel : ''].filter(Boolean).join(' · ')) + '</span>');
   if (det.valor) chips.push('<span class="lt-chip">valor ' + det.valor + (det.valorMotivo ? ': ' + esc(det.valorMotivo) : '') + '</span>');
   if (det.pontos) chips.push('<span class="lt-chip">' + det.pontos + ' pts</span>');
+  (det.depende || []).forEach(d => chips.push('<span class="lt-chip lt-dep">depende de ' + esc(d.nome.trim()) + '</span>'));
   if (chips.length) p.push('<div class="lt-chips">' + chips.join('') + '</div>');
   if ((det.aceite || []).length) p.push('<ul class="lt-crit">' + det.aceite.map(c => '<li>' + esc(c) + '</li>').join('') + '</ul>');
   return p.join('');
@@ -220,6 +232,12 @@ function ltPreviaHTML(r){
         (i.ws !== g.ws ? '<span class="lt-fr">' + esc(ltFrenteNome(i.ws)) + '</span>' : '') + (i.mc !== g.mc ? ltVersao(i.mc) : '') + '</div>' + ltDetHTML(i.det) +
         (i.erros.length ? '<ul class="lt-it-erros">' + i.erros.map(e => '<li>Linha ' + e.linha + ': ' + esc(e.msg) + '</li>').join('') + '</ul>' : '') + '</li>').join('') + '</ul>' : '') + '</li>').join('') + '</ol>';
 }
+// "depende de": a ligação "é bloqueado por" que o item já tem (sem repetir)
+function ltDepender(x, alvoId){
+  if (!x || !alvoId || alvoId === x.id) return; x.links = x.links || [];
+  const ja = x.links.some(l => l.alvo === alvoId && l.tipo === 'Is blocked by') || ((byId('issues', alvoId) || {}).links || []).some(l => l.alvo === x.id && l.tipo === 'Blocks');
+  if (!ja) x.links.push({tipo:'Is blocked by', alvo:alvoId});
+}
 // grava os detalhes num item (novo ou que já existe): só o que veio no texto; nada do que já existe é apagado
 function ltAplicar(x, det){
   if (det.quem) x.hQuem = det.quem; if (det.quero) x.hQuero = det.quero; if (det.para) x.hPara = det.para;
@@ -231,6 +249,7 @@ function ltAplicar(x, det){
   if (det.tipo === 'melhoria') x.melhoria = true; else if (det.tipo === 'item') x.melhoria = false;
   if (det.tipo === 'bug' && x.tipo !== 'bug' && typeof poMudarTipo === 'function') poMudarTipo(x, 'bug');
   if (det.tipo && det.tipo !== 'bug' && x.tipo === 'bug' && typeof poMudarTipo === 'function') poMudarTipo(x, det.tipo);
+  (det.depende || []).forEach(d => { if (d.id) ltDepender(x, d.id); });
   if ((det.aceite || []).length){ const ja = new Set((x.crit || []).map(c => ltNorm(c.t))); x.crit = (x.crit || []).concat(det.aceite.filter(c => !ja.has(ltNorm(c))).map(t => ({t, f:false}))); }
 }
 function ltNovo(titulo, ws, tipo, status, pai, mc){
@@ -247,7 +266,7 @@ function ltAtalhosHTML(){
   const grupo = (rot, dica, botoes) => botoes ? '<div class="lt-at-g"><span class="lt-at-rot" title="' + esc(dica) + '">' + rot + '</span><div class="lt-at-bts">' + botoes + '</div></div>' : '';
   return '<div class="lt-atalhos" role="toolbar" aria-label="Atalhos para escrever">' +
     grupo('Linha nova', 'Acrescenta uma linha embaixo da linha onde está o cursor', bt('epico', '', ICO.mais + 'Épico') + bt('item', '', ICO.mais + 'Item') + bt('nova-versao', prox, ICO.mais + 'Versão nova', 'Versão ' + prox + ', com a data de entrega') + bt('pronto', '', ICO.mais + 'Regra de pronto', 'Uma regra da Definição de Pronto do projeto')) +
-    grupo('Detalhe do item', 'Acrescenta, embaixo do item, uma linha campo: valor', [['como', 'Como'], ['quero', 'Quero'], ['para', 'Para'], ['aceite', 'Critério'], ['prioridade', 'Prioridade'], ['valor', 'Valor'], ['pontos', 'Pontos'], ['tipo', 'Tipo'], ['origem', 'Origem']].map(([k, n]) => bt('det', k, n)).join('')) +
+    grupo('Detalhe do item', 'Acrescenta, embaixo do item, uma linha campo: valor', [['como', 'Como'], ['quero', 'Quero'], ['para', 'Para'], ['aceite', 'Critério'], ['prioridade', 'Prioridade'], ['valor', 'Valor'], ['pontos', 'Pontos'], ['tipo', 'Tipo'], ['origem', 'Origem'], ['depende', 'Depende de']].map(([k, n]) => bt('det', k, n)).join('')) +
     grupo('Épico ou versão', 'Embaixo da linha do épico ou da versão', bt('det', 'meta', 'Meta') + bt('det', 'entrega', 'Data de entrega')) +
     grupo('Frente da linha', 'Põe [frente] no fim da linha onde está o cursor', frentes.map(n => bt('frente', n, esc(n))).join('')) +
     grupo('Versão da linha', 'Põe {versão} no fim da linha onde está o cursor', versoes.map(n => bt('versao', n, esc(n))).join('')) + '</div>';
@@ -308,6 +327,7 @@ function ltAbrir(){
       linhaG('  valor: 8 menos suporte', '<b>Valor</b> de 1 a 10 e o motivo') +
       linhaG('  pontos: 5', '<b>Estimativa</b>: 1, 2, 3, 5, 8, 13 ou 20') +
       linhaG('  tipo: Bug  /  origem: #1', '<b>Tipo</b> Item, Bug ou Melhoria. A origem é a chave (BL-12), o título ou a posição no texto (#1)') +
+      linhaG('  depende: #1  /  BL-12', 'O item só começa depois de outro: a chave, o título ou a posição no texto. Uma linha por item') +
       linhaG('meta: ...', 'Logo abaixo do épico (ou da versão): a <b>meta</b>') +
       linhaG('versão: v1.3  /  entrega: 15/11/2026', '<b>Versão nova</b>, com a data de entrega (obrigatória)') +
       linhaG('pronto: Testado no celular', 'Uma regra da <b>Definição de Pronto</b> do projeto') +
@@ -335,7 +355,8 @@ function ltAbrir(){
             const ni = ltNovo(i.titulo, i.ws, i.det.tipo === 'bug' ? 'bug' : ep ? 'story' : 'task', 'backlog', ep ? ep.id : null, i.mc); i._feito = ni; ltAplicar(ni, i.det); });
         });
         // origem apontando para um item deste mesmo texto: liga depois que todos existem
-        r.grupos.forEach(g => g.itens.forEach(i => { const o = i.det.origemLote; if (i._feito && o && o._feito && o._feito !== i._feito) i._feito.origem = o._feito.id; }));
+        r.grupos.forEach(g => g.itens.forEach(i => { const o = i.det.origemLote; if (i._feito && o && o._feito && o._feito !== i._feito) i._feito.origem = o._feito.id;
+          (i.det.depende || []).forEach(d => { if (d.lote && d.lote._feito && i._feito) ltDepender(i._feito, d.lote._feito.id); }); }));
       });
     }}]);
   const dl = document.querySelector('dialog.modal:last-of-type'); if (!dl) return;

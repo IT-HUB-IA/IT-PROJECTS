@@ -1509,7 +1509,24 @@ async function gravarNoBanco(){
     }
   }
   // 2) incluir e alterar (pais primeiro)
+  // as linhas novas vão em blocos (um lote grande gravava uma linha por vez e demorava minutos); se o bloco falhar, vai uma por uma para achar a que deu erro
+  const totalNovas = GRAVAR.reduce((s, [t]) => s + (t === 'notificacoes' ? 0 : [...agora[t].keys()].filter(k => !SYNC.base[t].has(k)).length), 0);
+  let feitas = 0;
   for (const [t, pk, natural] of GRAVAR){
+    if (t !== 'notificacoes'){
+      const novas = [...agora[t]].filter(([k]) => !SYNC.base[t].has(k));
+      while (novas.length > 1){
+        // num bloco de itens, o pai nunca vai junto com o filho (o pai precisa existir antes)
+        const bloco = []; const ids = new Set();
+        while (novas.length && bloco.length < 100 && !(t === 'itens' && novas[0][1].pai_id && ids.has(novas[0][1].pai_id))){ const x = novas.shift(); bloco.push(x); ids.add(x[1].id); }
+        const rows = bloco.map(x => x[1]);
+        const {data:inc, error} = natural ? await sb.from(t).upsert(rows, {onConflict:pk.join(',')}) : t === 'itens' ? await sb.from(t).insert(rows).select('id,chave') : await sb.from(t).insert(rows);
+        if (error){ novas.unshift(...bloco); break; }   // a gravação de uma por uma, logo abaixo, mostra qual deu erro
+        bloco.forEach(([k, row]) => SYNC.base[t].set(k, row));
+        if (t === 'itens'){ mexeuItens = true; (inc || []).forEach(r0 => { const it = D.issues.find(x => x.id === r0.id); if (it && r0.chave){ it.chave = r0.chave; SYNC.chavesNovas = true; } }); }
+        feitas += bloco.length; if (totalNovas > 20) selo('Salvando... ' + feitas + ' de ' + totalNovas);
+      }
+    }
     for (const [k, row] of agora[t]){
       const antes = SYNC.base[t].get(k);
       if (!antes){

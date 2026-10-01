@@ -104,3 +104,4 @@ dialog.modal.lt-modal{width:min(1240px, calc(100vw - 32px));max-width:none}
 .lt-guia-t code{font-size:12px;background:var(--preto-04);padding:1px 4px}
 .lt-guia .lt-nota{padding:8px 14px 12px}
 @media (max-width:860px){ .lt-grade{grid-template-columns:minmax(0, 1fr)} .lt-at-g{grid-template-columns:minmax(0, 1fr)} .lt-guia-t td:first-child{white-space:normal} }
+.lt-dep{border-color:#B45309;color:#B45309}

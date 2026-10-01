@@ -23,8 +23,8 @@ function executar(p){
     let sql;
     if (op === 'select' && conta){ const n = psql(COMO + 'select count(*) from ' + T).trim(); ops.push('count ' + t); return {data:null, count:Number(n), error:null}; }
     if (op === 'select') sql = 'select coalesce(json_agg(x), \'[]\') from (select * from ' + T + ' order by ' + (ordem ? ordem[0] + (ordem[1] ? ' asc' : ' desc') : '1') + ' offset ' + (de || 0) + ' limit ' + (lim || ((ate || 999) - (de || 0) + 1)) + ') x';
-    else if (op === 'insert' || op === 'upsert'){ const cs = Object.keys(row);
-      sql = 'insert into ' + T + ' (' + cs.join(',') + ') select ' + cs.join(',') + ' from json_populate_record(null::' + T + ', ' + lit(row) + ')' +
+    else if (op === 'insert' || op === 'upsert'){ const cs = Object.keys(Array.isArray(row) ? row[0] : row);
+      sql = 'insert into ' + T + ' (' + cs.join(',') + ') select ' + cs.join(',') + ' from ' + (Array.isArray(row) ? 'json_populate_recordset' : 'json_populate_record') + '(null::' + T + ', ' + lit(row) + ')' +
         (op === 'upsert' ? ' on conflict (' + conflito + ') do update set ' + (cs.filter(c => !conflito.split(',').includes(c)).map(c => c + '=excluded.' + c).join(',') || conflito.split(',')[0] + '=excluded.' + conflito.split(',')[0]) : '') ;
       // como o supabase-js: só devolve a linha quando a tela pede (.select); senão grava sem ler de volta
       sql = ret ? 'with u as (' + sql + ' returning *) select coalesce(json_agg(u), \'[]\') from u' : sql; }
@@ -134,6 +134,23 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
     await p.click('dialog.lt-modal .modal-rod .btn:not(.sec)'); await espera();
     ok(conta("select string_agg(c.texto, ';' order by c.ordem) from itens_criterios c join itens i on i.id = c.item_id where i.titulo = 'Primeiro da ordem'") === 'Critério A;Critério B', 'colar de novo não duplica o critério igual: só entra o novo');
     await p.evaluate(() => document.querySelectorAll('dialog.modal').forEach(d => { d.close(); d.remove(); }));
+  })();
+  // ---------- depende: e gravação em blocos ----------
+  await (async () => {
+    const espera = async () => { await p.waitForTimeout(600); await p.waitForFunction(() => !window.ciclodevSync.rodando && !window.ciclodevSync.pendente, null, {timeout: 30000}); await p.waitForTimeout(300); };
+    await p.evaluate(() => document.querySelectorAll('dialog.modal').forEach(d => { d.close(); d.remove(); })); await p.evaluate(() => window.__tf.ltAbrir()); await p.waitForTimeout(300);
+    const escrever = async t => { await p.evaluate(t => { const ta = document.querySelector('#lt-t'); ta.value = t; ta.dispatchEvent(new Event('input')); }, t); await p.waitForTimeout(150); return p.evaluate(() => document.querySelector('.lt-previa').textContent); };
+    const pv1 = await escrever('Dep teste\n- Dep base\n- Dep depois\n  depende: #1\n- Dep ruim\n  depende: Item que não existe');
+    ok(/depende de Dep base/.test(pv1) && /depende "Item que não existe" não existe/.test(pv1), 'a prévia mostra a dependência e aponta erro quando o item não existe');
+    let texto = 'Bloco grande\n'; for (let k = 1; k <= 60; k++) texto += '- Bloco item ' + k + '\n  aceite: Critério ' + k + '\n';
+    await escrever('Dep teste\n- Dep base\n- Dep depois\n  depende: #1\n  depende: Dep base\n\n' + texto);
+    await p.click('dialog.lt-modal .modal-rod .btn:not(.sec)'); await espera();
+    ok(conta("select count(*) from itens_ligacoes l join itens a on a.id = l.origem_id join itens b on b.id = l.destino_id where a.titulo = 'Dep base' and b.titulo = 'Dep depois' and l.tipo = 'bloqueia'") === '1', 'depende: grava uma ligação só (Dep base bloqueia Dep depois), mesmo escrito duas vezes');
+    ok(conta("select count(*) from itens where titulo like 'Bloco item %'") === '60' && conta("select count(*) from itens_criterios c join itens i on i.id = c.item_id where i.titulo like 'Bloco item %'") === '60', 'um lote grande (60 itens e 60 critérios) grava inteiro em blocos');
+    const dep = conta("select id from itens where titulo = 'Dep depois'");
+    await p.evaluate(id => window.__tf.abrirItem(id), dep); await p.waitForTimeout(500);
+    ok(await p.evaluate(() => { const d = document.querySelector('#gaveta-wrap .po-deps'); return !!d && /Dep base/.test(d.textContent) && d.classList.contains('po-deps-aviso') && /ainda não foi aceito/.test(d.textContent); }), 'a janela do item mostra Depende de, com aviso porque a dependência ainda não foi aceita');
+    await p.evaluate(() => { const b = document.querySelector('[data-fechar-gaveta]'); if (b) b.click(); document.querySelectorAll('dialog.modal').forEach(d => { d.close(); d.remove(); }); });
   })();
   // ---------- Quadro, Lista e Fila ----------
   await (async () => {

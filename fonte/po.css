@@ -94,3 +94,12 @@
 .po-dod-txt{font-size:13.5px;line-height:1.55;overflow-wrap:anywhere;padding:0 0 8px}
 .po-dod-caixa .po-acoes{margin-top:8px}
 .po-dod-corpo{padding:14px 16px 16px;display:grid;gap:8px}
+.po-deps{display:grid;gap:4px;font-size:12.5px;padding:6px 8px;border:1px solid var(--border-default)}
+.po-deps ul{margin:0;padding:0;list-style:none;display:grid;gap:2px}
+.po-deps li{display:flex;flex-wrap:wrap;align-items:center;gap:4px;overflow-wrap:anywhere}
+.po-deps-aviso{border-color:#B45309;border-left-width:3px}
+.po-dep-msg{margin:0;color:#B45309;font-weight:600}
+.po-dep-st{font-size:11px;font-weight:700}
+.po-dep-tirar{width:22px;height:22px}
+.po-dep-add{max-width:100%}
+.po-dep{color:#B45309;border-style:dashed}

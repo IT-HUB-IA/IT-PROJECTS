@@ -31,6 +31,11 @@ const poProjeto = i => { const ws = i && byId('ws', i.ws); const a = ws && byId(
 const poDoPO = i => { const pj = poProjeto(i); const p = pj && pj.po && pessoa(pj.po); return p && p.ativo !== false ? p : null; };
 const poSouPO = i => { const p = poDoPO(i); return !p || p.id === eu(); };
 const poAceito = i => i.status === 'done';
+// de quem o item depende: as ligações "é bloqueado por" (no próprio item) e "bloqueia" (gravadas no outro item)
+const poDeps = i => { const ids = new Set((i.links || []).filter(l => l.tipo === 'Is blocked by').map(l => l.alvo));
+  D.issues.forEach(x => (x.links || []).forEach(l => { if (l.tipo === 'Blocks' && l.alvo === i.id) ids.add(x.id); }));
+  return [...ids].map(id => byId('issues', id)).filter(x => x && !x.arquivado); };
+const poDepsAbertas = i => poDeps(i).filter(x => x.status !== 'done');
 const poHistoria = i => (i.hQuem || i.hQuero || i.hPara) ? 'Como ' + (i.hQuem || '...') + ', quero ' + (i.hQuero || '...') + ', para ' + (i.hPara || '...') + '.' : '';
 const poCh = x => { const c = typeof chaveDe === 'function' ? chaveDe(x) : ''; return c ? c + ' · ' : ''; };
 const poDataHora = v => { if (!v) return ''; const d = new Date(v); return isNaN(d) ? '' : d.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}) + ' ' + d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}); };
@@ -133,6 +138,7 @@ mudarStatus = function(i, s){
   const g = poGrupo(s);
   if (g === 'done' && i.status !== 'done' && !poPodeAceitar(i, true)) return;
   const antes = poSituacao(i);
+  if (['doing','review','done'].includes(g) && ['backlog','todo'].includes(i.status) && poDepsAbertas(i).length) toast('Atenção: "' + i.titulo + '" depende de ' + poDepsAbertas(i).map(x => poCh(x) + x.titulo).join(', ') + ', que ainda não foi aceito.');
   if (g === 'review' || g === 'done') i.voltou = null;
   const r = _mudarStatusPo.apply(this, arguments);
   if (poSituacao(i) !== antes) poHistLocal(i, {tipo:'situacao', de:antes, para:poSituacao(i)});
@@ -186,7 +192,16 @@ function poSituacaoHTML(i, pode){
   return '<div class="po-situ">' +
     '<div class="po-situ-lin">' + (poVoltou(i) ? '<span class="po-situ-nome po-s-voltou">Voltou</span>' : '') +
     '<span class="po-situ-po">P.O.: ' + (po ? '<b>' + esc(po.nome) + '</b>' : 'ninguém definido') + (pode ? ' <button type="button" class="po-link" data-po-acao="definir-po">' + (po ? 'trocar' : 'definir') + '</button>' : '') + '</span></div>' +
-    (poVoltou(i) && i.voltouMotivo ? '<p class="po-voltou">Voltou: ' + esc(i.voltouMotivo) + '</p>' : '') + acoes + '</div>';
+    (poVoltou(i) && i.voltouMotivo ? '<p class="po-voltou">Voltou: ' + esc(i.voltouMotivo) + '</p>' : '') + poDepsHTML(i, pode) + acoes + '</div>';
+}
+function poDepsHTML(i, pode){
+  const L = poDeps(i), ab = L.filter(x => x.status !== 'done');
+  const cand = pode ? D.issues.filter(x => x.id !== i.id && !x.arquivado && poTemPO(x) && !L.includes(x) && (byId('ws', x.ws) || {}).app && poProjeto(x) === poProjeto(i)) : [];
+  return '<div class="po-deps' + (ab.length ? ' po-deps-aviso' : '') + '"><b>Depende de</b>' +
+    (L.length ? '<ul>' + L.map(x => '<li><button type="button" class="po-link" data-abrir-item="' + x.id + '">' + esc(poCh(x) + x.titulo) + '</button> <span class="po-dep-st po-s-' + poSituacao(x) + '">' + esc(PO_SITU[poSituacao(x)]) + '</span>' +
+        (pode ? ' <button type="button" class="ico-btn po-dep-tirar" data-po-dep-tirar="' + x.id + '" aria-label="Tirar a dependência">' + ICO.fechar + '</button>' : '') + '</li>').join('') + '</ul>' : '<span class="po-nota"> nenhum item</span>') +
+    (ab.length ? '<p class="po-dep-msg">Atenção: ' + (ab.length === 1 ? 'o item de que este depende ainda não foi aceito' : ab.length + ' itens de que este depende ainda não foram aceitos') + '. O ideal é começar só depois.</p>' : '') +
+    (pode && cand.length ? '<select class="sel d-sel po-dep-add" data-po-dep-add aria-label="Acrescentar uma dependência"><option value="">+ Depende de outro item</option>' + cand.map(x => '<option value="' + x.id + '">' + esc(poCh(x) + x.titulo) + '</option>').join('') + '</select>' : '') + '</div>';
 }
 function poHistoriaHTML(i, pode){
   const trava = poAceito(i), dis = pode && !trava ? '' : ' disabled';
@@ -304,6 +319,7 @@ document.addEventListener('change', e => {
     salvar(); poReabrir(i); if (typeof rView === 'function' && c !== 'meta' && !c.startsWith('h') && c !== 'valorMotivo') rView();
     return;
   }
+  if (t.matches('[data-po-dep-add]') && t.value){ (i.links = i.links || []).push({tipo:'Is blocked by', alvo:t.value}); registrar('editou', i, i.titulo + ': depende de ' + ((byId('issues', t.value) || {}).titulo || '')); salvar(); poReabrir(i); return; }
   if (t.matches('[data-po-crit]')){
     const x = poCrit(i)[+t.dataset.poCrit]; if (!x) return;
     if (poAceito(i)){ toast('Item aceito: os critérios não mudam mais.'); poReabrir(i); return; }
@@ -332,8 +348,9 @@ document.addEventListener('submit', e => {
   const ni = $('#gaveta-wrap [data-po-form="crit"] input'); if (ni) ni.focus();
 });
 document.addEventListener('click', e => {
-  const t = e.target.closest ? e.target.closest('[data-po-crit-mover],[data-po-crit-tirar],[data-po-acao],[data-po-des-tirar],[data-po-des-ver]') : null; if (!t) return;
+  const t = e.target.closest ? e.target.closest('[data-po-crit-mover],[data-po-crit-tirar],[data-po-acao],[data-po-des-tirar],[data-po-des-ver],[data-po-dep-tirar]') : null; if (!t) return;
   const i = itemAberto && byId('issues', itemAberto); if (!i) return;
+  if (t.dataset.poDepTirar){ const a = t.dataset.poDepTirar; tfComDesfazer('Dependência tirada.', () => { i.links = (i.links || []).filter(l => !(l.tipo === 'Is blocked by' && l.alvo === a)); const o = byId('issues', a); if (o) o.links = (o.links || []).filter(l => !(l.tipo === 'Blocks' && l.alvo === i.id)); }); poReabrir(i); return; }
   if (t.dataset.poCritMover){ const [k, d] = t.dataset.poCritMover.split('|').map(Number); const L = poCrit(i).slice(); const j = k + d; if (j < 0 || j >= L.length) return; [L[k], L[j]] = [L[j], L[k]]; i.crit = L; salvar(); poReabrir(i); return; }
   if (t.dataset.poCritTirar != null){ const k = +t.dataset.poCritTirar; const x = poCrit(i)[k]; if (!x) return;
     tfComDesfazer('Critério tirado.', () => { i.crit = poCrit(i).filter((_, n) => n !== k); poHistLocal(i, {tipo:'criterio', de:x.t, texto:'tirou'}); }); poReabrir(i); return; }
@@ -397,6 +414,7 @@ function poChipsHTML(i, curto){
     '<span class="po-chip po-n po-n' + n + '" title="Nível ' + esc(PO_NIVEIS[n - 1][1]) + '">N' + n + '</span>' +
     (curto ? '' : (i.pontos ? '<span class="po-chip po-pts" title="Estimativa">' + i.pontos + ' pts</span>' : '')) +
     (c.n ? '<span class="po-chip po-ck' + (c.f === c.n ? ' ok' : '') + '" title="Critérios de aceite marcados: ' + c.f + ' de ' + c.n + '">✓ ' + c.f + ' de ' + c.n + '</span>' : '') +
+    (poDepsAbertas(i).length ? '<span class="po-chip po-dep" title="Depende de ' + esc(poDepsAbertas(i).map(x => poCh(x) + x.titulo).join(', ')) + ', ainda não aceito">depende</span>' : '') +
     (i.tipo === 'bug' ? '<span class="po-chip po-bug">Bug</span>' : i.melhoria ? '<span class="po-chip po-mel">Melhoria</span>' : '') + '</span>';
 }
 const _cartaoHTMLPo = cartaoHTML;
@@ -509,7 +527,7 @@ function poExLinhas(i){
     exLinha('Classe (MoSCoW)', poMoscowNome(i.moscow)) + exLinha('Nível', PO_NIVEIS[poNivel(i) - 1][1]) +
     exLinha('Valor de negócio', i.valor ? i.valor + ' de 10' + (i.valorMotivo ? ' · ' + i.valorMotivo : '') : (i.valorMotivo || '')) +
     exLinha('Estimativa (pontos)', i.pontos || '') + exLinha('Critérios de aceite', c.n ? c.f + ' de ' + c.n + ' marcados' : '') + exLinha('Posição na fila', pos || '') +
-    exLinha('P.O.', poDoPO(i) ? poDoPO(i).nome : '');
+    exLinha('P.O.', poDoPO(i) ? poDoPO(i).nome : '') + exLinha('Depende de', poDeps(i).map(x => exNomeItem(x) + ' (' + PO_SITU[poSituacao(x)] + ')').join('; '));
 }
 const _exSituacaoPo = exSituacao;
 exSituacao = function(i){ return _exSituacaoPo.apply(this, arguments).replace(/\n$/, poExLinhas(i) + '\n'); };
@@ -543,4 +561,4 @@ exNoMd = function(chave){
   return md;
 };
 
-if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {exItemMd, exNoMd, abrirItem, mudarStatus, poFila, poCritConta, poSituacao, poPodeAceitar, POH, poHistCarregar});
+if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {poDeps, exItemMd, exNoMd, abrirItem, mudarStatus, poFila, poCritConta, poSituacao, poPodeAceitar, POH, poHistCarregar});

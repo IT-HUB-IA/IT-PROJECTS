@@ -17,8 +17,8 @@ function executar(p){
       sql = ESCALAR.includes(fn) ? 'select to_json(public.' + fn + '(' + a + '))' : "select coalesce(json_agg(x), '[]') from public." + fn + '(' + a + ') x';
     }
     else if (op === 'select') sql = "select coalesce(json_agg(x), '[]') from (select * from " + T + ' order by 1 offset ' + (de || 0) + ' limit ' + ((ate || 999) - (de || 0) + 1) + ') x';
-    else if (op === 'insert' || op === 'upsert'){ const cs = Object.keys(row);
-      sql = 'insert into ' + T + ' (' + cs.join(',') + ') select ' + cs.join(',') + ' from json_populate_record(null::' + T + ', ' + lit(row) + ')' +
+    else if (op === 'insert' || op === 'upsert'){ const cs = Object.keys(Array.isArray(row) ? row[0] : row);
+      sql = 'insert into ' + T + ' (' + cs.join(',') + ') select ' + cs.join(',') + ' from ' + (Array.isArray(row) ? 'json_populate_recordset' : 'json_populate_record') + '(null::' + T + ', ' + lit(row) + ')' +
         (op === 'upsert' ? ' on conflict (' + conflito + ') do update set ' + (cs.filter(c => !conflito.split(',').includes(c)).map(c => c + '=excluded.' + c).join(',') || conflito.split(',')[0] + '=excluded.' + conflito.split(',')[0]) : '');
       sql = ret ? 'with u as (' + sql + " returning *) select coalesce(json_agg(u), '[]') from u" : sql; }
     else if (op === 'update'){ const cs = Object.keys(row); sql = 'with u as (update ' + T + ' set ' + (cs.length === 1 ? cs[0] + ' = (select ' + cs[0] : '(' + cs.join(',') + ') = (select ' + cs.join(',')) + ' from json_populate_record(null::' + T + ', ' + lit(row) + ')) where ' + onde(filtro) + " returning *) select coalesce(json_agg(u), '[]') from u"; }

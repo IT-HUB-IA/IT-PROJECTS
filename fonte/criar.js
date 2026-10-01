@@ -61,6 +61,7 @@ function ciLoteMd(ctx){
     '| `pontos` | Estimativa | 1, 2, 3, 5, 8, 13 ou 20 | `pontos: 5` |\n' +
     '| `tipo` | Tipo do item | `Item`, `Bug` ou `Melhoria` | `tipo: Bug` |\n' +
     '| `origem` | O item de origem (obrigatório no Bug) | a chave de um item que já existe (BL-12), o título de um item (que já existe ou que está neste mesmo texto) ou a posição do item neste texto (`#3` é o 3º item, contando de cima) | `origem: BL-12`, `origem: Cadastro do cliente`, `origem: #1` |\n' +
+    '| `depende` | O item só pode começar depois de outro. Repita a linha para cada item de que ele depende | a chave de um item que já existe (BL-12), o título de um item (que já existe ou que está neste texto) ou a posição neste texto (`#3`) | `depende: BL-12`, `depende: Cadastro do cliente`, `depende: #1` |\n' +
     '| `meta` | **Do épico**: a meta da entrega. Logo abaixo da linha do épico, sem traço. **Da versão**: logo abaixo da linha `versão:` | texto (até 1000 letras) | `meta: o lojista publica sem ligar para o suporte` |\n' +
     '| `versão` | Declara uma versão (linha sem recuo, em qualquer lugar do texto) | o nome da versão | `versão: v1.3` |\n' +
     '| `entrega` | **Da versão**: a data de entrega, logo abaixo da linha `versão:`. Obrigatória em versão nova | dia/mês/ano ou ano-mês-dia | `entrega: 15/11/2026` |\n' +
@@ -86,6 +87,7 @@ function ciLoteMd(ctx){
     '4. Um épico com o mesmo nome de um que já existe no projeto **não é duplicado**: os itens entram nele.\n' +
     '5. Um item com o mesmo título dentro de um épico que já existe **não é duplicado**: ele recebe os campos que vieram no texto, e nada do que ele já tem é apagado (os critérios novos se somam aos que já existem).\n' +
     '5b. **Critério de aceite repetido é ignorado**: colar o mesmo texto de novo não duplica critério. Conta como igual o critério com o mesmo texto, sem diferença de maiúscula, acento ou espaço; no mesmo item do texto, a segunda linha igual também é ignorada.\n' +
+    '5d. **`depende:`** liga o item ao item de que ele depende (na tela, a ligação \"é bloqueado por\"). Apontar para um item que não existe, neste projeto ou neste texto, é erro na prévia e o item fica de fora. Repetir a mesma dependência não duplica. Na janela do item aparece \"Depende de\", com um aviso enquanto a dependência ainda não foi aceita; no Quadro, a etiqueta \"depende\". O aviso não impede começar: só alerta.\n' +
     '5c. Bug e Melhoria podem apontar para um item do **mesmo texto**, que ainda não tem número: use o título dele (`origem: Cadastro do cliente`) ou a posição dele no texto (`origem: #1`). A ligação é feita depois que todos são criados. Se o item de origem tiver erro, o Bug ou a Melhoria também fica de fora.\n' +
     '6. Item que já foi aceito não muda a história nem os critérios: para mudar, crie um item novo com `tipo: Melhoria`.\n' +
     '7. Títulos curtos e claros (até 300 letras), começando com verbo ou com o nome da coisa (ex.: "Cadastro do cliente", "Validar CPF no cadastro").\n' +
@@ -93,7 +95,7 @@ function ciLoteMd(ctx){
     '9. O formato antigo, só com títulos, continua valendo: os detalhes são opcionais.\n\n' +
     '### Exemplo só com títulos\n\n```\n' + LT_EXEMPLO + '\n```\n\n' +
     '### Exemplo completo\n\n```\n' + ex + '\n```\n\n' +
-    '### Exemplo com Bug e Melhoria\n\n```\nCarteira de clientes\n- Cadastro do cliente\n  aceite: Avisa quando o CPF já está cadastrado\n- CPF repetido entra no cadastro\n  tipo: Bug\n  origem: Cadastro do cliente\n  aceite: Avisa quando o CPF já está cadastrado\n  prioridade: Deve 2\n  pontos: 2\n- Exportar a carteira em planilha\n  tipo: Melhoria\n  origem: #1\n  como: lojista\n  quero: baixar a carteira em planilha\n  para: mandar para o meu contador\n  prioridade: Poderia 4\n  valor: 3\n  pontos: 3\n```\n\n' +
+    '### Exemplo com Bug, Melhoria e dependência\n\n```\nCarteira de clientes\n- Cadastro do cliente\n  aceite: Avisa quando o CPF já está cadastrado\n- Tela da lista da carteira\n  depende: Cadastro do cliente\n- CPF repetido entra no cadastro\n  tipo: Bug\n  origem: Cadastro do cliente\n  aceite: Avisa quando o CPF já está cadastrado\n  prioridade: Deve 2\n  pontos: 2\n- Exportar a carteira em planilha\n  tipo: Melhoria\n  origem: #1\n  como: lojista\n  quero: baixar a carteira em planilha\n  para: mandar para o meu contador\n  prioridade: Poderia 4\n  valor: 3\n  pontos: 3\n```\n\n' +
     '### Nomes que existem agora' + (c.onde ? ' (em ' + c.onde + ')' : '') + '\n\n' +
     '**Frentes de trabalho** (use exatamente um destes nomes dentro de `[ ]`):\n' + (fr.length ? fr.map(n => '- ' + n).join('\n') : '- (nenhuma frente ainda: crie uma na Estrutura antes)') + '\n\n' +
     '**Versões abertas** (use só o nome dentro de `{ }`; a próxima sugerida é `' + c.proxima + '`):\n' + (c.versoes.length ? c.versoes.map(n => '- ' + n).join('\n') : '- (nenhuma: declare `versão: ' + c.proxima + '` com `entrega:` embaixo)') + '\n\n' +
