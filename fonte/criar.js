@@ -31,10 +31,10 @@ if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {cr
 function ciContexto(){
   const pj = cadeia(UI.sel).project;
   const frentes = (typeof ltFrentes === 'function' ? ltFrentes() : []).map(w => { const a = byId('apps', w.app); return {nome:w.nome, app:a ? a.nome : ''}; });
-  const versoes = (typeof marcosDoEscopo === 'function' ? marcosDoEscopo(UI.sel) : []).filter(m => m.tipo === 'release' && !m.entregue).map(m => m.nome);
+  const versoes = (typeof ltVersoesDoProjeto === 'function' ? ltVersoesDoProjeto() : []).filter(m => m.tipo === 'release' && !m.entregue).map(m => m.nome + (m.data ? ' · entrega ' + fmtData(m.data) : '') + (m.meta ? ' · meta: ' + m.meta : ''));
   const epicos = pj ? issuesEm('project:' + pj.id).filter(i => i.tipo === 'epic' && !i.arquivado).map(i => i.titulo).slice(0, 80) : [];
   const itens = pj ? issuesEm('project:' + pj.id).filter(i => i.tipo !== 'epic' && i.tipo !== 'subtask' && !i.arquivado).slice(0, 120).map(i => { const ch = typeof chaveDe === 'function' ? chaveDe(i) : ''; const ep = i.pai && byId('issues', i.pai); return (ch ? ch + ': ' : '') + i.titulo + (ep ? ' (épico ' + ep.titulo + ')' : ''); }) : [];
-  return {onde:nomeDe(UI.sel), projeto:pj ? pj.nome : '', frentes, versoes, proxima:typeof ltProximaVersao === 'function' ? ltProximaVersao() : 'v0.1', epicos, itens};
+  return {onde:nomeDe(UI.sel), projeto:pj ? pj.nome : '', frentes, versoes, proxima:typeof ltProximaVersao === 'function' ? ltProximaVersao() : 'v0.1', epicos, itens, dod:pj ? pj.dod || '' : '', po:pj && pj.po && pessoa(pj.po) ? pessoa(pj.po).nome : ''};
 }
 function ciLoteMd(ctx){
   const c = ctx || ciContexto(), fr = c.frentes.map(f => f.nome).filter((n, k, a) => a.indexOf(n) === k);
@@ -46,7 +46,7 @@ function ciLoteMd(ctx){
     '2. **Linha que começa com `- `** vira um **item** dentro do épico da linha de cima.\n' +
     '3. **Linha em branco** separa um épico do outro (opcional, só deixa mais fácil de ler).\n' +
     '4. **`[Nome da frente]` no fim da linha** diz em qual frente de trabalho fica. O item herda a frente do épico quando não diz outra.\n' +
-    '5. **`{Nome da versão}` no fim da linha** diz em qual versão entra. O item herda a versão do épico. Uma versão que ainda não existe é criada junto.\n\n' +
+    '5. **`{Nome da versão}` no fim da linha** diz em qual versão entra. O item herda a versão do épico. Uma versão que ainda não existe precisa ser declarada no texto, com a data de entrega (veja Versões, abaixo).\n\n' +
     '### Linhas de detalhe (opcionais)\n\n' +
     'Logo abaixo da linha do item, uma linha por campo, no formato `campo: valor`. Recue com dois espaços para ficar fácil de ler (o recuo é opcional). Os detalhes valem para o item da linha `- ` mais próxima acima.\n\n' +
     '| Campo | O que é | Valores aceitos | Exemplo |\n|---|---|---|---|\n' +
@@ -60,35 +60,54 @@ function ciLoteMd(ctx){
     '| `valor` | Valor de negócio, e por que importa | número de 1 a 10, e depois o motivo | `valor: 8 reduz as ligações ao suporte` |\n' +
     '| `pontos` | Estimativa | 1, 2, 3, 5, 8, 13 ou 20 | `pontos: 5` |\n' +
     '| `tipo` | Tipo do item | `Item`, `Bug` ou `Melhoria` | `tipo: Bug` |\n' +
-    '| `origem` | O item de origem (obrigatório no Bug) | a chave do item, como BL-12 | `origem: BL-12` |\n' +
-    '| `meta` | **Do épico**: a meta da entrega. Logo abaixo da linha do épico, sem traço | texto (até 1000 letras) | `meta: o lojista publica sem ligar para o suporte` |\n\n' +
+    '| `origem` | O item de origem (obrigatório no Bug) | a chave de um item que já existe (BL-12), o título de um item (que já existe ou que está neste mesmo texto) ou a posição do item neste texto (`#3` é o 3º item, contando de cima) | `origem: BL-12`, `origem: Cadastro do cliente`, `origem: #1` |\n' +
+    '| `meta` | **Do épico**: a meta da entrega. Logo abaixo da linha do épico, sem traço. **Da versão**: logo abaixo da linha `versão:` | texto (até 1000 letras) | `meta: o lojista publica sem ligar para o suporte` |\n' +
+    '| `versão` | Declara uma versão (linha sem recuo, em qualquer lugar do texto) | o nome da versão | `versão: v1.3` |\n' +
+    '| `entrega` | **Da versão**: a data de entrega, logo abaixo da linha `versão:`. Obrigatória em versão nova | dia/mês/ano ou ano-mês-dia | `entrega: 15/11/2026` |\n' +
+    '| `pronto` | Uma regra da Definição de Pronto do projeto (repita a linha para cada regra; sem recuo, em qualquer lugar) | texto (até 300 letras) | `pronto: Testado no computador e no celular` |\n\n' +
     '**O nível de prioridade:** 1 só para emergência; 2 é o mais urgente do dia a dia; 3 é o ritmo normal; 4 pode esperar; 5 é ideia ainda sem detalhe.\n\n' +
     '**Os tipos:** Item é algo novo que a pessoa vai ver ou usar. Bug é um critério de aceite que não foi cumprido: sempre com `origem:` apontando o item. Melhoria é mudança pedida depois que um item ficou pronto: é sempre um item novo (pode ter `origem:` com o item antigo), nunca uma mudança no item antigo.\n\n' +
+    '### Versões\n\n' +
+    'Uma versão é declarada com a linha `versão: nome` e, logo abaixo, `entrega:` (a data, obrigatória em versão nova) e `meta:` (opcional). Depois, os épicos e itens entram nela com `{nome}` no fim da linha, como sempre.\n\n' +
+    '- Versão que **já existe**: pode ser usada só com `{nome}`. Se for declarada com `entrega:` ou `meta:`, a data e a meta dela são atualizadas.\n' +
+    '- Versão **nova** sem `entrega:` é erro: ela e os itens que apontam para ela ficam de fora até corrigir.\n' +
+    '- Na tela, a data de entrega também é obrigatória (Entregas › Nova versão e Editar em tabela), e a meta fica na própria versão, em Entregas.\n\n' +
+    '```\nversão: v1.3\n  entrega: 15/11/2026\n  meta: o lojista cuida da carteira sozinho\n\nCarteira de clientes {v1.3}\n- Cadastro do cliente\n```\n\n' +
+    '### Ordem do backlog\n\n' +
+    '**A ordem das linhas vira a ordem da fila.** Os itens novos entram no fim da fila do projeto, um depois do outro, na mesma ordem em que aparecem no texto (de cima para baixo). Itens que já existem e só são atualizados **não mudam de lugar**. Por isso, escreva primeiro os mais importantes. Depois, o P.O. ajusta a ordem na tela (arrastando, pela posição no item ou com Ordenar pela prioridade).\n\n' +
+    '### Situação, histórico e Definição de Pronto\n\n' +
+    '- **Situação**: todo item criado pelo lote começa em **Criado** (o épico, em Priorizado). O lote **não muda a situação** de nenhum item: ela muda só na tela. O ciclo é Criado › Priorizado › Em andamento › Pronto para testar › Aceito, e Voltou quando o P.O. devolve. Quem leva até Pronto para testar é qualquer pessoa do time; **Aceitar e Devolver só o P.O. do projeto** (se o projeto não tem P.O., qualquer um do time aceita, como antes). Nada vai para Aceito com critério de aceite desmarcado. Aparece na janela do item (cartão Principal), no Quadro, na Lista e na Fila.\n' +
+    '- **Histórico de mudanças**: o próprio sistema grava cada mudança de situação e de critério (criou, marcou, desmarcou, tirou), com quem fez e quando. Ninguém escreve nem apaga o histórico, nem pelo lote. Aparece no fim da janela do item.\n' +
+    '- **Definição de Pronto**: um texto por projeto, mostrado como lembrete em todo item (abaixo dos critérios de aceite) e em Entregas. Pelo lote, cada linha `pronto:` acrescenta uma regra; as que já existem não se repetem e nada é apagado. Na tela, quem edita é qualquer pessoa do time, em Entregas ou no item.\n\n' +
     '### Regras de leitura\n\n' +
     '1. Um campo por linha. Não junte dois campos na mesma linha.\n' +
     '2. Os critérios de aceite vão com `aceite:`, um por linha. **Não** use `- ` para critério: linha com `- ` vira item.\n' +
     '3. Valor fora do aceito (prioridade que não existe, nível fora de 1 a 5, estimativa fora da sequência, valor fora de 1 a 10, campo que não existe, Bug sem origem) aparece como erro na prévia, com o número da linha, e **aquele item não é criado**. Os outros itens entram normalmente.\n' +
     '4. Um épico com o mesmo nome de um que já existe no projeto **não é duplicado**: os itens entram nele.\n' +
     '5. Um item com o mesmo título dentro de um épico que já existe **não é duplicado**: ele recebe os campos que vieram no texto, e nada do que ele já tem é apagado (os critérios novos se somam aos que já existem).\n' +
+    '5b. **Critério de aceite repetido é ignorado**: colar o mesmo texto de novo não duplica critério. Conta como igual o critério com o mesmo texto, sem diferença de maiúscula, acento ou espaço; no mesmo item do texto, a segunda linha igual também é ignorada.\n' +
+    '5c. Bug e Melhoria podem apontar para um item do **mesmo texto**, que ainda não tem número: use o título dele (`origem: Cadastro do cliente`) ou a posição dele no texto (`origem: #1`). A ligação é feita depois que todos são criados. Se o item de origem tiver erro, o Bug ou a Melhoria também fica de fora.\n' +
     '6. Item que já foi aceito não muda a história nem os critérios: para mudar, crie um item novo com `tipo: Melhoria`.\n' +
     '7. Títulos curtos e claros (até 300 letras), começando com verbo ou com o nome da coisa (ex.: "Cadastro do cliente", "Validar CPF no cadastro").\n' +
     '8. Prazo e responsável não vão no texto: ajustam-se depois, na tela.\n' +
     '9. O formato antigo, só com títulos, continua valendo: os detalhes são opcionais.\n\n' +
     '### Exemplo só com títulos\n\n```\n' + LT_EXEMPLO + '\n```\n\n' +
     '### Exemplo completo\n\n```\n' + ex + '\n```\n\n' +
-    '### Exemplo com Bug e Melhoria\n\n```\nCarteira de clientes\n- CPF repetido entra no cadastro\n  tipo: Bug\n  origem: BL-12\n  aceite: Avisa quando o CPF já está cadastrado\n  prioridade: Deve 2\n  pontos: 2\n- Exportar a carteira em planilha\n  tipo: Melhoria\n  origem: BL-12\n  como: lojista\n  quero: baixar a carteira em planilha\n  para: mandar para o meu contador\n  prioridade: Poderia 4\n  valor: 3\n  pontos: 3\n```\n\n' +
+    '### Exemplo com Bug e Melhoria\n\n```\nCarteira de clientes\n- Cadastro do cliente\n  aceite: Avisa quando o CPF já está cadastrado\n- CPF repetido entra no cadastro\n  tipo: Bug\n  origem: Cadastro do cliente\n  aceite: Avisa quando o CPF já está cadastrado\n  prioridade: Deve 2\n  pontos: 2\n- Exportar a carteira em planilha\n  tipo: Melhoria\n  origem: #1\n  como: lojista\n  quero: baixar a carteira em planilha\n  para: mandar para o meu contador\n  prioridade: Poderia 4\n  valor: 3\n  pontos: 3\n```\n\n' +
     '### Nomes que existem agora' + (c.onde ? ' (em ' + c.onde + ')' : '') + '\n\n' +
     '**Frentes de trabalho** (use exatamente um destes nomes dentro de `[ ]`):\n' + (fr.length ? fr.map(n => '- ' + n).join('\n') : '- (nenhuma frente ainda: crie uma na Estrutura antes)') + '\n\n' +
-    '**Versões abertas** (use dentro de `{ }`; a próxima sugerida é `' + c.proxima + '`):\n' + (c.versoes.length ? c.versoes.map(n => '- ' + n).join('\n') : '- (nenhuma: pode usar {' + c.proxima + '} e ela é criada)') + '\n\n' +
+    '**Versões abertas** (use só o nome dentro de `{ }`; a próxima sugerida é `' + c.proxima + '`):\n' + (c.versoes.length ? c.versoes.map(n => '- ' + n).join('\n') : '- (nenhuma: declare `versão: ' + c.proxima + '` com `entrega:` embaixo)') + '\n\n' +
     '**Épicos que já existem no projeto** (repetir o nome põe os itens dentro dele):\n' + (c.epicos.length ? c.epicos.map(n => '- ' + n).join('\n') : '- (nenhum ainda)') + '\n\n' +
+    '**Definição de Pronto de ' + (c.projeto || 'este projeto') + '** (hoje):\n' + (c.dod ? c.dod.split('\n').map(l => l.trim()).filter(Boolean).map(l => (l.startsWith('-') ? l : '- ' + l)).join('\n') : '- (ainda não escrita: pode mandar linhas pronto:)') + '\n\n' +
+    '**P.O. do projeto:** ' + (c.po || 'ninguém definido (qualquer um do time aceita)') + '\n\n' +
     (c.itens && c.itens.length ? '**Itens que já existem** (use a chave em `origem:`; repetir o título dentro do mesmo épico atualiza o item):\n' + c.itens.map(n => '- ' + n).join('\n') + '\n\n' : '') +
     '### Roteiro para o agente\n\n' +
     'Você vai ajudar a pessoa a organizar o trabalho de "' + (c.projeto || c.onde || 'este projeto') + '" no CicloDev, como um Product Owner faria.\n\n' +
     '1. Converse com a pessoa para entender o que precisa ser feito. Faça perguntas curtas, uma de cada vez, até entender as entregas (épicos) e os itens de cada uma.\n' +
     '2. Para cada item, descubra a história (quem usa, o que quer e por quê) e os critérios de aceite (o que precisa estar certo para aceitar). Critérios curtos, que dê para conferir com sim ou não.\n' +
     '3. Combine a prioridade (Deve, Deveria, Poderia, Não terá agora e o nível de 1 a 5), o valor de negócio (1 a 10, com o motivo) e, se a pessoa souber, a estimativa em pontos.\n' +
-    '4. Os itens do topo (os mais importantes) devem ser os mais detalhados. Ideias ainda soltas podem ficar só com o título e `prioridade: Poderia 5`.\n' +
-    '5. Agrupe os itens em épicos que façam sentido para quem vai entregar. Reaproveite os épicos que já existem quando o assunto for o mesmo.\n' +
+    '4. Escreva os itens na ordem de importância: a ordem das linhas vira a ordem da fila. Os do topo devem ser os mais detalhados. Ideias ainda soltas podem ficar só com o título e `prioridade: Poderia 5`.\n' +
+    '5. Se a entrega for numa versão nova, declare a versão com `versão:` e `entrega:` (a data é obrigatória). Agrupe os itens em épicos que façam sentido para quem vai entregar. Reaproveite os épicos que já existem quando o assunto for o mesmo.\n' +
     '6. Use só as frentes da lista acima. Se nenhuma servir, avise a pessoa em vez de inventar.\n' +
     '7. Use só os valores aceitos da tabela. Na dúvida, deixe o campo de fora: ele pode ser preenchido depois, na tela.\n' +
     '8. Mostre um resumo e peça confirmação antes de gerar o texto final.\n' +

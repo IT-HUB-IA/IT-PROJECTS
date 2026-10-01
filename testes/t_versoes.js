@@ -66,7 +66,11 @@ window.supabase = { createClient(){ let sess = {user:{id:'u1', email:'admin@it-i
   ok(await p.evaluate(() => !!document.querySelector('[data-vs-abrir]')), 'o botão Editar em tabela aparece');
   await p.click('[data-vs-abrir]:not([data-vs-abrir^="m"]), [data-vs-abrir=""]'); await p.waitForTimeout(400);
   const novas = await p.evaluate(() => document.querySelectorAll('.vs-nova').length);
-  await p.fill('.vs-nova [data-vs-c="nome"] >> nth=0', 'vTab1'); await p.fill('.vs-nova [data-vs-c="desc"] >> nth=0', 'Primeira');
+  await p.fill('.vs-nova [data-vs-c="nome"] >> nth=0', 'vTab1'); await p.fill('.vs-nova [data-vs-c="desc"] >> nth=0', 'Primeira'); await p.fill('.vs-nova [data-vs-c="data"] >> nth=0', '');
+  // a data de entrega é obrigatória: sem ela, a janela avisa e não grava
+  await p.evaluate(() => { const b = [...document.querySelectorAll('dialog.modal[open] .modal-rod .btn')].pop(); b.click(); }); await p.waitForTimeout(300);
+  ok(await p.evaluate(() => { const e = document.querySelector('dialog.modal[open] .vs-erro'); return !!e && !e.hidden && /sem data de entrega/.test(e.textContent); }), 'versão sem data de entrega não grava: a janela avisa');
+  await p.fill('.vs-nova [data-vs-c="data"] >> nth=0', '2027-04-10');
   if (novas < 2) await p.click('[data-vs-mais]');
   await p.fill('.vs-nova [data-vs-c="nome"] >> nth=1', 'vTab2'); await p.fill('.vs-nova [data-vs-c="data"] >> nth=1', '2027-05-20');
   await p.click('dialog.vs-modal .modal-rod .btn:not(.sec)');

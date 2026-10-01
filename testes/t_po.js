@@ -112,6 +112,29 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   ok(/1 épico novo e 2 itens novos/.test(pv4) && !/erro/.test(pv4), 'o formato antigo (só títulos) continua igual');
   await p.evaluate(() => document.querySelectorAll('dialog.modal').forEach(d => { d.close(); d.remove(); }));
   })();
+  // ---------- Criar em lote: versão com data e meta, ordem, critério repetido, origem no mesmo texto, Definição de Pronto ----------
+  await (async () => {
+    const espera = async () => { await p.waitForTimeout(600); await p.waitForFunction(() => !window.ciclodevSync.rodando && !window.ciclodevSync.pendente, null, {timeout: 20000}); await p.waitForTimeout(300); };
+    const abrir = async () => { await p.evaluate(() => document.querySelectorAll('dialog.modal').forEach(d => { d.close(); d.remove(); })); await p.evaluate(() => window.__tf.ltAbrir()); await p.waitForTimeout(300); };
+    const escrever = async t => { await p.evaluate(t => { const ta = document.querySelector('#lt-t'); ta.value = t; ta.dispatchEvent(new Event('input')); }, t); await p.waitForTimeout(150); return p.evaluate(() => document.querySelector('.lt-previa').textContent); };
+    await abrir();
+    const pvA = await escrever('Ordem teste {vNovaSemData}\n- Primeiro da ordem');
+    ok(/precisa da data de entrega/.test(pvA) && /de fora/.test(pvA), 'versão nova sem data de entrega é erro na prévia');
+    const pvB = await escrever('versão: vOrdem\n  entrega: 20/12/2026\n  meta: tudo da ordem\npronto: Testado no celular\npronto: Testado no celular\n\nOrdem teste {vOrdem}\n- Primeiro da ordem\n  aceite: Critério A\n  aceite: critério a\n- Segundo da ordem\n  tipo: Bug\n  origem: #1\n- Terceiro da ordem\n  tipo: Melhoria\n  origem: Primeiro da ordem');
+    ok(/vOrdem/.test(pvB) && /entrega 20\/12\/2026/.test(pvB) && /Meta: tudo da ordem/.test(pvB) && /Definição de Pronto/.test(pvB) && !/erro/.test(pvB), 'a prévia mostra a versão com data e meta, a Definição de Pronto, e aceita origem pela posição (#1) e pelo título do mesmo texto');
+    await p.click('dialog.lt-modal .modal-rod .btn:not(.sec)'); await espera();
+    ok(conta("select data::text || '|' || meta from marcos where nome = 'vOrdem'") === '2026-12-20|tudo da ordem', 'a versão nova foi criada com a data de entrega e a meta');
+    ok(conta("select string_agg(titulo, ',' order by ordem) from itens where titulo like '% da ordem'") === 'Primeiro da ordem,Segundo da ordem,Terceiro da ordem', 'a ordem das linhas virou a ordem da fila');
+    ok(conta("select count(*) from itens_criterios c join itens i on i.id = c.item_id where i.titulo = 'Primeiro da ordem'") === '1', 'critério repetido no mesmo item é ignorado');
+    ok(conta("select count(*) from itens b join itens o on o.id = b.origem_id where o.titulo = 'Primeiro da ordem' and b.titulo in ('Segundo da ordem','Terceiro da ordem')") === '2', 'Bug e Melhoria ficaram ligados ao item de origem criado no mesmo lote');
+    ok(conta("select count(*) from itens where titulo like '% da ordem' and marco_id = (select id from marcos where nome = 'vOrdem')") === '3', 'os itens entraram na versão declarada');
+    ok(/Testado no celular/.test(conta("select string_agg(definicao_pronto, '') from projetos")) && (conta("select string_agg(definicao_pronto, '') from projetos").match(/Testado no celular/g) || []).length === 1, 'a Definição de Pronto recebeu a regra uma vez só');
+    await abrir();
+    const pvC = await escrever('Ordem teste\n- Primeiro da ordem\n  aceite: Critério A\n  aceite: Critério B');
+    await p.click('dialog.lt-modal .modal-rod .btn:not(.sec)'); await espera();
+    ok(conta("select string_agg(c.texto, ';' order by c.ordem) from itens_criterios c join itens i on i.id = c.item_id where i.titulo = 'Primeiro da ordem'") === 'Critério A;Critério B', 'colar de novo não duplica o critério igual: só entra o novo');
+    await p.evaluate(() => document.querySelectorAll('dialog.modal').forEach(d => { d.close(); d.remove(); }));
+  })();
   // ---------- Quadro, Lista e Fila ----------
   await (async () => {
   const ver = async v => { await p.evaluate(([v, a]) => { const U = window.__tf.UI; U.sel = 'app:' + a; U.view = v; window.__tf.rOperacoes(); }, [v, app]); await p.waitForTimeout(500); };
