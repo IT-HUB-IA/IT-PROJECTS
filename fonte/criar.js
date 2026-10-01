@@ -59,7 +59,7 @@ function ciLoteMd(ctx){
     '| `nivel` | Só o nível, se não vier junto da prioridade | 1 a 5 | `nivel: 3` |\n' +
     '| `valor` | Valor de negócio, e por que importa | número de 1 a 10, e depois o motivo | `valor: 8 reduz as ligações ao suporte` |\n' +
     '| `pontos` | Estimativa | 1, 2, 3, 5, 8, 13 ou 20 | `pontos: 5` |\n' +
-    '| `tipo` | Tipo do item | `Item`, `Bug`, `Melhoria` ou `Tarefa` (tarefa externa, que não é desenvolvimento) | `tipo: Bug` |\n' +
+    '| `tipo` | Tipo do item | `Item`, `Bug`, `Melhoria`, `Tarefa` (tarefa externa, que não é desenvolvimento) ou `Decisão` (algo a decidir, com `prazo:` da decisão) | `tipo: Bug` |\n' +
     '| `responsavel` | Quem faz (para a Tarefa externa e para qualquer item) | o nome de alguém do time | `responsavel: Ana` |\n' +
     '| `prazo` | O prazo | dia/mês/ano | `prazo: 15/11/2026` |\n' +
     '| `origem` | O item de origem (obrigatório no Bug) | a chave de um item que já existe (BL-12), o título de um item (que já existe ou que está neste mesmo texto) ou a posição do item neste texto (`#3` é o 3º item, contando de cima) | `origem: BL-12`, `origem: Cadastro do cliente`, `origem: #1` |\n' +
@@ -125,7 +125,7 @@ function ciLoteMd(ctx){
     '| `titulo` | Renomeia (só com um item, nunca em editar todos) | texto até 300 letras |\n' +
     '| `como`, `quero`, `para`, `historia` | Troca a história | como no Criar em lote |\n' +
     '| `prioridade`, `nivel`, `valor`, `pontos` | Troca prioridade, nível, valor e pontos | os mesmos do Criar em lote |\n' +
-    '| `tipo` | Troca o tipo | Item, Bug, Melhoria ou Tarefa |\n' +
+    '| `tipo` | Troca o tipo | Item, Bug, Melhoria, Tarefa ou Decisão |\n' +
     '| `responsavel`, `prazo` | Troca o responsável e o prazo | nome de alguém do time (ou `ninguém`); dia/mês/ano |\n' +
     '| `aceite` | Acrescenta um critério (igual a um que já existe é ignorado) | texto |\n' +
     '| `tirar aceite` | Tira um critério, pelo texto | o texto do critério |\n' +
@@ -152,6 +152,9 @@ function ciLoteMd(ctx){
     '## Tarefa externa\n\n' +
     'É um tipo para o que **não é desenvolvimento** (ex.: marcar o vínculo da 40% no sistema do BL, pedir um acesso, mandar um documento). No Criar em lote: `tipo: Tarefa`, com `responsavel:` e `prazo:`. Aparece na Lista, no Quadro e na Fila com a marca **Externa** e **não conta nos pontos da versão**.\n\n' +
     '```\nPendências fora do sistema\n- Marcar o vínculo da 40% no sistema do BL\n  tipo: Tarefa\n  responsavel: William\n  prazo: 10/10/2026\n  aceite: O vínculo aparece no cadastro do BL\n```\n\n' +
+    '## Decisão\n\n' +
+    'É um tipo para **algo que precisa ser decidido** antes de seguir (ex.: qual banco de pagamento usar). No Criar em lote: `tipo: Decisão`, com `prazo:` (o prazo da decisão) e `responsavel:` (quem decide). Os itens que esperam a decisão usam `depende:` apontando para ela. A lista **O que fazer hoje** avisa quando uma decisão aberta trava itens ou passou do prazo. **Não conta nos pontos da versão.** O sistema nunca adivinha uma decisão pelo título: só vale o `tipo: Decisão`.\n\n' +
+    '```\nDecisões abertas\n- Escolher o banco que gera o Pix\n  tipo: Decisão\n  responsavel: William\n  prazo: 08/10/2026\n  aceite: O banco escolhido está registrado no item\n- Gerar o Pix da cobrança\n  depende: Escolher o banco que gera o Pix\n```\n\n' +
     '### Roteiro para o agente\n\n' +
     'Você vai ajudar a pessoa a organizar o trabalho de "' + (c.projeto || c.onde || 'este projeto') + '" no CicloDev, como um Product Owner faria.\n\n' +
     '1. Converse com a pessoa para entender o que precisa ser feito. Faça perguntas curtas, uma de cada vez, até entender as entregas (épicos) e os itens de cada uma.\n' +

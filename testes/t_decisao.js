@@ -74,7 +74,7 @@ window.supabase = { createClient(){ let sess = {user:{id:'u1', email:'admin@it-i
   await p.evaluate(() => document.querySelector('[data-tela="operacoes"]').click()); await p.waitForTimeout(400);
   await p.evaluate(a => { __tf.UI.sel = 'app:' + a; __tf.UI.view = 'backlog'; __tf.UI.bjEpic = null; __tf.rOperacoes(); }, app); await p.waitForTimeout(500);
   await p.click('[data-lt-abrir]'); await p.waitForTimeout(300);
-  await p.fill('#lt-t', 'Lote Dec {vDecNova}\n- Lote Dec item');
+  await p.fill('#lt-t', 'versão: vDecNova\n  entrega: 15/12/2026\nLote Dec {vDecNova}\n- Lote Dec item');
   await p.click('dialog.modal .modal-rod .btn:not(.sec)');
   await espera(); await semErro('criar o lote com versão nova sem erro');
   ok(conta("select count(*) from public.marcos where nome = 'vDecNova' and no_id = '" + app + "'") === '1', 'a versão nova foi criada no app onde o lote foi feito (nunca no projeto acima)');

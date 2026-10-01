@@ -60,7 +60,7 @@ function ltDetalhe(campo, v, det, pj){
     det.valor = +m[1]; if (m[2] && m[2].trim()){ if (m[2].trim().length > 300) return 'o motivo do valor passa de 300 letras'; det.valorMotivo = m[2].trim(); } return '';
   }
   if (campo === 'pontos'){ if (!/^\d+$/.test(txt) || !LT_SEQ.includes(+txt)) return 'estimativa "' + txt + '" fora da sequência: use 1, 2, 3, 5, 8, 13 ou 20'; det.pontos = +txt; return ''; }
-  if (campo === 'tipo'){ const t = {item:'item', bug:'bug', melhoria:'melhoria', tarefa:'tarefa', 'tarefa externa':'tarefa'}[ltNorm(txt)]; if (!t) return 'tipo "' + txt + '" não existe: use Item, Bug, Melhoria ou Tarefa'; det.tipo = t; return ''; }
+  if (campo === 'tipo'){ const t = {item:'item', bug:'bug', melhoria:'melhoria', tarefa:'tarefa', 'tarefa externa':'tarefa', decisao:'decisao'}[ltNorm(txt)]; if (!t) return 'tipo "' + txt + '" não existe: use Item, Bug, Melhoria, Tarefa ou Decisão'; det.tipo = t; return ''; }
   if (campo === 'responsavel'){ const n = ltNorm(txt); if (['ninguem','nenhum','sem responsavel'].includes(n)){ det.resp = '-'; return ''; }
     const ps = D.people.filter(p => p.ativo !== false && p.acesso !== 'stakeholder'); const ex = ps.filter(p => ltNorm(p.nome) === n), com = ps.filter(p => ltNorm(p.nome).startsWith(n));
     const achou = ex.length === 1 ? ex : com; if (achou.length !== 1) return achou.length ? 'responsável "' + txt + '" é ambíguo: ' + achou.map(p => p.nome).join(', ') : 'responsável "' + txt + '" não está no time';
@@ -210,7 +210,7 @@ function ltDetHTML(det){
   const chips = [];
   if (det.resp) chips.push('<span class="lt-chip">responsável: ' + esc(det.resp === '-' ? 'ninguém' : det.respNome) + '</span>');
   if (det.prazo) chips.push('<span class="lt-chip">prazo ' + esc(fmtData(det.prazo)) + '</span>');
-  if (det.tipo && det.tipo !== 'item') chips.push('<span class="lt-chip lt-' + det.tipo + '">' + (det.tipo === 'bug' ? 'Bug' : det.tipo === 'tarefa' ? 'Tarefa externa' : 'Melhoria') + (det.origemNome ? ' de ' + esc(det.origemNome.trim()) : '') + '</span>');
+  if (det.tipo && det.tipo !== 'item') chips.push('<span class="lt-chip lt-' + det.tipo + '">' + (det.tipo === 'bug' ? 'Bug' : det.tipo === 'tarefa' ? 'Tarefa externa' : det.tipo === 'decisao' ? 'Decisão' : 'Melhoria') + (det.origemNome ? ' de ' + esc(det.origemNome.trim()) : '') + '</span>');
   if (det.classe || det.nivel) chips.push('<span class="lt-chip">' + esc([det.classe ? ({deve:'Deve', deveria:'Deveria', poderia:'Poderia', nao_tera:'Não terá agora'})[det.classe] : '', det.nivel ? 'nível ' + det.nivel : ''].filter(Boolean).join(' · ')) + '</span>');
   if (det.valor) chips.push('<span class="lt-chip">valor ' + det.valor + (det.valorMotivo ? ': ' + esc(det.valorMotivo) : '') + '</span>');
   if (det.pontos) chips.push('<span class="lt-chip">' + det.pontos + ' pts</span>');
@@ -264,6 +264,7 @@ function ltAplicar(x, det){
   if (det.origem) x.origem = det.origem;
   if (det.tipo === 'melhoria'){ x.melhoria = true; x.externa = false; } else if (det.tipo === 'item'){ x.melhoria = false; x.externa = false; }
   if (det.tipo === 'tarefa'){ if (x.tipo === 'task') { x.externa = true; x.melhoria = false; } else if (typeof poMudarTipo === 'function') poMudarTipo(x, 'tarefa'); }
+  if (det.tipo === 'decisao'){ if (x.tipo === 'task') { x.decisao = true; x.externa = false; x.melhoria = false; } else if (typeof poMudarTipo === 'function') poMudarTipo(x, 'decisao'); }
   if (det.resp) x.resp = det.resp === '-' ? null : det.resp;
   if (det.prazo){ x.fim = det.prazo; x.alvo = det.prazo; if (x.ini && x.ini > det.prazo) x.ini = det.prazo; }
   if (det.tipo === 'bug' && x.tipo !== 'bug' && typeof poMudarTipo === 'function') poMudarTipo(x, 'bug');
@@ -373,7 +374,7 @@ function ltAbrir(){
           if (ep && g.meta) ep.meta = g.meta;
           g.itens.forEach(i => { if (i.erros.length) return;
             if (i.ja){ const x = byId('issues', i.ja.id); i._feito = x; if (x && ltTemDet(i.det)) ltAplicar(x, i.det); return; }
-            const ni = ltNovo(i.titulo, i.ws, i.det.tipo === 'bug' ? 'bug' : i.det.tipo === 'tarefa' ? 'task' : ep ? 'story' : 'task', 'backlog', ep ? ep.id : null, i.mc); i._feito = ni; ltAplicar(ni, i.det); });
+            const ni = ltNovo(i.titulo, i.ws, i.det.tipo === 'bug' ? 'bug' : (i.det.tipo === 'tarefa' || i.det.tipo === 'decisao') ? 'task' : ep ? 'story' : 'task', 'backlog', ep ? ep.id : null, i.mc); i._feito = ni; ltAplicar(ni, i.det); });
         });
         // origem apontando para um item deste mesmo texto: liga depois que todos existem
         r.grupos.forEach(g => g.itens.forEach(i => { const o = i.det.origemLote; if (i._feito && o && o._feito && o._feito !== i._feito) i._feito.origem = o._feito.id;

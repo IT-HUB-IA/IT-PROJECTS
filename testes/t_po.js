@@ -199,14 +199,39 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
     await p.evaluate(() => document.querySelectorAll('dialog.modal').forEach(d => { d.close(); d.remove(); }));
     const r = await p.evaluate(a => { const D = window.__tf.D, U = window.__tf.UI; U.sel = 'app:' + a; U.view = 'dashboard'; window.__tf.rOperacoes();
       const ws = new Set(D.ws.filter(w => w.app === a).map(w => w.id)); const its = D.issues.filter(i => ws.has(i.ws) && i.tipo === 'story' && !i.arquivado && i.status !== 'done');
-      const i = its[0]; i.hQuem = 'a'; i.hQuero = 'b'; i.hPara = 'c'; i.crit = [{t:'x', f:false}]; i.moscow = 'deve'; i.valor = 5; i.pontos = 3; const j = its[1]; if (j){ j.pontos = 20; j.hQuem = ''; }
-      return {ok:window.__tf.pgPreparo(i).ok, grande:j ? window.__tf.pgPreparo(j).grande : true, hoje:!!document.querySelector('#ops-corpo .pg-hoje'), acoes:window.__tf.pgAcoes('app:' + a).length}; }, app);
-    ok(r.ok && r.grande, 'selo Preparado: item completo fica preparado; item de 20 pontos é grande demais');
+      const i = its[0]; i.hQuem = 'a'; i.hQuero = 'b'; i.hPara = 'c'; i.crit = [{t:'x', f:false}]; i.moscow = 'deve'; i.valor = 5; i.pontos = 3; const rel = D.marcos.find(m => m.tipo === 'release'); i.marco = rel ? rel.id : i.marco; const semV = Object.assign({}, i, {marco:null}); const j = its[1]; if (j){ j.pontos = 20; j.hQuem = ''; }
+      return {ok:window.__tf.pgPreparo(i).ok, semVersao:!window.__tf.pgPreparo(semV).ok, grande:j ? window.__tf.pgPreparo(j).grande : true, hoje:!!document.querySelector('#ops-corpo .pg-hoje'), acoes:window.__tf.pgAcoes('app:' + a).length}; }, app);
+    ok(r.ok && r.semVersao && r.grande, 'selo Preparado: item completo fica preparado; sem versão não; item de 20 pontos é grande demais');
     ok(r.hoje && r.acoes > 0, 'o Painel mostra O que fazer hoje com sugestões (' + r.acoes + ')');
     await p.evaluate(a => { const U = window.__tf.UI; U.sel = 'app:' + a; U.view = 'backlog'; window.__tf.rOperacoes(); }, app); await p.waitForTimeout(300);
     await p.click('[data-po-ordenar]'); await p.waitForTimeout(300);
     ok(await p.evaluate(() => /Por que está aqui/.test((document.querySelector('dialog.modal[open]') || {}).textContent || '')), 'Ordenar pela prioridade abre a ordem sugerida com o porquê de cada lugar e o Aplicar');
     await p.evaluate(() => document.querySelectorAll('dialog.modal').forEach(d => { d.close(); d.remove(); }));
+    // limites por projeto
+    const lim = await p.evaluate(a => { const D = window.__tf.D, U = window.__tf.UI; U.sel = 'app:' + a; const pj = window.__tf.cadeia(U.sel).project; const ws = new Set(D.ws.filter(w => w.app === a).map(w => w.id));
+      const j = Object.assign({}, D.issues.find(i => ws.has(i.ws) && i.hQuero === 'b'), {pontos:20}); const antes = window.__tf.pgPreparo(j).grande; pj.poLimites = {grande:21}; const depois = window.__tf.pgPreparo(j).grande; pj.poLimites = {}; return {antes, depois}; }, app);
+    ok(lim.antes && !lim.depois, 'limite de pontos por projeto: com limite 21, o item de 20 pontos deixa de ser grande demais');
+    // guia Montar o projeto
+    await p.evaluate(a => { const U = window.__tf.UI; U.sel = 'app:' + a; U.view = 'dashboard'; window.__tf.rOperacoes(); }, app); await p.waitForTimeout(300);
+    await p.click('[data-pg-guia]'); await p.waitForTimeout(400);
+    ok(await p.evaluate(() => /9 passos curtos/.test(document.querySelector('dialog.pg-guia-modal[open]').textContent) && document.querySelectorAll('dialog.pg-guia-modal .pg-g-lado li').length === 9), 'o guia Montar o projeto abre com a abertura e os 9 passos');
+    await p.evaluate(() => document.querySelector('dialog.pg-guia-modal [data-pg-g-ir="0"]').click()); await p.waitForTimeout(200);
+    await p.evaluate(() => { const pj = window.__tf.cadeia(window.__tf.UI.sel).project; pj.visao = ''; document.querySelector('dialog.pg-guia-modal [data-pg-g-campo]').value = ''; document.querySelector('dialog.pg-guia-modal [data-pg-g-feito]').click(); }); await p.waitForTimeout(200);
+    ok(await p.evaluate(() => /Passo 1 de 9/.test(document.querySelector('dialog.pg-guia-modal .pg-g-meio').textContent)), 'passo 1 sem visão: Feito não avança (o sistema confere)');
+    await p.evaluate(() => { document.querySelector('dialog.pg-guia-modal [data-pg-g-campo]').value = 'O analista fecha o mês sem planilha'; document.querySelector('dialog.pg-guia-modal [data-pg-g-feito]').click(); }); await p.waitForTimeout(300);
+    const g = await p.evaluate(() => ({txt:document.querySelector('dialog.pg-guia-modal .pg-g-meio').textContent, ok1:document.querySelector('dialog.pg-guia-modal .pg-g-lado li').classList.contains('ok')}));
+    ok(/Passo 2 de 9/.test(g.txt) && g.ok1, 'com a visão escrita, passo 1 fica feito e vai ao passo 2');
+    await p.evaluate(() => document.querySelector('dialog.pg-guia-modal [data-pg-g-aba="duvida"]').click()); await p.waitForTimeout(200);
+    ok(await p.evaluate(() => /O que é Bloqueado/.test(document.querySelector('dialog.pg-guia-modal .pg-g-faq').textContent)), 'Tenho uma dúvida mostra as perguntas frequentes');
+    await p.evaluate(() => document.querySelector('dialog.pg-guia-modal [data-pg-g-ir="7"]').click()); await p.waitForTimeout(200);
+    await p.evaluate(() => { const c = document.querySelector('dialog.pg-guia-modal [data-pg-g-nenhum]'); c.checked = true; c.dispatchEvent(new Event('change', {bubbles:true})); }); await p.waitForTimeout(200);
+    ok(await p.evaluate(() => document.querySelectorAll('dialog.pg-guia-modal .pg-g-lado li')[7].classList.contains('ok')), 'passo 8: marcar que não há riscos confere o passo');
+    await p.waitForTimeout(2500);
+    ok(conta("select count(*) from projetos where visao = 'O analista fecha o mês sem planilha' and riscos_nenhum") === '1', 'a visão e o "não há riscos" vão para o banco');
+    await p.evaluate(() => document.querySelectorAll('dialog.modal').forEach(d => { d.close(); d.remove(); }));
+    await p.click('[data-pg-limites]'); await p.waitForTimeout(300);
+    await p.fill('#pg-l-grande', '8'); await p.evaluate(() => [...document.querySelectorAll('dialog.modal[open] .modal-rod .btn')].pop().click()); await p.waitForTimeout(2500);
+    ok(conta("select count(*) from projetos where po_limites->>'grande' = '8'") === '1', 'a janela Limites guarda o limite do projeto no banco');
   })();
   // ---------- Quadro, Lista e Fila ----------
   await (async () => {

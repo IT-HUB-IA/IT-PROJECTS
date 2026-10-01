@@ -100,7 +100,7 @@ function leAplicar(x, b, real, avisos, erros){
   b.ops.forEach(o => {
     if (o.op === 'titulo') x.titulo = o.val;
     else if (o.op === 'epico'){ const ep = o.alvo; if (ep && ep.id === x.id){ erros.push('não fica dentro de si mesmo'); return; } if (x.tipo === 'epic'){ erros.push('épico não fica dentro de outro épico'); return; }
-      if (ep && (byId('ws', ep.ws) || {}).app !== (byId('ws', x.ws) || {}).app){ erros.push('o épico "' + ep.titulo + '" é de outra aplicação'); return; } x.pai = ep ? ep.id : null; if (x.tipo === 'task' && ep && !x.externa) x.tipo = 'story'; }
+      if (ep && (byId('ws', ep.ws) || {}).app !== (byId('ws', x.ws) || {}).app){ erros.push('o épico "' + ep.titulo + '" é de outra aplicação'); return; } x.pai = ep ? ep.id : null; if (x.tipo === 'task' && ep && !x.externa && !x.decisao) x.tipo = 'story'; }
     else if (o.op === 'versao') x.marco = o.alvo ? o.alvo.id : null;
     else if (o.op === 'frente'){ const pai = x.pai && byId('issues', x.pai); if (pai && (byId('ws', pai.ws) || {}).app !== o.alvo.app){ erros.push('a frente "' + o.alvo.nome + '" é de outra aplicação que o épico do item'); return; } x.ws = o.alvo.id; }
     else if (o.op === 'posicao'){ const fila = D.issues.filter(y => !y.arquivado && y.id !== x.id && poTemPO(y) && y.status !== 'done' && (byId('ws', y.ws) || {}).app === (byId('ws', x.ws) || {}).app).sort((a, c) => (+a.ordem || 0) - (+c.ordem || 0));
@@ -202,7 +202,7 @@ function leAbrir(){
       linhaG('  titulo: Novo nome', '<b>Renomeia</b> (só com um item)') +
       linhaG('  como: / quero: / para: / historia:', 'Troca a <b>história</b>') +
       linhaG('  prioridade: Deve 2 / nivel / valor / pontos', 'Troca <b>prioridade, nível, valor e pontos</b>') +
-      linhaG('  tipo: Item / Bug / Melhoria / Tarefa', 'Troca o <b>tipo</b>. Tarefa é a tarefa externa (não é desenvolvimento)') +
+      linhaG('  tipo: Item / Bug / Melhoria / Tarefa / Decisão', 'Troca o <b>tipo</b>. Tarefa é a tarefa externa (não é desenvolvimento). Decisão é algo a decidir, com <b>prazo:</b> da decisão') +
       linhaG('  responsavel: Ana  /  prazo: 15/11/2026', 'Troca <b>responsável</b> e <b>prazo</b>') +
       linhaG('  aceite: texto  /  tirar aceite: texto', '<b>Acrescenta</b> ou <b>tira</b> um critério (tirar um marcado avisa)') +
       linhaG('  trocar aceites: sim', 'Tira todos os critérios antes dos <code>aceite:</code> do bloco (substitui)') +
