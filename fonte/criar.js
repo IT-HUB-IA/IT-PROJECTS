@@ -153,12 +153,13 @@ function ciLoteMd(ctx){
     '### Regras de segurança\n\n' +
     '1. **A prévia é obrigatória.** Ela mostra, para cada item, uma tabela com o campo, o antes e o depois, e o total de itens afetados.\n' +
     '2. **Com qualquer erro, nada é gravado**: item que não existe, título ambíguo (dois itens com o mesmo título sem `no épico:`), versão ou frente que não existe, valor inválido, campo desconhecido, critério a tirar que não existe, **situação que não existe**, **`onde` que não existe ou ambíguo**, **Voltou sem `motivo:`**, Aceito com critério desmarcado ou por quem não é o P.O., data fora do formato dia/mês/ano e início depois do prazo.\n' +
-    '3. **Item aceito é protegido**: mudar a história ou os critérios dele é erro, a não ser com `mudar aceito: sim` (a prévia avisa e o item volta para Priorizado). O caminho normal é criar uma Melhoria.\n' +
+    '3. **Item aceito é protegido**: mudar a história ou os critérios dele é erro, a não ser com `mudar aceito: sim` (a prévia avisa e o item volta para Priorizado). O mesmo `mudar aceito: sim` é preciso para **tirar um item de Aceito** com `situação:`. O caminho normal é criar uma Melhoria.\n' +
     '4. Tirar um critério **marcado como cumprido** (com `tirar aceite:` ou `trocar aceites:`) mostra um aviso na prévia.\n' +
     '5. **Nada é apagado**: arquivar e cancelar só escondem o item, com o motivo nos comentários; `reabrir: sim` traz de volta.\n' +
     '6. **Tudo vai para o histórico** de cada item: o banco grava quem mudou, quando e o que mudou (antes e depois).\n' +
     '7. **Desfazer o último lote**: o botão aparece no topo do Criar em lote e do Editar em lote e volta os itens a como estavam antes do último lote (criar ou editar).\n' +
-    '8. Use sempre a **chave** (BL-12) quando souber: é o jeito sem erro de achar o item.\n\n' +
+    '8. Use sempre a **chave** (BL-12) quando souber: é o jeito sem erro de achar o item.\n' +
+    '9. **A situação segue as regras da tela**: qualquer pessoa do time leva até Pronto para testar (pode pular etapas); **Aceito e Voltou só o P.O.** do projeto (sem P.O., qualquer um do time). Aceito exige todos os critérios marcados; Voltou só sai de Pronto para testar e exige `motivo:`. O que muda de situação vai para o histórico e o Desfazer o último lote volta.\n\n' +
     '## Tarefa externa\n\n' +
     'É um tipo para o que **não é desenvolvimento** (ex.: marcar o vínculo da 40% no sistema do BL, pedir um acesso, mandar um documento). No Criar em lote: `tipo: Tarefa`, com `responsavel:` e `prazo:`. Aparece na Lista, no Quadro e na Fila com a marca **Externa** e **não conta nos pontos da versão**.\n\n' +
     '```\nPendências fora do sistema\n- Marcar o vínculo da 40% no sistema do BL\n  tipo: Tarefa\n  responsavel: William\n  prazo: 10/10/2026\n  aceite: O vínculo aparece no cadastro do BL\n```\n\n' +
@@ -174,7 +175,7 @@ function ciLoteMd(ctx){
     '5. Se a entrega for numa versão nova, declare a versão com `versão:` e `entrega:` (a data é obrigatória). Agrupe os itens em épicos que façam sentido para quem vai entregar. Reaproveite os épicos que já existem quando o assunto for o mesmo.\n' +
     '6. Use só as frentes da lista acima. Se nenhuma servir, avise a pessoa em vez de inventar.\n' +
     '7. Use só os valores aceitos da tabela. Na dúvida, deixe o campo de fora: ele pode ser preenchido depois, na tela.\n' +
-    '8. Mostre um resumo e peça confirmação antes de gerar o texto final. Para **ajustar** o que já existe, gere um texto do Editar em lote (com a chave de cada item), nunca um Criar em lote repetido.\n' +
+    '8. Mostre um resumo e peça confirmação antes de gerar o texto final. Para **ajustar** o que já existe, gere um texto do Editar em lote (com a chave de cada item), nunca um Criar em lote repetido. Para mudar a **situação**, use `situação:`; só ponha `Aceito` ou `Voltou` se quem vai colar o texto for o P.O. do projeto.\n' +
     '9. Se o trabalho for dividido em vários lotes, siga a seção Vários lotes: cada texto começa com `lote:` e `depois de:`, e os arquivos vão numerados na ordem de colar.\n' +
     '10. No fim, entregue **só o texto no formato acima, dentro de um bloco de código**, sem comentários no meio, pronto para colar em **Criar em lote**.\n';
 }
