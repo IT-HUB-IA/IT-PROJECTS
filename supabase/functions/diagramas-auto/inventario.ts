@@ -2,11 +2,11 @@
 // telas, APIs, tarefas agendadas e tabelas, cada uma com o grupo (o épico sugerido) e os sinais de pronto ou inacabado.
 // A tela do CicloDev importa como épicos e itens: o que parece pronto vai para "Pronto para testar" (o P.O. confirma),
 // o que tem sinal de inacabado entra como "Precisa análise", com o motivo.
-import type { Arquivos, Estrutura } from './gerar.ts';
-import { empacotado } from './seguranca.ts';
+import { SERVICOS_SDK, type Arquivos, type Estrutura } from './gerar.ts';
+import { empacotado, dependenciasDe } from './seguranca.ts';
 
 export type Sinais = { arquivo?: string; todo?: number; teste?: boolean; inacabado?: string; usada?: boolean | null; rls?: boolean; colunas?: number };
-export type ItemInv = { tipo: 'tela' | 'api' | 'job' | 'tabela'; chave: string; grupo: string; nome: string; onde: string; sinais: Sinais };
+export type ItemInv = { tipo: 'tela' | 'api' | 'job' | 'tabela' | 'integracao' | 'infra' | 'teste'; chave: string; grupo: string; nome: string; onde: string; sinais: Sinais };
 
 const CODIGO = /\.(ts|tsx|js|jsx|mjs|cjs|vue|svelte|py|java|kt|go|cs|php|rb)$/i;
 const TESTE = /(^|\/)(test|tests|testes?|__tests__|spec|e2e|cypress)\/|\.(test|spec)\.[a-z]+$|Tests?\.(java|kt|cs)$/i;
@@ -28,6 +28,29 @@ export function inventarioDoCodigo(arq: Arquivos, caminhos: string[]): ItemInv[]
   const out: ItemInv[] = [], ja = new Set<string>();
   const testes = caminhos.filter(c => TESTE.test(c));
   const add = (i: ItemInv) => { if (ja.has(i.chave) || out.length >= 2500) return; ja.add(i.chave); out.push(i); };
+  // ---------- testes: um item por arquivo de teste (o que já está coberto) ----------
+  for (const c of testes.slice(0, 400)) if (/\.(m?[jt]sx?|cjs|py|java|kt|go|cs|php|rb)$/i.test(c))
+    add({ tipo: 'teste', chave: 'teste:' + c, grupo: 'Testes', nome: 'Teste ' + titulo(base(c).replace(/[._-]?(test|spec|tests?)$/i, '').replace(/^test[._-]?/i, '')), onde: c, sinais: { arquivo: c, teste: true } });
+  // ---------- infraestrutura: como o sistema é montado e publicado ----------
+  const INFRA: [RegExp, (c: string, t: string) => string | null][] = [
+    [/(^|\/)(Dockerfile[^/]*|[^/]+\.Dockerfile)$/i, c => 'Imagem Docker (' + c + ')'],
+    [/(^|\/)(docker-)?compose[^/]*\.ya?ml$/i, c => 'Docker Compose (' + c + ')'],
+    [/^\.github\/workflows\/[^/]+\.ya?ml$/i, (c, t) => 'Automação GitHub Actions: ' + (((t.match(/^name:\s*['"]?([^'"\n]+)/m) || [])[1] || base(c)).trim())],
+    [/(^|\/)vercel\.json$/i, () => 'Publicação na Vercel'], [/(^|\/)netlify\.toml$/i, () => 'Publicação na Netlify'],
+    [/(^|\/)fly\.toml$/i, () => 'Publicação no Fly.io'], [/(^|\/)render\.ya?ml$/i, () => 'Publicação no Render'],
+    [/\.tf$/i, c => 'Terraform (' + c + ')'], [/\.ya?ml$/i, (c, t) => /^\s*kind:\s*(Deployment|Service|Ingress|StatefulSet|CronJob)\b/m.test(t) && /^\s*apiVersion:/m.test(t) ? 'Kubernetes (' + c + ')' : null]
+  ];
+  for (const [c, t] of arq) for (const [re, nome] of INFRA) if (re.test(c)) { const n = nome(c, t); if (n) add({ tipo: 'infra', chave: 'infra:' + c, grupo: 'Infraestrutura', nome: n.slice(0, 300), onde: c, sinais: { arquivo: c } }); break; }
+  // ---------- integrações: sistemas de fora que o código chama, e bibliotecas de serviços conhecidos ----------
+  for (const [c, txt] of arq) {
+    if (!CODIGO.test(c) || TESTE.test(c) || empacotado(txt)) continue;
+    for (const m of txt.matchAll(/(?:fetch|axios(?:\.\w+)?|requests\.\w+|httpx\.\w+|getForObject|postForObject|getForEntity|postForEntity|exchange|WebClient\.create|baseUrl|URI\.create|http\.(?:get|post|request)|NewRequest\([^,]*,)\(?\s*[`'"]https?:\/\/([^/`'"$\s:]+)/g)) {
+      const h = m[1].toLowerCase(); if (/^(localhost|127\.|0\.0\.0\.0)/.test(h) || /\.(local|test|example)$/.test(h) || /(^|\.)example\.(com|org)$/.test(h)) continue;
+      add({ tipo: 'integracao', chave: 'int:' + h, grupo: 'Integrações', nome: 'Integração com ' + h, onde: c + ':' + linhaDe(txt, m.index!), sinais: sinaisDoArquivo(txt, c, testes) });
+    }
+  }
+  const deps = dependenciasDe(arq).map(d => d.nome);
+  for (const [re, n] of SERVICOS_SDK) { const d = deps.find(x => re.test(x)); if (d) add({ tipo: 'integracao', chave: 'sdk:' + n, grupo: 'Integrações', nome: 'Integração com ' + n, onde: 'biblioteca ' + d, sinais: {} }); }
   for (const [c, txt] of arq) {
     if (TESTE.test(c) || empacotado(txt)) continue;
     const sin = () => sinaisDoArquivo(txt, c, testes);

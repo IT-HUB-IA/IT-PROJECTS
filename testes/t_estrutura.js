@@ -65,10 +65,10 @@ window.supabase = { createClient(){ let sess = {user:{id:'u1', email:'admin@it-i
   const app = await p.evaluate(() => { const D = window.ciclodevDados(); const a = D.apps.find(a => D.ws.filter(w => w.app === a.id).length >= 3); return a && a.id; });
   ok(!!app, 'achou uma aplicação com 3 frentes');
   const ordemTela = () => p.evaluate(a => window.ciclodevDados().ws.filter(w => w.app === a).map(w => w.nome), app);
-  const antes = await ordemTela();
   await p.evaluate(a => { const D = window.ciclodevDados(); __tf.abrirArvore('ws:' + D.ws.find(w => w.app === a).id); __tf.UI.sel = 'app:' + a; __tf.rOperacoes(); }, app);
   await p.evaluate(() => document.querySelector('[data-tela="operacoes"]').click()); await p.waitForTimeout(400);
-  await p.evaluate(a => { __tf.UI.sel = 'app:' + a; __tf.abrirArvore('app:' + a); __tf.rOperacoes(); }, app); await p.waitForTimeout(300);
+  await p.evaluate(a => { __tf.UI.sel = 'app:' + a; __tf.UI.abertos['vazias:' + a] = true; __tf.abrirArvore('app:' + a); __tf.rOperacoes(); }, app); await p.waitForTimeout(300);
+  await espera(); const antes = await ordemTela();   // depois de abrir: a aplicação já ganhou as frentes padrão que faltavam (todas à mostra)
   const ids = await p.evaluate(a => window.ciclodevDados().ws.filter(w => w.app === a).map(w => 'ws:' + w.id), app);
   // arrasta a última para cima da primeira
   await p.locator('.no-arv[data-no="' + ids[ids.length - 1] + '"]').dragTo(p.locator('.no-arv[data-no="' + ids[0] + '"]'), {targetPosition:{x:20, y:3}});

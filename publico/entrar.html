@@ -315,6 +315,10 @@
   .no-arv .seta svg{transition:transform var(--dur) var(--ease-out)}
   .no-arv.aberto > .seta svg{transform:rotate(90deg)}
   .no-arv .nome{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ficha-sec .ficha-fr{margin:-4px 0 10px;font-size:12.5px;color:var(--grafite);display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .no-arv.fr-vazias{cursor:default}
+  .no-arv.fr-vazias button{border:0;background:transparent;padding:0;font:500 12px var(--font-body);color:var(--grafite);cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+  .no-arv.fr-vazias button:hover{color:inherit}
   .no-arv .tipo{font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--grafite);opacity:.8}
   .no-arv.escolhido .tipo{color:var(--nevoa)}
   .no-arv .mais{opacity:0}
@@ -4689,7 +4693,7 @@ function arvoreHTML(){
       const kp = 'project:' + p.id;
       h += linha(kp, p.nome, 1, 'project', true, p.status);
       if (!UI.abertos[kp]) return;
-      const appLinha = (a, nv) => { const ka = 'app:' + a.id; h += linha(ka, a.nome, nv, 'app', true, a.status); if (UI.abertos[ka]) D.ws.filter(w => w.app === a.id).forEach(w => { h += linha('ws:' + w.id, w.nome, nv + 1, 'ws', false, w.status); }); };
+      const appLinha = (a, nv) => { const ka = 'app:' + a.id; h += linha(ka, a.nome, nv, 'app', true, a.status); if (UI.abertos[ka]){ const {vis, ocultas} = typeof frWsArvore === 'function' ? frWsArvore(a.id) : {vis:D.ws.filter(w => w.app === a.id), ocultas:[]}; vis.forEach(w => { h += linha('ws:' + w.id, w.nome, nv + 1, 'ws', false, w.status); }); if (ocultas.length) h += '<div class="no-arv fr-vazias" style="padding-left:' + (8 + (nv + 1) * 14) + 'px"><span class="seta"></span><button type="button" data-alt="vazias:' + a.id + '">' + (UI.abertos['vazias:' + a.id] ? 'Esconder as frentes vazias' : '+ ' + ocultas.length + (ocultas.length === 1 ? ' frente vazia' : ' frentes vazias')) + '</button></div>'; } };
       D.products.filter(pr => pr.project === p.id).forEach(pr => {
         const kr = 'product:' + pr.id;
         h += linha(kr, pr.nome, 2, 'product', true, pr.status);
@@ -4949,7 +4953,7 @@ function vSheet(){
   // cada ponto tem a própria ficha: nada vem do projeto nem vai para os produtos (ver noDono em app.js)
   const dis = podeEditar() ? '' : ' disabled';
   return '<p class="intro">A ' + T('Tech sheet','ficha técnica') + ' de ' + esc(nomeDe(chave)) + '. Vale só para ' + esc(nomeDe(chave)) + (chave.startsWith('project') ? ': cada produto e aplicação tem a sua.' : '.') + '</p>' +
-    FICHA.map(([sec, expl, campos]) => '<section class="ficha-sec"><h3>' + (expl ? T(sec, expl) : esc(sec)) + '</h3><div class="ficha-campos">' + campos.map(cp => { const k = sec + '|' + cp, v = f.campos[k] || ''; return '<label class="lb">' + esc(cp) + '<textarea class="campo" rows="2" data-ficha="' + esc(k) + '"' + dis + '>' + esc(v) + '</textarea></label>'; }).join('') + '</div>' +
+    FICHA.map(([sec, expl, campos]) => '<section class="ficha-sec"><h3>' + (expl ? T(sec, expl) : esc(sec)) + '</h3>' + (typeof frFichaLigacao === 'function' ? frFichaLigacao(sec, chave) : '') + '<div class="ficha-campos">' + campos.map(cp => { const k = sec + '|' + cp, v = f.campos[k] || ''; return '<label class="lb">' + esc(cp) + '<textarea class="campo" rows="2" data-ficha="' + esc(k) + '"' + dis + '>' + esc(v) + '</textarea></label>'; }).join('') + '</div>' +
       (sec === 'Visual identity' || sec === 'Anexos e anotações' ? '<div class="arquivos">' + f.arquivos.filter(a => a.sec === sec).map((a, ix) => '<span class="arq">' + (a.url ? '<img src="' + a.url + '" alt="">' : ICO.clip) + '<span>' + esc(a.nome) + '</span></span>').join('') + (podeEditar() ? '<label class="btn sec peq" style="cursor:pointer">' + ICO.clip + 'Anexar arquivos<input type="file" multiple hidden data-anexar-ficha="' + esc(sec) + '"></label>' : '') + '</div>' : '') + '</section>').join('') +
     '<section class="ficha-sec"><h3>' + T('Custom fields','campos personalizados') + '</h3><div class="tabela-rolo" style="border:0"><table class="tabela"><thead><tr><th>Campo</th><th>Tipo</th><th>Valor</th><th style="width:60px"></th></tr></thead><tbody>' +
       f.custom.map((cf, ix) => '<tr><th scope="row">' + esc(cf.nome) + '</th><td>' + esc(cf.tipo) + '</td><td><input class="campo" data-custom="' + ix + '" value="' + esc(cf.valor) + '"' + dis + ' style="width:100%"></td><td>' + (podeEditar() ? '<button class="ico-btn" type="button" data-tirar-custom="' + ix + '" aria-label="Tirar campo">' + ICO.fechar + '</button>' : '') + '</td></tr>').join('') +
@@ -5744,7 +5748,7 @@ document.addEventListener('input', e => {
 document.addEventListener('submit', e => {
   const f = e.target; e.preventDefault();
   const txt = f.t ? f.t.value.trim() : '';
-  if (f.dataset.addStatus){ if (!txt) return; const ws = UI.sel.startsWith('ws:') ? UI.sel.slice(3) : primeiroWs(UI.sel); if (!ws){ toast('Escolha uma aplicação ou frente para criar o item'); return; } { const ni = novoIssue({titulo:txt, status:f.dataset.addStatus, ws}); D.issues.push(ni); registrar('criou', ni); } salvar(); rView(); toast('Item criado'); return; }
+  if (f.dataset.addStatus){ if (!txt) return; const ws = wsDoAssunto(txt); if (!ws){ toast('Escolha uma aplicação ou frente para criar o item'); return; } { const ni = novoIssue({titulo:txt, status:f.dataset.addStatus, ws}); D.issues.push(ni); registrar('criou', ni); } salvar(); rView(); toast('Item criado'); return; }
   const i = itemAberto && byId('issues', itemAberto);
   if (f.dataset.form === 'check' && txt){ i.check.push({t:txt, f:false}); salvar(); abrirItem(i.id); }
   else if (f.dataset.form === 'link'){ if (!f.alvo.value) return; i.links.push({tipo:f.tipo.value, alvo:f.alvo.value}); salvar(); abrirItem(i.id); }
@@ -5846,8 +5850,8 @@ function novoPedido(){
   }}]);
 }
 function virarIssue(id){
-  const r = byId('requests', id); const wss = D.ws.filter(w => w.app === r.app);
-  modal('Converter em Issue', '<div class="grade-form"><label class="lb largo">Título<input class="campo" id="vi-t" value="' + esc(r.titulo) + '"></label><label class="lb">Frente<select class="sel" id="vi-w">' + wss.map(w => '<option value="' + w.id + '">' + esc(w.nome) + '</option>').join('') + '</select></label><label class="lb">Tipo<select class="sel" id="vi-tp"><option value="bug"' + (r.tipo.startsWith('Bug') || r.tipo.startsWith('Fix') ? ' selected' : '') + '>Bug</option><option value="story"' + (r.tipo.startsWith('Feature') || r.tipo.startsWith('Change') ? ' selected' : '') + '>Story</option><option value="task">Task</option></select></label></div>',
+  const r = byId('requests', id); const wss = D.ws.filter(w => w.app === r.app && w.status !== 'archived'); const sug = typeof frenteSugerida === 'function' ? frenteSugerida(r.app, r.titulo + ' ' + (r.desc || '') + ' ' + (r.tipo || '')) : null;
+  modal('Converter em Issue', '<div class="grade-form"><label class="lb largo">Título<input class="campo" id="vi-t" value="' + esc(r.titulo) + '"></label><label class="lb">Frente<select class="sel" id="vi-w">' + wss.map(w => '<option value="' + w.id + '"' + (sug && sug.id === w.id ? ' selected' : '') + '>' + esc(w.nome) + '</option>').join('') + '</select></label><label class="lb">Tipo<select class="sel" id="vi-tp"><option value="bug"' + (r.tipo.startsWith('Bug') || r.tipo.startsWith('Fix') ? ' selected' : '') + '>Bug</option><option value="story"' + (r.tipo.startsWith('Feature') || r.tipo.startsWith('Change') ? ' selected' : '') + '>Story</option><option value="task">Task</option></select></label></div>',
     [{txt:'Cancelar', cls:'sec'},{txt:'Criar item', acao:d => { const i = novoIssue({titulo:$('#vi-t', d).value, ws:$('#vi-w', d).value, tipo:$('#vi-tp', d).value, prio: r.grav === 'Sistema parado' ? 'highest' : r.grav === 'Função quebrada' ? 'high' : 'medium', vis:'cliente', desc:'Veio do pedido do Service Desk: ' + r.titulo}); D.issues.push(i); registrar('criou', i); r.issue = i.id; r.status = 'Em andamento'; salvar(); rServiceDesk(); toast('Item criado no board e ligado ao pedido'); }}]);
 }
 
@@ -7800,7 +7804,7 @@ function vBacklog(){
 
 /* ---------- criar item pelo Backlog e ações ---------- */
 function criarItemRapido(titulo, sprint, status){
-  const ws = UI.sel.startsWith('ws:') ? UI.sel.slice(3) : primeiroWs(UI.sel);
+  const ws = wsDoAssunto(titulo);
   if (!ws){ toast('Crie antes uma frente de trabalho numa aplicação (Estrutura › aplicação › + Frente)'); return null; }
   const ni = novoIssue({titulo, status:status || (sprint ? 'todo' : 'backlog'), ws});
   if (sprint) ni.sprint = sprint;
@@ -11526,6 +11530,7 @@ function frenteSugerida(appId, texto, assunto){
 }
 // o assunto do que a análise leu do código e do banco
 function frAssuntoInventario(x){
+  const fixo = {integracao:'integracoes', infra:'infraestrutura', teste:'testes'}[x.tipo]; if (fixo) return fixo;
   const t = (x.nome || '') + ' ' + (x.grupo || '') + ' ' + (x.onde || '');
   const k = frAssunto(t);
   if (k === 'integracoes' || k === 'seguranca' || k === 'testes') return k;
@@ -11537,6 +11542,13 @@ function frAssuntoAchado(a){
   if (/^(BD|ARQ)-/.test(r)) return 'database';
   if (/^QUA-/.test(r)) return /\.(jsx|tsx|vue|svelte|html?|css)\b/i.test(a.onde || '') ? 'frontend' : 'backend';
   return 'seguranca';
+}
+// criar rápido (Quadro, colunas, Fila): a frente escolhida na Estrutura; senão a do assunto do título, na aplicação de sempre; senão a primeira
+function wsDoAssunto(titulo){
+  if (UI.sel.startsWith('ws:')) return UI.sel.slice(3);
+  const base = primeiroWs(UI.sel), w = base && byId('ws', base);
+  const s = w ? frenteSugerida(w.app, titulo) : null;
+  return s ? s.id : base;
 }
 // janela Novo item: enquanto a pessoa escreve o título, o "Onde" vai para a frente do assunto (até ela mesma escolher outra)
 const _novoItemFr = novoItem;
@@ -11552,6 +11564,44 @@ novoItem = function(){
     if (w && w.id !== s.value) s.value = w.id;
   });
 };
+// árvore: as frentes padrão novas (Integrações, Infraestrutura...) só aparecem quando têm item ou estão escolhidas.
+// Frontend, Backend, Database e as frentes criadas pela pessoa aparecem sempre. Continuam existindo para o envio automático.
+function frWsArvore(appId){
+  const todas = D.ws.filter(w => w.app === appId);
+  if (UI.abertos['vazias:' + appId]) return {vis:todas, ocultas:todas.filter(frEscondivel)};
+  const ocultas = todas.filter(frEscondivel);
+  return {vis:todas.filter(w => !ocultas.includes(w)), ocultas};
+}
+function frEscondivel(w){
+  const k = frChave(w.nome);
+  if (!k || ['frontend', 'backend', 'database'].includes(k) || UI.sel === 'ws:' + w.id) return false;
+  return !D.issues.some(i => i.ws === w.id && !i.arquivado);
+}
+// aplicações que já existiam ganham as frentes padrão que faltam (uma vez por sessão, sem duplicar)
+let frCompletou = false;
+function frCompletarApps(){
+  if (frCompletou || typeof podeEditar !== 'function' || !podeEditar() || !D.apps.length) return;
+  if (typeof BANCO === 'undefined' || !BANCO || !BANCO.carregado) return;   // só depois de o banco carregar (senão criaria de novo o que já existe lá)
+  frCompletou = true;
+  const antes = D.ws.length;
+  D.apps.filter(a => a.status !== 'archived').forEach(a => criarFrentesPadrao(a.id));
+  if (D.ws.length !== antes) salvar();
+}
+const _rOperacoesFr = rOperacoes;
+rOperacoes = function(){ frCompletarApps(); return _rOperacoesFr.apply(this, arguments); };
+// ficha técnica: cada seção mostra a frente de trabalho do mesmo assunto (o que está sendo feito ali)
+const FR_FICHA = {'Database':'database', 'APIs':'backend', 'Integrations':'integracoes', 'Environments':'infraestrutura', 'Secrets catalog':'seguranca', 'Visual identity':'design', 'Repositories':'documentacao'};
+function frFichaLigacao(sec, chave){
+  const k = FR_FICHA[sec]; if (!k) return '';
+  const [tipo, id] = String(chave).split(':');
+  const apps = D.apps.filter(a => (tipo === 'app' && a.id === id) || (tipo === 'product' && a.product === id) || (tipo === 'project' && a.project === id));
+  const ws = D.ws.filter(w => w.status !== 'archived' && apps.some(a => a.id === w.app) && frChave(w.nome) === k);
+  if (!ws.length) return '';
+  const itens = D.issues.filter(i => !i.arquivado && i.tipo !== 'epic' && ws.some(w => w.id === i.ws)), feitos = itens.filter(i => i.status === 'done').length;
+  const nome = FRENTES_PADRAO.find(x => x.chave === k).nome;
+  return '<p class="ficha-fr">Frente <b>' + esc(nome) + '</b>: ' + (itens.length ? itens.length + (itens.length === 1 ? ' item' : ' itens') + ' (' + feitos + ' concluídos, ' + (itens.length - feitos) + ' em aberto)' : 'nenhum item ainda') +
+    ws.map(w => ' <button type="button" class="btn fant peq" data-ir-ops="ws:' + w.id + '">' + esc(apps.length > 1 ? (byId('apps', w.app) || {}).nome + ' › ' + w.nome : 'Abrir a frente') + '</button>').join('') + '</p>';
+}
 
 /* ===== Fila: criar em lote =====
    Cola ou digita a lista inteira de uma vez, como no Trello e no ClickUp:
@@ -16176,6 +16226,9 @@ async function sgCarregar(){
     SG.achados = a.data || []; SG.rodadas = r.data || []; SG.inventario = v.error ? [] : (v.data || []);
   } catch (e){ SG.erro = e.message || String(e); }
   SG.carregando = false;
+  // o que o robô leu e ainda não virou item é montado sozinho
+  const novos = SG.inventario.filter(x => !x.item_id);
+  if (novos.length && podeEditar() && !SG.importando && SG.chave === chave) setTimeout(() => sgImportarAgora(novos, {auto:true}), 0);
 }
 function sgNota(lista){ const p = {critica:25, alta:10, media:4, baixa:1}; return Math.max(0, 100 - lista.reduce((s, a) => s + (p[a.gravidade] || 0), 0)); }
 const sgQuando = ts => { if (!ts) return ''; const m = Math.round((Date.now() - new Date(ts).getTime()) / 60000); if (m < 1) return 'agora'; if (m < 60) return 'há ' + m + ' min'; const h = Math.round(m / 60); if (h < 24) return 'há ' + h + ' h'; const d = Math.round(h / 24); return d === 1 ? 'ontem' : 'há ' + d + ' dias'; };
@@ -16221,7 +16274,7 @@ function sgTelaHTML(){
   return h + '</div>';
 }
 // ---------- o que já existe: importar como épicos e itens ----------
-const SG_INV_TIPO = {tela:'Telas', api:'APIs', job:'Tarefas agendadas', tabela:'Tabelas'};
+const SG_INV_TIPO = {tela:'Telas', api:'APIs', job:'Tarefas agendadas', tabela:'Tabelas', integracao:'Integrações', infra:'Infraestrutura', teste:'Testes'};
 function sgMotivos(x){ const s = x.sinais || {}, m = [];
   if (s.todo) m.push(s.todo + (s.todo === 1 ? ' marca TODO/FIXME no arquivo' : ' marcas TODO/FIXME no arquivo'));
   if (s.inacabado) m.push('o código diz "' + s.inacabado + '"');
@@ -16239,36 +16292,43 @@ function sgImportar(){
   const tipos = Object.keys(SG_INV_TIPO).filter(t => novo.some(x => x.tipo === t));
   const grupos = [...new Set(novo.map(x => x.grupo))];
   modal('Importar o que já existe', '<p>O CicloDev cria um <b>épico</b> para cada grupo (módulo, controlador ou família de tabelas) e um <b>item</b> para cada tela, API, tarefa ou tabela, com onde está no código e o que foi visto.</p>' +
-    '<ul class="sg-imp-regras"><li><b>Parece pronto</b> (sem TODO, sem "não implementado", tabela usada pelo código): entra em <b>Pronto para testar</b>. O P.O. confere e aceita, em lote se quiser.</li><li><b>Precisa análise</b>: entra em <b>Criado</b>, com o motivo escrito no item e o critério "Conferir o que falta".</li></ul>' +
+    '<ul class="sg-imp-regras"><li><b>Já pronto</b> (sem TODO, sem "não implementado", tabela usada pelo código): entra como <b>Concluído</b>, como se tivesse sido feito aqui desde o começo. Mudança daqui para frente vira Melhoria.</li><li><b>Precisa análise</b>: entra em <b>Criado</b>, com o motivo escrito no item e o critério "Conferir o que falta".</li></ul>' +
     '<fieldset class="sg-imp-tipos"><legend>O que importar</legend>' + tipos.map(t => { const n = novo.filter(x => x.tipo === t).length, ok = novo.filter(x => x.tipo === t && !sgMotivos(x).length).length;
       return '<label class="cm-ck"><input type="checkbox" data-sg-imp-tipo="' + t + '"' + (t === 'tabela' && n > 60 ? '' : ' checked') + '> ' + SG_INV_TIPO[t] + ' <small>' + n + ' (' + ok + ' prontos, ' + (n - ok) + ' para analisar)</small></label>'; }).join('') + '</fieldset>' +
     '<p class="sec">' + grupos.length + (grupos.length === 1 ? ' épico' : ' épicos') + ' no total. Épico com o mesmo nome de um que já existe recebe os itens, sem duplicar. O que já foi importado não entra de novo.' + (novo.some(x => x.tipo === 'tabela') && novo.filter(x => x.tipo === 'tabela').length > 60 ? ' As tabelas vêm desmarcadas porque são muitas: marque se quiser um item por tabela.' : '') + '</p>',
     [{txt:'Cancelar', cls:'sec'}, {txt:'Importar', acao:d => { const marcados = [...d.querySelectorAll('[data-sg-imp-tipo]:checked')].map(x => x.dataset.sgImpTipo); if (!marcados.length){ toast('Marque o que importar'); return false; }
       sgImportarAgora(novo.filter(x => marcados.includes(x.tipo))); }}]);
 }
-async function sgImportarAgora(lista){
-  const sb = sgBanco(); if (!sb) return;
-  const revisao = 'review', criados = [], epicos = {};
+// o que já existe entra como se tivesse sido feito no CicloDev desde o começo: o que parece pronto nasce Concluído
+// (sem critério pendente, para não travar o aceite); o que tem sinal de inacabado entra em Criado, com o motivo.
+async function sgImportarAgora(lista, opc = {}){
+  const sb = sgBanco(); if (!sb || SG.importando) return;
+  SG.importando = true;
+  const criados = [], epicos = {}, novosEp = new Set();
   for (const x of lista){
     const w = sgFrentePara(x.no_id, frAssuntoInventario(x)); if (!w) continue;
     const ap = w.app, chaveEp = ap + '|' + x.grupo;
     let ep = epicos[chaveEp] || D.issues.find(i => i.tipo === 'epic' && !i.arquivado && i.titulo.toLowerCase() === x.grupo.toLowerCase() && (byId('ws', i.ws) || {}).app === ap);
-    if (!ep){ ep = novoIssue({titulo:x.grupo.slice(0, 300), ws:w.id, tipo:'epic', status:'todo'}); ep.desc = 'Épico criado pela importação do que já existe no sistema (análise automática do código e do banco).'; if (typeof garantirBoard === 'function') garantirBoard({issues:[ep], boards:D.boards, equipes:D.equipes}); D.issues.push(ep); registrar('criou', ep); }
+    if (!ep){ ep = novoIssue({titulo:x.grupo.slice(0, 300), ws:w.id, tipo:'epic', status:'todo'}); ep.desc = 'Épico criado pela importação do que já existe no sistema (análise automática do código e do banco).'; if (typeof garantirBoard === 'function') garantirBoard({issues:[ep], boards:D.boards, equipes:D.equipes}); D.issues.push(ep); registrar('criou', ep); novosEp.add(ep.id); }
     epicos[chaveEp] = ep;
     const m = sgMotivos(x), s = x.sinais || {};
-    const it = novoIssue({titulo:x.nome.slice(0, 300), ws:w.id, tipo:'story', status:m.length ? 'backlog' : revisao, pai:ep.id});
-    it.desc = 'Importado da análise automática (' + (x.rotulo || '') + ').\nOnde: ' + x.onde + (s.teste ? '\nTem teste automático.' : '') + (x.tipo === 'tabela' && s.colunas ? '\nColunas: ' + s.colunas + (s.rls === false ? ' · RLS desligada' : '') : '') +
-      (m.length ? '\n\nPrecisa análise: ' + m.join('; ') + '.' : '\n\nParece pronto: nenhum sinal de trabalho pendente foi visto. O P.O. confere e aceita.');
-    it.crit = m.length ? [{t:'Conferir o que falta: ' + m.join('; '), f:false}] : [{t:'Funciona como está no sistema hoje (conferido pelo P.O.)', f:false}];
+    const it = novoIssue({titulo:x.nome.slice(0, 300), ws:w.id, tipo:'story', status:m.length ? 'backlog' : 'done', pai:ep.id});
+    if (!m.length){ it.feito = iso(HOJE); it.fim = iso(HOJE); }
+    it.desc = 'Importado da análise automática (' + (x.rotulo || '') + '): já existia no sistema quando ele foi ligado ao CicloDev.\nOnde: ' + x.onde + (s.teste ? '\nTem teste automático.' : '') + (x.tipo === 'tabela' && s.colunas ? '\nColunas: ' + s.colunas + (s.rls === false ? ' · RLS desligada' : '') : '') +
+      (m.length ? '\n\nPrecisa análise: ' + m.join('; ') + '.' : '\n\nJá pronto: nenhum sinal de trabalho pendente foi visto. Entrou como Concluído, como se tivesse sido feito aqui desde o começo. Mudança daqui para frente vira Melhoria.');
+    it.crit = m.length ? [{t:'Conferir o que falta: ' + m.join('; '), f:false}] : [];
     if (typeof garantirBoard === 'function') garantirBoard({issues:[it], boards:D.boards, equipes:D.equipes});
     it.ordem = Math.max(0, ...D.issues.map(y => +y.ordem || 0)) + 1;
     D.issues.push(it); criados.push({id:x.id, item:it.id});
   }
+  // épico com tudo pronto também fica Concluído
+  Object.values(epicos).forEach(ep => { const f = D.issues.filter(i => i.pai === ep.id && !i.arquivado); if (f.length && f.every(i => i.status === 'done') && ep.status !== 'done' && novosEp.has(ep.id)){ ep.status = 'done'; ep.feito = iso(HOJE); } });
   salvar(); rView();
-  toast(criados.length + (criados.length === 1 ? ' item importado' : ' itens importados') + ' em ' + Object.keys(epicos).length + (Object.keys(epicos).length === 1 ? ' épico.' : ' épicos.'));
+  if (criados.length) toast((opc.auto ? 'O sistema ligado foi montado no CicloDev: ' : '') + criados.length + (criados.length === 1 ? ' item' : ' itens') + ' em ' + Object.keys(epicos).length + (Object.keys(epicos).length === 1 ? ' épico' : ' épicos') + ', cada um na frente do assunto.');
   const t0 = Date.now(); while (window.ciclodevSync && (window.ciclodevSync.rodando || window.ciclodevSync.pendente) && Date.now() - t0 < 60000) await new Promise(ok => setTimeout(ok, 500));
   for (let i = 0; i < criados.length; i += 500){ const {error} = await sb.rpc('analise_inventario_ligar', {p_pares:criados.slice(i, i + 500)}); if (error){ toast('Os itens foram criados, mas não deu para marcar o inventário: ' + (error.message || error)); break; } }
   criados.forEach(c => { const x = SG.inventario.find(y => y.id === c.id); if (x) x.item_id = c.item; });
+  SG.importando = false;
   if (UI.view === 'seguranca') rView();
 }
 // a frente onde o item nasce: a do ponto do achado (a primeira frente ativa da aplicação ou do produto)
@@ -16311,9 +16371,23 @@ rView = function(){
   }
   return _rViewSg.apply(this, arguments);
 };
+// projeto que já está em produção: ao ligar o GitHub, o banco ou o que for, o que o robô leu vira épicos e itens sozinho,
+// como se tivesse sido feito no CicloDev desde o começo. Roda quando alguém que edita abre o ponto (e de novo quando o robô lê coisa nova).
+async function sgAutoImportar(){
+  const sb = sgBanco(), chave = UI.sel;
+  if (!sb || SG.importando || !podeEditar() || !sgPodeTer(chave) || SG_AUTO.has(chave)) return;
+  SG_AUTO.add(chave); setTimeout(() => SG_AUTO.delete(chave), 10000);
+  const {data, error} = await sb.from('analise_inventario').select('id, no_id, origem, rotulo, tipo, chave, grupo, nome, onde, sinais, item_id').in('no_id', sgNos(chave)).limit(5000);
+  const novos = (data || []).filter(x => !x.item_id);
+  if (error || !novos.length || UI.sel !== chave) return;
+  const ja = new Set(SG.inventario.map(x => x.id)); novos.forEach(x => { if (!ja.has(x.id)) SG.inventario.push(x); });
+  await sgImportarAgora(novos, {auto:true});
+}
+const SG_AUTO = new Set();
 const _rOperacoesSg = rOperacoes;
 rOperacoes = function(){
   _rOperacoesSg.apply(this, arguments);
+  sgAutoImportar();
   if (!sgPodeTer(UI.sel)){ const b = $('.view-b[data-view="seguranca"]'); if (b) (b.closest('.view-casa') || b).remove(); if (UI.view === 'seguranca'){ UI.view = 'dashboard'; rView(); } }
 };
 VIEWS.push(['seguranca', 'Análise', 'análise automática do código e do banco: segurança, qualidade e arquitetura']);

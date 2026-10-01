@@ -45,6 +45,7 @@ function frenteSugerida(appId, texto, assunto){
 }
 // o assunto do que a análise leu do código e do banco
 function frAssuntoInventario(x){
+  const fixo = {integracao:'integracoes', infra:'infraestrutura', teste:'testes'}[x.tipo]; if (fixo) return fixo;
   const t = (x.nome || '') + ' ' + (x.grupo || '') + ' ' + (x.onde || '');
   const k = frAssunto(t);
   if (k === 'integracoes' || k === 'seguranca' || k === 'testes') return k;
@@ -56,6 +57,13 @@ function frAssuntoAchado(a){
   if (/^(BD|ARQ)-/.test(r)) return 'database';
   if (/^QUA-/.test(r)) return /\.(jsx|tsx|vue|svelte|html?|css)\b/i.test(a.onde || '') ? 'frontend' : 'backend';
   return 'seguranca';
+}
+// criar rápido (Quadro, colunas, Fila): a frente escolhida na Estrutura; senão a do assunto do título, na aplicação de sempre; senão a primeira
+function wsDoAssunto(titulo){
+  if (UI.sel.startsWith('ws:')) return UI.sel.slice(3);
+  const base = primeiroWs(UI.sel), w = base && byId('ws', base);
+  const s = w ? frenteSugerida(w.app, titulo) : null;
+  return s ? s.id : base;
 }
 // janela Novo item: enquanto a pessoa escreve o título, o "Onde" vai para a frente do assunto (até ela mesma escolher outra)
 const _novoItemFr = novoItem;
@@ -71,3 +79,41 @@ novoItem = function(){
     if (w && w.id !== s.value) s.value = w.id;
   });
 };
+// árvore: as frentes padrão novas (Integrações, Infraestrutura...) só aparecem quando têm item ou estão escolhidas.
+// Frontend, Backend, Database e as frentes criadas pela pessoa aparecem sempre. Continuam existindo para o envio automático.
+function frWsArvore(appId){
+  const todas = D.ws.filter(w => w.app === appId);
+  if (UI.abertos['vazias:' + appId]) return {vis:todas, ocultas:todas.filter(frEscondivel)};
+  const ocultas = todas.filter(frEscondivel);
+  return {vis:todas.filter(w => !ocultas.includes(w)), ocultas};
+}
+function frEscondivel(w){
+  const k = frChave(w.nome);
+  if (!k || ['frontend', 'backend', 'database'].includes(k) || UI.sel === 'ws:' + w.id) return false;
+  return !D.issues.some(i => i.ws === w.id && !i.arquivado);
+}
+// aplicações que já existiam ganham as frentes padrão que faltam (uma vez por sessão, sem duplicar)
+let frCompletou = false;
+function frCompletarApps(){
+  if (frCompletou || typeof podeEditar !== 'function' || !podeEditar() || !D.apps.length) return;
+  if (typeof BANCO === 'undefined' || !BANCO || !BANCO.carregado) return;   // só depois de o banco carregar (senão criaria de novo o que já existe lá)
+  frCompletou = true;
+  const antes = D.ws.length;
+  D.apps.filter(a => a.status !== 'archived').forEach(a => criarFrentesPadrao(a.id));
+  if (D.ws.length !== antes) salvar();
+}
+const _rOperacoesFr = rOperacoes;
+rOperacoes = function(){ frCompletarApps(); return _rOperacoesFr.apply(this, arguments); };
+// ficha técnica: cada seção mostra a frente de trabalho do mesmo assunto (o que está sendo feito ali)
+const FR_FICHA = {'Database':'database', 'APIs':'backend', 'Integrations':'integracoes', 'Environments':'infraestrutura', 'Secrets catalog':'seguranca', 'Visual identity':'design', 'Repositories':'documentacao'};
+function frFichaLigacao(sec, chave){
+  const k = FR_FICHA[sec]; if (!k) return '';
+  const [tipo, id] = String(chave).split(':');
+  const apps = D.apps.filter(a => (tipo === 'app' && a.id === id) || (tipo === 'product' && a.product === id) || (tipo === 'project' && a.project === id));
+  const ws = D.ws.filter(w => w.status !== 'archived' && apps.some(a => a.id === w.app) && frChave(w.nome) === k);
+  if (!ws.length) return '';
+  const itens = D.issues.filter(i => !i.arquivado && i.tipo !== 'epic' && ws.some(w => w.id === i.ws)), feitos = itens.filter(i => i.status === 'done').length;
+  const nome = FRENTES_PADRAO.find(x => x.chave === k).nome;
+  return '<p class="ficha-fr">Frente <b>' + esc(nome) + '</b>: ' + (itens.length ? itens.length + (itens.length === 1 ? ' item' : ' itens') + ' (' + feitos + ' concluídos, ' + (itens.length - feitos) + ' em aberto)' : 'nenhum item ainda') +
+    ws.map(w => ' <button type="button" class="btn fant peq" data-ir-ops="ws:' + w.id + '">' + esc(apps.length > 1 ? (byId('apps', w.app) || {}).nome + ' › ' + w.nome : 'Abrir a frente') + '</button>').join('') + '</p>';
+}

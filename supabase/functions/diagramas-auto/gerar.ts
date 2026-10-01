@@ -1141,7 +1141,7 @@ const LINGUAS: Record<string, string> = { ts: 'TypeScript', tsx: 'TypeScript', m
   vue: 'Vue', svelte: 'Svelte', py: 'Python', go: 'Go', java: 'Java', kt: 'Kotlin', kts: 'Kotlin', cs: 'C#', rb: 'Ruby', php: 'PHP', rs: 'Rust', swift: 'Swift', dart: 'Dart', scala: 'Scala', sql: 'SQL', html: 'HTML', css: 'CSS', scss: 'CSS' };
 const semVersao = (v: unknown) => String(v ?? '').replace(/^[\^~>=<\s]+/, '').split(/\s|\|\|/)[0];
 const listaFicha = (xs: string[], max = 25) => { const u = [...new Set(xs.filter(Boolean))]; return u.slice(0, max).join(', ') + (u.length > max ? ' e mais ' + (u.length - max) : ''); };
-const SERVICOS_SDK: [RegExp, string][] = [
+export const SERVICOS_SDK: [RegExp, string][] = [
   [/^stripe$|stripe-java|com\.stripe/, 'Stripe'], [/^@sendgrid\/|sendgrid/, 'SendGrid'], [/^aws-sdk$|^@aws-sdk\/|software\.amazon\.awssdk|com\.amazonaws/, 'AWS'],
   [/^twilio$|com\.twilio/, 'Twilio'], [/^openai$|com\.theokanning|openai-java/, 'OpenAI'], [/^@anthropic-ai\/sdk$|anthropic/, 'Anthropic (Claude)'],
   [/^firebase(-admin)?$|com\.google\.firebase/, 'Firebase'], [/^googleapis$|^@google-cloud\/|com\.google\.cloud/, 'Google Cloud'], [/^@supabase\/supabase-js$|^@supabase\/ssr$|io\.github\.jan-tennert\.supabase/, 'Supabase'],

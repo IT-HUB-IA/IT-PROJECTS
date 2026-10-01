@@ -116,6 +116,10 @@
   .no-arv .seta svg{transition:transform var(--dur) var(--ease-out)}
   .no-arv.aberto > .seta svg{transform:rotate(90deg)}
   .no-arv .nome{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ficha-sec .ficha-fr{margin:-4px 0 10px;font-size:12.5px;color:var(--grafite);display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .no-arv.fr-vazias{cursor:default}
+  .no-arv.fr-vazias button{border:0;background:transparent;padding:0;font:500 12px var(--font-body);color:var(--grafite);cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+  .no-arv.fr-vazias button:hover{color:inherit}
   .no-arv .tipo{font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--grafite);opacity:.8}
   .no-arv.escolhido .tipo{color:var(--nevoa)}
   .no-arv .mais{opacity:0}

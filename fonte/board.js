@@ -348,7 +348,7 @@ function vBacklog(){
 
 /* ---------- criar item pelo Backlog e ações ---------- */
 function criarItemRapido(titulo, sprint, status){
-  const ws = UI.sel.startsWith('ws:') ? UI.sel.slice(3) : primeiroWs(UI.sel);
+  const ws = wsDoAssunto(titulo);
   if (!ws){ toast('Crie antes uma frente de trabalho numa aplicação (Estrutura › aplicação › + Frente)'); return null; }
   const ni = novoIssue({titulo, status:status || (sprint ? 'todo' : 'backlog'), ws});
   if (sprint) ni.sprint = sprint;

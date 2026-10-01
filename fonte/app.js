@@ -655,7 +655,7 @@ function arvoreHTML(){
       const kp = 'project:' + p.id;
       h += linha(kp, p.nome, 1, 'project', true, p.status);
       if (!UI.abertos[kp]) return;
-      const appLinha = (a, nv) => { const ka = 'app:' + a.id; h += linha(ka, a.nome, nv, 'app', true, a.status); if (UI.abertos[ka]) D.ws.filter(w => w.app === a.id).forEach(w => { h += linha('ws:' + w.id, w.nome, nv + 1, 'ws', false, w.status); }); };
+      const appLinha = (a, nv) => { const ka = 'app:' + a.id; h += linha(ka, a.nome, nv, 'app', true, a.status); if (UI.abertos[ka]){ const {vis, ocultas} = typeof frWsArvore === 'function' ? frWsArvore(a.id) : {vis:D.ws.filter(w => w.app === a.id), ocultas:[]}; vis.forEach(w => { h += linha('ws:' + w.id, w.nome, nv + 1, 'ws', false, w.status); }); if (ocultas.length) h += '<div class="no-arv fr-vazias" style="padding-left:' + (8 + (nv + 1) * 14) + 'px"><span class="seta"></span><button type="button" data-alt="vazias:' + a.id + '">' + (UI.abertos['vazias:' + a.id] ? 'Esconder as frentes vazias' : '+ ' + ocultas.length + (ocultas.length === 1 ? ' frente vazia' : ' frentes vazias')) + '</button></div>'; } };
       D.products.filter(pr => pr.project === p.id).forEach(pr => {
         const kr = 'product:' + pr.id;
         h += linha(kr, pr.nome, 2, 'product', true, pr.status);
@@ -915,7 +915,7 @@ function vSheet(){
   // cada ponto tem a própria ficha: nada vem do projeto nem vai para os produtos (ver noDono em app.js)
   const dis = podeEditar() ? '' : ' disabled';
   return '<p class="intro">A ' + T('Tech sheet','ficha técnica') + ' de ' + esc(nomeDe(chave)) + '. Vale só para ' + esc(nomeDe(chave)) + (chave.startsWith('project') ? ': cada produto e aplicação tem a sua.' : '.') + '</p>' +
-    FICHA.map(([sec, expl, campos]) => '<section class="ficha-sec"><h3>' + (expl ? T(sec, expl) : esc(sec)) + '</h3><div class="ficha-campos">' + campos.map(cp => { const k = sec + '|' + cp, v = f.campos[k] || ''; return '<label class="lb">' + esc(cp) + '<textarea class="campo" rows="2" data-ficha="' + esc(k) + '"' + dis + '>' + esc(v) + '</textarea></label>'; }).join('') + '</div>' +
+    FICHA.map(([sec, expl, campos]) => '<section class="ficha-sec"><h3>' + (expl ? T(sec, expl) : esc(sec)) + '</h3>' + (typeof frFichaLigacao === 'function' ? frFichaLigacao(sec, chave) : '') + '<div class="ficha-campos">' + campos.map(cp => { const k = sec + '|' + cp, v = f.campos[k] || ''; return '<label class="lb">' + esc(cp) + '<textarea class="campo" rows="2" data-ficha="' + esc(k) + '"' + dis + '>' + esc(v) + '</textarea></label>'; }).join('') + '</div>' +
       (sec === 'Visual identity' || sec === 'Anexos e anotações' ? '<div class="arquivos">' + f.arquivos.filter(a => a.sec === sec).map((a, ix) => '<span class="arq">' + (a.url ? '<img src="' + a.url + '" alt="">' : ICO.clip) + '<span>' + esc(a.nome) + '</span></span>').join('') + (podeEditar() ? '<label class="btn sec peq" style="cursor:pointer">' + ICO.clip + 'Anexar arquivos<input type="file" multiple hidden data-anexar-ficha="' + esc(sec) + '"></label>' : '') + '</div>' : '') + '</section>').join('') +
     '<section class="ficha-sec"><h3>' + T('Custom fields','campos personalizados') + '</h3><div class="tabela-rolo" style="border:0"><table class="tabela"><thead><tr><th>Campo</th><th>Tipo</th><th>Valor</th><th style="width:60px"></th></tr></thead><tbody>' +
       f.custom.map((cf, ix) => '<tr><th scope="row">' + esc(cf.nome) + '</th><td>' + esc(cf.tipo) + '</td><td><input class="campo" data-custom="' + ix + '" value="' + esc(cf.valor) + '"' + dis + ' style="width:100%"></td><td>' + (podeEditar() ? '<button class="ico-btn" type="button" data-tirar-custom="' + ix + '" aria-label="Tirar campo">' + ICO.fechar + '</button>' : '') + '</td></tr>').join('') +
@@ -1710,7 +1710,7 @@ document.addEventListener('input', e => {
 document.addEventListener('submit', e => {
   const f = e.target; e.preventDefault();
   const txt = f.t ? f.t.value.trim() : '';
-  if (f.dataset.addStatus){ if (!txt) return; const ws = UI.sel.startsWith('ws:') ? UI.sel.slice(3) : primeiroWs(UI.sel); if (!ws){ toast('Escolha uma aplicação ou frente para criar o item'); return; } { const ni = novoIssue({titulo:txt, status:f.dataset.addStatus, ws}); D.issues.push(ni); registrar('criou', ni); } salvar(); rView(); toast('Item criado'); return; }
+  if (f.dataset.addStatus){ if (!txt) return; const ws = wsDoAssunto(txt); if (!ws){ toast('Escolha uma aplicação ou frente para criar o item'); return; } { const ni = novoIssue({titulo:txt, status:f.dataset.addStatus, ws}); D.issues.push(ni); registrar('criou', ni); } salvar(); rView(); toast('Item criado'); return; }
   const i = itemAberto && byId('issues', itemAberto);
   if (f.dataset.form === 'check' && txt){ i.check.push({t:txt, f:false}); salvar(); abrirItem(i.id); }
   else if (f.dataset.form === 'link'){ if (!f.alvo.value) return; i.links.push({tipo:f.tipo.value, alvo:f.alvo.value}); salvar(); abrirItem(i.id); }
@@ -1812,8 +1812,8 @@ function novoPedido(){
   }}]);
 }
 function virarIssue(id){
-  const r = byId('requests', id); const wss = D.ws.filter(w => w.app === r.app);
-  modal('Converter em Issue', '<div class="grade-form"><label class="lb largo">Título<input class="campo" id="vi-t" value="' + esc(r.titulo) + '"></label><label class="lb">Frente<select class="sel" id="vi-w">' + wss.map(w => '<option value="' + w.id + '">' + esc(w.nome) + '</option>').join('') + '</select></label><label class="lb">Tipo<select class="sel" id="vi-tp"><option value="bug"' + (r.tipo.startsWith('Bug') || r.tipo.startsWith('Fix') ? ' selected' : '') + '>Bug</option><option value="story"' + (r.tipo.startsWith('Feature') || r.tipo.startsWith('Change') ? ' selected' : '') + '>Story</option><option value="task">Task</option></select></label></div>',
+  const r = byId('requests', id); const wss = D.ws.filter(w => w.app === r.app && w.status !== 'archived'); const sug = typeof frenteSugerida === 'function' ? frenteSugerida(r.app, r.titulo + ' ' + (r.desc || '') + ' ' + (r.tipo || '')) : null;
+  modal('Converter em Issue', '<div class="grade-form"><label class="lb largo">Título<input class="campo" id="vi-t" value="' + esc(r.titulo) + '"></label><label class="lb">Frente<select class="sel" id="vi-w">' + wss.map(w => '<option value="' + w.id + '"' + (sug && sug.id === w.id ? ' selected' : '') + '>' + esc(w.nome) + '</option>').join('') + '</select></label><label class="lb">Tipo<select class="sel" id="vi-tp"><option value="bug"' + (r.tipo.startsWith('Bug') || r.tipo.startsWith('Fix') ? ' selected' : '') + '>Bug</option><option value="story"' + (r.tipo.startsWith('Feature') || r.tipo.startsWith('Change') ? ' selected' : '') + '>Story</option><option value="task">Task</option></select></label></div>',
     [{txt:'Cancelar', cls:'sec'},{txt:'Criar item', acao:d => { const i = novoIssue({titulo:$('#vi-t', d).value, ws:$('#vi-w', d).value, tipo:$('#vi-tp', d).value, prio: r.grav === 'Sistema parado' ? 'highest' : r.grav === 'Função quebrada' ? 'high' : 'medium', vis:'cliente', desc:'Veio do pedido do Service Desk: ' + r.titulo}); D.issues.push(i); registrar('criou', i); r.issue = i.id; r.status = 'Em andamento'; salvar(); rServiceDesk(); toast('Item criado no board e ligado ao pedido'); }}]);
 }
 

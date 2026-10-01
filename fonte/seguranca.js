@@ -35,6 +35,9 @@ async function sgCarregar(){
     SG.achados = a.data || []; SG.rodadas = r.data || []; SG.inventario = v.error ? [] : (v.data || []);
   } catch (e){ SG.erro = e.message || String(e); }
   SG.carregando = false;
+  // o que o robô leu e ainda não virou item é montado sozinho
+  const novos = SG.inventario.filter(x => !x.item_id);
+  if (novos.length && podeEditar() && !SG.importando && SG.chave === chave) setTimeout(() => sgImportarAgora(novos, {auto:true}), 0);
 }
 function sgNota(lista){ const p = {critica:25, alta:10, media:4, baixa:1}; return Math.max(0, 100 - lista.reduce((s, a) => s + (p[a.gravidade] || 0), 0)); }
 const sgQuando = ts => { if (!ts) return ''; const m = Math.round((Date.now() - new Date(ts).getTime()) / 60000); if (m < 1) return 'agora'; if (m < 60) return 'há ' + m + ' min'; const h = Math.round(m / 60); if (h < 24) return 'há ' + h + ' h'; const d = Math.round(h / 24); return d === 1 ? 'ontem' : 'há ' + d + ' dias'; };
@@ -80,7 +83,7 @@ function sgTelaHTML(){
   return h + '</div>';
 }
 // ---------- o que já existe: importar como épicos e itens ----------
-const SG_INV_TIPO = {tela:'Telas', api:'APIs', job:'Tarefas agendadas', tabela:'Tabelas'};
+const SG_INV_TIPO = {tela:'Telas', api:'APIs', job:'Tarefas agendadas', tabela:'Tabelas', integracao:'Integrações', infra:'Infraestrutura', teste:'Testes'};
 function sgMotivos(x){ const s = x.sinais || {}, m = [];
   if (s.todo) m.push(s.todo + (s.todo === 1 ? ' marca TODO/FIXME no arquivo' : ' marcas TODO/FIXME no arquivo'));
   if (s.inacabado) m.push('o código diz "' + s.inacabado + '"');
@@ -98,36 +101,43 @@ function sgImportar(){
   const tipos = Object.keys(SG_INV_TIPO).filter(t => novo.some(x => x.tipo === t));
   const grupos = [...new Set(novo.map(x => x.grupo))];
   modal('Importar o que já existe', '<p>O CicloDev cria um <b>épico</b> para cada grupo (módulo, controlador ou família de tabelas) e um <b>item</b> para cada tela, API, tarefa ou tabela, com onde está no código e o que foi visto.</p>' +
-    '<ul class="sg-imp-regras"><li><b>Parece pronto</b> (sem TODO, sem "não implementado", tabela usada pelo código): entra em <b>Pronto para testar</b>. O P.O. confere e aceita, em lote se quiser.</li><li><b>Precisa análise</b>: entra em <b>Criado</b>, com o motivo escrito no item e o critério "Conferir o que falta".</li></ul>' +
+    '<ul class="sg-imp-regras"><li><b>Já pronto</b> (sem TODO, sem "não implementado", tabela usada pelo código): entra como <b>Concluído</b>, como se tivesse sido feito aqui desde o começo. Mudança daqui para frente vira Melhoria.</li><li><b>Precisa análise</b>: entra em <b>Criado</b>, com o motivo escrito no item e o critério "Conferir o que falta".</li></ul>' +
     '<fieldset class="sg-imp-tipos"><legend>O que importar</legend>' + tipos.map(t => { const n = novo.filter(x => x.tipo === t).length, ok = novo.filter(x => x.tipo === t && !sgMotivos(x).length).length;
       return '<label class="cm-ck"><input type="checkbox" data-sg-imp-tipo="' + t + '"' + (t === 'tabela' && n > 60 ? '' : ' checked') + '> ' + SG_INV_TIPO[t] + ' <small>' + n + ' (' + ok + ' prontos, ' + (n - ok) + ' para analisar)</small></label>'; }).join('') + '</fieldset>' +
     '<p class="sec">' + grupos.length + (grupos.length === 1 ? ' épico' : ' épicos') + ' no total. Épico com o mesmo nome de um que já existe recebe os itens, sem duplicar. O que já foi importado não entra de novo.' + (novo.some(x => x.tipo === 'tabela') && novo.filter(x => x.tipo === 'tabela').length > 60 ? ' As tabelas vêm desmarcadas porque são muitas: marque se quiser um item por tabela.' : '') + '</p>',
     [{txt:'Cancelar', cls:'sec'}, {txt:'Importar', acao:d => { const marcados = [...d.querySelectorAll('[data-sg-imp-tipo]:checked')].map(x => x.dataset.sgImpTipo); if (!marcados.length){ toast('Marque o que importar'); return false; }
       sgImportarAgora(novo.filter(x => marcados.includes(x.tipo))); }}]);
 }
-async function sgImportarAgora(lista){
-  const sb = sgBanco(); if (!sb) return;
-  const revisao = 'review', criados = [], epicos = {};
+// o que já existe entra como se tivesse sido feito no CicloDev desde o começo: o que parece pronto nasce Concluído
+// (sem critério pendente, para não travar o aceite); o que tem sinal de inacabado entra em Criado, com o motivo.
+async function sgImportarAgora(lista, opc = {}){
+  const sb = sgBanco(); if (!sb || SG.importando) return;
+  SG.importando = true;
+  const criados = [], epicos = {}, novosEp = new Set();
   for (const x of lista){
     const w = sgFrentePara(x.no_id, frAssuntoInventario(x)); if (!w) continue;
     const ap = w.app, chaveEp = ap + '|' + x.grupo;
     let ep = epicos[chaveEp] || D.issues.find(i => i.tipo === 'epic' && !i.arquivado && i.titulo.toLowerCase() === x.grupo.toLowerCase() && (byId('ws', i.ws) || {}).app === ap);
-    if (!ep){ ep = novoIssue({titulo:x.grupo.slice(0, 300), ws:w.id, tipo:'epic', status:'todo'}); ep.desc = 'Épico criado pela importação do que já existe no sistema (análise automática do código e do banco).'; if (typeof garantirBoard === 'function') garantirBoard({issues:[ep], boards:D.boards, equipes:D.equipes}); D.issues.push(ep); registrar('criou', ep); }
+    if (!ep){ ep = novoIssue({titulo:x.grupo.slice(0, 300), ws:w.id, tipo:'epic', status:'todo'}); ep.desc = 'Épico criado pela importação do que já existe no sistema (análise automática do código e do banco).'; if (typeof garantirBoard === 'function') garantirBoard({issues:[ep], boards:D.boards, equipes:D.equipes}); D.issues.push(ep); registrar('criou', ep); novosEp.add(ep.id); }
     epicos[chaveEp] = ep;
     const m = sgMotivos(x), s = x.sinais || {};
-    const it = novoIssue({titulo:x.nome.slice(0, 300), ws:w.id, tipo:'story', status:m.length ? 'backlog' : revisao, pai:ep.id});
-    it.desc = 'Importado da análise automática (' + (x.rotulo || '') + ').\nOnde: ' + x.onde + (s.teste ? '\nTem teste automático.' : '') + (x.tipo === 'tabela' && s.colunas ? '\nColunas: ' + s.colunas + (s.rls === false ? ' · RLS desligada' : '') : '') +
-      (m.length ? '\n\nPrecisa análise: ' + m.join('; ') + '.' : '\n\nParece pronto: nenhum sinal de trabalho pendente foi visto. O P.O. confere e aceita.');
-    it.crit = m.length ? [{t:'Conferir o que falta: ' + m.join('; '), f:false}] : [{t:'Funciona como está no sistema hoje (conferido pelo P.O.)', f:false}];
+    const it = novoIssue({titulo:x.nome.slice(0, 300), ws:w.id, tipo:'story', status:m.length ? 'backlog' : 'done', pai:ep.id});
+    if (!m.length){ it.feito = iso(HOJE); it.fim = iso(HOJE); }
+    it.desc = 'Importado da análise automática (' + (x.rotulo || '') + '): já existia no sistema quando ele foi ligado ao CicloDev.\nOnde: ' + x.onde + (s.teste ? '\nTem teste automático.' : '') + (x.tipo === 'tabela' && s.colunas ? '\nColunas: ' + s.colunas + (s.rls === false ? ' · RLS desligada' : '') : '') +
+      (m.length ? '\n\nPrecisa análise: ' + m.join('; ') + '.' : '\n\nJá pronto: nenhum sinal de trabalho pendente foi visto. Entrou como Concluído, como se tivesse sido feito aqui desde o começo. Mudança daqui para frente vira Melhoria.');
+    it.crit = m.length ? [{t:'Conferir o que falta: ' + m.join('; '), f:false}] : [];
     if (typeof garantirBoard === 'function') garantirBoard({issues:[it], boards:D.boards, equipes:D.equipes});
     it.ordem = Math.max(0, ...D.issues.map(y => +y.ordem || 0)) + 1;
     D.issues.push(it); criados.push({id:x.id, item:it.id});
   }
+  // épico com tudo pronto também fica Concluído
+  Object.values(epicos).forEach(ep => { const f = D.issues.filter(i => i.pai === ep.id && !i.arquivado); if (f.length && f.every(i => i.status === 'done') && ep.status !== 'done' && novosEp.has(ep.id)){ ep.status = 'done'; ep.feito = iso(HOJE); } });
   salvar(); rView();
-  toast(criados.length + (criados.length === 1 ? ' item importado' : ' itens importados') + ' em ' + Object.keys(epicos).length + (Object.keys(epicos).length === 1 ? ' épico.' : ' épicos.'));
+  if (criados.length) toast((opc.auto ? 'O sistema ligado foi montado no CicloDev: ' : '') + criados.length + (criados.length === 1 ? ' item' : ' itens') + ' em ' + Object.keys(epicos).length + (Object.keys(epicos).length === 1 ? ' épico' : ' épicos') + ', cada um na frente do assunto.');
   const t0 = Date.now(); while (window.ciclodevSync && (window.ciclodevSync.rodando || window.ciclodevSync.pendente) && Date.now() - t0 < 60000) await new Promise(ok => setTimeout(ok, 500));
   for (let i = 0; i < criados.length; i += 500){ const {error} = await sb.rpc('analise_inventario_ligar', {p_pares:criados.slice(i, i + 500)}); if (error){ toast('Os itens foram criados, mas não deu para marcar o inventário: ' + (error.message || error)); break; } }
   criados.forEach(c => { const x = SG.inventario.find(y => y.id === c.id); if (x) x.item_id = c.item; });
+  SG.importando = false;
   if (UI.view === 'seguranca') rView();
 }
 // a frente onde o item nasce: a do ponto do achado (a primeira frente ativa da aplicação ou do produto)
@@ -170,9 +180,23 @@ rView = function(){
   }
   return _rViewSg.apply(this, arguments);
 };
+// projeto que já está em produção: ao ligar o GitHub, o banco ou o que for, o que o robô leu vira épicos e itens sozinho,
+// como se tivesse sido feito no CicloDev desde o começo. Roda quando alguém que edita abre o ponto (e de novo quando o robô lê coisa nova).
+async function sgAutoImportar(){
+  const sb = sgBanco(), chave = UI.sel;
+  if (!sb || SG.importando || !podeEditar() || !sgPodeTer(chave) || SG_AUTO.has(chave)) return;
+  SG_AUTO.add(chave); setTimeout(() => SG_AUTO.delete(chave), 10000);
+  const {data, error} = await sb.from('analise_inventario').select('id, no_id, origem, rotulo, tipo, chave, grupo, nome, onde, sinais, item_id').in('no_id', sgNos(chave)).limit(5000);
+  const novos = (data || []).filter(x => !x.item_id);
+  if (error || !novos.length || UI.sel !== chave) return;
+  const ja = new Set(SG.inventario.map(x => x.id)); novos.forEach(x => { if (!ja.has(x.id)) SG.inventario.push(x); });
+  await sgImportarAgora(novos, {auto:true});
+}
+const SG_AUTO = new Set();
 const _rOperacoesSg = rOperacoes;
 rOperacoes = function(){
   _rOperacoesSg.apply(this, arguments);
+  sgAutoImportar();
   if (!sgPodeTer(UI.sel)){ const b = $('.view-b[data-view="seguranca"]'); if (b) (b.closest('.view-casa') || b).remove(); if (UI.view === 'seguranca'){ UI.view = 'dashboard'; rView(); } }
 };
 VIEWS.push(['seguranca', 'Análise', 'análise automática do código e do banco: segurança, qualidade e arquitetura']);

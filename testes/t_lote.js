@@ -75,7 +75,8 @@ window.supabase = { createClient(){ let sess = {user:{id:'u1', email:'admin@it-i
   await espera(); await semErro('gravar o lote sem erro');
   const q = "select string_agg(i.titulo || '/' || i.tipo || '/' || n.nome || '/' || coalesce(pai.titulo, '-'), ', ' order by i.titulo) from public.itens i join public.nos n on n.id = i.frente_id left join public.itens pai on pai.id = i.pai_id where i.titulo like 'Lote %'";
   const noBanco = conta(q);
-  const esperado = ['Lote item 1/story/' + frentes[1] + '/Lote Teste A', 'Lote item 2/story/' + frentes[0] + '/Lote Teste A', 'Lote item 3/story/' + frentes[0] + '/Lote Teste B', 'Lote Teste A/epic/' + frentes[1] + '/-', 'Lote Teste B/epic/' + frentes[0] + '/-'].sort().join(', ');
+  // "Lote Teste B" não diz a frente: vai para a do assunto do título (Testes), e o item herda a do épico
+  const esperado = ['Lote item 1/story/' + frentes[1] + '/Lote Teste A', 'Lote item 2/story/' + frentes[0] + '/Lote Teste A', 'Lote item 3/story/Testes/Lote Teste B', 'Lote Teste A/epic/' + frentes[1] + '/-', 'Lote Teste B/epic/Testes/-'].sort().join(', ');
   ok(noBanco === esperado, 'no banco: ' + noBanco + (noBanco === esperado ? '' : ' | esperado: ' + esperado));
   ok(conta("select count(*) from public.itens where titulo like 'Lote item%' and chave is not null") === '3', 'os itens ganharam chave do banco');
   const vs = conta("select string_agg(i.titulo, ', ' order by i.titulo) from public.itens i join public.marcos m on m.id = i.marco_id where m.nome = 'vLote'");
