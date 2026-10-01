@@ -104,3 +104,30 @@
 .po-dep-add{max-width:100%}
 .po-dep{color:#B45309;border-style:dashed}
 .po-ext{color:#0F766E;border-style:dashed}
+
+/* O CicloDev como P.O.: O que fazer hoje, selo Preparado, semáforo, aceite guiado */
+.pg-hoje{margin:0 0 16px;padding:14px 16px;border:1px solid var(--border-default);border-left:4px solid var(--vermelho);background:var(--surface-page, #fff);display:grid;gap:10px}
+.pg-hoje header{display:grid;gap:2px}
+.pg-hoje header b{font-size:15px}
+.pg-hoje header span{font-size:12.5px;color:var(--text-secondary)}
+.pg-hoje ol{margin:0;padding-left:20px;display:grid;gap:8px}
+.pg-hoje li{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;justify-content:space-between}
+.pg-hoje li > div{display:grid;gap:2px;min-width:0;flex:1 1 360px}
+.pg-hoje li b{font-size:13.5px;overflow-wrap:anywhere}
+.pg-hoje li small{font-size:12.5px;color:var(--text-secondary);line-height:1.45}
+.pg-bts{display:flex;gap:6px;flex-wrap:wrap}
+.pg-sems{display:flex;flex-wrap:wrap;gap:6px}
+.pg-sem{display:inline-block;font-size:12px;font-weight:700;padding:2px 8px;border:1px solid currentColor}
+.pg-verde{color:#15803D}.pg-amarelo{color:#B45309}.pg-vermelho{color:#B91C1C}
+.pg-ok{color:#15803D}
+.pg-falta{color:#B45309;border-style:dashed}
+.pg-prep{display:grid;gap:3px;margin:0 0 6px;padding:8px 10px;border:1px dashed #B45309;font-size:12.5px;color:#7C2D12}
+.pg-prep b{font-size:13px}
+.pg-prep-ok{border:1px solid #15803D;color:#14532D}
+.pg-conf{display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-bottom:1px solid var(--border-default);font-size:13.5px}
+.pg-conf input{margin-top:3px}
+.pg-conf span{overflow-wrap:anywhere}
+.pg-h{margin:12px 0 2px;font-size:13px}
+.pg-des{display:flex;gap:8px;flex-wrap:wrap}
+.pg-des img{max-height:160px;max-width:100%;border:1px solid var(--border-default)}
+.pg-ordem td:nth-child(1), .pg-ordem td:nth-child(2){font-variant-numeric:tabular-nums;width:56px}

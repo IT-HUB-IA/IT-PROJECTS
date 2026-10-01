@@ -194,6 +194,20 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
     ok(conta("select pontos from itens where chave = '" + um + "'") === '8', 'Desfazer o último lote volta os pontos para 8');
     await fechar();
   })();
+  // ---------- O CicloDev como P.O.: O que fazer hoje, Preparado, ordem sugerida, previsão ----------
+  await (async () => {
+    await p.evaluate(() => document.querySelectorAll('dialog.modal').forEach(d => { d.close(); d.remove(); }));
+    const r = await p.evaluate(a => { const D = window.__tf.D, U = window.__tf.UI; U.sel = 'app:' + a; U.view = 'dashboard'; window.__tf.rOperacoes();
+      const ws = new Set(D.ws.filter(w => w.app === a).map(w => w.id)); const its = D.issues.filter(i => ws.has(i.ws) && i.tipo === 'story' && !i.arquivado && i.status !== 'done');
+      const i = its[0]; i.hQuem = 'a'; i.hQuero = 'b'; i.hPara = 'c'; i.crit = [{t:'x', f:false}]; i.moscow = 'deve'; i.valor = 5; i.pontos = 3; const j = its[1]; if (j){ j.pontos = 20; j.hQuem = ''; }
+      return {ok:window.__tf.pgPreparo(i).ok, grande:j ? window.__tf.pgPreparo(j).grande : true, hoje:!!document.querySelector('#ops-corpo .pg-hoje'), acoes:window.__tf.pgAcoes('app:' + a).length}; }, app);
+    ok(r.ok && r.grande, 'selo Preparado: item completo fica preparado; item de 20 pontos é grande demais');
+    ok(r.hoje && r.acoes > 0, 'o Painel mostra O que fazer hoje com sugestões (' + r.acoes + ')');
+    await p.evaluate(a => { const U = window.__tf.UI; U.sel = 'app:' + a; U.view = 'backlog'; window.__tf.rOperacoes(); }, app); await p.waitForTimeout(300);
+    await p.click('[data-po-ordenar]'); await p.waitForTimeout(300);
+    ok(await p.evaluate(() => /Por que está aqui/.test((document.querySelector('dialog.modal[open]') || {}).textContent || '')), 'Ordenar pela prioridade abre a ordem sugerida com o porquê de cada lugar e o Aplicar');
+    await p.evaluate(() => document.querySelectorAll('dialog.modal').forEach(d => { d.close(); d.remove(); }));
+  })();
   // ---------- Quadro, Lista e Fila ----------
   await (async () => {
   const ver = async v => { await p.evaluate(([v, a]) => { const U = window.__tf.UI; U.sel = 'app:' + a; U.view = v; window.__tf.rOperacoes(); }, [v, app]); await p.waitForTimeout(500); };
@@ -294,7 +308,12 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   // volta, marca tudo e aceita
   await p.selectOption('#gaveta-wrap [data-g="status"]', 'review'); await p.waitForTimeout(400);
   await p.check('#gaveta-wrap [data-po-crit="0"]'); await p.waitForTimeout(300); await p.check('#gaveta-wrap [data-po-crit="1"]'); await p.waitForTimeout(300);
-  await p.click('#gaveta-wrap [data-po-acao="aceitar"]'); await p.waitForTimeout(2500);
+  await p.click('#gaveta-wrap [data-po-acao="aceitar"]'); await p.waitForTimeout(400);
+  // aceite guiado: precisa conferir cada ponto
+  await p.evaluate(() => [...document.querySelectorAll('dialog.modal[open] .modal-rod .btn')].pop().click()); await p.waitForTimeout(300);
+  ok(await p.evaluate(() => !!document.querySelector('dialog.modal[open] [data-pg-conf]')), 'aceite guiado: sem conferir os pontos, não aceita (a janela continua aberta)');
+  await p.evaluate(() => document.querySelectorAll('dialog.modal[open] [data-pg-conf]').forEach(x => { x.checked = true; }));
+  await p.evaluate(() => [...document.querySelectorAll('dialog.modal[open] .modal-rod .btn')].pop().click()); await p.waitForTimeout(2500);
   ok(conta("select s.grupo from itens i join status_fluxo s on s.id = i.status_id where i.id = '" + it + "'") === 'done', 'com tudo marcado, Aceitar leva para Aceito (no banco)');
   await abrir(); await p.waitForTimeout(3000); await abrir();
   ok(await p.evaluate(() => [...document.querySelectorAll('#gaveta-wrap [data-po-crit]')].every(x => x.disabled) && !document.querySelector('#gaveta-wrap [data-po-form="crit"]') && document.querySelector('#gaveta-wrap [data-po="hQuem"]').disabled), 'item aceito: critérios e história travados');
