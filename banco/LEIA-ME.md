@@ -155,6 +155,19 @@ Na tela: Entregas, **Ligar repositório** (conectar a conta, escolher o reposit�
 
 `43_analise_seguranca.sql`: `analise_achados` (cada achado com regra, gravidade, onde, trecho com segredo mascarado, identidade estável, status aberto/corrigido/ignorado, motivo e item ligado) e `analise_rodadas` (o resumo de cada leitura). `analise_gravar` (só o robô, service_role) grava o que achou e marca como corrigido o que sumiu; `analise_marcar` (quem edita o ponto) ignora com motivo, volta a abrir e liga ao item. As regras ficam em `supabase/functions/diagramas-auto/seguranca.ts` (fonte única: a tela pega o mesmo catálogo no build). A tela: `fonte/seguranca.js` (aba Segurança).
 
+## Parte 47: cadastro de servidores (VPS, dedicado, nuvem) (aplicada no Supabase em 02/10/2026, em partes)
+
+`47_servidores.sql`, quatro tabelas, todas com RLS e GRANT explícito:
+
+| Tabela | Para que serve |
+|---|---|
+| `servidores` | A máquina: tipo, ambiente, situação, provedor, plano, região, sistema, vCPU, memória, disco, tráfego, hostname, IPs, painel do provedor, **onde fica o acesso** (nunca a senha: o banco recusa texto como "senha: ..."), backup, monitoramento, responsável, contratação, renovação e como dividir o custo (`rateio` igual ou peso). Mora num ponto da estrutura (`no_id`, o dono). |
+| `servidores_alcance` | Onde se aplica: cliente, projeto ou produto valem para todas as aplicações de dentro; aplicação, só para ela. `peso` para a divisão do custo. |
+| `servidores_servicos` | O que roda nela: nome, tipo (aplicação, API, site, banco, proxy, container, fila, cache, rotina, monitoramento, backup, painel), tecnologia, versão, porta, endereço, pasta e a aplicação que o serviço atende. |
+| `servidores_custos` | Os custos (plano, backup, IP extra, licença): valor, moeda, mensal/anual/único, início e fim. |
+
+Quem vê: quem vê o dono ou algum ponto onde o servidor se aplica (`interno.servidor_ve`), menos stakeholder. Quem muda: quem edita o dono (`interno.servidor_edita`). A tela fica em `fonte/servidores.js` (aba Servidores no cliente, projeto, produto e aplicação) e aparece também em Custos (parte do custo de cada ponto), na Ficha técnica (seção Ambientes) e cria o item de renovação na frente Infraestrutura.
+
 ## Parte 46: inventário com as versões publicadas e as datas reais (aplicada no Supabase em 01/10/2026)
 
 `46_inventario_versoes.sql`: o tipo de `analise_inventario` aceita também `versao`. O robô busca no GitHub/GitLab o primeiro e o último commit de cada arquivo (até 250 arquivos por leitura) e as publicações (releases) com a data de cada uma; no banco, as datas de cada tabela vêm das migrations do Supabase (`supabase_migrations.schema_migrations`) ou do próprio MySQL (`create_time`/`update_time`). As datas não entram no resumo da estrutura (mudar a data não redesenha nada). A tela monta o projeto como se o P.O. o tivesse feito no CicloDev: as publicações viram versões em Entregas, cada item ganha história, critérios de aceite (o que já tem prova vem marcado), prioridade, pontos, início e prazo pelas datas reais e a versão em que foi publicado; o que parece pronto vai para Pronto para testar e o P.O. analisa e aceita.
