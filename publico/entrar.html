@@ -3399,6 +3399,93 @@ dialog.sv-modal{width:min(1040px,96vw)}
 .sv-ed-no small{color:var(--text-secondary)}
 .sv-peso{width:72px;display:none}
 .sv-com-peso .sv-peso{display:inline-block;margin-left:auto}
+/* ===== Inventário de TI ===== */
+.inv-tela{display:grid;gap:14px;max-width:1280px}
+.inv-topo{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-start;justify-content:space-between}
+.inv-topo h2{margin:0;font-family:var(--font-display);font-size:24px;letter-spacing:-.02em}
+.inv-topo .lead{margin:4px 0 0;max-width:76ch;color:var(--text-secondary);line-height:1.5}
+.inv-abas{display:flex;flex-wrap:wrap;gap:0;border-bottom:1px solid #E2E2E6}
+.inv-aba{border:0;background:transparent;padding:9px 14px;font:600 13px var(--font-body);color:var(--text-secondary);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1px}
+.inv-aba[aria-selected="true"]{color:var(--text-primary);border-bottom-color:var(--vermelho)}
+.inv-corpo{display:grid;gap:14px;min-width:0}
+.inv-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.inv-kpi{display:grid;gap:2px;padding:12px 14px;background:var(--branco);border:1px solid #E2E2E6;border-top:3px solid var(--preto);min-width:0}
+.inv-kpi b{font-family:var(--font-display);font-size:21px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.inv-kpi span{font-size:12px;color:var(--text-secondary)}
+.inv-kpi.inv-alerta{border-top-color:#C26A00}.inv-kpi.inv-alerta b{color:#C26A00}
+.inv-acoes-topo{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.inv-conta{font-size:12.5px;color:var(--text-secondary);font-variant-numeric:tabular-nums}
+.inv-ajuda{margin:0;font-size:12.5px;color:var(--text-secondary);line-height:1.5;max-width:90ch}
+.inv-vazio{margin:0;font-size:13px;color:var(--text-secondary)}
+.inv-quadro{display:grid;gap:8px;padding:14px 16px;background:var(--branco);border:1px solid #E2E2E6;min-width:0}
+.inv-quadro h4{margin:0;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-secondary)}
+.inv-grade2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.inv-grade3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media (max-width:1000px){ .inv-grade2,.inv-grade3{grid-template-columns:minmax(0,1fr)} }
+.inv-barras{margin:0;padding:0;list-style:none;display:grid;gap:5px}
+.inv-barras li{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,2fr) 36px;gap:8px;align-items:center;font-size:12.5px}
+.inv-barras span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.inv-barras i{display:block;height:8px;background:linear-gradient(90deg,var(--c) var(--w),#EEE var(--w))}
+.inv-barras b{text-align:right;font-variant-numeric:tabular-nums}
+.inv-avisos{margin:0;padding:0;list-style:none;display:grid;gap:4px}
+.inv-avisos li{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;font-size:13px;padding:5px 8px;border-left:3px solid #C26A00;background:var(--preto-04)}
+.inv-avisos li span{flex:1 1 300px;min-width:0}
+.inv-avisos .inv-av-desligado,.inv-avisos .inv-av-emprestimo{border-left-color:var(--vermelho)}
+.inv-filtros{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.inv-filtros .campo{flex:1 1 260px;min-width:0}
+.inv-filtros .sel{flex:0 1 200px;min-width:0}
+.inv-rot{display:flex;gap:6px;align-items:center;font-size:12.5px;color:var(--text-secondary)}
+.inv-tab{width:100%;border-collapse:collapse;font-size:13px;background:var(--branco)}
+.inv-tab th,.inv-tab td{padding:7px 9px;border-bottom:1px solid #EEE;text-align:left;vertical-align:top}
+.inv-tab th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-secondary);font-weight:600;background:var(--preto-04)}
+.inv-tab small{display:block;color:var(--text-secondary);font-size:11.5px}
+.inv-tab tr[data-inv-abrir],.inv-tab tr[data-inv-func]{cursor:pointer}
+.inv-tab tr[data-inv-abrir]:hover,.inv-tab tr[data-inv-func]:hover{background:var(--preto-04)}
+.inv-num{text-align:right !important;font-variant-numeric:tabular-nums;white-space:nowrap}
+.inv-pat{font:700 12.5px var(--font-mono);white-space:nowrap}
+.inv-bts{white-space:nowrap}
+.inv-inativo{opacity:.55}
+.inv-estorno{color:var(--text-secondary);font-style:italic}
+.inv-venc{color:var(--vermelho);font-weight:700}
+.inv-quase{color:#C26A00;font-weight:700}
+.inv-sit{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 8px;border:1px solid var(--c);color:var(--c);white-space:nowrap}
+.inv-link{border:0;background:transparent;padding:0;font:inherit;color:#3355E0;cursor:pointer;text-align:left;text-decoration:underline;text-underline-offset:2px}
+.inv-locais{margin:0;padding:0;list-style:none;display:grid;gap:4px}
+.inv-locais li{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;padding:7px 10px;background:var(--branco);border:1px solid #EEE}
+.inv-locais small{color:var(--text-secondary)}
+.inv-locais .inv-conta{margin-left:auto}
+.inv-func-bloco{display:grid;gap:4px;padding:8px 0;border-top:1px solid #EEE}
+.inv-func-bloco p{margin:0}
+.inv-func-bloco small{color:var(--text-secondary)}
+/* fichas e formulários */
+dialog.inv-modal{width:min(980px,96vw)}
+.inv-ficha{display:grid;gap:14px}
+.inv-ficha section{display:grid;gap:6px}
+.inv-ficha h4{margin:0;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-secondary)}
+.inv-ficha-topo{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.inv-onde{font-size:13.5px;font-weight:600}
+.inv-acoes-mov{display:flex;flex-wrap:wrap;gap:6px}
+.inv-dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:6px 16px;margin:0}
+.inv-lin{display:grid;gap:1px;min-width:0}
+.inv-lin dt{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-secondary)}
+.inv-lin dd{margin:0;font-size:13px;overflow-wrap:anywhere}
+.inv-lista{margin:0;padding-left:18px;display:grid;gap:4px;font-size:13px}
+.inv-lista small{color:var(--text-secondary)}
+.inv-hist{margin:0;padding:0;list-style:none;display:grid;gap:4px;font-size:13px}
+.inv-hist li{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline;padding:4px 0;border-bottom:1px solid #F0F0F0}
+.inv-hist small{color:var(--text-secondary);margin-left:auto}
+.inv-aviso{margin:0;padding:8px 10px;border-left:3px solid var(--vermelho);background:var(--preto-04);font-size:13px;font-weight:600}
+.inv-enviar{cursor:pointer}
+.inv-form{display:grid;gap:12px}
+.inv-form fieldset,.grade-form fieldset{border:1px solid #E2E2E6;padding:10px 14px 14px;margin:0;min-width:0}
+.inv-form legend,.grade-form legend{font-weight:700;font-size:13px;padding:0 4px}
+.inv-baixa{margin-top:10px;padding-top:10px;border-top:1px solid #EEE}
+.inv-ler{display:flex;flex-wrap:wrap;gap:8px}
+.inv-ler .campo{flex:1 1 320px;font-size:16px;min-width:0}
+.inv-video{width:100%;max-height:60vh;background:#000}
+.inv-previa{display:grid;gap:6px;padding:10px;background:var(--preto-04)}
+.inv-previa p{margin:0}
+.inv-erros{margin:0;padding-left:18px;font-size:12.5px;color:var(--vermelho);display:grid;gap:2px;max-height:260px;overflow:auto}
 
   .conteudo.sem-pad{padding:0;display:flex;flex-direction:column;flex:1}
   .conteudo.sem-pad > div{flex:1;display:flex;flex-direction:column}
@@ -16850,6 +16937,3352 @@ document.addEventListener('click', e => {
   const rn = e.target.closest('[data-sv-renovar]'); if (rn) return svRenovar(rn.dataset.svRenovar);
 });
 if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {SRV, svCarregar, svDivisao, svParte, svCustoMensal, svDoPonto, svRelacao, svFichaLigacao, svCustosHTML});
+
+//---------------------------------------------------------------------
+//
+// QR Code Generator for JavaScript
+//
+// Copyright (c) 2009 Kazuhiko Arase
+//
+// URL: http://www.d-project.com/
+//
+// Licensed under the MIT license:
+//  http://www.opensource.org/licenses/mit-license.php
+//
+// The word 'QR Code' is registered trademark of
+// DENSO WAVE INCORPORATED
+//  http://www.denso-wave.com/qrcode/faqpatent-e.html
+//
+//---------------------------------------------------------------------
+
+var qrcode = function() {
+
+  //---------------------------------------------------------------------
+  // qrcode
+  //---------------------------------------------------------------------
+
+  /**
+   * qrcode
+   * @param typeNumber 1 to 40
+   * @param errorCorrectionLevel 'L','M','Q','H'
+   */
+  var qrcode = function(typeNumber, errorCorrectionLevel) {
+
+    var PAD0 = 0xEC;
+    var PAD1 = 0x11;
+
+    var _typeNumber = typeNumber;
+    var _errorCorrectionLevel = QRErrorCorrectionLevel[errorCorrectionLevel];
+    var _modules = null;
+    var _moduleCount = 0;
+    var _dataCache = null;
+    var _dataList = [];
+
+    var _this = {};
+
+    var makeImpl = function(test, maskPattern) {
+
+      _moduleCount = _typeNumber * 4 + 17;
+      _modules = function(moduleCount) {
+        var modules = new Array(moduleCount);
+        for (var row = 0; row < moduleCount; row += 1) {
+          modules[row] = new Array(moduleCount);
+          for (var col = 0; col < moduleCount; col += 1) {
+            modules[row][col] = null;
+          }
+        }
+        return modules;
+      }(_moduleCount);
+
+      setupPositionProbePattern(0, 0);
+      setupPositionProbePattern(_moduleCount - 7, 0);
+      setupPositionProbePattern(0, _moduleCount - 7);
+      setupPositionAdjustPattern();
+      setupTimingPattern();
+      setupTypeInfo(test, maskPattern);
+
+      if (_typeNumber >= 7) {
+        setupTypeNumber(test);
+      }
+
+      if (_dataCache == null) {
+        _dataCache = createData(_typeNumber, _errorCorrectionLevel, _dataList);
+      }
+
+      mapData(_dataCache, maskPattern);
+    };
+
+    var setupPositionProbePattern = function(row, col) {
+
+      for (var r = -1; r <= 7; r += 1) {
+
+        if (row + r <= -1 || _moduleCount <= row + r) continue;
+
+        for (var c = -1; c <= 7; c += 1) {
+
+          if (col + c <= -1 || _moduleCount <= col + c) continue;
+
+          if ( (0 <= r && r <= 6 && (c == 0 || c == 6) )
+              || (0 <= c && c <= 6 && (r == 0 || r == 6) )
+              || (2 <= r && r <= 4 && 2 <= c && c <= 4) ) {
+            _modules[row + r][col + c] = true;
+          } else {
+            _modules[row + r][col + c] = false;
+          }
+        }
+      }
+    };
+
+    var getBestMaskPattern = function() {
+
+      var minLostPoint = 0;
+      var pattern = 0;
+
+      for (var i = 0; i < 8; i += 1) {
+
+        makeImpl(true, i);
+
+        var lostPoint = QRUtil.getLostPoint(_this);
+
+        if (i == 0 || minLostPoint > lostPoint) {
+          minLostPoint = lostPoint;
+          pattern = i;
+        }
+      }
+
+      return pattern;
+    };
+
+    var setupTimingPattern = function() {
+
+      for (var r = 8; r < _moduleCount - 8; r += 1) {
+        if (_modules[r][6] != null) {
+          continue;
+        }
+        _modules[r][6] = (r % 2 == 0);
+      }
+
+      for (var c = 8; c < _moduleCount - 8; c += 1) {
+        if (_modules[6][c] != null) {
+          continue;
+        }
+        _modules[6][c] = (c % 2 == 0);
+      }
+    };
+
+    var setupPositionAdjustPattern = function() {
+
+      var pos = QRUtil.getPatternPosition(_typeNumber);
+
+      for (var i = 0; i < pos.length; i += 1) {
+
+        for (var j = 0; j < pos.length; j += 1) {
+
+          var row = pos[i];
+          var col = pos[j];
+
+          if (_modules[row][col] != null) {
+            continue;
+          }
+
+          for (var r = -2; r <= 2; r += 1) {
+
+            for (var c = -2; c <= 2; c += 1) {
+
+              if (r == -2 || r == 2 || c == -2 || c == 2
+                  || (r == 0 && c == 0) ) {
+                _modules[row + r][col + c] = true;
+              } else {
+                _modules[row + r][col + c] = false;
+              }
+            }
+          }
+        }
+      }
+    };
+
+    var setupTypeNumber = function(test) {
+
+      var bits = QRUtil.getBCHTypeNumber(_typeNumber);
+
+      for (var i = 0; i < 18; i += 1) {
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+        _modules[Math.floor(i / 3)][i % 3 + _moduleCount - 8 - 3] = mod;
+      }
+
+      for (var i = 0; i < 18; i += 1) {
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+        _modules[i % 3 + _moduleCount - 8 - 3][Math.floor(i / 3)] = mod;
+      }
+    };
+
+    var setupTypeInfo = function(test, maskPattern) {
+
+      var data = (_errorCorrectionLevel << 3) | maskPattern;
+      var bits = QRUtil.getBCHTypeInfo(data);
+
+      // vertical
+      for (var i = 0; i < 15; i += 1) {
+
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+
+        if (i < 6) {
+          _modules[i][8] = mod;
+        } else if (i < 8) {
+          _modules[i + 1][8] = mod;
+        } else {
+          _modules[_moduleCount - 15 + i][8] = mod;
+        }
+      }
+
+      // horizontal
+      for (var i = 0; i < 15; i += 1) {
+
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+
+        if (i < 8) {
+          _modules[8][_moduleCount - i - 1] = mod;
+        } else if (i < 9) {
+          _modules[8][15 - i - 1 + 1] = mod;
+        } else {
+          _modules[8][15 - i - 1] = mod;
+        }
+      }
+
+      // fixed module
+      _modules[_moduleCount - 8][8] = (!test);
+    };
+
+    var mapData = function(data, maskPattern) {
+
+      var inc = -1;
+      var row = _moduleCount - 1;
+      var bitIndex = 7;
+      var byteIndex = 0;
+      var maskFunc = QRUtil.getMaskFunction(maskPattern);
+
+      for (var col = _moduleCount - 1; col > 0; col -= 2) {
+
+        if (col == 6) col -= 1;
+
+        while (true) {
+
+          for (var c = 0; c < 2; c += 1) {
+
+            if (_modules[row][col - c] == null) {
+
+              var dark = false;
+
+              if (byteIndex < data.length) {
+                dark = ( ( (data[byteIndex] >>> bitIndex) & 1) == 1);
+              }
+
+              var mask = maskFunc(row, col - c);
+
+              if (mask) {
+                dark = !dark;
+              }
+
+              _modules[row][col - c] = dark;
+              bitIndex -= 1;
+
+              if (bitIndex == -1) {
+                byteIndex += 1;
+                bitIndex = 7;
+              }
+            }
+          }
+
+          row += inc;
+
+          if (row < 0 || _moduleCount <= row) {
+            row -= inc;
+            inc = -inc;
+            break;
+          }
+        }
+      }
+    };
+
+    var createBytes = function(buffer, rsBlocks) {
+
+      var offset = 0;
+
+      var maxDcCount = 0;
+      var maxEcCount = 0;
+
+      var dcdata = new Array(rsBlocks.length);
+      var ecdata = new Array(rsBlocks.length);
+
+      for (var r = 0; r < rsBlocks.length; r += 1) {
+
+        var dcCount = rsBlocks[r].dataCount;
+        var ecCount = rsBlocks[r].totalCount - dcCount;
+
+        maxDcCount = Math.max(maxDcCount, dcCount);
+        maxEcCount = Math.max(maxEcCount, ecCount);
+
+        dcdata[r] = new Array(dcCount);
+
+        for (var i = 0; i < dcdata[r].length; i += 1) {
+          dcdata[r][i] = 0xff & buffer.getBuffer()[i + offset];
+        }
+        offset += dcCount;
+
+        var rsPoly = QRUtil.getErrorCorrectPolynomial(ecCount);
+        var rawPoly = qrPolynomial(dcdata[r], rsPoly.getLength() - 1);
+
+        var modPoly = rawPoly.mod(rsPoly);
+        ecdata[r] = new Array(rsPoly.getLength() - 1);
+        for (var i = 0; i < ecdata[r].length; i += 1) {
+          var modIndex = i + modPoly.getLength() - ecdata[r].length;
+          ecdata[r][i] = (modIndex >= 0)? modPoly.getAt(modIndex) : 0;
+        }
+      }
+
+      var totalCodeCount = 0;
+      for (var i = 0; i < rsBlocks.length; i += 1) {
+        totalCodeCount += rsBlocks[i].totalCount;
+      }
+
+      var data = new Array(totalCodeCount);
+      var index = 0;
+
+      for (var i = 0; i < maxDcCount; i += 1) {
+        for (var r = 0; r < rsBlocks.length; r += 1) {
+          if (i < dcdata[r].length) {
+            data[index] = dcdata[r][i];
+            index += 1;
+          }
+        }
+      }
+
+      for (var i = 0; i < maxEcCount; i += 1) {
+        for (var r = 0; r < rsBlocks.length; r += 1) {
+          if (i < ecdata[r].length) {
+            data[index] = ecdata[r][i];
+            index += 1;
+          }
+        }
+      }
+
+      return data;
+    };
+
+    var createData = function(typeNumber, errorCorrectionLevel, dataList) {
+
+      var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, errorCorrectionLevel);
+
+      var buffer = qrBitBuffer();
+
+      for (var i = 0; i < dataList.length; i += 1) {
+        var data = dataList[i];
+        buffer.put(data.getMode(), 4);
+        buffer.put(data.getLength(), QRUtil.getLengthInBits(data.getMode(), typeNumber) );
+        data.write(buffer);
+      }
+
+      // calc num max data.
+      var totalDataCount = 0;
+      for (var i = 0; i < rsBlocks.length; i += 1) {
+        totalDataCount += rsBlocks[i].dataCount;
+      }
+
+      if (buffer.getLengthInBits() > totalDataCount * 8) {
+        throw 'code length overflow. ('
+          + buffer.getLengthInBits()
+          + '>'
+          + totalDataCount * 8
+          + ')';
+      }
+
+      // end code
+      if (buffer.getLengthInBits() + 4 <= totalDataCount * 8) {
+        buffer.put(0, 4);
+      }
+
+      // padding
+      while (buffer.getLengthInBits() % 8 != 0) {
+        buffer.putBit(false);
+      }
+
+      // padding
+      while (true) {
+
+        if (buffer.getLengthInBits() >= totalDataCount * 8) {
+          break;
+        }
+        buffer.put(PAD0, 8);
+
+        if (buffer.getLengthInBits() >= totalDataCount * 8) {
+          break;
+        }
+        buffer.put(PAD1, 8);
+      }
+
+      return createBytes(buffer, rsBlocks);
+    };
+
+    _this.addData = function(data, mode) {
+
+      mode = mode || 'Byte';
+
+      var newData = null;
+
+      switch(mode) {
+      case 'Numeric' :
+        newData = qrNumber(data);
+        break;
+      case 'Alphanumeric' :
+        newData = qrAlphaNum(data);
+        break;
+      case 'Byte' :
+        newData = qr8BitByte(data);
+        break;
+      case 'Kanji' :
+        newData = qrKanji(data);
+        break;
+      default :
+        throw 'mode:' + mode;
+      }
+
+      _dataList.push(newData);
+      _dataCache = null;
+    };
+
+    _this.isDark = function(row, col) {
+      if (row < 0 || _moduleCount <= row || col < 0 || _moduleCount <= col) {
+        throw row + ',' + col;
+      }
+      return _modules[row][col];
+    };
+
+    _this.getModuleCount = function() {
+      return _moduleCount;
+    };
+
+    _this.make = function() {
+      if (_typeNumber < 1) {
+        var typeNumber = 1;
+
+        for (; typeNumber < 40; typeNumber++) {
+          var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, _errorCorrectionLevel);
+          var buffer = qrBitBuffer();
+
+          for (var i = 0; i < _dataList.length; i++) {
+            var data = _dataList[i];
+            buffer.put(data.getMode(), 4);
+            buffer.put(data.getLength(), QRUtil.getLengthInBits(data.getMode(), typeNumber) );
+            data.write(buffer);
+          }
+
+          var totalDataCount = 0;
+          for (var i = 0; i < rsBlocks.length; i++) {
+            totalDataCount += rsBlocks[i].dataCount;
+          }
+
+          if (buffer.getLengthInBits() <= totalDataCount * 8) {
+            break;
+          }
+        }
+
+        _typeNumber = typeNumber;
+      }
+
+      makeImpl(false, getBestMaskPattern() );
+    };
+
+    _this.createTableTag = function(cellSize, margin) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var qrHtml = '';
+
+      qrHtml += '<table style="';
+      qrHtml += ' border-width: 0px; border-style: none;';
+      qrHtml += ' border-collapse: collapse;';
+      qrHtml += ' padding: 0px; margin: ' + margin + 'px;';
+      qrHtml += '">';
+      qrHtml += '<tbody>';
+
+      for (var r = 0; r < _this.getModuleCount(); r += 1) {
+
+        qrHtml += '<tr>';
+
+        for (var c = 0; c < _this.getModuleCount(); c += 1) {
+          qrHtml += '<td style="';
+          qrHtml += ' border-width: 0px; border-style: none;';
+          qrHtml += ' border-collapse: collapse;';
+          qrHtml += ' padding: 0px; margin: 0px;';
+          qrHtml += ' width: ' + cellSize + 'px;';
+          qrHtml += ' height: ' + cellSize + 'px;';
+          qrHtml += ' background-color: ';
+          qrHtml += _this.isDark(r, c)? '#000000' : '#ffffff';
+          qrHtml += ';';
+          qrHtml += '"/>';
+        }
+
+        qrHtml += '</tr>';
+      }
+
+      qrHtml += '</tbody>';
+      qrHtml += '</table>';
+
+      return qrHtml;
+    };
+
+    _this.createSvgTag = function(cellSize, margin, alt, title) {
+
+      var opts = {};
+      if (typeof arguments[0] == 'object') {
+        // Called by options.
+        opts = arguments[0];
+        // overwrite cellSize and margin.
+        cellSize = opts.cellSize;
+        margin = opts.margin;
+        alt = opts.alt;
+        title = opts.title;
+      }
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      // Compose alt property surrogate
+      alt = (typeof alt === 'string') ? {text: alt} : alt || {};
+      alt.text = alt.text || null;
+      alt.id = (alt.text) ? alt.id || 'qrcode-description' : null;
+
+      // Compose title property surrogate
+      title = (typeof title === 'string') ? {text: title} : title || {};
+      title.text = title.text || null;
+      title.id = (title.text) ? title.id || 'qrcode-title' : null;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var c, mc, r, mr, qrSvg='', rect;
+
+      rect = 'l' + cellSize + ',0 0,' + cellSize +
+        ' -' + cellSize + ',0 0,-' + cellSize + 'z ';
+
+      qrSvg += '<svg version="1.1" xmlns="http://www.w3.org/2000/svg"';
+      qrSvg += !opts.scalable ? ' width="' + size + 'px" height="' + size + 'px"' : '';
+      qrSvg += ' viewBox="0 0 ' + size + ' ' + size + '" ';
+      qrSvg += ' preserveAspectRatio="xMinYMin meet"';
+      qrSvg += (title.text || alt.text) ? ' role="img" aria-labelledby="' +
+          escapeXml([title.id, alt.id].join(' ').trim() ) + '"' : '';
+      qrSvg += '>';
+      qrSvg += (title.text) ? '<title id="' + escapeXml(title.id) + '">' +
+          escapeXml(title.text) + '</title>' : '';
+      qrSvg += (alt.text) ? '<description id="' + escapeXml(alt.id) + '">' +
+          escapeXml(alt.text) + '</description>' : '';
+      qrSvg += '<rect width="100%" height="100%" fill="white" cx="0" cy="0"/>';
+      qrSvg += '<path d="';
+
+      for (r = 0; r < _this.getModuleCount(); r += 1) {
+        mr = r * cellSize + margin;
+        for (c = 0; c < _this.getModuleCount(); c += 1) {
+          if (_this.isDark(r, c) ) {
+            mc = c*cellSize+margin;
+            qrSvg += 'M' + mc + ',' + mr + rect;
+          }
+        }
+      }
+
+      qrSvg += '" stroke="transparent" fill="black"/>';
+      qrSvg += '</svg>';
+
+      return qrSvg;
+    };
+
+    _this.createDataURL = function(cellSize, margin) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      return createDataURL(size, size, function(x, y) {
+        if (min <= x && x < max && min <= y && y < max) {
+          var c = Math.floor( (x - min) / cellSize);
+          var r = Math.floor( (y - min) / cellSize);
+          return _this.isDark(r, c)? 0 : 1;
+        } else {
+          return 1;
+        }
+      } );
+    };
+
+    _this.createImgTag = function(cellSize, margin, alt) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+
+      var img = '';
+      img += '<img';
+      img += '\u0020src="';
+      img += _this.createDataURL(cellSize, margin);
+      img += '"';
+      img += '\u0020width="';
+      img += size;
+      img += '"';
+      img += '\u0020height="';
+      img += size;
+      img += '"';
+      if (alt) {
+        img += '\u0020alt="';
+        img += escapeXml(alt);
+        img += '"';
+      }
+      img += '/>';
+
+      return img;
+    };
+
+    var escapeXml = function(s) {
+      var escaped = '';
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charAt(i);
+        switch(c) {
+        case '<': escaped += '&lt;'; break;
+        case '>': escaped += '&gt;'; break;
+        case '&': escaped += '&amp;'; break;
+        case '"': escaped += '&quot;'; break;
+        default : escaped += c; break;
+        }
+      }
+      return escaped;
+    };
+
+    var _createHalfASCII = function(margin) {
+      var cellSize = 1;
+      margin = (typeof margin == 'undefined')? cellSize * 2 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      var y, x, r1, r2, p;
+
+      var blocks = {
+        '██': '█',
+        '█ ': '▀',
+        ' █': '▄',
+        '  ': ' '
+      };
+
+      var blocksLastLineNoMargin = {
+        '██': '▀',
+        '█ ': '▀',
+        ' █': ' ',
+        '  ': ' '
+      };
+
+      var ascii = '';
+      for (y = 0; y < size; y += 2) {
+        r1 = Math.floor((y - min) / cellSize);
+        r2 = Math.floor((y + 1 - min) / cellSize);
+        for (x = 0; x < size; x += 1) {
+          p = '█';
+
+          if (min <= x && x < max && min <= y && y < max && _this.isDark(r1, Math.floor((x - min) / cellSize))) {
+            p = ' ';
+          }
+
+          if (min <= x && x < max && min <= y+1 && y+1 < max && _this.isDark(r2, Math.floor((x - min) / cellSize))) {
+            p += ' ';
+          }
+          else {
+            p += '█';
+          }
+
+          // Output 2 characters per pixel, to create full square. 1 character per pixels gives only half width of square.
+          ascii += (margin < 1 && y+1 >= max) ? blocksLastLineNoMargin[p] : blocks[p];
+        }
+
+        ascii += '\n';
+      }
+
+      if (size % 2 && margin > 0) {
+        return ascii.substring(0, ascii.length - size - 1) + Array(size+1).join('▀');
+      }
+
+      return ascii.substring(0, ascii.length-1);
+    };
+
+    _this.createASCII = function(cellSize, margin) {
+      cellSize = cellSize || 1;
+
+      if (cellSize < 2) {
+        return _createHalfASCII(margin);
+      }
+
+      cellSize -= 1;
+      margin = (typeof margin == 'undefined')? cellSize * 2 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      var y, x, r, p;
+
+      var white = Array(cellSize+1).join('██');
+      var black = Array(cellSize+1).join('  ');
+
+      var ascii = '';
+      var line = '';
+      for (y = 0; y < size; y += 1) {
+        r = Math.floor( (y - min) / cellSize);
+        line = '';
+        for (x = 0; x < size; x += 1) {
+          p = 1;
+
+          if (min <= x && x < max && min <= y && y < max && _this.isDark(r, Math.floor((x - min) / cellSize))) {
+            p = 0;
+          }
+
+          // Output 2 characters per pixel, to create full square. 1 character per pixels gives only half width of square.
+          line += p ? white : black;
+        }
+
+        for (r = 0; r < cellSize; r += 1) {
+          ascii += line + '\n';
+        }
+      }
+
+      return ascii.substring(0, ascii.length-1);
+    };
+
+    _this.renderTo2dContext = function(context, cellSize) {
+      cellSize = cellSize || 2;
+      var length = _this.getModuleCount();
+      for (var row = 0; row < length; row++) {
+        for (var col = 0; col < length; col++) {
+          context.fillStyle = _this.isDark(row, col) ? 'black' : 'white';
+          context.fillRect(row * cellSize, col * cellSize, cellSize, cellSize);
+        }
+      }
+    }
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrcode.stringToBytes
+  //---------------------------------------------------------------------
+
+  qrcode.stringToBytesFuncs = {
+    'default' : function(s) {
+      var bytes = [];
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charCodeAt(i);
+        bytes.push(c & 0xff);
+      }
+      return bytes;
+    }
+  };
+
+  qrcode.stringToBytes = qrcode.stringToBytesFuncs['default'];
+
+  //---------------------------------------------------------------------
+  // qrcode.createStringToBytes
+  //---------------------------------------------------------------------
+
+  /**
+   * @param unicodeData base64 string of byte array.
+   * [16bit Unicode],[16bit Bytes], ...
+   * @param numChars
+   */
+  qrcode.createStringToBytes = function(unicodeData, numChars) {
+
+    // create conversion map.
+
+    var unicodeMap = function() {
+
+      var bin = base64DecodeInputStream(unicodeData);
+      var read = function() {
+        var b = bin.read();
+        if (b == -1) throw 'eof';
+        return b;
+      };
+
+      var count = 0;
+      var unicodeMap = {};
+      while (true) {
+        var b0 = bin.read();
+        if (b0 == -1) break;
+        var b1 = read();
+        var b2 = read();
+        var b3 = read();
+        var k = String.fromCharCode( (b0 << 8) | b1);
+        var v = (b2 << 8) | b3;
+        unicodeMap[k] = v;
+        count += 1;
+      }
+      if (count != numChars) {
+        throw count + ' != ' + numChars;
+      }
+
+      return unicodeMap;
+    }();
+
+    var unknownChar = '?'.charCodeAt(0);
+
+    return function(s) {
+      var bytes = [];
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charCodeAt(i);
+        if (c < 128) {
+          bytes.push(c);
+        } else {
+          var b = unicodeMap[s.charAt(i)];
+          if (typeof b == 'number') {
+            if ( (b & 0xff) == b) {
+              // 1byte
+              bytes.push(b);
+            } else {
+              // 2bytes
+              bytes.push(b >>> 8);
+              bytes.push(b & 0xff);
+            }
+          } else {
+            bytes.push(unknownChar);
+          }
+        }
+      }
+      return bytes;
+    };
+  };
+
+  //---------------------------------------------------------------------
+  // QRMode
+  //---------------------------------------------------------------------
+
+  var QRMode = {
+    MODE_NUMBER :    1 << 0,
+    MODE_ALPHA_NUM : 1 << 1,
+    MODE_8BIT_BYTE : 1 << 2,
+    MODE_KANJI :     1 << 3
+  };
+
+  //---------------------------------------------------------------------
+  // QRErrorCorrectionLevel
+  //---------------------------------------------------------------------
+
+  var QRErrorCorrectionLevel = {
+    L : 1,
+    M : 0,
+    Q : 3,
+    H : 2
+  };
+
+  //---------------------------------------------------------------------
+  // QRMaskPattern
+  //---------------------------------------------------------------------
+
+  var QRMaskPattern = {
+    PATTERN000 : 0,
+    PATTERN001 : 1,
+    PATTERN010 : 2,
+    PATTERN011 : 3,
+    PATTERN100 : 4,
+    PATTERN101 : 5,
+    PATTERN110 : 6,
+    PATTERN111 : 7
+  };
+
+  //---------------------------------------------------------------------
+  // QRUtil
+  //---------------------------------------------------------------------
+
+  var QRUtil = function() {
+
+    var PATTERN_POSITION_TABLE = [
+      [],
+      [6, 18],
+      [6, 22],
+      [6, 26],
+      [6, 30],
+      [6, 34],
+      [6, 22, 38],
+      [6, 24, 42],
+      [6, 26, 46],
+      [6, 28, 50],
+      [6, 30, 54],
+      [6, 32, 58],
+      [6, 34, 62],
+      [6, 26, 46, 66],
+      [6, 26, 48, 70],
+      [6, 26, 50, 74],
+      [6, 30, 54, 78],
+      [6, 30, 56, 82],
+      [6, 30, 58, 86],
+      [6, 34, 62, 90],
+      [6, 28, 50, 72, 94],
+      [6, 26, 50, 74, 98],
+      [6, 30, 54, 78, 102],
+      [6, 28, 54, 80, 106],
+      [6, 32, 58, 84, 110],
+      [6, 30, 58, 86, 114],
+      [6, 34, 62, 90, 118],
+      [6, 26, 50, 74, 98, 122],
+      [6, 30, 54, 78, 102, 126],
+      [6, 26, 52, 78, 104, 130],
+      [6, 30, 56, 82, 108, 134],
+      [6, 34, 60, 86, 112, 138],
+      [6, 30, 58, 86, 114, 142],
+      [6, 34, 62, 90, 118, 146],
+      [6, 30, 54, 78, 102, 126, 150],
+      [6, 24, 50, 76, 102, 128, 154],
+      [6, 28, 54, 80, 106, 132, 158],
+      [6, 32, 58, 84, 110, 136, 162],
+      [6, 26, 54, 82, 110, 138, 166],
+      [6, 30, 58, 86, 114, 142, 170]
+    ];
+    var G15 = (1 << 10) | (1 << 8) | (1 << 5) | (1 << 4) | (1 << 2) | (1 << 1) | (1 << 0);
+    var G18 = (1 << 12) | (1 << 11) | (1 << 10) | (1 << 9) | (1 << 8) | (1 << 5) | (1 << 2) | (1 << 0);
+    var G15_MASK = (1 << 14) | (1 << 12) | (1 << 10) | (1 << 4) | (1 << 1);
+
+    var _this = {};
+
+    var getBCHDigit = function(data) {
+      var digit = 0;
+      while (data != 0) {
+        digit += 1;
+        data >>>= 1;
+      }
+      return digit;
+    };
+
+    _this.getBCHTypeInfo = function(data) {
+      var d = data << 10;
+      while (getBCHDigit(d) - getBCHDigit(G15) >= 0) {
+        d ^= (G15 << (getBCHDigit(d) - getBCHDigit(G15) ) );
+      }
+      return ( (data << 10) | d) ^ G15_MASK;
+    };
+
+    _this.getBCHTypeNumber = function(data) {
+      var d = data << 12;
+      while (getBCHDigit(d) - getBCHDigit(G18) >= 0) {
+        d ^= (G18 << (getBCHDigit(d) - getBCHDigit(G18) ) );
+      }
+      return (data << 12) | d;
+    };
+
+    _this.getPatternPosition = function(typeNumber) {
+      return PATTERN_POSITION_TABLE[typeNumber - 1];
+    };
+
+    _this.getMaskFunction = function(maskPattern) {
+
+      switch (maskPattern) {
+
+      case QRMaskPattern.PATTERN000 :
+        return function(i, j) { return (i + j) % 2 == 0; };
+      case QRMaskPattern.PATTERN001 :
+        return function(i, j) { return i % 2 == 0; };
+      case QRMaskPattern.PATTERN010 :
+        return function(i, j) { return j % 3 == 0; };
+      case QRMaskPattern.PATTERN011 :
+        return function(i, j) { return (i + j) % 3 == 0; };
+      case QRMaskPattern.PATTERN100 :
+        return function(i, j) { return (Math.floor(i / 2) + Math.floor(j / 3) ) % 2 == 0; };
+      case QRMaskPattern.PATTERN101 :
+        return function(i, j) { return (i * j) % 2 + (i * j) % 3 == 0; };
+      case QRMaskPattern.PATTERN110 :
+        return function(i, j) { return ( (i * j) % 2 + (i * j) % 3) % 2 == 0; };
+      case QRMaskPattern.PATTERN111 :
+        return function(i, j) { return ( (i * j) % 3 + (i + j) % 2) % 2 == 0; };
+
+      default :
+        throw 'bad maskPattern:' + maskPattern;
+      }
+    };
+
+    _this.getErrorCorrectPolynomial = function(errorCorrectLength) {
+      var a = qrPolynomial([1], 0);
+      for (var i = 0; i < errorCorrectLength; i += 1) {
+        a = a.multiply(qrPolynomial([1, QRMath.gexp(i)], 0) );
+      }
+      return a;
+    };
+
+    _this.getLengthInBits = function(mode, type) {
+
+      if (1 <= type && type < 10) {
+
+        // 1 - 9
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 10;
+        case QRMode.MODE_ALPHA_NUM : return 9;
+        case QRMode.MODE_8BIT_BYTE : return 8;
+        case QRMode.MODE_KANJI     : return 8;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else if (type < 27) {
+
+        // 10 - 26
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 12;
+        case QRMode.MODE_ALPHA_NUM : return 11;
+        case QRMode.MODE_8BIT_BYTE : return 16;
+        case QRMode.MODE_KANJI     : return 10;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else if (type < 41) {
+
+        // 27 - 40
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 14;
+        case QRMode.MODE_ALPHA_NUM : return 13;
+        case QRMode.MODE_8BIT_BYTE : return 16;
+        case QRMode.MODE_KANJI     : return 12;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else {
+        throw 'type:' + type;
+      }
+    };
+
+    _this.getLostPoint = function(qrcode) {
+
+      var moduleCount = qrcode.getModuleCount();
+
+      var lostPoint = 0;
+
+      // LEVEL1
+
+      for (var row = 0; row < moduleCount; row += 1) {
+        for (var col = 0; col < moduleCount; col += 1) {
+
+          var sameCount = 0;
+          var dark = qrcode.isDark(row, col);
+
+          for (var r = -1; r <= 1; r += 1) {
+
+            if (row + r < 0 || moduleCount <= row + r) {
+              continue;
+            }
+
+            for (var c = -1; c <= 1; c += 1) {
+
+              if (col + c < 0 || moduleCount <= col + c) {
+                continue;
+              }
+
+              if (r == 0 && c == 0) {
+                continue;
+              }
+
+              if (dark == qrcode.isDark(row + r, col + c) ) {
+                sameCount += 1;
+              }
+            }
+          }
+
+          if (sameCount > 5) {
+            lostPoint += (3 + sameCount - 5);
+          }
+        }
+      };
+
+      // LEVEL2
+
+      for (var row = 0; row < moduleCount - 1; row += 1) {
+        for (var col = 0; col < moduleCount - 1; col += 1) {
+          var count = 0;
+          if (qrcode.isDark(row, col) ) count += 1;
+          if (qrcode.isDark(row + 1, col) ) count += 1;
+          if (qrcode.isDark(row, col + 1) ) count += 1;
+          if (qrcode.isDark(row + 1, col + 1) ) count += 1;
+          if (count == 0 || count == 4) {
+            lostPoint += 3;
+          }
+        }
+      }
+
+      // LEVEL3
+
+      for (var row = 0; row < moduleCount; row += 1) {
+        for (var col = 0; col < moduleCount - 6; col += 1) {
+          if (qrcode.isDark(row, col)
+              && !qrcode.isDark(row, col + 1)
+              &&  qrcode.isDark(row, col + 2)
+              &&  qrcode.isDark(row, col + 3)
+              &&  qrcode.isDark(row, col + 4)
+              && !qrcode.isDark(row, col + 5)
+              &&  qrcode.isDark(row, col + 6) ) {
+            lostPoint += 40;
+          }
+        }
+      }
+
+      for (var col = 0; col < moduleCount; col += 1) {
+        for (var row = 0; row < moduleCount - 6; row += 1) {
+          if (qrcode.isDark(row, col)
+              && !qrcode.isDark(row + 1, col)
+              &&  qrcode.isDark(row + 2, col)
+              &&  qrcode.isDark(row + 3, col)
+              &&  qrcode.isDark(row + 4, col)
+              && !qrcode.isDark(row + 5, col)
+              &&  qrcode.isDark(row + 6, col) ) {
+            lostPoint += 40;
+          }
+        }
+      }
+
+      // LEVEL4
+
+      var darkCount = 0;
+
+      for (var col = 0; col < moduleCount; col += 1) {
+        for (var row = 0; row < moduleCount; row += 1) {
+          if (qrcode.isDark(row, col) ) {
+            darkCount += 1;
+          }
+        }
+      }
+
+      var ratio = Math.abs(100 * darkCount / moduleCount / moduleCount - 50) / 5;
+      lostPoint += ratio * 10;
+
+      return lostPoint;
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // QRMath
+  //---------------------------------------------------------------------
+
+  var QRMath = function() {
+
+    var EXP_TABLE = new Array(256);
+    var LOG_TABLE = new Array(256);
+
+    // initialize tables
+    for (var i = 0; i < 8; i += 1) {
+      EXP_TABLE[i] = 1 << i;
+    }
+    for (var i = 8; i < 256; i += 1) {
+      EXP_TABLE[i] = EXP_TABLE[i - 4]
+        ^ EXP_TABLE[i - 5]
+        ^ EXP_TABLE[i - 6]
+        ^ EXP_TABLE[i - 8];
+    }
+    for (var i = 0; i < 255; i += 1) {
+      LOG_TABLE[EXP_TABLE[i] ] = i;
+    }
+
+    var _this = {};
+
+    _this.glog = function(n) {
+
+      if (n < 1) {
+        throw 'glog(' + n + ')';
+      }
+
+      return LOG_TABLE[n];
+    };
+
+    _this.gexp = function(n) {
+
+      while (n < 0) {
+        n += 255;
+      }
+
+      while (n >= 256) {
+        n -= 255;
+      }
+
+      return EXP_TABLE[n];
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // qrPolynomial
+  //---------------------------------------------------------------------
+
+  function qrPolynomial(num, shift) {
+
+    if (typeof num.length == 'undefined') {
+      throw num.length + '/' + shift;
+    }
+
+    var _num = function() {
+      var offset = 0;
+      while (offset < num.length && num[offset] == 0) {
+        offset += 1;
+      }
+      var _num = new Array(num.length - offset + shift);
+      for (var i = 0; i < num.length - offset; i += 1) {
+        _num[i] = num[i + offset];
+      }
+      return _num;
+    }();
+
+    var _this = {};
+
+    _this.getAt = function(index) {
+      return _num[index];
+    };
+
+    _this.getLength = function() {
+      return _num.length;
+    };
+
+    _this.multiply = function(e) {
+
+      var num = new Array(_this.getLength() + e.getLength() - 1);
+
+      for (var i = 0; i < _this.getLength(); i += 1) {
+        for (var j = 0; j < e.getLength(); j += 1) {
+          num[i + j] ^= QRMath.gexp(QRMath.glog(_this.getAt(i) ) + QRMath.glog(e.getAt(j) ) );
+        }
+      }
+
+      return qrPolynomial(num, 0);
+    };
+
+    _this.mod = function(e) {
+
+      if (_this.getLength() - e.getLength() < 0) {
+        return _this;
+      }
+
+      var ratio = QRMath.glog(_this.getAt(0) ) - QRMath.glog(e.getAt(0) );
+
+      var num = new Array(_this.getLength() );
+      for (var i = 0; i < _this.getLength(); i += 1) {
+        num[i] = _this.getAt(i);
+      }
+
+      for (var i = 0; i < e.getLength(); i += 1) {
+        num[i] ^= QRMath.gexp(QRMath.glog(e.getAt(i) ) + ratio);
+      }
+
+      // recursive call
+      return qrPolynomial(num, 0).mod(e);
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // QRRSBlock
+  //---------------------------------------------------------------------
+
+  var QRRSBlock = function() {
+
+    var RS_BLOCK_TABLE = [
+
+      // L
+      // M
+      // Q
+      // H
+
+      // 1
+      [1, 26, 19],
+      [1, 26, 16],
+      [1, 26, 13],
+      [1, 26, 9],
+
+      // 2
+      [1, 44, 34],
+      [1, 44, 28],
+      [1, 44, 22],
+      [1, 44, 16],
+
+      // 3
+      [1, 70, 55],
+      [1, 70, 44],
+      [2, 35, 17],
+      [2, 35, 13],
+
+      // 4
+      [1, 100, 80],
+      [2, 50, 32],
+      [2, 50, 24],
+      [4, 25, 9],
+
+      // 5
+      [1, 134, 108],
+      [2, 67, 43],
+      [2, 33, 15, 2, 34, 16],
+      [2, 33, 11, 2, 34, 12],
+
+      // 6
+      [2, 86, 68],
+      [4, 43, 27],
+      [4, 43, 19],
+      [4, 43, 15],
+
+      // 7
+      [2, 98, 78],
+      [4, 49, 31],
+      [2, 32, 14, 4, 33, 15],
+      [4, 39, 13, 1, 40, 14],
+
+      // 8
+      [2, 121, 97],
+      [2, 60, 38, 2, 61, 39],
+      [4, 40, 18, 2, 41, 19],
+      [4, 40, 14, 2, 41, 15],
+
+      // 9
+      [2, 146, 116],
+      [3, 58, 36, 2, 59, 37],
+      [4, 36, 16, 4, 37, 17],
+      [4, 36, 12, 4, 37, 13],
+
+      // 10
+      [2, 86, 68, 2, 87, 69],
+      [4, 69, 43, 1, 70, 44],
+      [6, 43, 19, 2, 44, 20],
+      [6, 43, 15, 2, 44, 16],
+
+      // 11
+      [4, 101, 81],
+      [1, 80, 50, 4, 81, 51],
+      [4, 50, 22, 4, 51, 23],
+      [3, 36, 12, 8, 37, 13],
+
+      // 12
+      [2, 116, 92, 2, 117, 93],
+      [6, 58, 36, 2, 59, 37],
+      [4, 46, 20, 6, 47, 21],
+      [7, 42, 14, 4, 43, 15],
+
+      // 13
+      [4, 133, 107],
+      [8, 59, 37, 1, 60, 38],
+      [8, 44, 20, 4, 45, 21],
+      [12, 33, 11, 4, 34, 12],
+
+      // 14
+      [3, 145, 115, 1, 146, 116],
+      [4, 64, 40, 5, 65, 41],
+      [11, 36, 16, 5, 37, 17],
+      [11, 36, 12, 5, 37, 13],
+
+      // 15
+      [5, 109, 87, 1, 110, 88],
+      [5, 65, 41, 5, 66, 42],
+      [5, 54, 24, 7, 55, 25],
+      [11, 36, 12, 7, 37, 13],
+
+      // 16
+      [5, 122, 98, 1, 123, 99],
+      [7, 73, 45, 3, 74, 46],
+      [15, 43, 19, 2, 44, 20],
+      [3, 45, 15, 13, 46, 16],
+
+      // 17
+      [1, 135, 107, 5, 136, 108],
+      [10, 74, 46, 1, 75, 47],
+      [1, 50, 22, 15, 51, 23],
+      [2, 42, 14, 17, 43, 15],
+
+      // 18
+      [5, 150, 120, 1, 151, 121],
+      [9, 69, 43, 4, 70, 44],
+      [17, 50, 22, 1, 51, 23],
+      [2, 42, 14, 19, 43, 15],
+
+      // 19
+      [3, 141, 113, 4, 142, 114],
+      [3, 70, 44, 11, 71, 45],
+      [17, 47, 21, 4, 48, 22],
+      [9, 39, 13, 16, 40, 14],
+
+      // 20
+      [3, 135, 107, 5, 136, 108],
+      [3, 67, 41, 13, 68, 42],
+      [15, 54, 24, 5, 55, 25],
+      [15, 43, 15, 10, 44, 16],
+
+      // 21
+      [4, 144, 116, 4, 145, 117],
+      [17, 68, 42],
+      [17, 50, 22, 6, 51, 23],
+      [19, 46, 16, 6, 47, 17],
+
+      // 22
+      [2, 139, 111, 7, 140, 112],
+      [17, 74, 46],
+      [7, 54, 24, 16, 55, 25],
+      [34, 37, 13],
+
+      // 23
+      [4, 151, 121, 5, 152, 122],
+      [4, 75, 47, 14, 76, 48],
+      [11, 54, 24, 14, 55, 25],
+      [16, 45, 15, 14, 46, 16],
+
+      // 24
+      [6, 147, 117, 4, 148, 118],
+      [6, 73, 45, 14, 74, 46],
+      [11, 54, 24, 16, 55, 25],
+      [30, 46, 16, 2, 47, 17],
+
+      // 25
+      [8, 132, 106, 4, 133, 107],
+      [8, 75, 47, 13, 76, 48],
+      [7, 54, 24, 22, 55, 25],
+      [22, 45, 15, 13, 46, 16],
+
+      // 26
+      [10, 142, 114, 2, 143, 115],
+      [19, 74, 46, 4, 75, 47],
+      [28, 50, 22, 6, 51, 23],
+      [33, 46, 16, 4, 47, 17],
+
+      // 27
+      [8, 152, 122, 4, 153, 123],
+      [22, 73, 45, 3, 74, 46],
+      [8, 53, 23, 26, 54, 24],
+      [12, 45, 15, 28, 46, 16],
+
+      // 28
+      [3, 147, 117, 10, 148, 118],
+      [3, 73, 45, 23, 74, 46],
+      [4, 54, 24, 31, 55, 25],
+      [11, 45, 15, 31, 46, 16],
+
+      // 29
+      [7, 146, 116, 7, 147, 117],
+      [21, 73, 45, 7, 74, 46],
+      [1, 53, 23, 37, 54, 24],
+      [19, 45, 15, 26, 46, 16],
+
+      // 30
+      [5, 145, 115, 10, 146, 116],
+      [19, 75, 47, 10, 76, 48],
+      [15, 54, 24, 25, 55, 25],
+      [23, 45, 15, 25, 46, 16],
+
+      // 31
+      [13, 145, 115, 3, 146, 116],
+      [2, 74, 46, 29, 75, 47],
+      [42, 54, 24, 1, 55, 25],
+      [23, 45, 15, 28, 46, 16],
+
+      // 32
+      [17, 145, 115],
+      [10, 74, 46, 23, 75, 47],
+      [10, 54, 24, 35, 55, 25],
+      [19, 45, 15, 35, 46, 16],
+
+      // 33
+      [17, 145, 115, 1, 146, 116],
+      [14, 74, 46, 21, 75, 47],
+      [29, 54, 24, 19, 55, 25],
+      [11, 45, 15, 46, 46, 16],
+
+      // 34
+      [13, 145, 115, 6, 146, 116],
+      [14, 74, 46, 23, 75, 47],
+      [44, 54, 24, 7, 55, 25],
+      [59, 46, 16, 1, 47, 17],
+
+      // 35
+      [12, 151, 121, 7, 152, 122],
+      [12, 75, 47, 26, 76, 48],
+      [39, 54, 24, 14, 55, 25],
+      [22, 45, 15, 41, 46, 16],
+
+      // 36
+      [6, 151, 121, 14, 152, 122],
+      [6, 75, 47, 34, 76, 48],
+      [46, 54, 24, 10, 55, 25],
+      [2, 45, 15, 64, 46, 16],
+
+      // 37
+      [17, 152, 122, 4, 153, 123],
+      [29, 74, 46, 14, 75, 47],
+      [49, 54, 24, 10, 55, 25],
+      [24, 45, 15, 46, 46, 16],
+
+      // 38
+      [4, 152, 122, 18, 153, 123],
+      [13, 74, 46, 32, 75, 47],
+      [48, 54, 24, 14, 55, 25],
+      [42, 45, 15, 32, 46, 16],
+
+      // 39
+      [20, 147, 117, 4, 148, 118],
+      [40, 75, 47, 7, 76, 48],
+      [43, 54, 24, 22, 55, 25],
+      [10, 45, 15, 67, 46, 16],
+
+      // 40
+      [19, 148, 118, 6, 149, 119],
+      [18, 75, 47, 31, 76, 48],
+      [34, 54, 24, 34, 55, 25],
+      [20, 45, 15, 61, 46, 16]
+    ];
+
+    var qrRSBlock = function(totalCount, dataCount) {
+      var _this = {};
+      _this.totalCount = totalCount;
+      _this.dataCount = dataCount;
+      return _this;
+    };
+
+    var _this = {};
+
+    var getRsBlockTable = function(typeNumber, errorCorrectionLevel) {
+
+      switch(errorCorrectionLevel) {
+      case QRErrorCorrectionLevel.L :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 0];
+      case QRErrorCorrectionLevel.M :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 1];
+      case QRErrorCorrectionLevel.Q :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 2];
+      case QRErrorCorrectionLevel.H :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 3];
+      default :
+        return undefined;
+      }
+    };
+
+    _this.getRSBlocks = function(typeNumber, errorCorrectionLevel) {
+
+      var rsBlock = getRsBlockTable(typeNumber, errorCorrectionLevel);
+
+      if (typeof rsBlock == 'undefined') {
+        throw 'bad rs block @ typeNumber:' + typeNumber +
+            '/errorCorrectionLevel:' + errorCorrectionLevel;
+      }
+
+      var length = rsBlock.length / 3;
+
+      var list = [];
+
+      for (var i = 0; i < length; i += 1) {
+
+        var count = rsBlock[i * 3 + 0];
+        var totalCount = rsBlock[i * 3 + 1];
+        var dataCount = rsBlock[i * 3 + 2];
+
+        for (var j = 0; j < count; j += 1) {
+          list.push(qrRSBlock(totalCount, dataCount) );
+        }
+      }
+
+      return list;
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // qrBitBuffer
+  //---------------------------------------------------------------------
+
+  var qrBitBuffer = function() {
+
+    var _buffer = [];
+    var _length = 0;
+
+    var _this = {};
+
+    _this.getBuffer = function() {
+      return _buffer;
+    };
+
+    _this.getAt = function(index) {
+      var bufIndex = Math.floor(index / 8);
+      return ( (_buffer[bufIndex] >>> (7 - index % 8) ) & 1) == 1;
+    };
+
+    _this.put = function(num, length) {
+      for (var i = 0; i < length; i += 1) {
+        _this.putBit( ( (num >>> (length - i - 1) ) & 1) == 1);
+      }
+    };
+
+    _this.getLengthInBits = function() {
+      return _length;
+    };
+
+    _this.putBit = function(bit) {
+
+      var bufIndex = Math.floor(_length / 8);
+      if (_buffer.length <= bufIndex) {
+        _buffer.push(0);
+      }
+
+      if (bit) {
+        _buffer[bufIndex] |= (0x80 >>> (_length % 8) );
+      }
+
+      _length += 1;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrNumber
+  //---------------------------------------------------------------------
+
+  var qrNumber = function(data) {
+
+    var _mode = QRMode.MODE_NUMBER;
+    var _data = data;
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _data.length;
+    };
+
+    _this.write = function(buffer) {
+
+      var data = _data;
+
+      var i = 0;
+
+      while (i + 2 < data.length) {
+        buffer.put(strToNum(data.substring(i, i + 3) ), 10);
+        i += 3;
+      }
+
+      if (i < data.length) {
+        if (data.length - i == 1) {
+          buffer.put(strToNum(data.substring(i, i + 1) ), 4);
+        } else if (data.length - i == 2) {
+          buffer.put(strToNum(data.substring(i, i + 2) ), 7);
+        }
+      }
+    };
+
+    var strToNum = function(s) {
+      var num = 0;
+      for (var i = 0; i < s.length; i += 1) {
+        num = num * 10 + chatToNum(s.charAt(i) );
+      }
+      return num;
+    };
+
+    var chatToNum = function(c) {
+      if ('0' <= c && c <= '9') {
+        return c.charCodeAt(0) - '0'.charCodeAt(0);
+      }
+      throw 'illegal char :' + c;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrAlphaNum
+  //---------------------------------------------------------------------
+
+  var qrAlphaNum = function(data) {
+
+    var _mode = QRMode.MODE_ALPHA_NUM;
+    var _data = data;
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _data.length;
+    };
+
+    _this.write = function(buffer) {
+
+      var s = _data;
+
+      var i = 0;
+
+      while (i + 1 < s.length) {
+        buffer.put(
+          getCode(s.charAt(i) ) * 45 +
+          getCode(s.charAt(i + 1) ), 11);
+        i += 2;
+      }
+
+      if (i < s.length) {
+        buffer.put(getCode(s.charAt(i) ), 6);
+      }
+    };
+
+    var getCode = function(c) {
+
+      if ('0' <= c && c <= '9') {
+        return c.charCodeAt(0) - '0'.charCodeAt(0);
+      } else if ('A' <= c && c <= 'Z') {
+        return c.charCodeAt(0) - 'A'.charCodeAt(0) + 10;
+      } else {
+        switch (c) {
+        case ' ' : return 36;
+        case '$' : return 37;
+        case '%' : return 38;
+        case '*' : return 39;
+        case '+' : return 40;
+        case '-' : return 41;
+        case '.' : return 42;
+        case '/' : return 43;
+        case ':' : return 44;
+        default :
+          throw 'illegal char :' + c;
+        }
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qr8BitByte
+  //---------------------------------------------------------------------
+
+  var qr8BitByte = function(data) {
+
+    var _mode = QRMode.MODE_8BIT_BYTE;
+    var _data = data;
+    var _bytes = qrcode.stringToBytes(data);
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _bytes.length;
+    };
+
+    _this.write = function(buffer) {
+      for (var i = 0; i < _bytes.length; i += 1) {
+        buffer.put(_bytes[i], 8);
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrKanji
+  //---------------------------------------------------------------------
+
+  var qrKanji = function(data) {
+
+    var _mode = QRMode.MODE_KANJI;
+    var _data = data;
+
+    var stringToBytes = qrcode.stringToBytesFuncs['SJIS'];
+    if (!stringToBytes) {
+      throw 'sjis not supported.';
+    }
+    !function(c, code) {
+      // self test for sjis support.
+      var test = stringToBytes(c);
+      if (test.length != 2 || ( (test[0] << 8) | test[1]) != code) {
+        throw 'sjis not supported.';
+      }
+    }('\u53cb', 0x9746);
+
+    var _bytes = stringToBytes(data);
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return ~~(_bytes.length / 2);
+    };
+
+    _this.write = function(buffer) {
+
+      var data = _bytes;
+
+      var i = 0;
+
+      while (i + 1 < data.length) {
+
+        var c = ( (0xff & data[i]) << 8) | (0xff & data[i + 1]);
+
+        if (0x8140 <= c && c <= 0x9FFC) {
+          c -= 0x8140;
+        } else if (0xE040 <= c && c <= 0xEBBF) {
+          c -= 0xC140;
+        } else {
+          throw 'illegal char at ' + (i + 1) + '/' + c;
+        }
+
+        c = ( (c >>> 8) & 0xff) * 0xC0 + (c & 0xff);
+
+        buffer.put(c, 13);
+
+        i += 2;
+      }
+
+      if (i < data.length) {
+        throw 'illegal char at ' + (i + 1);
+      }
+    };
+
+    return _this;
+  };
+
+  //=====================================================================
+  // GIF Support etc.
+  //
+
+  //---------------------------------------------------------------------
+  // byteArrayOutputStream
+  //---------------------------------------------------------------------
+
+  var byteArrayOutputStream = function() {
+
+    var _bytes = [];
+
+    var _this = {};
+
+    _this.writeByte = function(b) {
+      _bytes.push(b & 0xff);
+    };
+
+    _this.writeShort = function(i) {
+      _this.writeByte(i);
+      _this.writeByte(i >>> 8);
+    };
+
+    _this.writeBytes = function(b, off, len) {
+      off = off || 0;
+      len = len || b.length;
+      for (var i = 0; i < len; i += 1) {
+        _this.writeByte(b[i + off]);
+      }
+    };
+
+    _this.writeString = function(s) {
+      for (var i = 0; i < s.length; i += 1) {
+        _this.writeByte(s.charCodeAt(i) );
+      }
+    };
+
+    _this.toByteArray = function() {
+      return _bytes;
+    };
+
+    _this.toString = function() {
+      var s = '';
+      s += '[';
+      for (var i = 0; i < _bytes.length; i += 1) {
+        if (i > 0) {
+          s += ',';
+        }
+        s += _bytes[i];
+      }
+      s += ']';
+      return s;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // base64EncodeOutputStream
+  //---------------------------------------------------------------------
+
+  var base64EncodeOutputStream = function() {
+
+    var _buffer = 0;
+    var _buflen = 0;
+    var _length = 0;
+    var _base64 = '';
+
+    var _this = {};
+
+    var writeEncoded = function(b) {
+      _base64 += String.fromCharCode(encode(b & 0x3f) );
+    };
+
+    var encode = function(n) {
+      if (n < 0) {
+        // error.
+      } else if (n < 26) {
+        return 0x41 + n;
+      } else if (n < 52) {
+        return 0x61 + (n - 26);
+      } else if (n < 62) {
+        return 0x30 + (n - 52);
+      } else if (n == 62) {
+        return 0x2b;
+      } else if (n == 63) {
+        return 0x2f;
+      }
+      throw 'n:' + n;
+    };
+
+    _this.writeByte = function(n) {
+
+      _buffer = (_buffer << 8) | (n & 0xff);
+      _buflen += 8;
+      _length += 1;
+
+      while (_buflen >= 6) {
+        writeEncoded(_buffer >>> (_buflen - 6) );
+        _buflen -= 6;
+      }
+    };
+
+    _this.flush = function() {
+
+      if (_buflen > 0) {
+        writeEncoded(_buffer << (6 - _buflen) );
+        _buffer = 0;
+        _buflen = 0;
+      }
+
+      if (_length % 3 != 0) {
+        // padding
+        var padlen = 3 - _length % 3;
+        for (var i = 0; i < padlen; i += 1) {
+          _base64 += '=';
+        }
+      }
+    };
+
+    _this.toString = function() {
+      return _base64;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // base64DecodeInputStream
+  //---------------------------------------------------------------------
+
+  var base64DecodeInputStream = function(str) {
+
+    var _str = str;
+    var _pos = 0;
+    var _buffer = 0;
+    var _buflen = 0;
+
+    var _this = {};
+
+    _this.read = function() {
+
+      while (_buflen < 8) {
+
+        if (_pos >= _str.length) {
+          if (_buflen == 0) {
+            return -1;
+          }
+          throw 'unexpected end of file./' + _buflen;
+        }
+
+        var c = _str.charAt(_pos);
+        _pos += 1;
+
+        if (c == '=') {
+          _buflen = 0;
+          return -1;
+        } else if (c.match(/^\s$/) ) {
+          // ignore if whitespace.
+          continue;
+        }
+
+        _buffer = (_buffer << 6) | decode(c.charCodeAt(0) );
+        _buflen += 6;
+      }
+
+      var n = (_buffer >>> (_buflen - 8) ) & 0xff;
+      _buflen -= 8;
+      return n;
+    };
+
+    var decode = function(c) {
+      if (0x41 <= c && c <= 0x5a) {
+        return c - 0x41;
+      } else if (0x61 <= c && c <= 0x7a) {
+        return c - 0x61 + 26;
+      } else if (0x30 <= c && c <= 0x39) {
+        return c - 0x30 + 52;
+      } else if (c == 0x2b) {
+        return 62;
+      } else if (c == 0x2f) {
+        return 63;
+      } else {
+        throw 'c:' + c;
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // gifImage (B/W)
+  //---------------------------------------------------------------------
+
+  var gifImage = function(width, height) {
+
+    var _width = width;
+    var _height = height;
+    var _data = new Array(width * height);
+
+    var _this = {};
+
+    _this.setPixel = function(x, y, pixel) {
+      _data[y * _width + x] = pixel;
+    };
+
+    _this.write = function(out) {
+
+      //---------------------------------
+      // GIF Signature
+
+      out.writeString('GIF87a');
+
+      //---------------------------------
+      // Screen Descriptor
+
+      out.writeShort(_width);
+      out.writeShort(_height);
+
+      out.writeByte(0x80); // 2bit
+      out.writeByte(0);
+      out.writeByte(0);
+
+      //---------------------------------
+      // Global Color Map
+
+      // black
+      out.writeByte(0x00);
+      out.writeByte(0x00);
+      out.writeByte(0x00);
+
+      // white
+      out.writeByte(0xff);
+      out.writeByte(0xff);
+      out.writeByte(0xff);
+
+      //---------------------------------
+      // Image Descriptor
+
+      out.writeString(',');
+      out.writeShort(0);
+      out.writeShort(0);
+      out.writeShort(_width);
+      out.writeShort(_height);
+      out.writeByte(0);
+
+      //---------------------------------
+      // Local Color Map
+
+      //---------------------------------
+      // Raster Data
+
+      var lzwMinCodeSize = 2;
+      var raster = getLZWRaster(lzwMinCodeSize);
+
+      out.writeByte(lzwMinCodeSize);
+
+      var offset = 0;
+
+      while (raster.length - offset > 255) {
+        out.writeByte(255);
+        out.writeBytes(raster, offset, 255);
+        offset += 255;
+      }
+
+      out.writeByte(raster.length - offset);
+      out.writeBytes(raster, offset, raster.length - offset);
+      out.writeByte(0x00);
+
+      //---------------------------------
+      // GIF Terminator
+      out.writeString(';');
+    };
+
+    var bitOutputStream = function(out) {
+
+      var _out = out;
+      var _bitLength = 0;
+      var _bitBuffer = 0;
+
+      var _this = {};
+
+      _this.write = function(data, length) {
+
+        if ( (data >>> length) != 0) {
+          throw 'length over';
+        }
+
+        while (_bitLength + length >= 8) {
+          _out.writeByte(0xff & ( (data << _bitLength) | _bitBuffer) );
+          length -= (8 - _bitLength);
+          data >>>= (8 - _bitLength);
+          _bitBuffer = 0;
+          _bitLength = 0;
+        }
+
+        _bitBuffer = (data << _bitLength) | _bitBuffer;
+        _bitLength = _bitLength + length;
+      };
+
+      _this.flush = function() {
+        if (_bitLength > 0) {
+          _out.writeByte(_bitBuffer);
+        }
+      };
+
+      return _this;
+    };
+
+    var getLZWRaster = function(lzwMinCodeSize) {
+
+      var clearCode = 1 << lzwMinCodeSize;
+      var endCode = (1 << lzwMinCodeSize) + 1;
+      var bitLength = lzwMinCodeSize + 1;
+
+      // Setup LZWTable
+      var table = lzwTable();
+
+      for (var i = 0; i < clearCode; i += 1) {
+        table.add(String.fromCharCode(i) );
+      }
+      table.add(String.fromCharCode(clearCode) );
+      table.add(String.fromCharCode(endCode) );
+
+      var byteOut = byteArrayOutputStream();
+      var bitOut = bitOutputStream(byteOut);
+
+      // clear code
+      bitOut.write(clearCode, bitLength);
+
+      var dataIndex = 0;
+
+      var s = String.fromCharCode(_data[dataIndex]);
+      dataIndex += 1;
+
+      while (dataIndex < _data.length) {
+
+        var c = String.fromCharCode(_data[dataIndex]);
+        dataIndex += 1;
+
+        if (table.contains(s + c) ) {
+
+          s = s + c;
+
+        } else {
+
+          bitOut.write(table.indexOf(s), bitLength);
+
+          if (table.size() < 0xfff) {
+
+            if (table.size() == (1 << bitLength) ) {
+              bitLength += 1;
+            }
+
+            table.add(s + c);
+          }
+
+          s = c;
+        }
+      }
+
+      bitOut.write(table.indexOf(s), bitLength);
+
+      // end code
+      bitOut.write(endCode, bitLength);
+
+      bitOut.flush();
+
+      return byteOut.toByteArray();
+    };
+
+    var lzwTable = function() {
+
+      var _map = {};
+      var _size = 0;
+
+      var _this = {};
+
+      _this.add = function(key) {
+        if (_this.contains(key) ) {
+          throw 'dup key:' + key;
+        }
+        _map[key] = _size;
+        _size += 1;
+      };
+
+      _this.size = function() {
+        return _size;
+      };
+
+      _this.indexOf = function(key) {
+        return _map[key];
+      };
+
+      _this.contains = function(key) {
+        return typeof _map[key] != 'undefined';
+      };
+
+      return _this;
+    };
+
+    return _this;
+  };
+
+  var createDataURL = function(width, height, getPixel) {
+    var gif = gifImage(width, height);
+    for (var y = 0; y < height; y += 1) {
+      for (var x = 0; x < width; x += 1) {
+        gif.setPixel(x, y, getPixel(x, y) );
+      }
+    }
+
+    var b = byteArrayOutputStream();
+    gif.write(b);
+
+    var base64 = base64EncodeOutputStream();
+    var bytes = b.toByteArray();
+    for (var i = 0; i < bytes.length; i += 1) {
+      base64.writeByte(bytes[i]);
+    }
+    base64.flush();
+
+    return 'data:image/gif;base64,' + base64;
+  };
+
+  //---------------------------------------------------------------------
+  // returns qrcode function.
+
+  return qrcode;
+}();
+
+// multibyte support
+!function() {
+
+  qrcode.stringToBytesFuncs['UTF-8'] = function(s) {
+    // http://stackoverflow.com/questions/18729405/how-to-convert-utf8-string-to-byte-array
+    function toUTF8Array(str) {
+      var utf8 = [];
+      for (var i=0; i < str.length; i++) {
+        var charcode = str.charCodeAt(i);
+        if (charcode < 0x80) utf8.push(charcode);
+        else if (charcode < 0x800) {
+          utf8.push(0xc0 | (charcode >> 6),
+              0x80 | (charcode & 0x3f));
+        }
+        else if (charcode < 0xd800 || charcode >= 0xe000) {
+          utf8.push(0xe0 | (charcode >> 12),
+              0x80 | ((charcode>>6) & 0x3f),
+              0x80 | (charcode & 0x3f));
+        }
+        // surrogate pair
+        else {
+          i++;
+          // UTF-16 encodes 0x10000-0x10FFFF by
+          // subtracting 0x10000 and splitting the
+          // 20 bits of 0x0-0xFFFFF into two halves
+          charcode = 0x10000 + (((charcode & 0x3ff)<<10)
+            | (str.charCodeAt(i) & 0x3ff));
+          utf8.push(0xf0 | (charcode >>18),
+              0x80 | ((charcode>>12) & 0x3f),
+              0x80 | ((charcode>>6) & 0x3f),
+              0x80 | (charcode & 0x3f));
+        }
+      }
+      return utf8;
+    }
+    return toUTF8Array(s);
+  };
+
+}();
+
+(function (factory) {
+  if (typeof define === 'function' && define.amd) {
+      define([], factory);
+  } else if (typeof exports === 'object') {
+      module.exports = factory();
+  }
+}(function () {
+    return qrcode;
+}));
+
+/* ===== Inventário de TI por cliente (parte 48): a base — dados, painel e listas =====
+   Cada cliente tem o seu inventário: equipamentos um a um (patrimônio, série, situação, com quem está), itens por
+   quantidade (cabos, fontes) com saldo por local, licenças, funcionários do cliente (só cadastro, sem acesso),
+   locais, histórico, conferência e cadastros. A situação só muda por movimentação (inv_movimentar no banco), que
+   grava o histórico junto. Só o time que edita o cliente vê; stakeholder não vê.
+   Arquivos: inventario.js (base), inventario_acoes.js (cadastros e movimentações), inventario_extra.js (termo,
+   etiquetas, planilha, conferência e ligações com o resto do sistema). */
+const INV = {cli:null, lido:false, carregando:null, erro:'', aba:'painel', d:{}, f:{q:'', sit:'', cat:'', local:'', func:'', dep:''}, preparado:{}};
+const INV_TABELAS = [['categorias','inv_categorias'],['modelos','inv_modelos'],['locais','inv_locais'],['funcionarios','inv_funcionarios'],['fapps','inv_funcionarios_apps'],
+  ['ativos','inv_ativos'],['ligacoes','inv_ligacoes'],['itens','inv_itens'],['saldos','inv_saldos'],['licencas','inv_licencas'],['lusos','inv_licencas_uso'],
+  ['manut','inv_manutencoes'],['baixas','inv_baixas'],['termos','inv_termos'],['conferencias','inv_conferencias'],['citens','inv_conferencias_itens'],['anexos','inv_anexos'],['movs','inv_movimentos']];
+const INV_SIT = {estoque:['Em estoque','#0E8A55'], uso_funcionario:['Em uso por funcionário','#3355E0'], uso_aplicacao:['Em uso por aplicação','#7C3AED'], uso_local:['Em uso no local','#0E7490'],
+  emprestado:['Emprestado','#C26A00'], manutencao:['Em manutenção','#B45309'], aguardando:['Aguardando','#64748B'], defeito:['Com defeito','#DC2626'], perdido:['Perdido','#991B1B'], baixado:['Baixado','#71717A']};
+const INV_MOV = {cadastro:'Cadastro', entrega:'Entregue ao funcionário', uso_aplicacao:'Em uso pela aplicação', uso_local:'Em uso no local', emprestimo:'Emprestado', devolucao:'Devolvido ao estoque',
+  transferencia:'Mudou de local', manutencao:'Foi para manutenção', retorno_manutencao:'Voltou da manutenção', aguardando:'Aguardando', defeito:'Com defeito', perda:'Perdido', baixa:'Baixa',
+  estorno:'Desfeito (estorno)', entrada:'Entrada no estoque', saida:'Saída do estoque', ajuste:'Ajuste de saldo'};
+const INV_GRUPOS = [['computador','Computador'],['monitor','Monitor'],['periferico','Periférico'],['cabo','Cabo'],['energia','Energia'],['rede','Rede'],['telefonia','Telefonia'],['impressao','Impressão'],
+  ['componente','Peça interna'],['consumivel','Consumível'],['armazenamento','Armazenamento'],['audio_video','Áudio e vídeo'],['mobiliario','Mobiliário'],['outro','Outro']];
+const INV_PROP = [['proprio','Próprio do cliente'],['alugado','Alugado'],['comodato','Comodato'],['byod','Do funcionário (BYOD)']];
+const INV_ABAS = [['painel','Painel'],['equipamentos','Equipamentos'],['estoque','Estoque'],['licencas','Licenças'],['funcionarios','Funcionários'],['locais','Locais'],
+  ['historico','Histórico'],['conferencia','Conferência'],['cadastros','Categorias e modelos'],['planilha','Importar e exportar']];
+const invBanco = () => (typeof COM_BANCO !== 'undefined' && COM_BANCO && window.ciclodevBanco && typeof BANCO !== 'undefined' && BANCO.carregado) ? window.ciclodevBanco : null;
+const invPodeTer = sel => /^(client|project|product|app):/.test(sel || '') && UI.verComo !== 'stakeholder';
+const invCliDe = sel => { const c = cadeia(sel || '').client; return c ? c.id : null; };
+const invDia = s => s ? String(s).slice(8, 10) + '/' + String(s).slice(5, 7) + '/' + String(s).slice(0, 4) : '';
+const invHoje = () => iso(HOJE);
+const invDias = d => d ? Math.round((parse(String(d).slice(0, 10)) - HOJE) / 86400000) : null;
+const invNum = v => v == null || v === '' ? null : +v;
+const invCpf = c => c ? c.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4') : '';
+const invCpfMasc = c => c ? '***.' + c.slice(3, 6) + '.' + c.slice(6, 9) + '-**' : '';
+const invOpts = (lista, v, vazio) => (vazio != null ? '<option value="">' + esc(vazio) + '</option>' : '') + lista.map(([k, n]) => '<option value="' + esc(k) + '"' + (String(k) === String(v == null ? '' : v) ? ' selected' : '') + '>' + esc(n) + '</option>').join('');
+const invAchar = (t, id) => (INV.d[t] || []).find(x => x.id === id);
+
+/* ---------- o que vale aqui: o cliente inteiro, ou só as aplicações do ponto escolhido ---------- */
+function invEscopoApps(sel){
+  const [t, id] = String(sel || '').split(':');
+  if (t === 'app') return [id];
+  if (t === 'product') return D.apps.filter(a => a.product === id).map(a => a.id);
+  if (t === 'project') return D.apps.filter(a => a.project === id).map(a => a.id);
+  return null;   // cliente: tudo
+}
+const invAppsDoCliente = cli => D.apps.filter(a => { const p = byId('projects', a.project); return p && p.client === cli && a.status !== 'archived'; });
+
+/* ---------- dados ---------- */
+async function invCarregar(forcar){
+  const sb = invBanco(), cli = invCliDe(UI.sel); if (!sb || !cli){ INV.lido = true; return; }
+  if (INV.carregando && !forcar && INV.cli === cli) return INV.carregando;
+  INV.cli = cli;
+  INV.carregando = (async () => {
+    try {
+      if (!INV.preparado[cli] && podeEditar()){ const {error} = await sb.rpc('inv_preparar', {p_cliente:cli}); if (!error) INV.preparado[cli] = true; }
+      const rs = await Promise.all(INV_TABELAS.map(([, t]) => { let q = sb.from(t).select('*').eq('cliente_id', cli); if (t === 'inv_movimentos') q = q.order('em', {ascending:false}).limit(5000); else q = q.limit(20000); return q; }));
+      const e = rs.find(r => r.error); if (e) throw e.error;
+      if (INV.cli !== cli) return;
+      const d = {}; INV_TABELAS.forEach(([k], i) => { d[k] = (rs[i].data || []).filter(x => x.cliente_id === cli); });
+      d.movs.sort((a, b) => String(b.em).localeCompare(String(a.em)));
+      INV.d = d; INV.erro = '';
+    } catch (e){ INV.erro = e.message || String(e); }
+    INV.lido = true; INV.carregando = null;
+  })();
+  return INV.carregando;
+}
+async function invRecarregar(){ await invCarregar(true); invRender(); }
+
+/* ---------- nomes e contas ---------- */
+const invCat = a => invAchar('categorias', a.categoria_id) || {nome:'', grupo:'outro', depreciacao_pct_ano:0};
+const invModelo = a => a.modelo_id ? invAchar('modelos', a.modelo_id) : null;
+function invNomeAtivo(a){
+  const m = invModelo(a), base = a.descricao || (m ? [m.fabricante, m.modelo].filter(Boolean).join(' ') : '') || invCat(a).nome;
+  return (a.patrimonio ? a.patrimonio + ' · ' : '') + base;
+}
+const invFunc = id => invAchar('funcionarios', id);
+const invLocal = id => invAchar('locais', id);
+function invLocalNome(id){ const l = invLocal(id); if (!l) return ''; const p = l.pai_id && invLocal(l.pai_id); return (p ? p.nome + ' › ' : '') + l.nome; }
+const invAppNome = id => (byId('apps', id) || {}).nome || '';
+function invOnde(a){
+  if (a.situacao === 'uso_funcionario' || a.situacao === 'emprestado'){ const f = invFunc(a.funcionario_id); return (f ? f.nome : 'Funcionário') + (f && f.departamento ? ' · ' + f.departamento : '') + (a.situacao === 'emprestado' && a.devolucao_prevista ? ' · volta ' + invDia(a.devolucao_prevista) : ''); }
+  if (a.situacao === 'uso_aplicacao') return invAppNome(a.aplicacao_id) + (a.local_id ? ' · ' + invLocalNome(a.local_id) : '');
+  return invLocalNome(a.local_id);
+}
+const invSitHTML = s => { const x = INV_SIT[s] || [s, '#64748B']; return '<span class="inv-sit" style="--c:' + x[1] + '">' + esc(x[0]) + '</span>'; };
+// valor atual pela depreciação em linha reta (taxa do equipamento, senão a da categoria)
+function invValorAtual(a){
+  if (a.valor_compra == null || !a.data_compra) return a.valor_compra == null ? null : +a.valor_compra;
+  const pct = a.depreciacao_pct_ano != null ? +a.depreciacao_pct_ano : +invCat(a).depreciacao_pct_ano || 0;
+  const anos = Math.max(0, (HOJE - parse(String(a.data_compra).slice(0, 10))) / (365.25 * 86400000));
+  return Math.max(0, +a.valor_compra * (1 - pct / 100 * anos));
+}
+const invSaldoItem = (it, local) => (INV.d.saldos || []).filter(s => s.item_id === it.id && (!local || s.local_id === local)).reduce((t, s) => t + (+s.quantidade || 0), 0);
+const invUsosLicenca = l => (INV.d.lusos || []).filter(u => u.licenca_id === l.id);
+function invMensalLicenca(l){ if (l.valor == null) return 0; const v = svBRLInv(+l.valor, l.moeda); return l.recorrencia === 'mensal' ? v : l.recorrencia === 'anual' ? v / 12 : 0; }
+const svBRLInv = (v, moeda) => typeof svBRL === 'function' ? svBRL(v, moeda) : paraBRL(v, moeda);
+// o que está no escopo (cliente inteiro ou as aplicações do ponto): equipamentos da aplicação e dos funcionários que a usam
+function invAtivosDoEscopo(sel){
+  const apps = invEscopoApps(sel), lista = (INV.d.ativos || []);
+  if (!apps) return lista;
+  const funcs = new Set((INV.d.fapps || []).filter(x => apps.includes(x.no_id)).map(x => x.funcionario_id));
+  return lista.filter(a => apps.includes(a.aplicacao_id) || (a.funcionario_id && funcs.has(a.funcionario_id)));
+}
+
+/* ---------- avisos do painel ---------- */
+function invAlertas(){
+  const L = [], ativos = (INV.d.ativos || []).filter(a => a.situacao !== 'baixado');
+  ativos.forEach(a => {
+    const g = invDias(a.garantia_ate); if (a.situacao !== 'perdido' && g != null && g >= 0 && g <= 30) L.push({tipo:'garantia', id:a.id, txt:'Garantia ' + (g ? 'vence em ' + g + ' dias' : 'vence hoje') + ': ' + invNomeAtivo(a), dias:g});
+    const e = invDias(a.devolucao_prevista); if (a.situacao === 'emprestado' && e != null && e < 0) L.push({tipo:'emprestimo', id:a.id, txt:'Empréstimo atrasado ' + -e + ' dias: ' + invNomeAtivo(a) + ' (' + invOnde(a) + ')', dias:e});
+    const c = invDias(a.contrato_fim); if (a.propriedade === 'alugado' && c != null && c <= 60) L.push({tipo:'aluguel', id:a.id, txt:'Aluguel ' + (c < 0 ? 'terminou há ' + -c + ' dias' : 'termina em ' + c + ' dias') + ': ' + invNomeAtivo(a), dias:c});
+    const p = invDias(a.proxima_conferencia); if (p != null && p < 0) L.push({tipo:'conferencia', id:a.id, txt:'Conferência atrasada: ' + invNomeAtivo(a), dias:p});
+    const f = a.funcionario_id && invFunc(a.funcionario_id); if (f && f.situacao === 'desligado') L.push({tipo:'desligado', id:a.id, txt:'Com funcionário desligado: ' + invNomeAtivo(a) + ' (' + f.nome + ')', dias:-999});
+  });
+  (INV.d.itens || []).filter(i => i.ativo && +i.estoque_minimo > 0 && invSaldoItem(i) < +i.estoque_minimo).forEach(i => L.push({tipo:'estoque', item:i.id, txt:'Estoque abaixo do mínimo: ' + i.nome + ' (' + invSaldoItem(i) + ' de ' + (+i.estoque_minimo) + ')', dias:0}));
+  (INV.d.licencas || []).forEach(l => { const v = invDias(l.vence_em); if (v != null && v <= 30) L.push({tipo:'licenca', lic:l.id, txt:'Licença ' + (v < 0 ? 'venceu há ' + -v + ' dias' : 'vence em ' + v + ' dias') + ': ' + l.nome, dias:v}); });
+  return L.sort((a, b) => a.dias - b.dias);
+}
+
+/* ---------- a tela ---------- */
+function invTelaHTML(){
+  const sb = invBanco(), cli = invCliDe(UI.sel), c = cli && byId('clients', cli);
+  if (!sb) return '<div class="inv-tela"><p class="inv-vazio">O inventário precisa do banco do CicloDev ligado.</p></div>';
+  if (!c) return '<div class="inv-tela"><p class="inv-vazio">Escolha um cliente.</p></div>';
+  if (!INV.lido || INV.cli !== cli) return '<div class="inv-tela"><p class="inv-vazio">Carregando o inventário…</p></div>';
+  if (INV.erro) return '<div class="inv-tela"><p class="entrada-erro">Não deu para ler o inventário: ' + esc(INV.erro) + '</p></div>';
+  const escopo = invEscopoApps(UI.sel);
+  if (escopo) return '<div class="inv-tela">' + invEscopoHTML(escopo) + '</div>';
+  const aba = INV_ABAS.some(a => a[0] === INV.aba) ? INV.aba : 'painel';
+  const corpo = {painel:invPainelHTML, equipamentos:invEquipamentosHTML, estoque:invEstoqueHTML, licencas:invLicencasHTML, funcionarios:invFuncionariosHTML, locais:invLocaisHTML,
+    historico:invHistoricoHTML, conferencia:() => typeof invConferenciaHTML === 'function' ? invConferenciaHTML() : '', cadastros:invCadastrosHTML,
+    planilha:() => typeof invPlanilhaHTML === 'function' ? invPlanilhaHTML() : ''}[aba]();
+  return '<div class="inv-tela">' +
+    '<header class="inv-topo"><div><h2>Inventário de ' + esc(c.nome) + '</h2><p class="lead">Equipamentos, estoque, licenças e funcionários deste cliente. Cada mudança de situação fica no histórico, com quem fez e quando.</p></div></header>' +
+    '<nav class="inv-abas" role="tablist">' + INV_ABAS.map(([k, n]) => '<button type="button" role="tab" class="inv-aba" data-inv-aba="' + k + '" aria-selected="' + (k === aba) + '">' + esc(n) + '</button>').join('') + '</nav>' +
+    '<div class="inv-corpo">' + corpo + '</div></div>';
+}
+function invKpi(v, rot, cls){ return '<div class="inv-kpi' + (cls ? ' ' + cls : '') + '"><b>' + v + '</b><span>' + rot + '</span></div>'; }
+function invBarras(titulo, linhas){
+  const max = Math.max(1, ...linhas.map(l => l[1]));
+  return '<section class="inv-quadro"><h4>' + esc(titulo) + '</h4>' + (linhas.length ? '<ul class="inv-barras">' + linhas.map(([n, v, cor]) => '<li><span>' + esc(n) + '</span><i style="--w:' + Math.round(v / max * 100) + '%;--c:' + (cor || 'var(--preto)') + '"></i><b>' + v + '</b></li>').join('') + '</ul>' : '<p class="inv-vazio">Nada ainda.</p>') + '</section>';
+}
+function invPainelHTML(){
+  const ativos = (INV.d.ativos || []).filter(a => a.situacao !== 'baixado'), conta = s => ativos.filter(a => a.situacao === s).length;
+  const compra = ativos.reduce((t, a) => t + (+a.valor_compra || 0), 0), atual = ativos.reduce((t, a) => t + (invValorAtual(a) || 0), 0);
+  const mensal = ativos.filter(a => a.propriedade === 'alugado').reduce((t, a) => t + (+a.valor_mensal || 0), 0) + (INV.d.licencas || []).reduce((t, l) => t + invMensalLicenca(l), 0);
+  const alertas = invAlertas(), pode = podeEditar();
+  const porCat = {}; ativos.forEach(a => { const n = invCat(a).nome || 'Sem categoria'; porCat[n] = (porCat[n] || 0) + 1; });
+  const porDep = {}; ativos.filter(a => a.funcionario_id).forEach(a => { const f = invFunc(a.funcionario_id), n = (f && f.departamento) || 'Sem departamento'; porDep[n] = (porDep[n] || 0) + 1; });
+  return '<div class="inv-kpis">' + invKpi(ativos.length, 'equipamentos') + invKpi(conta('uso_funcionario') + conta('emprestado') + conta('uso_aplicacao') + conta('uso_local'), 'em uso') +
+      invKpi(conta('estoque'), 'em estoque') + invKpi(conta('manutencao') + conta('defeito'), 'em manutenção ou com defeito', conta('defeito') ? 'inv-alerta' : '') +
+      invKpi(brl(compra), 'valor de compra') + invKpi(brl(atual), 'valor atual (depreciação)') + invKpi(brl(mensal), 'por mês (aluguéis e licenças)') + invKpi(alertas.length, 'avisos', alertas.length ? 'inv-alerta' : '') + '</div>' +
+    (pode ? '<div class="inv-acoes-topo"><button type="button" class="btn" data-inv-novo-ativo>Cadastrar equipamento</button><button type="button" class="btn sec" data-inv-novo-func>Cadastrar funcionário</button><button type="button" class="btn sec" data-inv-novo-item>Item de estoque</button><button type="button" class="btn sec" data-inv-aba="planilha">Importar planilha</button></div>' : '') +
+    '<section class="inv-quadro"><h4>Avisos</h4>' + (alertas.length ? '<ul class="inv-avisos">' + alertas.slice(0, 40).map(x => '<li class="inv-av-' + x.tipo + '"><span>' + esc(x.txt) + '</span>' +
+        (x.id ? '<button type="button" class="btn fant peq" data-inv-abrir="' + esc(x.id) + '">Abrir</button>' : '') + (pode && x.id && typeof invCriarItemTrabalho === 'function' ? '<button type="button" class="btn fant peq" data-inv-item-trabalho="' + esc(x.id) + '" data-inv-item-txt="' + esc(x.txt) + '">Criar item</button>' : '') + '</li>').join('') + '</ul>' : '<p class="inv-vazio">Nada pedindo atenção.</p>') + '</section>' +
+    '<div class="inv-grade3">' + invBarras('Por situação', Object.keys(INV_SIT).filter(s => s !== 'baixado').map(s => [INV_SIT[s][0], conta(s), INV_SIT[s][1]]).filter(x => x[1])) +
+      invBarras('Por categoria', Object.entries(porCat).sort((a, b) => b[1] - a[1]).slice(0, 12)) + invBarras('Em uso por departamento', Object.entries(porDep).sort((a, b) => b[1] - a[1]).slice(0, 12)) + '</div>' +
+    '<section class="inv-quadro"><h4>Últimas movimentações</h4>' + invMovsHTML((INV.d.movs || []).slice(0, 12)) + '</section>';
+}
+function invMovsHTML(movs){
+  if (!movs.length) return '<p class="inv-vazio">Nada ainda.</p>';
+  return '<div class="tabela-rolo"><table class="inv-tab"><thead><tr><th>Data</th><th>O quê</th><th>Movimentação</th><th>Para</th><th>Motivo</th><th>Quem</th></tr></thead><tbody>' + movs.map(m => {
+    const a = m.ativo_id && invAchar('ativos', m.ativo_id), it = m.item_id && invAchar('itens', m.item_id), p = m.feito_por && pessoa(m.feito_por);
+    const para = m.funcionario_para ? (invFunc(m.funcionario_para) || {}).nome : m.aplicacao_para ? invAppNome(m.aplicacao_para) : m.local_para ? invLocalNome(m.local_para) : '';
+    return '<tr' + (m.tipo === 'estorno' ? ' class="inv-estorno"' : '') + '><td class="inv-num">' + invDia(m.data) + '</td><td>' + (a ? '<button type="button" class="inv-link" data-inv-abrir="' + esc(a.id) + '">' + esc(invNomeAtivo(a)) + '</button>' : esc(it ? it.nome + ' (' + (+m.quantidade) + ' ' + it.unidade + ')' : '')) + '</td>' +
+      '<td>' + esc(INV_MOV[m.tipo] || m.tipo) + '</td><td>' + esc(para || '') + '</td><td>' + esc(m.motivo) + '</td><td>' + esc(p ? p.nome : '') + '</td></tr>'; }).join('') + '</tbody></table></div>';
+}
+
+/* ---------- equipamentos ---------- */
+function invFiltrar(lista){
+  const f = INV.f, q = (f.q || '').toLowerCase().trim();
+  return lista.filter(a => (!f.sit ? a.situacao !== 'baixado' : f.sit === 'todos' || a.situacao === f.sit) && (!f.cat || a.categoria_id === f.cat) && (!f.local || a.local_id === f.local) &&
+    (!f.func || a.funcionario_id === f.func) && (!f.dep || ((invFunc(a.funcionario_id) || {}).departamento || '') === f.dep) &&
+    (!q || [a.patrimonio, a.numero_serie, a.descricao, a.hostname, a.ip, a.mac, invNomeAtivo(a), invOnde(a), invCat(a).nome].join(' ').toLowerCase().includes(q)));
+}
+function invTabelaAtivos(lista, comSel){
+  if (!lista.length) return '<p class="inv-vazio">Nenhum equipamento aqui.</p>';
+  return '<div class="tabela-rolo"><table class="inv-tab inv-tab-ativos"><thead><tr>' + (comSel ? '<th><input type="checkbox" data-inv-sel-todos aria-label="Marcar todos"></th>' : '') + '<th>Patrimônio</th><th>Equipamento</th><th>Série</th><th>Situação</th><th>Com quem / onde</th><th>Garantia</th><th class="inv-num">Valor atual</th></tr></thead><tbody>' +
+    lista.map(a => { const g = invDias(a.garantia_ate), v = invValorAtual(a);
+      return '<tr data-inv-abrir="' + esc(a.id) + '">' + (comSel ? '<td><input type="checkbox" data-inv-sel="' + esc(a.id) + '" aria-label="Marcar"></td>' : '') + '<td class="inv-pat">' + esc(a.patrimonio || '—') + '</td><td><b>' + esc(a.descricao || (invModelo(a) ? [invModelo(a).fabricante, invModelo(a).modelo].filter(Boolean).join(' ') : invCat(a).nome)) + '</b><small>' + esc(invCat(a).nome) + (a.propriedade !== 'proprio' ? ' · ' + svNomeInv(INV_PROP, a.propriedade) : '') + '</small></td>' +
+        '<td>' + esc(a.numero_serie) + '</td><td>' + invSitHTML(a.situacao) + '</td><td>' + esc(invOnde(a)) + '</td><td' + (g != null && g < 0 ? ' class="inv-venc"' : g != null && g <= 30 ? ' class="inv-quase"' : '') + '>' + (a.garantia_ate ? invDia(a.garantia_ate) : '') + '</td><td class="inv-num">' + (v != null ? brl(v) : '') + '</td></tr>'; }).join('') + '</tbody></table></div>';
+}
+const svNomeInv = (lista, k) => (lista.find(x => x[0] === k) || [k, k])[1];
+function invEquipamentosHTML(){
+  const f = INV.f, cats = (INV.d.categorias || []).filter(c => c.controle === 'unidade'), lista = invFiltrar(INV.d.ativos || []), pode = podeEditar();
+  const deps = [...new Set((INV.d.funcionarios || []).map(x => x.departamento).filter(Boolean))].sort();
+  return '<div class="inv-filtros"><input class="campo" data-inv-f="q" placeholder="Buscar patrimônio, série, nome, hostname, IP…" value="' + esc(f.q) + '">' +
+      '<select class="sel" data-inv-f="sit">' + invOpts([['todos','Todas, até as baixadas']].concat(Object.keys(INV_SIT).map(k => [k, INV_SIT[k][0]])), f.sit, 'Situação: todas menos baixadas') + '</select>' +
+      '<select class="sel" data-inv-f="cat">' + invOpts(cats.map(c => [c.id, c.nome]), f.cat, 'Categoria: todas') + '</select>' +
+      '<select class="sel" data-inv-f="local">' + invOpts((INV.d.locais || []).map(l => [l.id, invLocalNome(l.id)]), f.local, 'Local: todos') + '</select>' +
+      '<select class="sel" data-inv-f="func">' + invOpts((INV.d.funcionarios || []).map(x => [x.id, x.nome]), f.func, 'Funcionário: todos') + '</select>' +
+      (deps.length ? '<select class="sel" data-inv-f="dep">' + invOpts(deps.map(x => [x, x]), f.dep, 'Departamento: todos') + '</select>' : '') + '</div>' +
+    '<div class="inv-acoes-topo"><span class="inv-conta">' + lista.length + (lista.length === 1 ? ' equipamento' : ' equipamentos') + '</span>' + (pode ? '<button type="button" class="btn" data-inv-novo-ativo>Cadastrar equipamento</button>' : '') +
+      '<button type="button" class="btn sec" data-inv-etiquetas>Imprimir etiquetas dos marcados</button>' + (pode ? '<button type="button" class="btn sec" data-inv-lote-mov>Movimentar os marcados</button>' : '') + '<button type="button" class="btn sec" data-inv-csv="equipamentos">Baixar planilha</button></div>' +
+    invTabelaAtivos(lista, true);
+}
+
+/* ---------- estoque por quantidade ---------- */
+function invEstoqueHTML(){
+  const itens = INV.d.itens || [], locais = INV.d.locais || [], pode = podeEditar();
+  return '<div class="inv-acoes-topo">' + (pode ? '<button type="button" class="btn" data-inv-novo-item>Novo item de estoque</button>' : '') + '<button type="button" class="btn sec" data-inv-csv="estoque">Baixar planilha</button></div>' +
+    '<p class="inv-ajuda">Cabos, fontes, adaptadores e consumíveis: controlados por quantidade em cada local. Entrada, saída (para quem foi), transferência e ajuste ficam no histórico.</p>' +
+    (itens.length ? '<div class="tabela-rolo"><table class="inv-tab"><thead><tr><th>Item</th><th>Categoria</th><th class="inv-num">Total</th><th class="inv-num">Mínimo</th><th>Por local</th><th></th></tr></thead><tbody>' + itens.map(i => {
+      const tot = invSaldoItem(i), baixo = +i.estoque_minimo > 0 && tot < +i.estoque_minimo;
+      const porLocal = locais.map(l => [l, invSaldoItem(i, l.id)]).filter(x => x[1] > 0);
+      return '<tr' + (i.ativo ? '' : ' class="inv-inativo"') + '><td><b>' + esc(i.nome) + '</b>' + (i.notas ? '<small>' + esc(i.notas) + '</small>' : '') + '</td><td>' + esc((invAchar('categorias', i.categoria_id) || {}).nome || '') + '</td>' +
+        '<td class="inv-num' + (baixo ? ' inv-venc' : '') + '"><b>' + tot + '</b> ' + esc(i.unidade) + '</td><td class="inv-num">' + (+i.estoque_minimo || '') + '</td><td>' + esc(porLocal.map(([l, q]) => invLocalNome(l.id) + ': ' + q).join(' · ')) + '</td>' +
+        '<td class="inv-bts">' + (pode ? ['entrada','saida','transferencia','ajuste'].map(t => '<button type="button" class="btn fant peq" data-inv-estoque="' + esc(i.id) + '" data-inv-tipo="' + t + '">' + {entrada:'Entrada', saida:'Saída', transferencia:'Transferir', ajuste:'Ajustar'}[t] + '</button>').join('') + '<button type="button" class="btn fant peq" data-inv-editar-item="' + esc(i.id) + '">Editar</button>' : '') + '</td></tr>'; }).join('') + '</tbody></table></div>' : '<p class="inv-vazio">Nenhum item de estoque ainda.</p>');
+}
+
+/* ---------- licenças ---------- */
+function invLicencasHTML(){
+  const L = INV.d.licencas || [], pode = podeEditar();
+  return '<div class="inv-acoes-topo">' + (pode ? '<button type="button" class="btn" data-inv-nova-lic>Nova licença</button>' : '') + '</div>' +
+    (L.length ? '<div class="tabela-rolo"><table class="inv-tab"><thead><tr><th>Licença</th><th class="inv-num">Em uso</th><th>Vence</th><th class="inv-num">Por mês</th><th>Com quem</th><th></th></tr></thead><tbody>' + L.map(l => {
+      const us = invUsosLicenca(l), v = invDias(l.vence_em);
+      return '<tr><td><b>' + esc(l.nome) + '</b><small>' + esc([l.fornecedor, {assinatura:'Assinatura', perpetua:'Perpétua', oem:'OEM'}[l.tipo], l.chave_onde ? 'chave: ' + l.chave_onde : ''].filter(Boolean).join(' · ')) + '</small></td>' +
+        '<td class="inv-num' + (us.length >= l.quantidade ? ' inv-quase' : '') + '">' + us.length + ' de ' + l.quantidade + '</td><td' + (v != null && v < 0 ? ' class="inv-venc"' : v != null && v <= 30 ? ' class="inv-quase"' : '') + '>' + (l.vence_em ? invDia(l.vence_em) + (l.renovacao_automatica ? ' (automática)' : '') : '') + '</td>' +
+        '<td class="inv-num">' + (invMensalLicenca(l) ? brl(invMensalLicenca(l)) : '') + '</td><td>' + esc(us.map(u => u.funcionario_id ? (invFunc(u.funcionario_id) || {}).nome : invNomeAtivo(invAchar('ativos', u.ativo_id) || {})).join(', ')) + '</td>' +
+        '<td class="inv-bts">' + (pode ? '<button type="button" class="btn fant peq" data-inv-lic-uso="' + esc(l.id) + '">Atribuir</button><button type="button" class="btn fant peq" data-inv-editar-lic="' + esc(l.id) + '">Editar</button>' : '') + '</td></tr>'; }).join('') + '</tbody></table></div>' : '<p class="inv-vazio">Nenhuma licença cadastrada.</p>');
+}
+
+/* ---------- funcionários ---------- */
+function invFuncionariosHTML(){
+  const F = (INV.d.funcionarios || []).slice().sort((a, b) => (a.situacao === 'desligado') - (b.situacao === 'desligado') || a.nome.localeCompare(b.nome)), pode = podeEditar();
+  return '<div class="inv-acoes-topo">' + (pode ? '<button type="button" class="btn" data-inv-novo-func>Cadastrar funcionário</button>' : '') + '<button type="button" class="btn sec" data-inv-csv="funcionarios">Baixar planilha</button></div>' +
+    '<p class="inv-ajuda">Funcionários do cliente: só cadastro de controle, não entram no sistema. O CPF aparece mascarado; ele é usado no termo de responsabilidade.</p>' +
+    (F.length ? '<div class="tabela-rolo"><table class="inv-tab"><thead><tr><th>Nome</th><th>Cargo</th><th>Departamento</th><th>CPF</th><th>Telefone</th><th class="inv-num">Equipamentos</th><th>Usa</th><th>Situação</th></tr></thead><tbody>' + F.map(x => {
+      const n = (INV.d.ativos || []).filter(a => a.funcionario_id === x.id).length, apps = (INV.d.fapps || []).filter(y => y.funcionario_id === x.id).map(y => invAppNome(y.no_id)).filter(Boolean);
+      return '<tr data-inv-func="' + esc(x.id) + '"' + (x.situacao === 'desligado' ? ' class="inv-inativo"' : '') + '><td><b>' + esc(x.nome) + '</b></td><td>' + esc(x.cargo) + '</td><td>' + esc(x.departamento) + '</td><td class="inv-num">' + esc(invCpfMasc(x.cpf)) + '</td><td>' + esc(x.telefone) + '</td>' +
+        '<td class="inv-num' + (x.situacao === 'desligado' && n ? ' inv-venc' : '') + '">' + n + '</td><td>' + esc(apps.join(', ')) + '</td><td>' + esc({ativo:'Ativo', afastado:'Afastado', desligado:'Desligado'}[x.situacao]) + '</td></tr>'; }).join('') + '</tbody></table></div>' : '<p class="inv-vazio">Nenhum funcionário cadastrado.</p>');
+}
+
+/* ---------- locais ---------- */
+function invLocaisHTML(){
+  const L = INV.d.locais || [], pode = podeEditar();
+  const arvore = (pai, nivel) => L.filter(l => (l.pai_id || null) === pai).sort((a, b) => a.nome.localeCompare(b.nome)).map(l => {
+    const n = (INV.d.ativos || []).filter(a => a.local_id === l.id && a.situacao !== 'baixado').length, q = (INV.d.saldos || []).filter(s => s.local_id === l.id && +s.quantidade > 0).length;
+    return '<li style="padding-left:' + (nivel * 20) + 'px"><b>' + esc(l.nome) + '</b> <small>' + esc({unidade:'unidade', predio:'prédio', andar:'andar', sala:'sala', armario:'armário', almoxarifado:'almoxarifado', remoto:'remoto', outro:'outro'}[l.tipo]) + (l.endereco ? ' · ' + esc(l.endereco) : '') + '</small>' +
+      '<span class="inv-conta">' + n + (n === 1 ? ' equipamento' : ' equipamentos') + (q ? ' · ' + q + (q === 1 ? ' item de estoque' : ' itens de estoque') : '') + '</span>' +
+      (pode ? '<button type="button" class="btn fant peq" data-inv-editar-local="' + esc(l.id) + '">Editar</button>' : '') + '</li>' + arvore(l.id, nivel + 1); }).join('');
+  return '<div class="inv-acoes-topo">' + (pode ? '<button type="button" class="btn" data-inv-novo-local>Novo local</button>' : '') + '</div>' +
+    '<p class="inv-ajuda">Matriz, filiais, prédios, salas, armários e almoxarifado. Um local pode ficar dentro de outro.</p>' +
+    (L.length ? '<ul class="inv-locais">' + arvore(null, 0) + '</ul>' : '<p class="inv-vazio">Nenhum local cadastrado.</p>');
+}
+
+/* ---------- histórico ---------- */
+function invHistoricoHTML(){
+  const f = INV.f, tipos = Object.keys(INV_MOV);
+  let movs = INV.d.movs || [];
+  if (f.mtipo) movs = movs.filter(m => m.tipo === f.mtipo);
+  if (f.mde) movs = movs.filter(m => String(m.data) >= f.mde);
+  if (f.mate) movs = movs.filter(m => String(m.data) <= f.mate);
+  return '<div class="inv-filtros"><select class="sel" data-inv-f="mtipo">' + invOpts(tipos.map(t => [t, INV_MOV[t]]), f.mtipo, 'Tipo: todos') + '</select>' +
+    '<label class="inv-rot">De <input class="campo" type="date" data-inv-f="mde" value="' + esc(f.mde || '') + '"></label><label class="inv-rot">Até <input class="campo" type="date" data-inv-f="mate" value="' + esc(f.mate || '') + '"></label>' +
+    '<button type="button" class="btn sec" data-inv-csv="historico">Baixar planilha</button></div>' +
+    '<p class="inv-ajuda">O histórico nunca muda nem some. Um erro se corrige desfazendo a última movimentação do equipamento (fica registrado como estorno).</p>' + invMovsHTML(movs.slice(0, 500));
+}
+
+/* ---------- categorias e modelos ---------- */
+function invCadastrosHTML(){
+  const C = (INV.d.categorias || []).slice().sort((a, b) => a.ordem - b.ordem || a.nome.localeCompare(b.nome)), M = INV.d.modelos || [], pode = podeEditar();
+  return '<div class="inv-grade2"><section class="inv-quadro"><h4>Categorias</h4><p class="inv-ajuda">Cada categoria diz se o controle é um a um (com patrimônio e série) ou por quantidade, a depreciação por ano (tabela da Receita: computadores 20%, impressoras e nobreaks 10%) e de quanto em quanto tempo conferir.</p>' +
+      (pode ? '<button type="button" class="btn sec peq" data-inv-nova-cat>Nova categoria</button>' : '') +
+      '<div class="tabela-rolo"><table class="inv-tab"><thead><tr><th>Categoria</th><th>Controle</th><th class="inv-num">Depreciação</th><th class="inv-num">Conferir a cada</th><th></th></tr></thead><tbody>' +
+      C.map(c => '<tr' + (c.ativo ? '' : ' class="inv-inativo"') + '><td><b>' + esc(c.nome) + '</b><small>' + esc(svNomeInv(INV_GRUPOS, c.grupo)) + '</small></td><td>' + (c.controle === 'unidade' ? 'Um a um' : 'Por quantidade') + '</td><td class="inv-num">' + (+c.depreciacao_pct_ano) + '% ao ano</td><td class="inv-num">' + c.conferencia_meses + ' meses</td>' +
+        '<td>' + (pode ? '<button type="button" class="btn fant peq" data-inv-editar-cat="' + esc(c.id) + '">Editar</button>' : '') + '</td></tr>').join('') + '</tbody></table></div></section>' +
+    '<section class="inv-quadro"><h4>Modelos</h4><p class="inv-ajuda">Fabricante e modelo, para não digitar de novo a cada equipamento.</p>' + (pode ? '<button type="button" class="btn sec peq" data-inv-novo-modelo>Novo modelo</button>' : '') +
+      (M.length ? '<div class="tabela-rolo"><table class="inv-tab"><thead><tr><th>Modelo</th><th>Categoria</th><th class="inv-num">Em uso</th><th></th></tr></thead><tbody>' + M.map(m => '<tr><td><b>' + esc([m.fabricante, m.modelo].filter(Boolean).join(' ')) + '</b>' + (m.especificacoes ? '<small>' + esc(m.especificacoes) + '</small>' : '') + '</td><td>' + esc((invAchar('categorias', m.categoria_id) || {}).nome || '') + '</td>' +
+        '<td class="inv-num">' + (INV.d.ativos || []).filter(a => a.modelo_id === m.id && a.situacao !== 'baixado').length + '</td><td>' + (pode ? '<button type="button" class="btn fant peq" data-inv-editar-modelo="' + esc(m.id) + '">Editar</button>' : '') + '</td></tr>').join('') + '</tbody></table></div>' : '<p class="inv-vazio">Nenhum modelo ainda.</p>') + '</section></div>';
+}
+
+/* ---------- aplicação, produto ou projeto: o que é usado ali ---------- */
+function invEscopoHTML(apps){
+  const lista = invAtivosDoEscopo(UI.sel).filter(a => a.situacao !== 'baixado');
+  const daApp = lista.filter(a => apps.includes(a.aplicacao_id)), funcs = (INV.d.funcionarios || []).filter(f => (INV.d.fapps || []).some(x => x.funcionario_id === f.id && apps.includes(x.no_id)));
+  const c = byId('clients', INV.cli);
+  return '<header class="inv-topo"><div><h2>Inventário de ' + esc(nomeDe(UI.sel)) + '</h2><p class="lead">Os equipamentos que esta parte usa, do inventário de ' + esc(c ? c.nome : 'cliente') + ': os que estão em uso pela própria aplicação e os dos funcionários que usam a aplicação.</p></div>' +
+      '<button type="button" class="btn sec" data-inv-ir-cliente>Abrir o inventário do cliente</button></header>' +
+    '<div class="inv-kpis">' + invKpi(daApp.length, 'em uso pela aplicação') + invKpi(funcs.length, funcs.length === 1 ? 'funcionário usa' : 'funcionários usam') + invKpi(lista.length - daApp.length, 'equipamentos com esses funcionários') + '</div>' +
+    '<section class="inv-quadro"><h4>Em uso pela aplicação</h4>' + invTabelaAtivos(daApp, false) + '</section>' +
+    '<section class="inv-quadro"><h4>Funcionários que usam e os equipamentos deles</h4>' + (funcs.length ? funcs.map(f => { const eq = lista.filter(a => a.funcionario_id === f.id);
+      return '<div class="inv-func-bloco"><p><b>' + esc(f.nome) + '</b> <small>' + esc([f.cargo, f.departamento].filter(Boolean).join(' · ')) + '</small></p>' + (eq.length ? invTabelaAtivos(eq, false) : '<p class="inv-vazio">Sem equipamento.</p>') + '</div>'; }).join('') : '<p class="inv-vazio">Nenhum funcionário marcado como usuário desta aplicação. Marque no cadastro do funcionário.</p>') + '</section>';
+}
+
+/* ---------- desenhar e ligar na aba ---------- */
+function invRender(){
+  const c = $('#ops-corpo'); if (!c || UI.view !== 'inventario') return;
+  const rolo = c.scrollTop; c.innerHTML = invTelaHTML(); c.scrollTop = rolo;
+  if (typeof smAgruparAbas === 'function') smAgruparAbas();
+}
+const _rViewInv = rView;
+rView = function(){
+  const c = $('#ops-corpo');
+  if (c && UI.view === 'inventario'){
+    if (!invPodeTer(UI.sel)){ UI.view = 'dashboard'; return _rViewInv.apply(this, arguments); }
+    const cli = invCliDe(UI.sel);
+    if (INV.cli !== cli){ INV.lido = false; INV.f = {q:'', sit:'', cat:'', local:'', func:'', dep:''}; }
+    invRender();
+    if (!INV.lido || INV.cli !== cli) invCarregar(true).then(invRender);
+    return;
+  }
+  return _rViewInv.apply(this, arguments);
+};
+const _rOperacoesInv = rOperacoes;
+rOperacoes = function(){
+  _rOperacoesInv.apply(this, arguments);
+  if (!invPodeTer(UI.sel)){ const b = $('.view-b[data-view="inventario"]'); if (b) (b.closest('.view-casa') || b).remove(); if (UI.view === 'inventario'){ UI.view = 'dashboard'; rView(); } }
+};
+VIEWS.push(['inventario', 'Inventário', 'inventário de TI do cliente: equipamentos, estoque, licenças e funcionários']);
+if (typeof SM_ABAS !== 'undefined') SM_ABAS.inventario = ['Inventário', 'O inventário de TI do cliente: cada equipamento com patrimônio, série, situação e com quem está (funcionário, aplicação ou local), o estoque de cabos e acessórios, as licenças, os funcionários, os locais, o histórico de movimentações, a conferência física e as etiquetas.'];
+if (typeof SM_DICA !== 'undefined') SM_DICA.inventario = 'inventário de TI do cliente';
+if (typeof EXPL_VIEW !== 'undefined') EXPL_VIEW.inventario = 'Inventário de TI do cliente: equipamentos, estoque, licenças, funcionários e histórico.';
+if (typeof SM_EXTRAS_PADRAO !== 'undefined' && !SM_EXTRAS_PADRAO.includes('inventario')){ SM_EXTRAS_PADRAO.push('inventario'); if (typeof SM_PRINCIPAIS !== 'undefined' && !SM_PRINCIPAIS.includes('inventario')) SM_PRINCIPAIS.push('inventario'); }
+
+// filtros e abas
+document.addEventListener('input', e => { const f = e.target.closest('#ops-corpo .inv-tela [data-inv-f]'); if (!f || f.tagName !== 'INPUT' || f.type === 'date') return; INV.f[f.dataset.invF] = f.value; clearTimeout(INV._t); INV._t = setTimeout(() => { invRender(); const n = $('#ops-corpo [data-inv-f="' + f.dataset.invF + '"]'); if (n){ n.focus(); n.setSelectionRange(n.value.length, n.value.length); } }, 250); });
+document.addEventListener('change', e => { const f = e.target.closest('#ops-corpo .inv-tela [data-inv-f]'); if (!f || (f.tagName === 'INPUT' && f.type !== 'date')) return; INV.f[f.dataset.invF] = f.value; invRender(); });
+document.addEventListener('click', e => {
+  if (!e.target.closest('#ops-corpo .inv-tela')) return;
+  const ab = e.target.closest('[data-inv-aba]'); if (ab){ INV.aba = ab.dataset.invAba; invRender(); return; }
+  if (e.target.closest('[data-inv-ir-cliente]')){ UI.sel = 'client:' + INV.cli; UI.view = 'inventario'; if (typeof abrirArvore === 'function') abrirArvore(UI.sel); salvarUI(); rOperacoes(); return; }
+  const st = e.target.closest('[data-inv-sel-todos]'); if (st){ $$('#ops-corpo [data-inv-sel]').forEach(x => { x.checked = st.checked; }); return; }
+  if (e.target.closest('input[type="checkbox"]')) return;
+  if (typeof invClique === 'function') invClique(e);
+});
+if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {INV, invCarregar, invValorAtual, invAlertas, invAtivosDoEscopo, invRender});
+
+/* ===== Inventário: cadastros e movimentações =====
+   Formulários (equipamento, funcionário, local, categoria, modelo, item de estoque, licença), a ficha do equipamento
+   com as ações (entregar, emprestar, usar em aplicação, devolver, transferir, manutenção, defeito, perda, baixa) e o
+   desfazer da última movimentação. Tudo grava direto no banco; a situação só muda pelas funções do banco. */
+
+/* ---------- gravar ---------- */
+async function invGravar(tabela, row, id){
+  const sb = invBanco(); if (!sb) throw new Error('banco desligado');
+  if (id){ const {data, error} = await sb.from(tabela).update(row).eq('id', id).select('id'); if (error) throw error; if (!data || !data.length) throw new Error('o banco não deixou mudar (sem acesso a este cliente)'); return id; }
+  const novo = Object.assign({id:novoUuid(), cliente_id:INV.cli}, row); const {error} = await sb.from(tabela).insert(novo); if (error) throw error; return novo.id;
+}
+async function invRpc(fn, args){ const {data, error} = await invBanco().rpc(fn, args); if (error) throw error; return data; }
+const invErro = e => { const m = String(e && e.message || e); toast('Não deu para gravar: ' + (/inv_ativos_patrimonio_uq/.test(m) ? 'este patrimônio já existe neste cliente' : /inv_funcionarios_cpf_uq/.test(m) ? 'este CPF já está cadastrado neste cliente' : /cpf_check|cpf_valido/.test(m) ? 'CPF inválido' : /acesso_onde_check/.test(m) ? 'em "onde fica o acesso" vai só onde ela está, nunca a senha' : m)); };
+// janela de formulário: os botões não fecham sozinhos (só quando grava)
+function invForm(titulo, corpo, gravar, extra){
+  const dlg = modal(titulo, corpo, [{txt:'Cancelar', cls:'sec'}].concat(extra || [], [{txt:'Gravar', acao:d => { const b = d.querySelector('.modal-rod .btn:not(.sec)'); if (b) b.disabled = true;
+    Promise.resolve().then(() => gravar(d)).then(ok => { if (ok === false){ if (b) b.disabled = false; return; } d.close(); d.remove(); invRecarregar(); }).catch(e => { if (b) b.disabled = false; invErro(e); }); return false; }}]));
+  dlg.classList.add('inv-modal'); return dlg;
+}
+const invV = (d, id) => { const x = d.querySelector('#' + id); return x ? (x.type === 'checkbox' ? x.checked : x.value.trim()) : ''; };
+const invCampo = (rot, html, cls) => '<label class="lb' + (cls ? ' ' + cls : '') + '">' + rot + html + '</label>';
+const invIn = (id, v, extra) => '<input class="campo" id="' + id + '" value="' + esc(v == null ? '' : v) + '"' + (extra || '') + '>';
+const invFuncOpts = (v, todos) => invOpts((INV.d.funcionarios || []).filter(f => todos || f.situacao !== 'desligado' || f.id === v).sort((a, b) => a.nome.localeCompare(b.nome)).map(f => [f.id, f.nome + (f.departamento ? ' · ' + f.departamento : '')]), v, 'Escolha o funcionário');
+const invLocalOpts = (v, vazio) => invOpts((INV.d.locais || []).filter(l => l.ativo || l.id === v).map(l => [l.id, invLocalNome(l.id)]).sort((a, b) => a[1].localeCompare(b[1])), v, vazio == null ? 'Sem local' : vazio);
+const invAppOpts = v => invOpts(invAppsDoCliente(INV.cli).map(a => [a.id, a.nome]), v, 'Escolha a aplicação');
+
+/* ---------- equipamento: cadastrar e editar ---------- */
+function invProximoPatrimonio(){
+  const nums = (INV.d.ativos || []).map(a => (a.patrimonio.match(/^(.*?)(\d+)$/) || [])).filter(m => m.length);
+  if (!nums.length) return 'PAT-0001';
+  const m = nums.sort((a, b) => +b[2] - +a[2])[0]; return m[1] + String(+m[2] + 1).padStart(m[2].length, '0');
+}
+function invFormAtivo(id){
+  const a = id ? invAchar('ativos', id) : {situacao:'estoque', propriedade:'proprio', patrimonio:invProximoPatrimonio()}, novo = !id;
+  const cats = (INV.d.categorias || []).filter(c => c.controle === 'unidade' && (c.ativo || c.id === a.categoria_id));
+  const modelos = INV.d.modelos || [];
+  const corpo = '<div class="inv-form">' +
+    '<fieldset><legend>O equipamento</legend><div class="grade-form">' + invCampo('Categoria', '<select class="sel" id="ia-cat">' + invOpts(cats.map(c => [c.id, c.nome]), a.categoria_id, 'Escolha') + '</select>') +
+      invCampo('Modelo', '<select class="sel" id="ia-mod">' + invOpts(modelos.map(m => [m.id, [m.fabricante, m.modelo].filter(Boolean).join(' ')]), a.modelo_id, 'Sem modelo (ou cadastre ao lado)') + '</select>') +
+      invCampo('Novo modelo: fabricante', invIn('ia-fab', '', ' placeholder="Ex.: Dell"')) + invCampo('Novo modelo: nome', invIn('ia-modn', '', ' placeholder="Ex.: Latitude 5440"')) +
+      invCampo('Patrimônio (plaqueta)', invIn('ia-pat', a.patrimonio, ' maxlength="60"')) + invCampo('Número de série', invIn('ia-serie', a.numero_serie, ' maxlength="120"')) +
+      invCampo('Descrição', invIn('ia-desc', a.descricao, ' maxlength="300" placeholder="Ex.: Notebook do financeiro, i7, 16 GB"'), 'largo') +
+      (novo ? invCampo('Cadastrar quantos iguais', invIn('ia-copias', 1, ' type="number" min="1" max="200"') + '<small class="inv-ajuda">Com o patrimônio em sequência e a série em branco</small>') : '') + '</div></fieldset>' +
+    (novo ? '<fieldset><legend>Onde começa</legend><div class="grade-form">' + invCampo('Situação', '<select class="sel" id="ia-sit">' + invOpts([['estoque','Em estoque'],['uso_funcionario','Em uso por funcionário'],['uso_aplicacao','Em uso por aplicação'],['uso_local','Em uso no local'],['aguardando','Aguardando'],['defeito','Com defeito']], a.situacao) + '</select>') +
+      invCampo('Local', '<select class="sel" id="ia-local">' + invLocalOpts(a.local_id) + '</select>') + invCampo('Funcionário', '<select class="sel" id="ia-func">' + invFuncOpts(a.funcionario_id) + '</select>', 'ia-so-func') +
+      invCampo('Aplicação', '<select class="sel" id="ia-app">' + invAppOpts(a.aplicacao_id) + '</select>', 'ia-so-app') + '</div></fieldset>' : '') +
+    '<fieldset><legend>De quem é e a compra</legend><div class="grade-form">' + invCampo('Propriedade', '<select class="sel" id="ia-prop">' + invOpts(INV_PROP, a.propriedade) + '</select>') +
+      invCampo('Locadora', invIn('ia-loc', a.locadora, ' maxlength="120"'), 'ia-so-alug') + invCampo('Fim do contrato', invIn('ia-cfim', a.contrato_fim, ' type="date"'), 'ia-so-alug') + invCampo('Aluguel por mês (R$)', invIn('ia-vmes', a.valor_mensal, ' type="number" min="0" step="0.01"'), 'ia-so-alug') +
+      invCampo('Fornecedor', invIn('ia-forn', a.fornecedor, ' maxlength="120"')) + invCampo('Nota fiscal', invIn('ia-nf', a.nota_fiscal, ' maxlength="60"')) + invCampo('Chave da nota (44 dígitos)', invIn('ia-nfc', a.nf_chave, ' maxlength="44" inputmode="numeric"')) +
+      invCampo('Data da compra', invIn('ia-dcompra', a.data_compra, ' type="date"')) + invCampo('Valor de compra (R$)', invIn('ia-vcompra', a.valor_compra, ' type="number" min="0" step="0.01"')) + invCampo('Garantia até', invIn('ia-gar', a.garantia_ate, ' type="date"')) +
+      invCampo('Depreciação própria (% ao ano)', invIn('ia-dep', a.depreciacao_pct_ano, ' type="number" min="0" max="100" step="0.5" placeholder="vazio: a da categoria"')) + '</div></fieldset>' +
+    '<fieldset><legend>Rede e sistema</legend><div class="grade-form">' + invCampo('Hostname', invIn('ia-host', a.hostname, ' maxlength="120"')) + invCampo('IP', invIn('ia-ip', a.ip, ' maxlength="64"')) + invCampo('MAC', invIn('ia-mac', a.mac, ' maxlength="64"')) +
+      invCampo('Sistema', invIn('ia-so', a.sistema, ' maxlength="120" placeholder="Ex.: Windows 11 Pro"')) + invCampo('Onde fica o acesso (nunca a senha)', invIn('ia-acesso', a.acesso_onde, ' maxlength="300" placeholder="Ex.: cofre de senhas, item Notebook João"'), 'largo') + '</div></fieldset>' +
+    '<fieldset><legend>Anotações</legend><textarea class="campo" id="ia-notas" rows="3" maxlength="4000">' + esc(a.notas || '') + '</textarea></fieldset></div>';
+  const dlg = invForm(novo ? 'Cadastrar equipamento' : 'Editar ' + invNomeAtivo(a), corpo, d => invSalvarAtivo(d, a));
+  const vis = () => { const s = invV(dlg, 'ia-sit'), p = invV(dlg, 'ia-prop'); dlg.querySelectorAll('.ia-so-func').forEach(x => x.hidden = s !== 'uso_funcionario'); dlg.querySelectorAll('.ia-so-app').forEach(x => x.hidden = s !== 'uso_aplicacao'); dlg.querySelectorAll('.ia-so-alug').forEach(x => x.hidden = p !== 'alugado'); };
+  vis(); dlg.addEventListener('change', vis);
+}
+async function invSalvarAtivo(d, a){
+  const v = id => invV(d, id);
+  if (!v('ia-cat')){ toast('Escolha a categoria'); return false; }
+  const nfc = v('ia-nfc').replace(/\D/g, ''); if (nfc && nfc.length !== 44){ toast('A chave da nota tem 44 dígitos'); return false; }
+  if (/(senha|password|passwd|pwd|token|secret|pin)\s*[:=]\s*\S/i.test(v('ia-acesso'))){ toast('Em "Onde fica o acesso" vai só onde ela está, nunca a senha'); return false; }
+  if (v('ia-prop') === 'alugado' && !v('ia-loc')){ toast('Diga a locadora'); return false; }
+  let modelo = v('ia-mod') || null;
+  if (!modelo && v('ia-modn')) modelo = await invGravar('inv_modelos', {categoria_id:v('ia-cat'), fabricante:v('ia-fab'), modelo:v('ia-modn')});
+  const row = {categoria_id:v('ia-cat'), modelo_id:modelo, patrimonio:v('ia-pat'), numero_serie:v('ia-serie'), descricao:v('ia-desc'), propriedade:v('ia-prop'),
+    locadora:v('ia-prop') === 'alugado' ? v('ia-loc') : '', contrato_fim:v('ia-prop') === 'alugado' ? v('ia-cfim') || null : null, valor_mensal:v('ia-prop') === 'alugado' ? invNum(v('ia-vmes')) : null,
+    fornecedor:v('ia-forn'), nota_fiscal:v('ia-nf'), nf_chave:nfc, data_compra:v('ia-dcompra') || null, valor_compra:invNum(v('ia-vcompra')), garantia_ate:v('ia-gar') || null,
+    depreciacao_pct_ano:invNum(v('ia-dep')), hostname:v('ia-host'), ip:v('ia-ip'), mac:v('ia-mac'), sistema:v('ia-so'), acesso_onde:v('ia-acesso'), notas:d.querySelector('#ia-notas').value.trim()};
+  if (a.id){ await invGravar('inv_ativos', row, a.id); toast('Equipamento salvo'); return; }
+  const sit = v('ia-sit');
+  if (sit === 'uso_funcionario' && !v('ia-func')){ toast('Escolha o funcionário'); return false; }
+  if (sit === 'uso_aplicacao' && !v('ia-app')){ toast('Escolha a aplicação'); return false; }
+  Object.assign(row, {situacao:sit, local_id:v('ia-local') || null, funcionario_id:sit === 'uso_funcionario' ? v('ia-func') : null, aplicacao_id:sit === 'uso_aplicacao' ? v('ia-app') : null});
+  const n = Math.max(1, Math.min(200, +v('ia-copias') || 1)), pm = (row.patrimonio.match(/^(.*?)(\d+)$/) || []);
+  for (let i = 0; i < n; i++){
+    const r = Object.assign({}, row);
+    if (i > 0){ r.numero_serie = ''; r.patrimonio = pm.length ? pm[1] + String(+pm[2] + i).padStart(pm[2].length, '0') : (row.patrimonio ? row.patrimonio + '-' + (i + 1) : ''); }
+    await invGravar('inv_ativos', r);
+  }
+  toast(n === 1 ? 'Equipamento cadastrado' : n + ' equipamentos cadastrados');
+}
+
+/* ---------- a ficha do equipamento ---------- */
+const INV_ACOES = {
+  estoque:['entrega','emprestimo','uso_aplicacao','uso_local','transferencia','manutencao','aguardando','defeito','perda','baixa'],
+  uso_funcionario:['devolucao','transferencia','manutencao','defeito','perda'], emprestado:['devolucao','transferencia','manutencao','defeito','perda'],
+  uso_aplicacao:['devolucao','transferencia','manutencao','defeito','perda'], uso_local:['devolucao','entrega','uso_aplicacao','transferencia','manutencao','defeito','perda'],
+  manutencao:['retorno_manutencao','defeito','baixa'], aguardando:['devolucao','entrega','uso_aplicacao','uso_local','defeito','baixa'],
+  defeito:['manutencao','devolucao','baixa'], perdido:['devolucao','baixa'], baixado:[]};
+const INV_ACAO_NOME = {entrega:'Entregar a funcionário', emprestimo:'Emprestar', uso_aplicacao:'Usar em aplicação', uso_local:'Deixar em uso no local', devolucao:'Devolver ao estoque', transferencia:'Mudar de local',
+  manutencao:'Mandar para manutenção', retorno_manutencao:'Voltou da manutenção', aguardando:'Aguardando', defeito:'Marcar com defeito', perda:'Marcar como perdido', baixa:'Dar baixa'};
+function invFichaAtivo(id){
+  const a = invAchar('ativos', id); if (!a) return;
+  const pode = podeEditar(), m = invModelo(a), movs = (INV.d.movs || []).filter(x => x.ativo_id === id), ult = movs[0];
+  const lig = (INV.d.ligacoes || []).filter(l => l.ativo_id === id || l.alvo_id === id), lics = (INV.d.lusos || []).filter(u => u.ativo_id === id);
+  const man = (INV.d.manut || []).filter(x => x.ativo_id === id).sort((x, y) => String(y.aberta_em).localeCompare(String(x.aberta_em))), anex = (INV.d.anexos || []).filter(x => x.ativo_id === id);
+  const bx = (INV.d.baixas || []).find(b => b.ativo_id === id), v = invValorAtual(a), g = invDias(a.garantia_ate);
+  const srv = typeof SRV !== 'undefined' && a.hostname ? (SRV.lista || []).find(s => s.hostname && s.hostname.toLowerCase() === a.hostname.toLowerCase()) : null;
+  const lin = (r, x) => x ? '<div class="inv-lin"><dt>' + r + '</dt><dd>' + x + '</dd></div>' : '';
+  const corpo = '<div class="inv-ficha">' +
+    '<div class="inv-ficha-topo">' + invSitHTML(a.situacao) + '<span class="inv-onde">' + esc(invOnde(a)) + '</span></div>' +
+    (pode && INV_ACOES[a.situacao] && INV_ACOES[a.situacao].length ? '<div class="inv-acoes-mov">' + INV_ACOES[a.situacao].map(t => '<button type="button" class="btn ' + (['entrega','devolucao','uso_aplicacao'].includes(t) ? '' : 'sec ') + 'peq" data-inv-mov="' + t + '">' + esc(INV_ACAO_NOME[t]) + '</button>').join('') + '</div>' : '') +
+    '<dl class="inv-dl">' + lin('Categoria', esc(invCat(a).nome)) + lin('Modelo', esc(m ? [m.fabricante, m.modelo, m.numero_modelo].filter(Boolean).join(' ') : '')) + lin('Patrimônio', esc(a.patrimonio)) + lin('Série', esc(a.numero_serie)) +
+      lin('Propriedade', esc(svNomeInv(INV_PROP, a.propriedade) + (a.propriedade === 'alugado' ? ' · ' + a.locadora + (a.contrato_fim ? ' até ' + invDia(a.contrato_fim) : '') + (a.valor_mensal ? ' · ' + brl(+a.valor_mensal) + ' por mês' : '') : ''))) +
+      lin('Compra', esc([a.data_compra ? invDia(a.data_compra) : '', a.valor_compra != null ? brl(+a.valor_compra) : '', a.fornecedor, a.nota_fiscal ? 'NF ' + a.nota_fiscal : ''].filter(Boolean).join(' · '))) +
+      lin('Valor atual', v != null ? brl(v) + ' <small>(depreciação de ' + (a.depreciacao_pct_ano != null ? +a.depreciacao_pct_ano : +invCat(a).depreciacao_pct_ano) + '% ao ano)</small>' : '') +
+      lin('Garantia', a.garantia_ate ? invDia(a.garantia_ate) + (g < 0 ? ' <b class="inv-venc">(vencida)</b>' : g <= 30 ? ' <b class="inv-quase">(vence em ' + g + ' dias)</b>' : '') : '') +
+      lin('Rede', esc([a.hostname, a.ip, a.mac].filter(Boolean).join(' · '))) + lin('Sistema', esc(a.sistema)) + lin('Onde fica o acesso', esc(a.acesso_onde)) +
+      lin('Conferência', esc([a.ultima_conferencia ? 'última em ' + invDia(a.ultima_conferencia) : '', a.proxima_conferencia ? 'próxima em ' + invDia(a.proxima_conferencia) : ''].filter(Boolean).join(' · '))) +
+      lin('Servidor', srv ? 'é o servidor <b>' + esc(srv.nome) + '</b> da aba Servidores' : '') + lin('Anotações', esc(a.notas).replace(/\n/g, '<br>')) +
+      (bx ? lin('Baixa', esc([invDia(bx.data), {venda:'Venda', doacao:'Doação', sucata:'Sucata', perda:'Perda', roubo:'Roubo', devolucao_locadora:'Devolvido à locadora', outro:'Outro'}[bx.motivo], bx.metodo_apagamento ? 'apagamento: ' + {clear:'sobrescrita (Clear)', purge:'apagamento seguro (Purge)', destroy:'destruição (Destroy)', sem_dados:'sem dados'}[bx.metodo_apagamento] : '', bx.recicladora, bx.cdf ? 'CDF ' + bx.cdf : '', bx.boletim ? 'BO ' + bx.boletim : ''].filter(Boolean).join(' · '))) : '') + '</dl>' +
+    '<section><h4>Ligações</h4>' + (lig.length ? '<ul class="inv-lista">' + lig.map(l => { const outro = invAchar('ativos', l.ativo_id === id ? l.alvo_id : l.ativo_id);
+        return '<li>' + (l.tipo === 'instalado' ? (l.ativo_id === id ? 'Instalado em ' : 'Tem instalado ') : (l.ativo_id === id ? 'Conectado a ' : 'Recebe ')) + '<button type="button" class="inv-link" data-inv-abrir="' + esc(outro ? outro.id : '') + '">' + esc(outro ? invNomeAtivo(outro) : '?') + '</button>' + (pode ? ' <button type="button" class="btn fant peq" data-inv-desligar="' + esc(l.id) + '">Tirar</button>' : '') + '</li>'; }).join('') + '</ul>' : '<p class="inv-vazio">Nenhuma.</p>') +
+      (pode ? '<button type="button" class="btn sec peq" data-inv-ligar>Conectar a outro equipamento</button>' : '') + '</section>' +
+    (lics.length ? '<section><h4>Licenças nesta máquina</h4><ul class="inv-lista">' + lics.map(u => '<li>' + esc((invAchar('licencas', u.licenca_id) || {}).nome || '') + '</li>').join('') + '</ul></section>' : '') +
+    '<section><h4>Manutenções</h4>' + (man.length ? '<ul class="inv-lista">' + man.map(x => '<li><b>' + esc({corretiva:'Corretiva', preventiva:'Preventiva', upgrade:'Upgrade', garantia:'Garantia'}[x.tipo]) + '</b> ' + invDia(x.aberta_em) + (x.concluida_em ? ' a ' + invDia(x.concluida_em) : ' (aberta)') + (x.custo != null ? ' · ' + brl(+x.custo) : '') + (x.fornecedor ? ' · ' + esc(x.fornecedor) : '') + (x.na_garantia ? ' · na garantia' : '') + (x.descricao ? '<small>' + esc(x.descricao) + '</small>' : '') +
+        (pode ? ' <button type="button" class="btn fant peq" data-inv-editar-man="' + esc(x.id) + '">Editar</button>' : '') + '</li>').join('') + '</ul>' : '<p class="inv-vazio">Nenhuma.</p>') + (pode ? '<button type="button" class="btn sec peq" data-inv-nova-man>Registrar manutenção</button>' : '') + '</section>' +
+    '<section><h4>Arquivos</h4>' + (anex.length ? '<ul class="inv-lista">' + anex.map(x => '<li><button type="button" class="inv-link" data-inv-baixar-anexo="' + esc(x.id) + '">' + esc(x.nome) + '</button> <small>' + esc({foto:'foto', nota_fiscal:'nota fiscal', termo:'termo', certificado_apagamento:'certificado de apagamento', cdf:'CDF', garantia:'garantia', contrato:'contrato', outro:'arquivo'}[x.papel]) + ' · ' + invDia(String(x.enviado_em).slice(0, 10)) + '</small></li>').join('') + '</ul>' : '<p class="inv-vazio">Nenhum.</p>') +
+      (pode ? '<label class="btn sec peq inv-enviar">Anexar foto, nota ou certificado<input type="file" hidden data-inv-anexar="' + esc(id) + '" accept="image/*,.pdf,.xml,.doc,.docx,.xls,.xlsx,.txt"></label><select class="sel peq" data-inv-papel>' + invOpts([['foto','Foto'],['nota_fiscal','Nota fiscal'],['garantia','Garantia'],['contrato','Contrato'],['certificado_apagamento','Certificado de apagamento'],['cdf','CDF (descarte)'],['outro','Outro']], 'foto') + '</select>' : '') + '</section>' +
+    '<section><h4>Histórico</h4>' + (movs.length ? '<ol class="inv-hist">' + movs.map((x, i) => { const p = x.feito_por && pessoa(x.feito_por);
+        const para = x.funcionario_para ? (invFunc(x.funcionario_para) || {}).nome : x.aplicacao_para ? invAppNome(x.aplicacao_para) : x.local_para ? invLocalNome(x.local_para) : '';
+        return '<li' + (x.tipo === 'estorno' ? ' class="inv-estorno"' : '') + '><span class="inv-num">' + invDia(x.data) + '</span><b>' + esc(INV_MOV[x.tipo] || x.tipo) + '</b>' + (para ? ' · ' + esc(para) : '') + (x.motivo ? ' · ' + esc(x.motivo) : '') + '<small>' + esc(p ? p.nome : '') + '</small>' +
+          (pode && i === 0 && !['cadastro','estorno'].includes(x.tipo) ? ' <button type="button" class="btn fant peq" data-inv-desfazer="' + esc(x.id) + '">Desfazer</button>' : '') + '</li>'; }).join('') + '</ol>' : '') + '</section>' +
+  '</div>';
+  const bts = [{txt:'Fechar', cls:'sec'}, {txt:'Etiqueta', cls:'sec', acao:() => { if (typeof invImprimirEtiquetas === 'function') invImprimirEtiquetas([id]); return false; }}];
+  if (pode) bts.push({txt:'Editar', acao:() => { setTimeout(() => invFormAtivo(id), 0); }});
+  const dlg = modal(esc(invNomeAtivo(a)), corpo, bts); dlg.classList.add('inv-modal'); dlg.dataset.invAtivo = id; INV.ficha = dlg;
+  dlg.addEventListener('click', e => {
+    const mv = e.target.closest('[data-inv-mov]'); if (mv) return invMovimentar([id], mv.dataset.invMov);
+    const df = e.target.closest('[data-inv-desfazer]'); if (df) return invDesfazer(df.dataset.invDesfazer);
+    const ab = e.target.closest('[data-inv-abrir]'); if (ab && ab.dataset.invAbrir){ dlg.close(); dlg.remove(); return invFichaAtivo(ab.dataset.invAbrir); }
+    if (e.target.closest('[data-inv-ligar]')) return invLigar(id);
+    const dl = e.target.closest('[data-inv-desligar]'); if (dl) return invApagar('inv_ligacoes', dl.dataset.invDesligar, 'Tirar esta ligação?');
+    if (e.target.closest('[data-inv-nova-man]')) return invFormManutencao(id, null);
+    const em = e.target.closest('[data-inv-editar-man]'); if (em) return invFormManutencao(id, em.dataset.invEditarMan);
+    const ba = e.target.closest('[data-inv-baixar-anexo]'); if (ba) return invAbrirAnexo(ba.dataset.invBaixarAnexo);
+  });
+  dlg.addEventListener('change', e => { const f = e.target.closest('[data-inv-anexar]'); if (f && f.files[0]) invAnexar(f.files[0], {ativo_id:id, papel:(dlg.querySelector('[data-inv-papel]') || {}).value || 'outro'}); });
+}
+// a ficha aberta é redesenhada quando os dados mudam
+const _invRecarregarFicha = invRecarregar;
+invRecarregar = async function(){ await _invRecarregarFicha(); const f = INV.ficha; if (f && f.isConnected && f.dataset.invAtivo){ const id = f.dataset.invAtivo; f.close(); f.remove(); invFichaAtivo(id); } };
+
+/* ---------- movimentar (um ou vários) ---------- */
+function invMovimentar(ids, tipo){
+  const ativos = ids.map(i => invAchar('ativos', i)).filter(Boolean); if (!ativos.length) return;
+  const um = ativos.length === 1, a = ativos[0];
+  const precisaFunc = ['entrega','emprestimo'].includes(tipo), precisaApp = tipo === 'uso_aplicacao', precisaLocal = tipo === 'transferencia';
+  const corpo = '<div class="grade-form">' + (um ? '' : '<p class="largo inv-ajuda">' + ativos.length + ' equipamentos: ' + esc(ativos.slice(0, 8).map(invNomeAtivo).join(', ')) + (ativos.length > 8 ? '…' : '') + '</p>') +
+    (precisaFunc ? invCampo('Funcionário', '<select class="sel" id="im-func">' + invFuncOpts(null) + '</select>') : '') +
+    (precisaApp ? invCampo('Aplicação', '<select class="sel" id="im-app">' + invAppOpts(null) + '</select>') : '') +
+    (tipo !== 'baixa' ? invCampo(precisaLocal ? 'Para o local' : 'Local', '<select class="sel" id="im-local">' + invLocalOpts(['devolucao','retorno_manutencao'].includes(tipo) ? (a.local_id || '') : '', precisaLocal ? 'Escolha o local' : 'Sem local') + '</select>') : '') +
+    (tipo === 'emprestimo' ? invCampo('Volta em', invIn('im-volta', iso(dAdd(HOJE, 7)), ' type="date"')) : '') +
+    (tipo === 'retorno_manutencao' ? invCampo('Voltou para', '<select class="sel" id="im-sit">' + invOpts([['estoque','Estoque'],['defeito','Ainda com defeito']], 'estoque') + '</select>') : '') +
+    invCampo('Data', invIn('im-data', invHoje(), ' type="date"')) + invCampo('Motivo', invIn('im-motivo', '', ' maxlength="500" placeholder="Ex.: admissão, troca, home office"'), 'largo') +
+    (['entrega','emprestimo','devolucao'].includes(tipo) ? '<label class="cm-ck largo"><input type="checkbox" id="im-termo" checked> Gerar o termo de responsabilidade para assinar</label>' : '') + '</div>' +
+    (tipo === 'baixa' ? '<div class="grade-form inv-baixa"><p class="largo inv-ajuda">A baixa tira o equipamento de circulação para sempre. Anote o motivo e, se tinha dados, como foram apagados (NIST 800-88) e o certificado de descarte (CDF).</p>' +
+      invCampo('Motivo', '<select class="sel" id="ib-motivo">' + invOpts([['sucata','Sucata'],['venda','Venda'],['doacao','Doação'],['perda','Perda'],['roubo','Roubo'],['devolucao_locadora','Devolvido à locadora'],['outro','Outro']], 'sucata') + '</select>') +
+      invCampo('Apagamento dos dados', '<select class="sel" id="ib-apag">' + invOpts([['','Não informado'],['sem_dados','Não guarda dados'],['clear','Sobrescrita (Clear)'],['purge','Apagamento seguro (Purge)'],['destroy','Destruição física (Destroy)']], '') + '</select>') +
+      invCampo('Quem apagou', invIn('ib-quem', '', ' maxlength="160"')) + invCampo('Recicladora', invIn('ib-rec', '', ' maxlength="160"')) + invCampo('MTR', invIn('ib-mtr', '', ' maxlength="60"')) + invCampo('CDF', invIn('ib-cdf', '', ' maxlength="60"')) +
+      invCampo('Boletim de ocorrência', invIn('ib-bo', '', ' maxlength="60"')) + invCampo('Valor da venda (R$)', invIn('ib-venda', '', ' type="number" min="0" step="0.01"')) + '</div>' : '');
+  const titulo = (INV_ACAO_NOME[tipo] || tipo) + (um ? ': ' + invNomeAtivo(a) : ' (' + ativos.length + ')');
+  invForm(esc(titulo), corpo, async d => {
+    const v = id => invV(d, id);
+    if (precisaFunc && !v('im-func')){ toast('Escolha o funcionário'); return false; }
+    if (precisaApp && !v('im-app')){ toast('Escolha a aplicação'); return false; }
+    if (precisaLocal && !v('im-local')){ toast('Escolha o local'); return false; }
+    if (tipo === 'emprestimo' && !v('im-volta')){ toast('Diga quando volta'); return false; }
+    if (tipo === 'baixa' && ['roubo','perda'].includes(v('ib-motivo')) && !v('ib-bo')) toast('Dica: guarde o número do boletim de ocorrência');
+    const funcAntes = ativos.map(x => x.funcionario_id).find(Boolean);
+    let termo = null;
+    const querTermo = d.querySelector('#im-termo') && d.querySelector('#im-termo').checked, funcTermo = tipo === 'devolucao' ? funcAntes : v('im-func');
+    if (querTermo && funcTermo && typeof invCriarTermo === 'function') termo = await invCriarTermo(funcTermo, tipo === 'devolucao' ? 'devolucao' : 'entrega', ativos.map(x => x.id));
+    for (const x of ativos){
+      if (tipo === 'baixa') await invGravar('inv_baixas', {ativo_id:x.id, motivo:v('ib-motivo'), data:v('im-data') || invHoje(), metodo_apagamento:v('ib-apag'), apagamento_por:v('ib-quem'), recicladora:v('ib-rec'), mtr:v('ib-mtr'), cdf:v('ib-cdf'), boletim:v('ib-bo'), valor_venda:invNum(v('ib-venda'))})
+        .catch(e => { if (!/duplicate|unique/i.test(String(e.message))) throw e; });
+      await invRpc('inv_movimentar', {p_ativo:x.id, p_tipo:tipo, p_situacao:v('im-sit') || null, p_local:v('im-local') || null, p_funcionario:v('im-func') || null, p_aplicacao:v('im-app') || null,
+        p_devolucao:v('im-volta') || null, p_motivo:v('im-motivo'), p_data:v('im-data') || null, p_termo:termo});
+    }
+    toast(ativos.length === 1 ? 'Movimentação gravada' : ativos.length + ' movimentações gravadas');
+    if (termo && typeof invImprimirTermo === 'function') invImprimirTermo(termo);
+  });
+}
+function invDesfazer(movId){
+  modal('Desfazer a última movimentação', '<p>O equipamento volta para como estava antes. Nada some: fica registrado um estorno no histórico.</p><label class="lb">Por quê<input class="campo" id="id-motivo" maxlength="300" placeholder="Ex.: registrei o funcionário errado"></label>',
+    [{txt:'Cancelar', cls:'sec'}, {txt:'Desfazer', acao:d => { const m = d.querySelector('#id-motivo').value.trim(); const mv = invAchar('movs', movId); invRpc('inv_estornar', {p_mov:movId, p_motivo:m}).then(async () => { if (mv && mv.tipo === 'baixa'){ await invBanco().from('inv_baixas').delete().eq('ativo_id', mv.ativo_id); } toast('Desfeito'); invRecarregar(); }).catch(invErro); }}]);
+}
+function invLigar(id){
+  const outros = (INV.d.ativos || []).filter(a => a.id !== id && a.situacao !== 'baixado');
+  invForm('Conectar a outro equipamento', '<div class="grade-form">' + invCampo('Como', '<select class="sel" id="il-tipo">' + invOpts([['conectado','Conectado a (monitor no computador, dock)'],['instalado','Instalado em (memória, disco dentro do equipamento)']], 'conectado') + '</select>') +
+    invCampo('Equipamento', '<select class="sel" id="il-alvo">' + invOpts(outros.map(a => [a.id, invNomeAtivo(a)]), '', 'Escolha') + '</select>', 'largo') + '</div>', async d => {
+      if (!invV(d, 'il-alvo')){ toast('Escolha o equipamento'); return false; }
+      await invGravar('inv_ligacoes', {ativo_id:id, alvo_id:invV(d, 'il-alvo'), tipo:invV(d, 'il-tipo')}); toast('Ligação gravada'); });
+}
+function invApagar(tabela, id, pergunta){
+  modal('Confirmar', '<p>' + esc(pergunta) + '</p>', [{txt:'Cancelar', cls:'sec'}, {txt:'Sim', acao:() => { invBanco().from(tabela).delete().eq('id', id).select('id').then(({data, error}) => {
+    if (error || !data || !data.length){ toast('Não deu: ' + (error ? error.message : 'o banco não deixou (ainda é usado ou tem histórico)')); return; } toast('Feito'); invRecarregar(); }); }}]);
+}
+
+/* ---------- manutenção ---------- */
+function invFormManutencao(ativo, id){
+  const x = id ? invAchar('manut', id) : {tipo:'corretiva', aberta_em:invHoje()}, a = invAchar('ativos', ativo), g = invDias(a.garantia_ate);
+  invForm(id ? 'Editar manutenção' : 'Registrar manutenção', '<div class="grade-form">' + invCampo('Tipo', '<select class="sel" id="ix-tipo">' + invOpts([['corretiva','Corretiva'],['preventiva','Preventiva'],['upgrade','Upgrade'],['garantia','Garantia']], x.tipo) + '</select>') +
+    invCampo('Aberta em', invIn('ix-ab', x.aberta_em, ' type="date"')) + invCampo('Concluída em', invIn('ix-co', x.concluida_em, ' type="date"')) + invCampo('Fornecedor', invIn('ix-forn', x.fornecedor, ' maxlength="120"')) +
+    invCampo('Custo (R$)', invIn('ix-custo', x.custo, ' type="number" min="0" step="0.01"')) + '<label class="cm-ck"><input type="checkbox" id="ix-gar"' + ((id ? x.na_garantia : g != null && g >= 0) ? ' checked' : '') + '> Na garantia</label>' +
+    invCampo('O que foi feito', '<textarea class="campo" id="ix-desc" rows="3" maxlength="2000">' + esc(x.descricao || '') + '</textarea>', 'largo') + '</div>' +
+    (!id ? '<p class="inv-ajuda">Para o equipamento sair de circulação enquanto conserta, use também "Mandar para manutenção".</p>' : ''), async d => {
+      const co = invV(d, 'ix-co'); if (co && co < invV(d, 'ix-ab')){ toast('A conclusão é antes da abertura'); return false; }
+      await invGravar('inv_manutencoes', {ativo_id:ativo, tipo:invV(d, 'ix-tipo'), aberta_em:invV(d, 'ix-ab') || invHoje(), concluida_em:co || null, fornecedor:invV(d, 'ix-forn'), custo:invNum(invV(d, 'ix-custo')), na_garantia:invV(d, 'ix-gar'), descricao:invV(d, 'ix-desc')}, id);
+      toast('Manutenção gravada'); });
+}
+
+/* ---------- funcionários ---------- */
+function invFormFunc(id){
+  const f = id ? invAchar('funcionarios', id) : {situacao:'ativo'}, apps = invAppsDoCliente(INV.cli), usa = new Set((INV.d.fapps || []).filter(x => x.funcionario_id === id).map(x => x.no_id));
+  const corpo = '<div class="grade-form">' + invCampo('Nome', invIn('if-nome', f.nome, ' maxlength="160"'), 'largo') + invCampo('CPF', invIn('if-cpf', invCpf(f.cpf), ' maxlength="14" inputmode="numeric" placeholder="000.000.000-00"')) +
+    invCampo('Telefone', invIn('if-tel', f.telefone, ' maxlength="30"')) + invCampo('Cargo', invIn('if-cargo', f.cargo, ' maxlength="120"')) +
+    invCampo('Departamento', invIn('if-dep', f.departamento, ' maxlength="120" list="if-deps"') + '<datalist id="if-deps">' + [...new Set((INV.d.funcionarios || []).map(x => x.departamento).filter(Boolean))].map(x => '<option value="' + esc(x) + '">').join('') + '</datalist>') +
+    invCampo('Situação', '<select class="sel" id="if-sit">' + invOpts([['ativo','Ativo'],['afastado','Afastado'],['desligado','Desligado']], f.situacao) + '</select>') + invCampo('Desligado em', invIn('if-desl', f.desligado_em, ' type="date"')) +
+    (apps.length ? '<fieldset class="largo"><legend>Usa as aplicações</legend>' + apps.map(a => '<label class="cm-ck"><input type="checkbox" data-if-app="' + esc(a.id) + '"' + (usa.has(a.id) ? ' checked' : '') + '> ' + esc(a.nome) + '</label>').join('') + '</fieldset>' : '') +
+    invCampo('Anotações', '<textarea class="campo" id="if-notas" rows="2" maxlength="1000">' + esc(f.notas || '') + '</textarea>', 'largo') + '</div>' +
+    '<p class="inv-ajuda">Só cadastro de controle: o funcionário não entra no sistema. Guarde só o necessário (LGPD).</p>';
+  invForm(id ? 'Editar ' + esc(f.nome) : 'Cadastrar funcionário', corpo, async d => {
+    const nome = invV(d, 'if-nome'), cpf = invV(d, 'if-cpf').replace(/\D/g, '');
+    if (!nome){ toast('Escreva o nome'); return false; }
+    if (cpf && !invCpfValido(cpf)){ toast('CPF inválido'); return false; }
+    const sit = invV(d, 'if-sit');
+    const fid = await invGravar('inv_funcionarios', {nome, cpf, telefone:invV(d, 'if-tel'), cargo:invV(d, 'if-cargo'), departamento:invV(d, 'if-dep'), situacao:sit, desligado_em:sit === 'desligado' ? (invV(d, 'if-desl') || invHoje()) : null, notas:invV(d, 'if-notas')}, id);
+    const sb = invBanco(), marc = [...d.querySelectorAll('[data-if-app]')].filter(x => x.checked).map(x => x.dataset.ifApp);
+    for (const no of [...usa].filter(x => !marc.includes(x))){ const {error} = await sb.from('inv_funcionarios_apps').delete().eq('funcionario_id', fid).eq('no_id', no); if (error) throw error; }
+    const novos = marc.filter(x => !usa.has(x)).map(no => ({funcionario_id:fid, cliente_id:INV.cli, no_id:no}));
+    if (novos.length){ const {error} = await sb.from('inv_funcionarios_apps').insert(novos); if (error) throw error; }
+    toast('Funcionário salvo');
+    if (sit === 'desligado' && (INV.d.ativos || []).some(a => a.funcionario_id === fid)) setTimeout(() => invFichaFunc(fid), 400);
+  });
+}
+function invCpfValido(d){
+  if (!/^\d{11}$/.test(d) || /^(\d)\1{10}$/.test(d)) return false;
+  const dv = n => { let s = 0; for (let i = 0; i < n; i++) s += +d[i] * (n + 1 - i); const r = (s * 10) % 11; return r === 10 ? 0 : r; };
+  return dv(9) === +d[9] && dv(10) === +d[10];
+}
+function invFichaFunc(id){
+  const f = invAchar('funcionarios', id); if (!f) return;
+  const eq = (INV.d.ativos || []).filter(a => a.funcionario_id === id), lics = (INV.d.lusos || []).filter(u => u.funcionario_id === id), pode = podeEditar();
+  const movs = (INV.d.movs || []).filter(m => m.funcionario_para === id || m.funcionario_de === id), termos = (INV.d.termos || []).filter(t => t.funcionario_id === id);
+  const apps = (INV.d.fapps || []).filter(x => x.funcionario_id === id).map(x => invAppNome(x.no_id)).filter(Boolean);
+  const corpo = '<div class="inv-ficha"><dl class="inv-dl"><div class="inv-lin"><dt>Cargo</dt><dd>' + esc([f.cargo, f.departamento].filter(Boolean).join(' · ')) + '</dd></div><div class="inv-lin"><dt>CPF</dt><dd>' + esc(invCpfMasc(f.cpf)) + '</dd></div>' +
+      '<div class="inv-lin"><dt>Telefone</dt><dd>' + esc(f.telefone) + '</dd></div><div class="inv-lin"><dt>Situação</dt><dd>' + esc({ativo:'Ativo', afastado:'Afastado', desligado:'Desligado' + (f.desligado_em ? ' em ' + invDia(f.desligado_em) : '')}[f.situacao]) + '</dd></div>' +
+      (apps.length ? '<div class="inv-lin"><dt>Usa</dt><dd>' + esc(apps.join(', ')) + '</dd></div>' : '') + '</dl>' +
+    (f.situacao === 'desligado' && (eq.length || lics.length) ? '<p class="inv-aviso">Desligado e ainda com ' + eq.length + (eq.length === 1 ? ' equipamento' : ' equipamentos') + (lics.length ? ' e ' + lics.length + (lics.length === 1 ? ' licença' : ' licenças') : '') + ' para recolher.</p>' : '') +
+    '<section><h4>Com ele agora</h4>' + (eq.length ? invTabelaAtivos(eq, false) : '<p class="inv-vazio">Nada.</p>') +
+      (pode && eq.length ? '<button type="button" class="btn sec peq" data-iff-devolver>Devolver tudo ao estoque</button>' : '') + (pode && eq.length && typeof invCriarTermo === 'function' ? '<button type="button" class="btn sec peq" data-iff-termo>Gerar termo do que está com ele</button>' : '') + '</section>' +
+    (lics.length ? '<section><h4>Licenças</h4><ul class="inv-lista">' + lics.map(u => '<li>' + esc((invAchar('licencas', u.licenca_id) || {}).nome || '') + (pode ? ' <button type="button" class="btn fant peq" data-iff-tirar-lic="' + esc(u.id) + '">Liberar</button>' : '') + '</li>').join('') + '</ul></section>' : '') +
+    (termos.length ? '<section><h4>Termos</h4><ul class="inv-lista">' + termos.map(t => '<li>' + esc(t.tipo === 'entrega' ? 'Entrega' : 'Devolução') + ' de ' + invDia(String(t.gerado_em).slice(0, 10)) + ' · ' + (t.assinado_em ? 'assinado em ' + invDia(t.assinado_em) : '<b class="inv-quase">falta a assinatura</b>') +
+      ' <button type="button" class="btn fant peq" data-iff-ver-termo="' + esc(t.id) + '">Abrir</button>' + (pode && !t.assinado_em ? '<label class="btn fant peq inv-enviar">Anexar assinado<input type="file" hidden accept=".pdf,image/*" data-iff-assinado="' + esc(t.id) + '"></label>' : '') + '</li>').join('') + '</ul></section>' : '') +
+    '<section><h4>Histórico</h4>' + invMovsHTML(movs.slice(0, 50)) + '</section></div>';
+  const bts = [{txt:'Fechar', cls:'sec'}]; if (pode) bts.push({txt:'Editar', acao:() => { setTimeout(() => invFormFunc(id), 0); }});
+  const dlg = modal(esc(f.nome), corpo, bts); dlg.classList.add('inv-modal');
+  dlg.addEventListener('click', e => {
+    if (e.target.closest('[data-iff-devolver]')){ dlg.close(); dlg.remove(); return invMovimentar(eq.map(a => a.id), 'devolucao'); }
+    if (e.target.closest('[data-iff-termo]')) return invCriarTermo(id, 'entrega', eq.map(a => a.id)).then(t => { invImprimirTermo(t); invRecarregar(); }).catch(invErro);
+    const tl = e.target.closest('[data-iff-tirar-lic]'); if (tl){ dlg.close(); dlg.remove(); return invApagar('inv_licencas_uso', tl.dataset.iffTirarLic, 'Liberar esta licença?'); }
+    const vt = e.target.closest('[data-iff-ver-termo]'); if (vt) return invImprimirTermo(vt.dataset.iffVerTermo);
+    const ab = e.target.closest('[data-inv-abrir]'); if (ab){ dlg.close(); dlg.remove(); return invFichaAtivo(ab.dataset.invAbrir); }
+  });
+  dlg.addEventListener('change', e => { const f2 = e.target.closest('[data-iff-assinado]'); if (f2 && f2.files[0]) invAnexar(f2.files[0], {termo_id:f2.dataset.iffAssinado, papel:'termo'}).then(() => invGravar('inv_termos', {assinado_em:invHoje()}, f2.dataset.iffAssinado)).then(() => { dlg.close(); dlg.remove(); invRecarregar(); }).catch(invErro); });
+}
+
+/* ---------- locais, categorias, modelos ---------- */
+function invFormLocal(id){
+  const l = id ? invAchar('locais', id) : {tipo:'sala', ativo:true};
+  invForm(id ? 'Editar local' : 'Novo local', '<div class="grade-form">' + invCampo('Nome', invIn('il-nome', l.nome, ' maxlength="120" placeholder="Ex.: Matriz, Sala 3, Almoxarifado"')) +
+    invCampo('Tipo', '<select class="sel" id="il-tp">' + invOpts([['unidade','Unidade (matriz, filial)'],['predio','Prédio'],['andar','Andar'],['sala','Sala'],['armario','Armário'],['almoxarifado','Almoxarifado'],['remoto','Remoto (home office)'],['outro','Outro']], l.tipo) + '</select>') +
+    invCampo('Dentro de', '<select class="sel" id="il-pai">' + invOpts((INV.d.locais || []).filter(x => x.id !== id).map(x => [x.id, invLocalNome(x.id)]), l.pai_id, 'Nenhum') + '</select>') +
+    invCampo('Endereço', invIn('il-end', l.endereco, ' maxlength="300"'), 'largo') + '<label class="cm-ck"><input type="checkbox" id="il-at"' + (l.ativo ? ' checked' : '') + '> Em uso</label></div>', async d => {
+      if (!invV(d, 'il-nome')){ toast('Escreva o nome'); return false; }
+      await invGravar('inv_locais', {nome:invV(d, 'il-nome'), tipo:invV(d, 'il-tp'), pai_id:invV(d, 'il-pai') || null, endereco:invV(d, 'il-end'), ativo:invV(d, 'il-at')}, id); toast('Local salvo'); },
+    id ? [{txt:'Excluir', cls:'sec', acao:d => { d.close(); d.remove(); invApagar('inv_locais', id, 'Excluir este local? Só dá se nada estiver nele.'); return false; }}] : []);
+}
+function invFormCat(id){
+  const c = id ? invAchar('categorias', id) : {grupo:'outro', controle:'unidade', depreciacao_pct_ano:20, conferencia_meses:12, ativo:true};
+  invForm(id ? 'Editar categoria' : 'Nova categoria', '<div class="grade-form">' + invCampo('Nome', invIn('ic-nome', c.nome, ' maxlength="80"')) + invCampo('Grupo', '<select class="sel" id="ic-grupo">' + invOpts(INV_GRUPOS, c.grupo) + '</select>') +
+    invCampo('Controle', '<select class="sel" id="ic-ctrl"' + (id ? ' disabled' : '') + '>' + invOpts([['unidade','Um a um (com patrimônio e série)'],['quantidade','Por quantidade (cabos, fontes)']], c.controle) + '</select>') +
+    invCampo('Depreciação (% ao ano)', invIn('ic-dep', c.depreciacao_pct_ano, ' type="number" min="0" max="100" step="0.5"')) + invCampo('Vida útil (meses)', invIn('ic-vida', c.vida_util_meses, ' type="number" min="1" max="600"')) +
+    invCampo('Conferir a cada (meses)', invIn('ic-conf', c.conferencia_meses, ' type="number" min="1" max="120"')) + '<label class="cm-ck"><input type="checkbox" id="ic-at"' + (c.ativo ? ' checked' : '') + '> Em uso</label></div>', async d => {
+      if (!invV(d, 'ic-nome')){ toast('Escreva o nome'); return false; }
+      await invGravar('inv_categorias', Object.assign({nome:invV(d, 'ic-nome'), grupo:invV(d, 'ic-grupo'), depreciacao_pct_ano:invNum(invV(d, 'ic-dep')) || 0, vida_util_meses:invNum(invV(d, 'ic-vida')), conferencia_meses:invNum(invV(d, 'ic-conf')) || 12, ativo:invV(d, 'ic-at')}, id ? {} : {controle:invV(d, 'ic-ctrl')}), id); toast('Categoria salva'); });
+}
+function invFormModelo(id){
+  const m = id ? invAchar('modelos', id) : {ativo:true};
+  invForm(id ? 'Editar modelo' : 'Novo modelo', '<div class="grade-form">' + invCampo('Categoria', '<select class="sel" id="io-cat">' + invOpts((INV.d.categorias || []).map(c => [c.id, c.nome]), m.categoria_id, 'Escolha') + '</select>') +
+    invCampo('Fabricante', invIn('io-fab', m.fabricante, ' maxlength="80"')) + invCampo('Modelo', invIn('io-mod', m.modelo, ' maxlength="120"')) + invCampo('Número do modelo', invIn('io-num', m.numero_modelo, ' maxlength="80"')) +
+    invCampo('Fim de vida (meses)', invIn('io-fim', m.fim_vida_meses, ' type="number" min="1" max="600"')) + invCampo('Especificações', '<textarea class="campo" id="io-esp" rows="3" maxlength="2000">' + esc(m.especificacoes || '') + '</textarea>', 'largo') + '</div>', async d => {
+      if (!invV(d, 'io-cat') || !invV(d, 'io-mod')){ toast('Escolha a categoria e escreva o modelo'); return false; }
+      await invGravar('inv_modelos', {categoria_id:invV(d, 'io-cat'), fabricante:invV(d, 'io-fab'), modelo:invV(d, 'io-mod'), numero_modelo:invV(d, 'io-num'), fim_vida_meses:invNum(invV(d, 'io-fim')), especificacoes:invV(d, 'io-esp')}, id); toast('Modelo salvo'); });
+}
+
+/* ---------- estoque por quantidade ---------- */
+function invFormItem(id){
+  const i = id ? invAchar('itens', id) : {unidade:'un', estoque_minimo:0, ativo:true}, cats = (INV.d.categorias || []).filter(c => c.controle === 'quantidade');
+  invForm(id ? 'Editar item' : 'Novo item de estoque', '<div class="grade-form">' + invCampo('Nome', invIn('it-nome', i.nome, ' maxlength="160" placeholder="Ex.: Cabo HDMI 2 m"'), 'largo') +
+    invCampo('Categoria', '<select class="sel" id="it-cat">' + invOpts(cats.map(c => [c.id, c.nome]), i.categoria_id, 'Escolha') + '</select>') + invCampo('Unidade', '<select class="sel" id="it-un">' + invOpts([['un','unidade'],['m','metro'],['cx','caixa'],['pct','pacote'],['kit','kit']], i.unidade) + '</select>') +
+    invCampo('Estoque mínimo', invIn('it-min', i.estoque_minimo, ' type="number" min="0"')) + invCampo('Valor unitário (R$)', invIn('it-val', i.valor_unitario, ' type="number" min="0" step="0.01"')) +
+    '<label class="cm-ck"><input type="checkbox" id="it-at"' + (i.ativo ? ' checked' : '') + '> Em uso</label>' + invCampo('Anotações', invIn('it-notas', i.notas, ' maxlength="1000"'), 'largo') + '</div>', async d => {
+      if (!invV(d, 'it-nome') || !invV(d, 'it-cat')){ toast('Escreva o nome e escolha a categoria'); return false; }
+      await invGravar('inv_itens', {nome:invV(d, 'it-nome'), categoria_id:invV(d, 'it-cat'), unidade:invV(d, 'it-un'), estoque_minimo:invNum(invV(d, 'it-min')) || 0, valor_unitario:invNum(invV(d, 'it-val')), ativo:invV(d, 'it-at'), notas:invV(d, 'it-notas')}, id); toast('Item salvo'); });
+}
+function invEstoqueMov(id, tipo){
+  const i = invAchar('itens', id); if (!i) return;
+  if (!(INV.d.locais || []).length){ toast('Cadastre antes um local (aba Locais)'); return; }
+  const nome = {entrada:'Entrada', saida:'Saída', transferencia:'Transferir', ajuste:'Ajustar saldo'}[tipo];
+  const dlg = invForm(nome + ': ' + esc(i.nome), '<div class="grade-form">' + invCampo(tipo === 'entrada' ? 'Entra no local' : 'Do local', '<select class="sel" id="ie-local">' + invLocalOpts('', 'Escolha') + '</select>') +
+    (tipo === 'transferencia' ? invCampo('Para o local', '<select class="sel" id="ie-para">' + invLocalOpts('', 'Escolha') + '</select>') : '') +
+    invCampo(tipo === 'ajuste' ? 'Saldo certo (conferido)' : 'Quantidade', invIn('ie-q', '', ' type="number" min="0" step="1"')) +
+    (tipo === 'saida' ? invCampo('Para o funcionário', '<select class="sel" id="ie-func">' + invFuncOpts(null) + '</select>') + invCampo('Ou para a aplicação', '<select class="sel" id="ie-app">' + invAppOpts(null) + '</select>') : '') +
+    invCampo('Data', invIn('ie-data', invHoje(), ' type="date"')) + invCampo('Motivo', invIn('ie-motivo', '', ' maxlength="500" placeholder="' + (tipo === 'entrada' ? 'Ex.: compra NF 123' : 'Ex.: sala de reunião') + '"'), 'largo') + '</div>' +
+    '<p class="inv-ajuda" data-ie-saldo></p>', async d => {
+      const q = +invV(d, 'ie-q'); if (!invV(d, 'ie-local') || (!q && tipo !== 'ajuste') || q < 0){ toast('Escolha o local e a quantidade'); return false; }
+      await invRpc('inv_estoque', {p_item:id, p_tipo:tipo, p_local:invV(d, 'ie-local'), p_quantidade:q, p_local_para:invV(d, 'ie-para') || null, p_funcionario:invV(d, 'ie-func') || null, p_aplicacao:invV(d, 'ie-app') || null, p_motivo:invV(d, 'ie-motivo'), p_data:invV(d, 'ie-data') || null});
+      toast('Estoque atualizado'); });
+  const mostrar = () => { const l = invV(dlg, 'ie-local'), p = dlg.querySelector('[data-ie-saldo]'); if (p) p.textContent = l ? 'Saldo neste local: ' + invSaldoItem(i, l) + ' ' + i.unidade : ''; };
+  if (dlg){ dlg.addEventListener('change', mostrar); mostrar(); }
+}
+
+/* ---------- licenças ---------- */
+function invFormLic(id){
+  const l = id ? invAchar('licencas', id) : {tipo:'assinatura', quantidade:1, moeda:'BRL', recorrencia:'mensal'};
+  invForm(id ? 'Editar licença' : 'Nova licença', '<div class="grade-form">' + invCampo('Nome', invIn('ic2-nome', l.nome, ' maxlength="160" placeholder="Ex.: Microsoft 365 Business Standard"'), 'largo') +
+    invCampo('Fornecedor', invIn('ic2-forn', l.fornecedor, ' maxlength="120"')) + invCampo('Tipo', '<select class="sel" id="ic2-tipo">' + invOpts([['assinatura','Assinatura'],['perpetua','Perpétua'],['oem','OEM (veio com a máquina)']], l.tipo) + '</select>') +
+    invCampo('Quantidade', invIn('ic2-q', l.quantidade, ' type="number" min="1"')) + invCampo('Onde fica a chave (não a chave)', invIn('ic2-chave', l.chave_onde, ' maxlength="300" placeholder="Ex.: portal Microsoft, conta ti@cliente"'), 'largo') +
+    invCampo('Início', invIn('ic2-ini', l.inicio, ' type="date"')) + invCampo('Vence em', invIn('ic2-vence', l.vence_em, ' type="date"')) + invCampo('Valor', invIn('ic2-val', l.valor, ' type="number" min="0" step="0.01"')) +
+    invCampo('Moeda', '<select class="sel" id="ic2-moeda">' + invOpts([['BRL','R$'],['USD','US$'],['EUR','€']], l.moeda) + '</select>') + invCampo('Cobrança', '<select class="sel" id="ic2-rec">' + invOpts([['mensal','Mensal'],['anual','Anual'],['unico','Única']], l.recorrencia) + '</select>') +
+    '<label class="cm-ck"><input type="checkbox" id="ic2-auto"' + (l.renovacao_automatica ? ' checked' : '') + '> Renovação automática</label></div>', async d => {
+      if (!invV(d, 'ic2-nome')){ toast('Escreva o nome'); return false; }
+      const q = Math.max(1, +invV(d, 'ic2-q') || 1); if (id && q < invUsosLicenca(l).length){ toast('Já há ' + invUsosLicenca(l).length + ' em uso: libere antes de diminuir'); return false; }
+      await invGravar('inv_licencas', {nome:invV(d, 'ic2-nome'), fornecedor:invV(d, 'ic2-forn'), tipo:invV(d, 'ic2-tipo'), quantidade:q, chave_onde:invV(d, 'ic2-chave'), inicio:invV(d, 'ic2-ini') || null, vence_em:invV(d, 'ic2-vence') || null,
+        valor:invNum(invV(d, 'ic2-val')), moeda:invV(d, 'ic2-moeda'), recorrencia:invV(d, 'ic2-rec'), renovacao_automatica:invV(d, 'ic2-auto')}, id); toast('Licença salva'); },
+    id ? [{txt:'Excluir', cls:'sec', acao:d => { d.close(); d.remove(); invApagar('inv_licencas', id, 'Excluir esta licença e as atribuições dela?'); return false; }}] : []);
+}
+function invLicUso(id){
+  const l = invAchar('licencas', id), us = invUsosLicenca(l); if (us.length >= l.quantidade){ toast('Esta licença já está toda em uso (' + us.length + ' de ' + l.quantidade + ')'); return; }
+  invForm('Atribuir: ' + esc(l.nome), '<div class="grade-form">' + invCampo('Para o funcionário', '<select class="sel" id="iu-func">' + invFuncOpts(null) + '</select>') +
+    invCampo('Ou para o equipamento', '<select class="sel" id="iu-at">' + invOpts((INV.d.ativos || []).filter(a => a.situacao !== 'baixado').map(a => [a.id, invNomeAtivo(a)]), '', 'Nenhum') + '</select>') + '</div>' +
+    '<p class="inv-ajuda">' + us.length + ' de ' + l.quantidade + ' em uso.</p>', async d => {
+      const f = invV(d, 'iu-func'), a = invV(d, 'iu-at'); if (!!f === !!a){ toast('Escolha um funcionário ou um equipamento (só um)'); return false; }
+      await invGravar('inv_licencas_uso', {licenca_id:id, funcionario_id:f || null, ativo_id:a || null}); toast('Licença atribuída'); });
+}
+
+/* ---------- arquivos (bucket privado "inventario") ---------- */
+async function invAnexar(arquivo, ref){
+  const sb = invBanco(); if (!sb) return;
+  if (arquivo.size > 25 * 1024 * 1024){ toast('O arquivo passa de 25 MB'); return; }
+  const caminho = INV.cli + '/' + novoUuid() + '-' + arquivo.name.replace(/[^\w.\-]+/g, '_').slice(-120);
+  const {error} = await sb.storage.from('inventario').upload(caminho, arquivo, {contentType:arquivo.type || 'application/octet-stream', upsert:false});
+  if (error){ toast('Não deu para enviar: ' + error.message); throw error; }
+  await invGravar('inv_anexos', Object.assign({nome:arquivo.name.slice(0, 200), storage_path:caminho, mime:arquivo.type || '', tamanho:arquivo.size}, ref));
+  toast('Arquivo anexado'); invRecarregar();
+}
+async function invAbrirAnexo(id){
+  const x = invAchar('anexos', id), sb = invBanco(); if (!x || !sb) return;
+  const {data, error} = await sb.storage.from('inventario').createSignedUrl(x.storage_path, 600);
+  if (error || !data){ toast('Não deu para abrir o arquivo'); return; }
+  const a = document.createElement('a'); a.href = data.signedUrl; a.target = '_blank'; a.rel = 'noopener'; document.body.appendChild(a); a.click(); a.remove();
+}
+
+/* ---------- cliques da tela ---------- */
+function invClique(e){
+  const t = s => e.target.closest(s);
+  let x;
+  if ((x = t('[data-inv-abrir]')) && x.dataset.invAbrir) return invFichaAtivo(x.dataset.invAbrir);
+  if ((x = t('[data-inv-func]'))) return invFichaFunc(x.dataset.invFunc);
+  if (t('[data-inv-novo-ativo]')) return invFormAtivo(null);
+  if (t('[data-inv-novo-func]')) return invFormFunc(null);
+  if (t('[data-inv-novo-item]')) return invFormItem(null);
+  if ((x = t('[data-inv-editar-item]'))) return invFormItem(x.dataset.invEditarItem);
+  if ((x = t('[data-inv-estoque]'))) return invEstoqueMov(x.dataset.invEstoque, x.dataset.invTipo);
+  if (t('[data-inv-nova-lic]')) return invFormLic(null);
+  if ((x = t('[data-inv-editar-lic]'))) return invFormLic(x.dataset.invEditarLic);
+  if ((x = t('[data-inv-lic-uso]'))) return invLicUso(x.dataset.invLicUso);
+  if (t('[data-inv-novo-local]')) return invFormLocal(null);
+  if ((x = t('[data-inv-editar-local]'))) return invFormLocal(x.dataset.invEditarLocal);
+  if (t('[data-inv-nova-cat]')) return invFormCat(null);
+  if ((x = t('[data-inv-editar-cat]'))) return invFormCat(x.dataset.invEditarCat);
+  if (t('[data-inv-novo-modelo]')) return invFormModelo(null);
+  if ((x = t('[data-inv-editar-modelo]'))) return invFormModelo(x.dataset.invEditarModelo);
+  const marcados = () => $$('#ops-corpo [data-inv-sel]:checked').map(c => c.dataset.invSel);
+  if (t('[data-inv-etiquetas]')){ const m = marcados(); if (!m.length){ toast('Marque os equipamentos na lista'); return; } return typeof invImprimirEtiquetas === 'function' && invImprimirEtiquetas(m); }
+  if (t('[data-inv-lote-mov]')){ const m = marcados(); if (!m.length){ toast('Marque os equipamentos na lista'); return; } return invLoteMov(m); }
+  if ((x = t('[data-inv-csv]')) && typeof invBaixarCsv === 'function') return invBaixarCsv(x.dataset.invCsv);
+  if ((x = t('[data-inv-item-trabalho]')) && typeof invCriarItemTrabalho === 'function') return invCriarItemTrabalho(x.dataset.invItemTrabalho, x.dataset.invItemTxt);
+  if (typeof invCliqueExtra === 'function') invCliqueExtra(e);
+}
+// movimentar vários: as ações que valem para todos os marcados
+function invLoteMov(ids){
+  const sits = [...new Set(ids.map(i => (invAchar('ativos', i) || {}).situacao))], comuns = Object.keys(INV_ACAO_NOME).filter(t => sits.every(s => (INV_ACOES[s] || []).includes(t)));
+  if (!comuns.length){ toast('Os marcados estão em situações diferentes: nenhuma ação vale para todos'); return; }
+  modal('Movimentar ' + ids.length + ' equipamentos', '<div class="inv-acoes-mov">' + comuns.map(c => '<button type="button" class="btn sec peq" data-lm="' + c + '">' + esc(INV_ACAO_NOME[c]) + '</button>').join('') + '</div>', [{txt:'Cancelar', cls:'sec'}])
+    .addEventListener('click', function(e){ const b = e.target.closest('[data-lm]'); if (b){ this.close(); this.remove(); invMovimentar(ids, b.dataset.lm); } });
+}
+if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {invFormAtivo, invFichaAtivo, invMovimentar, invFormFunc, invCpfValido, invProximoPatrimonio});
+
+/* ===== Inventário: termo, etiquetas, planilha, conferência e ligações com o resto do sistema =====
+   Termo de responsabilidade (impresso para assinar; o assinado volta como anexo), etiquetas com QR code (o QR abre o
+   equipamento no CicloDev), planilha para baixar e para importar (com prévia dos erros), conferência física (por
+   patrimônio, série ou câmera), e as ligações: Custos, Ficha técnica, ficha do cliente e itens na frente Infraestrutura. */
+
+/* ---------- imprimir (num quadro escondido, sem abrir outra janela) ---------- */
+function invImprimir(html){
+  if (location.protocol === 'file:' && window.__tf){ window.__ultimaImpressao = html; return; }   // nos testes, só guarda
+  const f = document.createElement('iframe'); f.setAttribute('aria-hidden', 'true'); f.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0';
+  document.body.appendChild(f); const doc = f.contentDocument; doc.open(); doc.write(html); doc.close();
+  setTimeout(() => { try { f.contentWindow.focus(); f.contentWindow.print(); } catch (e) {} setTimeout(() => f.remove(), 60000); }, 350);
+}
+const INV_PAPEL = '<style>body{font:13px/1.5 Arial,Helvetica,sans-serif;color:#111;margin:28px}h1{font-size:18px;margin:0 0 4px}h2{font-size:14px;margin:18px 0 6px}table{width:100%;border-collapse:collapse;margin:8px 0}' +
+  'td,th{border:1px solid #999;padding:5px 6px;text-align:left;font-size:12px}th{background:#eee}.peq{font-size:11px;color:#444}.ass{display:flex;gap:40px;margin-top:48px}.ass div{flex:1;border-top:1px solid #111;padding-top:4px;text-align:center;font-size:12px}' +
+  'ol li{margin:3px 0}@page{margin:14mm}</style>';
+
+/* ---------- termo de responsabilidade ---------- */
+INV.termosHtml = {};
+function invTermoHtml(func, tipo, ativos, quando){
+  const c = byId('clients', INV.cli) || {}, fi = c.ficha || {}, doc = fi.documento || c.doc || '';
+  const entrega = tipo === 'entrega';
+  return '<!doctype html><html><head><meta charset="utf-8"><title>Termo de ' + (entrega ? 'responsabilidade' : 'devolução') + '</title>' + INV_PAPEL + '</head><body>' +
+    '<h1>' + (entrega ? 'Termo de responsabilidade pelo uso de equipamentos' : 'Termo de devolução de equipamentos') + '</h1>' +
+    '<p class="peq">' + esc(fi.razao_social || c.nome || '') + (doc ? ' · CNPJ/CPF ' + esc(doc) : '') + '</p>' +
+    '<h2>Funcionário</h2><p><b>' + esc(func.nome) + '</b>' + (func.cpf ? ' · CPF ' + esc(invCpf(func.cpf)) : '') + (func.cargo ? ' · ' + esc(func.cargo) : '') + (func.departamento ? ' · ' + esc(func.departamento) : '') + '</p>' +
+    '<h2>Equipamentos</h2><table><thead><tr><th>Patrimônio</th><th>Equipamento</th><th>Série</th><th>Estado</th></tr></thead><tbody>' +
+      ativos.map(a => '<tr><td>' + esc(a.patrimonio || '') + '</td><td>' + esc(a.descricao || (invModelo(a) ? [invModelo(a).fabricante, invModelo(a).modelo].filter(Boolean).join(' ') : invCat(a).nome)) + '</td><td>' + esc(a.numero_serie || '') + '</td><td>' + (a.situacao === 'defeito' ? 'Com defeito' : 'Funcionando') + '</td></tr>').join('') + '</tbody></table>' +
+    (entrega ? '<h2>Compromissos</h2><ol><li>Usar os equipamentos só para o trabalho, com cuidado, e não emprestar a terceiros.</li><li>Avisar logo em caso de defeito, perda, furto ou roubo (com boletim de ocorrência).</li>' +
+      '<li>Devolver tudo no desligamento ou quando a empresa pedir, no estado em que recebeu, fora o desgaste normal do uso.</li><li>Desconto por dano só nos casos do art. 462, § 1º, da CLT (dolo, ou culpa quando previamente acordado).</li></ol>'
+      : '<p>A empresa recebeu de volta os equipamentos acima, conferidos na data abaixo.</p>') +
+    '<p>' + esc(c.ficha && c.ficha.cidade ? c.ficha.cidade + ', ' : '') + esc(invDia(quando || invHoje())) + '</p>' +
+    '<div class="ass"><div>' + esc(func.nome) + '<br>Funcionário</div><div>' + esc(fi.razao_social || c.nome || 'Empresa') + '<br>Empresa</div></div></body></html>';
+}
+async function invCriarTermo(funcId, tipo, ativoIds){
+  const f = invAchar('funcionarios', funcId), ativos = ativoIds.map(i => invAchar('ativos', i)).filter(Boolean); if (!f || !ativos.length) return null;
+  const html = invTermoHtml(f, tipo, ativos);
+  const id = await invGravar('inv_termos', {funcionario_id:funcId, tipo, ativos:ativos.map(a => a.id), texto:html.slice(0, 20000)});
+  INV.termosHtml[id] = html; return id;
+}
+function invImprimirTermo(id){
+  const t = invAchar('termos', id), html = INV.termosHtml[id] || (t && t.texto); if (!html){ toast('Termo não encontrado'); return; }
+  invImprimir(html); toast('Termo pronto para imprimir: depois de assinado, anexe na ficha do funcionário');
+}
+
+/* ---------- etiquetas com QR code ---------- */
+const invLinkAtivo = id => location.origin + location.pathname + '#inv:' + id;
+function invQrSvg(texto){
+  if (typeof qrcode !== 'function') return '';
+  const q = qrcode(0, 'M'); q.addData(texto); q.make(); return q.createSvgTag({cellSize:3, margin:0, scalable:true});
+}
+function invImprimirEtiquetas(ids){
+  const c = byId('clients', INV.cli) || {}, ativos = ids.map(i => invAchar('ativos', i)).filter(Boolean); if (!ativos.length) return;
+  const html = '<!doctype html><html><head><meta charset="utf-8"><title>Etiquetas</title><style>body{margin:8mm;font:11px Arial,Helvetica,sans-serif}.g{display:grid;grid-template-columns:repeat(3,62mm);gap:4mm}' +
+    '.e{border:1px dashed #999;padding:3mm;display:grid;grid-template-columns:22mm 1fr;gap:3mm;align-items:center;height:26mm;overflow:hidden;break-inside:avoid}.e svg{width:22mm;height:22mm}.p{font:700 15px Arial;letter-spacing:.5px}.c{font-size:9px;color:#444}@page{margin:6mm}</style></head><body><div class="g">' +
+    ativos.map(a => '<div class="e">' + invQrSvg(invLinkAtivo(a.id)) + '<div><div class="p">' + esc(a.patrimonio || 'sem patrimônio') + '</div><div>' + esc((a.descricao || invCat(a).nome).slice(0, 48)) + '</div>' + (a.numero_serie ? '<div class="c">S/N ' + esc(a.numero_serie) + '</div>' : '') + '<div class="c">' + esc(c.nome || '') + '</div></div></div>').join('') +
+    '</div></body></html>';
+  invImprimir(html); toast(ativos.length === 1 ? 'Etiqueta pronta para imprimir' : ativos.length + ' etiquetas prontas para imprimir');
+}
+// o QR (ou o link) abre o equipamento: #inv:<id>
+async function invAbrirPeloLink(){
+  const m = /^#inv:([0-9a-f-]{36})$/.exec(location.hash || ''); if (!m) return;
+  const t0 = Date.now(); while (!invBanco() && Date.now() - t0 < 30000) await new Promise(r => setTimeout(r, 500));
+  const sb = invBanco(); if (!sb) return;
+  const {data} = await sb.from('inv_ativos').select('id, cliente_id').eq('id', m[1]).limit(1);
+  const a = (data || []).find(x => x.id === m[1]); if (!a){ toast('Equipamento não encontrado (ou sem acesso a este cliente)'); return; }
+  UI.sel = 'client:' + a.cliente_id; UI.view = 'inventario'; if (typeof abrirArvore === 'function') abrirArvore(UI.sel);
+  if (typeof abrirModulo === 'function') abrirModulo('operacoes'); rOperacoes();
+  await invCarregar(true); invRender(); invFichaAtivo(a.id);
+  history.replaceState(null, '', location.pathname + location.search);
+}
+window.addEventListener('hashchange', invAbrirPeloLink); setTimeout(invAbrirPeloLink, 1500);
+
+/* ---------- planilha: baixar ---------- */
+const invCsvCel = v => { const s = v == null ? '' : String(v); return /[";\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+const invCsv = linhas => '﻿' + linhas.map(l => l.map(invCsvCel).join(';')).join('\r\n');
+function invBaixar(nome, texto){ const b = new Blob([texto], {type:'text/csv;charset=utf-8'}), a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = nome; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000); }
+const invMoeda = v => v == null ? '' : (+v).toFixed(2).replace('.', ',');
+function invLinhasCsv(qual){
+  if (qual === 'equipamentos') return [['Patrimônio','Série','Categoria','Fabricante','Modelo','Descrição','Situação','Funcionário','Departamento','Aplicação','Local','Propriedade','Locadora','Fornecedor','Nota fiscal','Data da compra','Valor de compra','Valor atual','Garantia até','Hostname','IP','MAC','Sistema','Notas']].concat(
+    invFiltrar(INV.d.ativos || []).map(a => { const m = invModelo(a), f = invFunc(a.funcionario_id);
+      return [a.patrimonio, a.numero_serie, invCat(a).nome, m ? m.fabricante : '', m ? m.modelo : '', a.descricao, (INV_SIT[a.situacao] || [a.situacao])[0], f ? f.nome : '', f ? f.departamento : '', invAppNome(a.aplicacao_id), invLocalNome(a.local_id),
+        svNomeInv(INV_PROP, a.propriedade), a.locadora, a.fornecedor, a.nota_fiscal, invDia(a.data_compra), invMoeda(a.valor_compra), invMoeda(invValorAtual(a)), invDia(a.garantia_ate), a.hostname, a.ip, a.mac, a.sistema, a.notas]; }));
+  if (qual === 'funcionarios') return [['Nome','CPF','Telefone','Cargo','Departamento','Situação','Equipamentos com ele']].concat((INV.d.funcionarios || []).map(f => [f.nome, invCpf(f.cpf), f.telefone, f.cargo, f.departamento, f.situacao, (INV.d.ativos || []).filter(a => a.funcionario_id === f.id).length]));
+  if (qual === 'estoque') return [['Item','Categoria','Unidade','Local','Quantidade','Mínimo (total)']].concat((INV.d.saldos || []).filter(s => +s.quantidade > 0).map(s => { const i = invAchar('itens', s.item_id) || {}; return [i.nome, (invAchar('categorias', i.categoria_id) || {}).nome, i.unidade, invLocalNome(s.local_id), +s.quantidade, +i.estoque_minimo || '']; }));
+  if (qual === 'historico') return [['Data','Movimentação','Equipamento ou item','Quantidade','Para','Motivo','Quem']].concat((INV.d.movs || []).map(m => { const a = m.ativo_id && invAchar('ativos', m.ativo_id), it = m.item_id && invAchar('itens', m.item_id), p = m.feito_por && pessoa(m.feito_por);
+    return [invDia(m.data), INV_MOV[m.tipo] || m.tipo, a ? invNomeAtivo(a) : it ? it.nome : '', m.quantidade != null ? +m.quantidade : '', m.funcionario_para ? (invFunc(m.funcionario_para) || {}).nome : m.aplicacao_para ? invAppNome(m.aplicacao_para) : invLocalNome(m.local_para), m.motivo, p ? p.nome : '']; }));
+  return [];
+}
+function invBaixarCsv(qual){
+  const c = byId('clients', INV.cli) || {nome:'cliente'}, l = invLinhasCsv(qual);
+  invBaixar('inventario-' + qual + '-' + c.nome.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-') + '-' + invHoje() + '.csv', invCsv(l));
+}
+
+/* ---------- planilha: importar ---------- */
+const INV_MODELO_EQ = ['patrimonio','serie','categoria','fabricante','modelo','descricao','situacao','local','funcionario','aplicacao','propriedade','locadora','fornecedor','nota_fiscal','data_compra','valor_compra','garantia_ate','hostname','ip','mac','sistema','notas'];
+const INV_MODELO_FU = ['nome','cpf','telefone','cargo','departamento','situacao'];
+const invChaveCol = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+const INV_ALIAS = {numero_de_serie:'serie', n_serie:'serie', serial:'serie', s_n:'serie', patrimonio_plaqueta:'patrimonio', plaqueta:'patrimonio', tag:'patrimonio', nf:'nota_fiscal', nota:'nota_fiscal',
+  data_de_compra:'data_compra', compra:'data_compra', valor:'valor_compra', valor_de_compra:'valor_compra', garantia:'garantia_ate', garantia_ate:'garantia_ate', usuario:'funcionario', responsavel:'funcionario', setor:'departamento', fone:'telefone', celular:'telefone', app:'aplicacao', sistema_operacional:'sistema', so:'sistema', observacoes:'notas', obs:'notas'};
+function invLerCsv(texto){
+  texto = texto.replace(/^﻿/, ''); const prim = texto.split(/\r?\n/)[0] || '';
+  const sep = [';', '\t', ','].sort((a, b) => prim.split(b).length - prim.split(a).length)[0];
+  const linhas = []; let lin = [], cel = '', aspas = false;
+  for (let i = 0; i < texto.length; i++){ const ch = texto[i];
+    if (aspas){ if (ch === '"'){ if (texto[i + 1] === '"'){ cel += '"'; i++; } else aspas = false; } else cel += ch; continue; }
+    if (ch === '"'){ aspas = true; continue; }
+    if (ch === sep){ lin.push(cel); cel = ''; continue; }
+    if (ch === '\n' || ch === '\r'){ if (ch === '\r' && texto[i + 1] === '\n') i++; lin.push(cel); cel = ''; if (lin.some(x => x.trim())) linhas.push(lin); lin = []; continue; }
+    cel += ch; }
+  lin.push(cel); if (lin.some(x => x.trim())) linhas.push(lin);
+  if (!linhas.length) return [];
+  const cab = linhas[0].map(h => { const k = invChaveCol(h); return INV_ALIAS[k] || k; });
+  return linhas.slice(1).map((l, n) => { const o = {_linha:n + 2}; cab.forEach((k, i) => { o[k] = (l[i] || '').trim(); }); return o; });
+}
+const invData = s => { s = String(s || '').trim(); let m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(s); if (m) return m[3] + '-' + m[2].padStart(2, '0') + '-' + m[1].padStart(2, '0'); m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s); return m ? m[0] : (s ? 'ruim' : null); };
+const invValor = s => { s = String(s || '').replace(/[R$\s]/g, ''); if (!s) return null; if (/,\d{1,2}$/.test(s)) s = s.replace(/\./g, '').replace(',', '.'); const n = +s; return isFinite(n) ? n : NaN; };
+const invAcha = (lista, campo, v) => { const n = invChaveCol(v); return n ? lista.find(x => invChaveCol(x[campo]) === n) : null; };
+function invPrepararEquipamentos(linhas){
+  const cats = (INV.d.categorias || []).filter(c => c.controle === 'unidade'), apps = invAppsDoCliente(INV.cli), pats = new Set((INV.d.ativos || []).map(a => a.patrimonio.toLowerCase()).filter(Boolean)), noArq = new Set();
+  return linhas.map(l => {
+    const erros = [], r = {linha:l._linha, dados:l};
+    r.cat = invAcha(cats, 'nome', l.categoria); if (!r.cat) erros.push(l.categoria ? 'categoria "' + l.categoria + '" não existe' : 'falta a categoria');
+    const pat = (l.patrimonio || '').trim(); if (pat){ if (pats.has(pat.toLowerCase())) erros.push('patrimônio ' + pat + ' já existe'); else if (noArq.has(pat.toLowerCase())) erros.push('patrimônio ' + pat + ' repetido na planilha'); noArq.add(pat.toLowerCase()); }
+    if (l.funcionario){ const cpf = l.funcionario.replace(/\D/g, ''); r.func = (INV.d.funcionarios || []).find(f => (cpf.length === 11 && f.cpf === cpf) || invChaveCol(f.nome) === invChaveCol(l.funcionario)); if (!r.func) erros.push('funcionário "' + l.funcionario + '" não cadastrado'); }
+    if (l.aplicacao){ r.app = invAcha(apps, 'nome', l.aplicacao); if (!r.app) erros.push('aplicação "' + l.aplicacao + '" não é deste cliente'); }
+    if (r.func && r.app) erros.push('ou funcionário ou aplicação, não os dois');
+    r.local = l.local ? invAcha(INV.d.locais || [], 'nome', l.local) : null; r.localNovo = l.local && !r.local ? l.local.trim() : '';
+    const sitTxt = invChaveCol(l.situacao);
+    r.sit = r.func ? 'uso_funcionario' : r.app ? 'uso_aplicacao' : ({'':'estoque', estoque:'estoque', em_estoque:'estoque', disponivel:'estoque', em_uso_no_local:'uso_local', uso_local:'uso_local', no_local:'uso_local', aguardando:'aguardando', defeito:'defeito', com_defeito:'defeito', quebrado:'defeito'})[sitTxt];
+    if (!r.sit) erros.push('situação "' + l.situacao + '" (use: estoque, no local, aguardando, defeito; em uso: preencha o funcionário ou a aplicação)');
+    const prop = invChaveCol(l.propriedade); r.prop = ({'':'proprio', proprio:'proprio', alugado:'alugado', locado:'alugado', comodato:'comodato', byod:'byod', do_funcionario:'byod'})[prop]; if (!r.prop) erros.push('propriedade "' + l.propriedade + '"');
+    if (r.prop === 'alugado' && !l.locadora) erros.push('alugado precisa da locadora');
+    r.dc = invData(l.data_compra); r.ga = invData(l.garantia_ate); if (r.dc === 'ruim') erros.push('data da compra (use dia/mês/ano)'); if (r.ga === 'ruim') erros.push('garantia (use dia/mês/ano)');
+    r.vc = invValor(l.valor_compra); if (Number.isNaN(r.vc)) erros.push('valor de compra');
+    r.modeloNovo = !l.modelo ? null : ((INV.d.modelos || []).find(m => invChaveCol(m.modelo) === invChaveCol(l.modelo) && invChaveCol(m.fabricante) === invChaveCol(l.fabricante || m.fabricante)) || {novo:true, fabricante:l.fabricante || '', modelo:l.modelo});
+    r.erros = erros; return r;
+  });
+}
+function invPrepararFuncionarios(linhas){
+  const cpfs = new Set((INV.d.funcionarios || []).map(f => f.cpf).filter(Boolean)), noArq = new Set();
+  return linhas.map(l => { const erros = [], cpf = (l.cpf || '').replace(/\D/g, '');
+    if (!l.nome) erros.push('falta o nome');
+    if (cpf){ if (!invCpfValido(cpf)) erros.push('CPF inválido'); else if (cpfs.has(cpf)) erros.push('CPF já cadastrado'); else if (noArq.has(cpf)) erros.push('CPF repetido na planilha'); noArq.add(cpf); }
+    const sit = ({'':'ativo', ativo:'ativo', afastado:'afastado', desligado:'desligado'})[invChaveCol(l.situacao)]; if (!sit) erros.push('situação "' + l.situacao + '"');
+    return {linha:l._linha, dados:l, cpf, sit, erros}; });
+}
+function invPlanilhaHTML(){
+  const pv = INV.previa, pode = podeEditar();
+  const bloco = (qual, tit, txt) => '<section class="inv-quadro"><h4>' + tit + '</h4><p class="inv-ajuda">' + txt + '</p><div class="inv-acoes-topo"><button type="button" class="btn sec peq" data-inv-modelo-csv="' + qual + '">Baixar o modelo da planilha</button>' +
+    '<button type="button" class="btn sec peq" data-inv-csv="' + qual + '">Baixar o que já existe</button>' + (pode ? '<label class="btn peq inv-enviar">Escolher a planilha (CSV)<input type="file" hidden accept=".csv,.txt,text/csv" data-inv-importar="' + qual + '"></label>' : '') + '</div>' +
+    (pv && pv.qual === qual ? invPreviaHTML(pv) : '') + '</section>';
+  return '<p class="inv-ajuda">Planilha no formato CSV (no Excel: Salvar como, CSV separado por ponto e vírgula). A primeira linha tem os nomes das colunas. Antes de gravar aparece a prévia, com os erros de cada linha: nada é gravado enquanto houver erro.</p>' +
+    bloco('funcionarios', 'Funcionários', 'Colunas: nome, cpf, telefone, cargo, departamento, situacao (ativo, afastado ou desligado). Importe os funcionários antes dos equipamentos que estão com eles.') +
+    bloco('equipamentos', 'Equipamentos', 'Colunas: patrimonio, serie, categoria (igual a uma das categorias), fabricante, modelo, descricao, situacao, local, funcionario (nome ou CPF), aplicacao, propriedade, locadora, fornecedor, nota_fiscal, data_compra, valor_compra, garantia_ate, hostname, ip, mac, sistema, notas. Local e modelo que não existem são criados.') +
+    bloco('estoque', 'Estoque (baixar)', 'O saldo de cada item em cada local.');
+}
+function invPreviaHTML(pv){
+  const ruins = pv.linhas.filter(l => l.erros.length);
+  return '<div class="inv-previa"><p><b>' + pv.linhas.length + ' linhas</b> · ' + (ruins.length ? '<b class="inv-venc">' + ruins.length + ' com erro</b>' : 'nenhum erro') + '</p>' +
+    (ruins.length ? '<ul class="inv-erros">' + ruins.slice(0, 50).map(l => '<li>Linha ' + l.linha + ': ' + esc(l.erros.join('; ')) + '</li>').join('') + '</ul>' : '') +
+    (!ruins.length && pv.linhas.length ? '<button type="button" class="btn" data-inv-importar-ok>Importar ' + pv.linhas.length + (pv.qual === 'equipamentos' ? ' equipamentos' : ' funcionários') + '</button>' : '') + '<button type="button" class="btn fant peq" data-inv-previa-limpar>Limpar</button></div>';
+}
+async function invImportarAgora(){
+  const pv = INV.previa; if (!pv || pv.linhas.some(l => l.erros.length)) return;
+  const btn = $('#ops-corpo [data-inv-importar-ok]'); if (btn) btn.disabled = true;
+  let n = 0;
+  try {
+    if (pv.qual === 'funcionarios'){
+      for (const r of pv.linhas){ const d = r.dados; await invGravar('inv_funcionarios', {nome:d.nome, cpf:r.cpf, telefone:d.telefone || '', cargo:d.cargo || '', departamento:d.departamento || '', situacao:r.sit, desligado_em:r.sit === 'desligado' ? invHoje() : null}); n++; }
+    } else {
+      const locais = {}, modelos = {};
+      for (const r of pv.linhas){
+        const d = r.dados; let local = r.local ? r.local.id : null;
+        if (r.localNovo){ const k = invChaveCol(r.localNovo); local = locais[k] || (locais[k] = await invGravar('inv_locais', {nome:r.localNovo, tipo:'sala'})); }
+        let modelo = r.modeloNovo && r.modeloNovo.id ? r.modeloNovo.id : null;
+        if (r.modeloNovo && r.modeloNovo.novo){ const k = invChaveCol(r.modeloNovo.fabricante + '|' + r.modeloNovo.modelo); modelo = modelos[k] || (modelos[k] = await invGravar('inv_modelos', {categoria_id:r.cat.id, fabricante:r.modeloNovo.fabricante, modelo:r.modeloNovo.modelo})); }
+        await invGravar('inv_ativos', {categoria_id:r.cat.id, modelo_id:modelo, patrimonio:d.patrimonio || '', numero_serie:d.serie || '', descricao:d.descricao || '', situacao:r.sit, local_id:local,
+          funcionario_id:r.func ? r.func.id : null, aplicacao_id:r.app ? r.app.id : null, propriedade:r.prop, locadora:d.locadora || '', fornecedor:d.fornecedor || '', nota_fiscal:d.nota_fiscal || '',
+          data_compra:r.dc, valor_compra:r.vc, garantia_ate:r.ga, hostname:d.hostname || '', ip:d.ip || '', mac:d.mac || '', sistema:d.sistema || '', notas:d.notas || ''});
+        n++;
+      }
+    }
+  } catch (e){ invErro(e); }
+  INV.previa = null; toast(n + (n === 1 ? ' linha importada' : ' linhas importadas')); invRecarregar();
+}
+
+/* ---------- conferência física ---------- */
+function invConferenciaHTML(){
+  const C = (INV.d.conferencias || []).slice().sort((a, b) => String(b.iniciada_em).localeCompare(String(a.iniciada_em))), pode = podeEditar();
+  const ab = INV.confAberta && invAchar('conferencias', INV.confAberta);
+  if (ab) return invConferenciaAbertaHTML(ab);
+  return '<div class="inv-acoes-topo">' + (pode ? '<button type="button" class="btn" data-inv-nova-conf>Nova conferência</button>' : '') + '</div>' +
+    '<p class="inv-ajuda">Vá ao local, leia a etiqueta (câmera do celular ou leitor) ou digite o patrimônio. O que não for achado aparece no fim, para marcar como perdido ou procurar.</p>' +
+    (C.length ? '<div class="tabela-rolo"><table class="inv-tab"><thead><tr><th>Conferência</th><th>Local</th><th>Começou</th><th class="inv-num">Achados</th><th>Situação</th><th></th></tr></thead><tbody>' + C.map(c => {
+      const it = (INV.d.citens || []).filter(x => x.conferencia_id === c.id);
+      return '<tr><td><b>' + esc(c.nome) + '</b></td><td>' + esc(c.local_id ? invLocalNome(c.local_id) : 'Todos') + '</td><td>' + invDia(String(c.iniciada_em).slice(0, 10)) + '</td><td class="inv-num">' + it.filter(x => x.achado).length + '</td>' +
+        '<td>' + (c.concluida_em ? 'Concluída em ' + invDia(String(c.concluida_em).slice(0, 10)) : '<b>Aberta</b>') + '</td><td><button type="button" class="btn fant peq" data-inv-abrir-conf="' + esc(c.id) + '">Abrir</button></td></tr>'; }).join('') + '</tbody></table></div>' : '<p class="inv-vazio">Nenhuma conferência ainda.</p>');
+}
+// o que deve estar no local: menos o que está com uma pessoa (fica com ela, não no local)
+function invEsperados(c){ return (INV.d.ativos || []).filter(a => !['baixado','uso_funcionario','emprestado','perdido'].includes(a.situacao) && (!c.local_id || a.local_id === c.local_id)); }
+function invConferenciaAbertaHTML(c){
+  const it = (INV.d.citens || []).filter(x => x.conferencia_id === c.id), marc = new Map(it.map(x => [x.ativo_id, x])), esp = invEsperados(c), aberta = !c.concluida_em && podeEditar();
+  const achados = esp.filter(a => marc.has(a.id) && marc.get(a.id).achado), faltam = esp.filter(a => !marc.has(a.id) || !marc.get(a.id).achado), fora = it.filter(x => x.achado && !esp.some(a => a.id === x.ativo_id));
+  const linha = (a, ok) => '<li><button type="button" class="inv-link" data-inv-abrir="' + esc(a.id) + '">' + esc(invNomeAtivo(a)) + '</button> <small>' + esc(invOnde(a)) + '</small>' +
+    (aberta ? (ok ? '' : ' <button type="button" class="btn fant peq" data-inv-achei="' + esc(a.id) + '">Achei</button>') + (marc.has(a.id) && !marc.get(a.id).achado ? ' <small class="inv-venc">não achado</small>' : aberta && !ok ? ' <button type="button" class="btn fant peq" data-inv-nao-achei="' + esc(a.id) + '">Não achei</button>' : '') : '') + '</li>';
+  return '<div class="inv-acoes-topo"><button type="button" class="btn fant" data-inv-fechar-conf>Voltar</button><b>' + esc(c.nome) + '</b> <span class="inv-conta">' + esc(c.local_id ? invLocalNome(c.local_id) : 'todos os locais') + '</span></div>' +
+    (aberta ? '<div class="inv-ler"><input class="campo" data-inv-codigo placeholder="Patrimônio, série ou leitura do QR (Enter confirma)" autocomplete="off"><button type="button" class="btn" data-inv-ler-ok>Conferir</button>' +
+      ('BarcodeDetector' in window && navigator.mediaDevices ? '<button type="button" class="btn sec" data-inv-camera>Ler com a câmera</button>' : '') + '</div>' : '') +
+    '<div class="inv-kpis">' + invKpi(esp.length, 'esperados') + invKpi(achados.length, 'achados') + invKpi(faltam.length, 'faltando', faltam.length ? 'inv-alerta' : '') + invKpi(fora.length, 'achados fora do esperado') + '</div>' +
+    '<div class="inv-grade2"><section class="inv-quadro"><h4>Faltando</h4>' + (faltam.length ? '<ul class="inv-lista">' + faltam.map(a => linha(a, false)).join('') + '</ul>' : '<p class="inv-vazio">Nada faltando.</p>') + '</section>' +
+      '<section class="inv-quadro"><h4>Achados</h4>' + (achados.length || fora.length ? '<ul class="inv-lista">' + achados.map(a => linha(a, true)).join('') + fora.map(x => { const a = invAchar('ativos', x.ativo_id); return a ? '<li>' + esc(invNomeAtivo(a)) + ' <small class="inv-quase">achado aqui, mas devia estar em ' + esc(invOnde(a) || 'outro lugar') + '</small></li>' : ''; }).join('') + '</ul>' : '<p class="inv-vazio">Nada ainda.</p>') + '</section></div>' +
+    (aberta ? '<div class="inv-acoes-topo"><button type="button" class="btn" data-inv-concluir-conf>Concluir a conferência</button>' + (faltam.length ? '<span class="inv-ajuda">Ao concluir, dá para marcar os ' + faltam.length + ' que faltam como perdidos.</span>' : '') + '</div>' : '');
+}
+function invAcharPorCodigo(txt){
+  txt = String(txt || '').trim(); if (!txt) return null;
+  const m = /#inv:([0-9a-f-]{36})/.exec(txt); if (m) return invAchar('ativos', m[1]);
+  const n = txt.toLowerCase(); return (INV.d.ativos || []).find(a => a.patrimonio && a.patrimonio.toLowerCase() === n) || (INV.d.ativos || []).find(a => a.numero_serie && a.numero_serie.toLowerCase() === n);
+}
+async function invConferirCodigo(txt){
+  const c = invAchar('conferencias', INV.confAberta), a = invAcharPorCodigo(txt);
+  if (!a){ toast('Não achei nenhum equipamento com "' + txt + '"'); return; }
+  await invRpc('inv_conferir', {p_conferencia:c.id, p_ativo:a.id, p_achado:true, p_local:c.local_id || a.local_id || null, p_notas:''}).then(() => toast('Conferido: ' + invNomeAtivo(a))).catch(invErro);
+  await invRecarregar(); const i = $('#ops-corpo [data-inv-codigo]'); if (i) i.focus();
+}
+async function invCamera(){
+  let video, parar = false, stream;
+  const dlg = modal('Ler a etiqueta', '<video class="inv-video" autoplay playsinline muted></video><p class="inv-ajuda">Aponte para o QR ou o código de barras.</p>', [{txt:'Fechar', cls:'sec', acao:() => { parar = true; }}]);
+  dlg.addEventListener('close', () => { parar = true; if (stream) stream.getTracks().forEach(t => t.stop()); });
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}}); video = dlg.querySelector('video'); video.srcObject = stream;
+    const det = new BarcodeDetector({formats:['qr_code','code_128','code_39','ean_13']});
+    while (!parar && dlg.isConnected){ const r = await det.detect(video).catch(() => []); if (r.length){ parar = true; stream.getTracks().forEach(t => t.stop()); dlg.close(); dlg.remove(); await invConferirCodigo(r[0].rawValue); return; } await new Promise(x => setTimeout(x, 250)); }
+  } catch (e){ toast('A câmera não abriu aqui: digite o patrimônio'); if (dlg.isConnected){ dlg.close(); dlg.remove(); } }
+}
+function invNovaConferencia(){
+  invForm('Nova conferência', '<div class="grade-form">' + invCampo('Nome', invIn('ic3-nome', 'Conferência de ' + invDia(invHoje()), ' maxlength="160"')) + invCampo('Local', '<select class="sel" id="ic3-local">' + invLocalOpts('', 'Todos os locais') + '</select>') + '</div>', async d => {
+    const id = await invGravar('inv_conferencias', {nome:invV(d, 'ic3-nome') || 'Conferência', local_id:invV(d, 'ic3-local') || null}); INV.confAberta = id; toast('Conferência aberta'); });
+}
+function invConcluirConferencia(){
+  const c = invAchar('conferencias', INV.confAberta), it = (INV.d.citens || []).filter(x => x.conferencia_id === c.id), faltam = invEsperados(c).filter(a => !it.some(x => x.ativo_id === a.id && x.achado));
+  modal('Concluir a conferência', '<p>' + (faltam.length ? faltam.length + (faltam.length === 1 ? ' equipamento não foi achado.' : ' equipamentos não foram achados.') : 'Tudo achado.') + '</p>' + (faltam.length ? '<label class="cm-ck"><input type="checkbox" id="cc-perdidos"> Marcar os que faltam como perdidos (dá para desfazer depois)</label>' : ''),
+    [{txt:'Cancelar', cls:'sec'}, {txt:'Concluir', acao:d => { const perd = d.querySelector('#cc-perdidos') && d.querySelector('#cc-perdidos').checked; (async () => {
+      await invGravar('inv_conferencias', {concluida_em:new Date().toISOString()}, c.id);
+      if (perd) for (const a of faltam.filter(x => (INV_ACOES[x.situacao] || []).includes('perda'))) await invRpc('inv_movimentar', {p_ativo:a.id, p_tipo:'perda', p_situacao:null, p_local:null, p_funcionario:null, p_aplicacao:null, p_devolucao:null, p_motivo:'Não achado na ' + c.nome, p_data:null, p_termo:null});
+      toast('Conferência concluída'); invRecarregar(); })().catch(invErro); }}]);
+}
+
+/* ---------- item de trabalho na frente Infraestrutura ---------- */
+function invCriarItemTrabalho(ativoId, texto){
+  const a = invAchar('ativos', ativoId), apps = invAppsDoCliente(INV.cli), app = (a && a.aplicacao_id) || (apps[0] && apps[0].id);
+  const w = app && ((typeof frenteSugerida === 'function' && frenteSugerida(app, '', 'infraestrutura')) || byId('ws', primeiroWs('app:' + app)));
+  if (!w){ toast('Este cliente ainda não tem aplicação com frente para receber o item'); return; }
+  const titulo = String(texto || 'Inventário').slice(0, 280);
+  if (D.issues.some(i => !i.arquivado && i.titulo === titulo)){ toast('Este item já existe'); return; }
+  const ni = novoIssue({titulo, ws:w.id, tipo:'task', status:'todo', prio:'high'});
+  ni.desc = 'Aviso do inventário de ' + ((byId('clients', INV.cli) || {}).nome || '') + (a ? ': ' + invNomeAtivo(a) + (invOnde(a) ? ' (' + invOnde(a) + ')' : '') : '') + '.';
+  D.issues.push(ni); registrar('criou', ni); salvar(); toast('Item criado na frente ' + w.nome);
+}
+
+/* ---------- cliques desta parte ---------- */
+function invCliqueExtra(e){
+  const t = s => e.target.closest(s); let x;
+  if ((x = t('[data-inv-modelo-csv]'))){ const q = x.dataset.invModeloCsv, cab = q === 'funcionarios' ? INV_MODELO_FU : INV_MODELO_EQ;
+    const ex = q === 'funcionarios' ? ['Maria Souza','111.444.777-35','(11) 99999-0000','Analista','Financeiro','ativo'] : ['PAT-0001','5CD1234XYZ','Notebook','Dell','Latitude 5440','Notebook do financeiro','','Sala TI','Maria Souza','','proprio','','Loja X','12345','15/03/2025','5.200,00','15/03/2028','NB-MARIA','','','Windows 11 Pro',''];
+    return invBaixar('modelo-' + q + '.csv', invCsv([cab, ex])); }
+  if (t('[data-inv-importar-ok]')) return invImportarAgora();
+  if (t('[data-inv-previa-limpar]')){ INV.previa = null; return invRender(); }
+  if (t('[data-inv-nova-conf]')) return invNovaConferencia();
+  if ((x = t('[data-inv-abrir-conf]'))){ INV.confAberta = x.dataset.invAbrirConf; return invRender(); }
+  if (t('[data-inv-fechar-conf]')){ INV.confAberta = null; return invRender(); }
+  if ((x = t('[data-inv-achei]'))) return invConferirCodigo('#inv:' + x.dataset.invAchei);
+  if ((x = t('[data-inv-nao-achei]'))) return invRpc('inv_conferir', {p_conferencia:INV.confAberta, p_ativo:x.dataset.invNaoAchei, p_achado:false, p_local:null, p_notas:''}).then(invRecarregar).catch(invErro);
+  if (t('[data-inv-ler-ok]')){ const i = $('#ops-corpo [data-inv-codigo]'); return invConferirCodigo(i ? i.value : ''); }
+  if (t('[data-inv-camera]')) return invCamera();
+  if (t('[data-inv-concluir-conf]')) return invConcluirConferencia();
+}
+document.addEventListener('keydown', e => { const i = e.target.closest && e.target.closest('#ops-corpo [data-inv-codigo]'); if (i && e.key === 'Enter'){ e.preventDefault(); invConferirCodigo(i.value); } });
+document.addEventListener('change', e => {
+  const f = e.target.closest && e.target.closest('#ops-corpo [data-inv-importar]'); if (!f || !f.files[0]) return;
+  const qual = f.dataset.invImportar, r = new FileReader();
+  r.onload = () => { const linhas = invLerCsv(String(r.result || '')); INV.previa = {qual, linhas:qual === 'funcionarios' ? invPrepararFuncionarios(linhas) : invPrepararEquipamentos(linhas)}; invRender(); };
+  r.readAsText(f.files[0], 'utf-8');
+});
+
+/* ---------- ligações com o resto do sistema ---------- */
+// Custos: o patrimônio do cliente (ou só o da aplicação) e o que custa por mês
+function invCustosHTML(chave){
+  if (!invBanco() || !invPodeTer(chave) || UI.sel !== chave) return '';
+  const cli = invCliDe(chave); if (!cli) return '';
+  if (INV.cli !== cli || !INV.lido){ invCarregar(true).then(() => { if (UI.view === 'custos') rView(); }); return ''; }
+  const ativos = invAtivosDoEscopo(chave).filter(a => a.situacao !== 'baixado'); if (!ativos.length && !(INV.d.licencas || []).length) return '';
+  const compra = ativos.reduce((t, a) => t + (+a.valor_compra || 0), 0), atual = ativos.reduce((t, a) => t + (invValorAtual(a) || 0), 0), aluguel = ativos.filter(a => a.propriedade === 'alugado').reduce((t, a) => t + (+a.valor_mensal || 0), 0);
+  const lic = invEscopoApps(chave) ? 0 : (INV.d.licencas || []).reduce((t, l) => t + invMensalLicenca(l), 0);
+  const ids = new Set(ativos.map(a => a.id)), um = new Date(HOJE); um.setFullYear(um.getFullYear() - 1);
+  const manut = (INV.d.manut || []).filter(m => ids.has(m.ativo_id) && String(m.aberta_em) >= iso(um)).reduce((t, m) => t + (+m.custo || 0), 0);
+  return '<h2 class="sub">Inventário de TI</h2><div class="kpis" style="margin-top:8px"><div class="kpi"><b>' + brl(compra) + '</b><span>Valor de compra (' + ativos.length + ' equipamentos)</span></div><div class="kpi"><b>' + brl(atual) + '</b><span>Valor atual (depreciação)</span></div>' +
+    '<div class="kpi"><b>' + brl(aluguel + lic) + '</b><span>Por mês: aluguéis' + (lic ? ' e licenças' : '') + '</span></div><div class="kpi"><b>' + brl(manut) + '</b><span>Manutenções nos últimos 12 meses</span></div></div>' +
+    '<p class="sec" style="font-size:12.5px">Do inventário (aba Inventário do cliente).' + (invEscopoApps(chave) ? ' Aqui entram os equipamentos em uso pela aplicação e os dos funcionários que a usam.' : '') + '</p>';
+}
+if (typeof vCustosEscopo === 'function'){ const _vCustosInv = vCustosEscopo; vCustosEscopo = function(chave){ return _vCustosInv.apply(this, arguments) + invCustosHTML(chave); }; }
+// Ficha técnica (Ambientes): os equipamentos que a aplicação usa
+function invFichaLigacao(sec, chave){
+  if (sec !== 'Environments' || !invBanco() || !/^app:/.test(chave)) return '';
+  const cli = invCliDe(chave); if (INV.cli !== cli || !INV.lido){ invCarregar(true).then(() => { if (UI.view === 'sheet') rView(); }); return ''; }
+  const app = chave.slice(4), lista = (INV.d.ativos || []).filter(a => a.aplicacao_id === app && a.situacao !== 'baixado'); if (!lista.length) return '';
+  return '<ul class="sv-ficha"><li><b>Equipamentos em uso pela aplicação:</b> ' + esc(lista.map(invNomeAtivo).join(', ')) + '</li></ul>';
+}
+(function(){ const v = typeof svFichaLigacao === 'function' ? svFichaLigacao : null; if (!v) return; svFichaLigacao = function(sec, chave){ return v.apply(this, arguments) + invFichaLigacao(sec, chave); }; })();
+// ficha do cliente: aba que leva ao inventário
+if (typeof fcDesenhar === 'function'){
+  const _fcDesenharInv = fcDesenhar;
+  fcDesenhar = function(){
+    _fcDesenharInv.apply(this, arguments);
+    const abas = FC.dlg && FC.dlg.querySelector('.fc-abas'); if (!abas || abas.querySelector('[data-fc-inv]') || UI.verComo === 'stakeholder') return;
+    abas.insertAdjacentHTML('beforeend', '<button class="view-b" type="button" data-fc-inv>Inventário de TI</button>');
+  };
+  document.addEventListener('click', e => { const b = e.target.closest('[data-fc-inv]'); if (!b) return; const id = FC.cli; if (FC.dlg){ FC.dlg.close(); FC.dlg.remove(); }
+    UI.sel = 'client:' + id; UI.view = 'inventario'; if (typeof abrirArvore === 'function') abrirArvore(UI.sel); if (typeof abrirModulo === 'function') abrirModulo('operacoes'); salvarUI(); rOperacoes(); });
+}
+if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {invLerCsv, invPrepararEquipamentos, invPrepararFuncionarios, invImportarAgora, invTermoHtml, invImprimirEtiquetas, invQrSvg, invCustosHTML, invFichaLigacao, invAcharPorCodigo, invLinhasCsv});
 
 abrirModulo(UI.modulo);
 })();

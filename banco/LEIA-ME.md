@@ -155,6 +155,26 @@ Na tela: Entregas, **Ligar repositório** (conectar a conta, escolher o reposit�
 
 `43_analise_seguranca.sql`: `analise_achados` (cada achado com regra, gravidade, onde, trecho com segredo mascarado, identidade estável, status aberto/corrigido/ignorado, motivo e item ligado) e `analise_rodadas` (o resumo de cada leitura). `analise_gravar` (só o robô, service_role) grava o que achou e marca como corrigido o que sumiu; `analise_marcar` (quem edita o ponto) ignora com motivo, volta a abrir e liga ao item. As regras ficam em `supabase/functions/diagramas-auto/seguranca.ts` (fonte única: a tela pega o mesmo catálogo no build). A tela: `fonte/seguranca.js` (aba Segurança).
 
+## Parte 48: inventário de TI por cliente (aplicada no Supabase em 02/10/2026, em partes) e parte 49 (arquivos e aviso diário, só no Supabase)
+
+`48_inventario.sql`: cada cliente tem o seu inventário, isolado pelo `cliente_id` (todas as chaves estrangeiras entre tabelas do inventário levam o cliente junto, então nada aponta para outro cliente).
+
+| Tabela | Para que serve |
+|---|---|
+| `inv_categorias`, `inv_modelos` | Categorias (controle um a um ou por quantidade, depreciação % ao ano, de quanto em quanto tempo conferir) e modelos (fabricante, modelo, especificações). `inv_preparar` cria as 21 de começo |
+| `inv_locais` | Matriz, filial, prédio, sala, armário, almoxarifado, remoto (um dentro do outro) |
+| `inv_funcionarios`, `inv_funcionarios_apps` | Funcionários do cliente, só cadastro de controle (sem acesso): nome, CPF conferido pelos dígitos, telefone, cargo, departamento, situação. E quais aplicações do cliente cada um usa |
+| `inv_ativos` | Cada equipamento um a um: patrimônio (único no cliente), série, situação (estoque, em uso por funcionário, por aplicação, no local, emprestado, manutenção, aguardando, defeito, perdido, baixado), com quem está, propriedade (próprio, alugado, comodato, do funcionário), compra, nota fiscal, garantia, depreciação, rede, onde fica o acesso (nunca a senha) |
+| `inv_ligacoes` | Monitor conectado ao computador, memória instalada no notebook |
+| `inv_itens`, `inv_saldos` | Itens por quantidade (cabos, fontes, adaptadores, consumíveis) e o saldo em cada local |
+| `inv_licencas`, `inv_licencas_uso` | Licenças de software, com a quantidade comprada (o banco não deixa passar) e para quem ou qual máquina |
+| `inv_movimentos` | O histórico: nunca muda nem some (erro se corrige com estorno) |
+| `inv_termos`, `inv_manutencoes`, `inv_baixas`, `inv_conferencias(_itens)`, `inv_anexos` | Termo de responsabilidade, manutenções, baixa com descarte (NIST 800-88, MTR, CDF), conferência física e os arquivos |
+
+Funções: `inv_movimentar` (a situação só muda por ela, que grava o histórico junto; a tabela recusa mudança direta), `inv_estornar` (desfaz só a última), `inv_estoque` (entrada, saída, transferência, ajuste), `inv_conferir`, `inv_pendencias_funcionario`, `interno.inv_avisos` (todo dia: garantia, empréstimo, aluguel, licença, conferência; estoque mínimo às segundas). Quem vê e mexe: `interno.inv_pode` (quem edita o cliente, nunca stakeholder). Teste: `99_teste_inventario_LOCAL.sql` (36 conferências).
+
+`49_inventario_arquivos_SUPABASE.sql`: bucket privado `inventario` (caminho `<cliente>/<uuid>-<nome>`, só quem edita o cliente) e a rotina diária `ciclodev_inventario_avisos`.
+
 ## Parte 47: cadastro de servidores (VPS, dedicado, nuvem) (aplicada no Supabase em 02/10/2026, em partes)
 
 `47_servidores.sql`, quatro tabelas, todas com RLS e GRANT explícito:
