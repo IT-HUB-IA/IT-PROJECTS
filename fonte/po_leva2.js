@@ -5,7 +5,11 @@
    8 prova em cada critério   9 decisão que muda marca os itens afetados para revisar   10 critério Dado/Quando/Então
    11 mapa de histórias   12 pirâmide do backlog   13 o que mudou desde   14 exportar o projeto inteiro e o épico com
    todas as frentes. Nada grava sozinho em situação, ordem ou aceite: são avisos com motivo, e todos podem ser silenciados. */
-const LV2 = {hist:null, histEm:0, mudouRef:'', mudouFrente:'', mudouPessoa:''};
+const LV2 = {hist:null, histEm:0};
+// as escolhas da tela (agrupar por épico, filtros do "O que mudou") vão para pessoas_preferencias.tela, como as outras (parte 22)
+if (typeof PF_CAMPOS !== 'undefined') ['lv2PorEpico', 'lv2Mudou'].forEach(k => { if (!PF_CAMPOS.includes(k)) PF_CAMPOS.push(k); });
+const lv2M = () => (UI.lv2Mudou = UI.lv2Mudou && typeof UI.lv2Mudou === 'object' ? UI.lv2Mudou : {ref:'', frente:'', pessoa:''});
+Object.defineProperties(LV2, {mudouRef:{get:() => lv2M().ref || '', set:v => { lv2M().ref = v; }}, mudouFrente:{get:() => lv2M().frente || '', set:v => { lv2M().frente = v; }}, mudouPessoa:{get:() => lv2M().pessoa || '', set:v => { lv2M().pessoa = v; }}});
 const lv2Data = v => v ? fmtData(String(v).slice(0, 10)) : '';
 const lv2Norm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/^[-*•\s]+/, '').replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
 const lv2Ws = i => byId('ws', i && i.ws);
@@ -406,7 +410,7 @@ document.addEventListener('change', e => {
   const t = e.target; if (!t.matches || !t.matches('[data-lv2-mudou]')) return;
   const k = t.dataset.lv2Mudou;
   if (k === 'ref') LV2.mudouRef = t.value; else if (k === 'data'){ if (t.value) LV2.mudouRef = 'data:' + t.value; } else if (k === 'frente') LV2.mudouFrente = t.value; else if (k === 'pessoa') LV2.mudouPessoa = t.value;
-  rView();
+  salvarUI(); rView();
 });
 document.addEventListener('click', e => { if (e.target.closest && e.target.closest('[data-lv2-mudou-baixar]')) exBaixar('O que mudou · ' + nomeDe(UI.sel), lv2MudouMd()); });
 
@@ -497,4 +501,4 @@ rOperacoes = function(){
   if (!lv2NoValido(UI.sel)) ['mapa', 'mudou'].forEach(v => { const b = $('.view-b[data-view="' + v + '"]'); if (b) (b.closest('.view-casa') || b).remove(); if (UI.view === v){ UI.view = 'dashboard'; rView(); } });
 };
 
-if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {novoIssue:(...a) => novoIssue(...a), salvar:() => salvar(), novoUuid:() => novoUuid(), byId:(t, id) => byId(t, id), ltNovo:(...a) => ltNovo(...a), ltAplicar:(...a) => ltAplicar(...a), mudarStatus:(...a) => mudarStatus(...a), lv2SemProva, lv2LerHistorico, fecharItem:() => fecharItem(), abrirItem:id => abrirItem(id), exNoMd:c => exNoMd(c), lv2Repetidas, lv2Mudancas, lv2EpicoMd, lv2ProjetoMd, lv2Piramide, lv2MapaHTML, lv2ConferirDecisoes, lv2Afetados, ltLer, lePreviaHTML, LV2, poAndamentoVersao, pgAcoes, lv2EditarDodFrente, epicDe});
+if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {novoIssue:(...a) => novoIssue(...a), salvar:() => salvar(), novoUuid:() => novoUuid(), byId:(t, id) => byId(t, id), ltNovo:(...a) => ltNovo(...a), ltAplicar:(...a) => ltAplicar(...a), mudarStatus:(...a) => mudarStatus(...a), lv2SemProva, lv2LerHistorico, fecharItem:() => fecharItem(), pgSilenciarL2:k => pgSilenciar(k), abrirItem:id => abrirItem(id), exNoMd:c => exNoMd(c), lv2Repetidas, lv2Mudancas, lv2EpicoMd, lv2ProjetoMd, lv2Piramide, lv2MapaHTML, lv2ConferirDecisoes, lv2Afetados, ltLer, lePreviaHTML, LV2, poAndamentoVersao, pgAcoes, lv2EditarDodFrente, epicDe});

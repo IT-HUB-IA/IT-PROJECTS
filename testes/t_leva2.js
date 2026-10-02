@@ -173,6 +173,16 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   ok(await p.evaluate(() => { const t = document.querySelector('#ops-corpo').textContent; return /O que mudou desde/.test(t) && /mudanças desde/.test(t) && /Guardar o destino da cobrança/.test(t); }), 'o que mudou desde ontem lista as mudanças dos itens');
   ok(await p.evaluate(s => window.__tf.lv2Mudancas().filter(h => h.item_id === s).length >= 3, ids.S), 'a lista bate com o histórico do item');
   if (F) await p.screenshot({path:F + 'lv2_mudou.png', fullPage:false});
+  // as escolhas da tela vão para o banco (pessoas_preferencias.tela)
+  await p.selectOption('[data-lv2-mudou="ref"]', 'dias:30'); await dorme(500);
+  await p.evaluate(w => { const U = window.__tf.UI; U.sel = 'ws:' + w; U.view = 'list'; U.lv2PorEpico = false; window.__tf.rOperacoes(); }, W2); await dorme(600);
+  await p.click('[data-lv2-agrupar]'); await dorme(3500);
+  const tela = JSON.parse(conta("select coalesce(tela::text, '{}') from pessoas_preferencias where pessoa_id = '" + eu + "'") || '{}');
+  ok(tela.lv2PorEpico === true && tela.lv2Mudou && tela.lv2Mudou.ref === 'dias:30', '"Agrupar por épico" e os filtros do "O que mudou" ficam guardados no banco da pessoa');
+  const est = JSON.parse(conta("select coalesce(estado::text, '{}') from pessoas_preferencias where pessoa_id = '" + eu + "'") || '{}');
+  await p.evaluate(pj => { const k = window.__tf.pgAcoes('project:' + pj)[0]; if (k) window.__tf.pgSilenciarL2(k.k); }, PJ); await dorme(2500);
+  const est2 = JSON.parse(conta("select coalesce(estado::text, '{}') from pessoas_preferencias where pessoa_id = '" + eu + "'") || '{}');
+  ok(Object.keys(est2.po_silenciados || {}).length > Object.keys(est.po_silenciados || {}).length, 'silenciar um aviso fica guardado no banco da pessoa (pessoas_preferencias.estado)');
   // 14: épico com todas as frentes e o projeto inteiro
   await p.evaluate(() => window.__tf.LV2 && 0);
   const ep = await p.evaluate(async e => { await window.__tf.lv2LerHistorico(true); return window.__tf.lv2EpicoMd(window.__tf.byId('issues', e)); }, ids.E);

@@ -53,8 +53,7 @@ begin
   return null;
 end $$;
 revoke all on function interno.po_historico_leva2() from public, anon;
-drop trigger if exists itens_po_historico_leva2 on public.itens;
-create trigger itens_po_historico_leva2 after insert or update of revisar, decisao_texto on public.itens for each row execute function interno.po_historico_leva2();
+create or replace trigger itens_po_historico_leva2 after insert or update of revisar, decisao_texto on public.itens for each row execute function interno.po_historico_leva2();
 
 -- quem registra a decisão e quando: o banco carimba (a tela não escolhe)
 create or replace function interno.po_carimbar_decisao() returns trigger
@@ -67,8 +66,7 @@ begin
   return new;
 end $$;
 revoke all on function interno.po_carimbar_decisao() from public, anon;
-drop trigger if exists itens_po_carimbar_decisao on public.itens;
-create trigger itens_po_carimbar_decisao before insert or update of decisao_texto, decisao_por, decisao_em on public.itens for each row execute function interno.po_carimbar_decisao();
+create or replace trigger itens_po_carimbar_decisao before insert or update of decisao_texto, decisao_por, decisao_em on public.itens for each row execute function interno.po_carimbar_decisao();
 
 -- ---------- critérios: a prova entra no histórico (a regra do item aceito continua: texto e marcado não mudam; a prova pode entrar depois) ----------
 create or replace function interno.po_historico_criterio() returns trigger
