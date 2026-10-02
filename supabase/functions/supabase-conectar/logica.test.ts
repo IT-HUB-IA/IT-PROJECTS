@@ -43,7 +43,7 @@ function montar(c: Cen = {}) {
   const rpc = async (nome: string, a: any) => {
     rpcs.push(nome);
     if (nome === 'supa_app_ler') return { data: { client_id: 'cli-12345678', client_secret: 'seg-12345678', retorno: 'https://ciclodev.app/entrar.html?git=supabase' }, error: null };
-    if (nome === 'supa_conexao_gravar') { TOK['c-1'] = { acesso: a.p_acesso, renovacao: a.p_renovacao, expira_em: a.p_expira }; return { data: 'c-1', error: null }; }
+    if (nome === 'supa_conexao_gravar') { (globalThis as any).__org = a.p_organizacao; TOK['c-1'] = { acesso: a.p_acesso, renovacao: a.p_renovacao, expira_em: a.p_expira }; return { data: 'c-1', error: null }; }
     if (nome === 'supa_conexao_ler') return { data: TOK[a.p_id] ? { id: a.p_id, tokens: TOK[a.p_id] } : null, error: null };
     if (nome === 'supa_tokens_gravar') { TOK[a.p_conexao] = { acesso: a.p_acesso, renovacao: a.p_renovacao, expira_em: a.p_expira }; return { data: null, error: null }; }
     if (nome === 'supa_prova_gravar') return { data: 'prova-1', error: null };
@@ -66,7 +66,8 @@ const CON = '11111111-1111-1111-1111-111111111111', REF = 'abcdefghijklmnopqrst'
 // 1. volta da janelinha
 { const m = montar(); const r = await pedir(m.d, { acao: 'concluir', code: 'cod', estado: 'est-1' });
   ok(r.j.ok && r.j.conexao_id === 'c-1' && r.j.projetos.length === 1 && r.j.conta === 'Empresa X', 'concluir: troca o código (com PKCE), lista os projetos e guarda a conta');
-  ok(m.TOK['c-1'].acesso === 'acesso-1' && m.TOK['c-1'].renovacao === 'renova-2', 'as chaves vão para o banco pela função de serviço'); }
+  ok(m.TOK['c-1'].acesso === 'acesso-1' && m.TOK['c-1'].renovacao === 'renova-2', 'as chaves vão para o banco pela função de serviço');
+  ok((globalThis as any).__org === 'org1', 'a conexão fica marcada com a organização autorizada (o Supabase autoriza uma por vez)'); }
 { const m = montar(); const r = await pedir(m.d, { acao: 'concluir', code: 'cod', estado: 'outro' });
   ok(!r.j.ok && /expirou ou não é sua/.test(r.j.erro) && !m.rpcs.includes('supa_conexao_gravar'), 'estado de outra pessoa ou vencido: não guarda nada'); }
 { const m = montar({ projetos: [] }); m.d.buscar = (async (u: string, i: any) => String(u).endsWith('/v1/projects') ? new Response('{}', { status: 403 }) : (montar().d.buscar as any)(u, i)) as any;

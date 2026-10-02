@@ -47,10 +47,14 @@ async function concluir(d: DepsSc, c: any) {
   const t = await trocarCodigo(sb(d), app, String(c.code), est.verificador);
   // a autorização precisa ao menos listar os projetos; se não lista, nem guarda
   const projetos = await listarProjetos(sb(d), t.acesso);
-  const orgs = await listarOrganizacoes(sb(d), t.acesso).catch(() => [] as string[]);
-  const id = await chamar(d.rpc, 'supa_conexao_gravar', { p_espaco: est.espaco_id, p_pessoa: est.pessoa_id, p_conta: orgs.join(', ') || 'Supabase',
-    p_acesso: t.acesso, p_renovacao: t.renovacao, p_expira: t.expira_em });
-  return { ok: true, conexao_id: id, conta: orgs.join(', ') || 'Supabase', projetos };
+  // o Supabase autoriza uma organização por vez: a conexão é dessa organização (a mesma de novo só troca as chaves)
+  const orgs = await listarOrganizacoes(sb(d), t.acesso).catch(() => []);
+  const idsOrg = [...new Set(orgs.map(o => o.id).concat(projetos.map(p => p.organizacao || '').filter(Boolean)))].sort();
+  const nomes = orgs.length ? orgs.map(o => o.nome) : [...new Set(projetos.map(p => p.organizacao_nome || p.organizacao || '').filter(Boolean))];
+  const conta = nomes.join(', ') || 'Supabase';
+  const id = await chamar(d.rpc, 'supa_conexao_gravar', { p_espaco: est.espaco_id, p_pessoa: est.pessoa_id, p_conta: conta,
+    p_acesso: t.acesso, p_renovacao: t.renovacao, p_expira: t.expira_em, p_organizacao: idsOrg.join(',') || null });
+  return { ok: true, conexao_id: id, conta, projetos };
 }
 
 async function projetos(d: DepsSc, c: any) {

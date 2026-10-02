@@ -195,3 +195,4 @@ textarea[data-ficha].fa-escondido{display:none}
 .sc-itens dd{margin:0;font-variant-numeric:tabular-nums}
 .sc-recomenda{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:10px 12px;background:var(--preto-04);border-left:3px solid #1f8a4c;font-size:13px}
 .sc-corpo .ifr-ed-linha{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%}.sc-corpo .ifr-ed-linha .lb{width:100%}
+.sc-orgs{margin:0;padding-left:18px;display:grid;gap:3px;font-size:13px}

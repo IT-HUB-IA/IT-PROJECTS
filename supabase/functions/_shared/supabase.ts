@@ -58,18 +58,19 @@ async function api(d: DepsSb, token: string, caminho: string, init: RequestInit 
   return { status: r.status, ok: r.ok, j, t };
 }
 
-export type Projeto = { ref: string; nome: string; regiao: string | null; organizacao: string | null; situacao: string | null };
+export type Projeto = { ref: string; nome: string; regiao: string | null; organizacao: string | null; organizacao_nome: string | null; situacao: string | null };
 export async function listarProjetos(d: DepsSb, token: string): Promise<Projeto[]> {
   const r = await api(d, token, '/v1/projects');
   if (r.status === 401) throw new ErroSupabase('A autorização do Supabase foi tirada ou venceu. Conecte de novo.', 403);
   if (r.status === 403) throw new ErroSupabase('A autorização não deixa ver os projetos. No app do CicloDev no Supabase, marque a permissão Projects: Read (veja Admin, aba Supabase).', 403);
   if (!r.ok || !Array.isArray(r.j)) throw new ErroSupabase('O Supabase respondeu ' + r.status + ' ao listar os projetos', 502);
-  return r.j.map((p: any) => ({ ref: String(p.ref || p.id), nome: String(p.name || p.ref || p.id), regiao: p.region || null, organizacao: p.organization_id || null, situacao: p.status || null }))
+  return r.j.map((p: any) => ({ ref: String(p.ref || p.id), nome: String(p.name || p.ref || p.id), regiao: p.region || null, organizacao: p.organization_id || null, organizacao_nome: p.organization_slug || null, situacao: p.status || null }))
     .filter((p: Projeto) => /^[a-z0-9]{8,40}$/.test(p.ref));
 }
-export async function listarOrganizacoes(d: DepsSb, token: string): Promise<string[]> {
+export type Organizacao = { id: string; nome: string };
+export async function listarOrganizacoes(d: DepsSb, token: string): Promise<Organizacao[]> {
   const r = await api(d, token, '/v1/organizations');
-  return r.ok && Array.isArray(r.j) ? r.j.map((o: any) => String(o.name || o.slug || o.id)).filter(Boolean) : [];
+  return r.ok && Array.isArray(r.j) ? r.j.map((o: any) => ({ id: String(o.id || o.slug || ''), nome: String(o.name || o.slug || o.id || '') })).filter((o: Organizacao) => o.id) : [];
 }
 
 // uma consulta FIXA no modo só leitura do Supabase

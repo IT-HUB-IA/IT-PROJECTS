@@ -52,10 +52,17 @@ do $$ begin perform supa_estado_usar((select estado from t)); raise exception 'u
 select pg_temp.ok(true, 'o mesmo estado não vale duas vezes');
 
 -- ---------- 3. a conta conectada: as chaves só a função vê ----------
-do $$ begin perform supa_conexao_gravar((select esp from t), (select will from t), 'x', 'a', 'b', null); raise exception 'gravou'; exception when insufficient_privilege then null; end $$;
+do $$ begin perform supa_conexao_gravar((select esp from t), (select will from t), 'x', 'a', 'b', null, 'org-x'); raise exception 'gravou'; exception when insufficient_privilege then null; end $$;
 select pg_temp.ok(true, 'a tela não grava conta nem chave');
 reset role; set role service_role;
-update t set con = supa_conexao_gravar(esp, will, 'Empresa X', 'chave-acesso', 'chave-renova', now() + interval '1 hour');
+update t set con = supa_conexao_gravar(esp, will, 'Empresa X', 'chave-acesso', 'chave-renova', now() + interval '1 hour', 'org-x');
+-- a mesma organização de novo: não cria outra, só troca as chaves; outra organização vira outra conexão
+create temp table orgs as select supa_conexao_gravar(esp, will, 'Empresa X', 'chave-nova', 'renova-nova', now() + interval '1 hour', 'org-x') x, supa_conexao_gravar(esp, will, 'Empresa Y', 'chave-y', null, null, 'org-y') y from t;
+reset role;
+select pg_temp.ok((select x from orgs) = (select con from t) and (select acesso from interno.supa_tokens where conexao_id = (select con from t)) = 'chave-nova', 'conectar de novo a mesma organização não repete: troca as chaves da conexão que já existe');
+select pg_temp.ok((select y from orgs) <> (select con from t) and (select count(*) from supa_conexoes where espaco_id = (select esp from t)) = 2, 'outra organização vira outra conexão (o Supabase autoriza uma por vez)');
+delete from supa_conexoes where id = (select y from orgs);
+set role service_role;
 reset role; select pg_temp.como('00000000-0000-0000-0000-00000000000a'); set role authenticated;
 select pg_temp.ok((select count(*) from supa_conexoes where id = (select con from t)) = 1, 'William vê a conta do Supabase do espaço dele');
 do $$ begin perform * from interno.supa_tokens; raise exception 'leu'; exception when insufficient_privilege then null; end $$;

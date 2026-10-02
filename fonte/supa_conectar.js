@@ -45,10 +45,11 @@ async function scVolta(d, espera){
   if (!d.code) return;
   const r = await scFuncao({acao:'concluir', code:d.code, estado:d.state || (espera && espera.estado)});
   if (!r.ok){ toast('Não deu para conectar o Supabase: ' + (r.erro || 'erro')); return; }
-  SC.projetos[r.conexao_id] = r.projetos || [];
   await scCarregar(true);
-  tfAviso('Supabase conectado (' + (r.conta || 'Supabase') + '). Agora escolha o projeto.', [], 3500);
+  tfAviso('Organização ' + (r.conta || 'do Supabase') + ' conectada. Agora escolha o projeto.', [], 3500);
   if (SC.aoConectar) SC.aoConectar(r.conexao_id);
+  SC.projetos[r.conexao_id] = r.projetos || [];
+  const dl = document.querySelector('dialog.sc-dlg'); if (dl && dl.__pintar) dl.__pintar();
 }
 
 /* ---------- Ligar banco pelo Supabase ---------- */
@@ -71,40 +72,43 @@ function scLigarModal(id){
   const dlg = modal(b ? 'Trocar o banco ' + esc(b.nome) : 'Ligar um banco do Supabase', '<div class="ifr-ed sc-corpo" id="sc-corpo"></div>', [{txt:'Cancelar', cls:'sec'}, {txt:'Conferir e ligar', acao:() => { scConferirLigar(dlg, st, b); return false; }}]);
   dlg.classList.add('sc-dlg');
   const nomeV = () => ($('#sc-nome', dlg) || {}).value, esqV = () => ($('#sc-esq', dlg) || {}).value;
+  // o Supabase autoriza uma organização por vez: cada conexão é uma organização, e a lista junta os projetos de todas
+  const carregar = cid => { if (SC.projetos[cid] || (st.lendo || {})[cid]) return; (st.lendo = st.lendo || {})[cid] = true;
+    scFuncao({acao:'projetos', conexao_id:cid}).then(r => { st.lendo[cid] = false; if (r.ok) SC.projetos[cid] = r.projetos || []; else (st.erros = st.erros || {})[cid] = r.erro || 'Não deu para ler os projetos'; pintar(); }); };
   const pintar = async () => {
     const c = $('#sc-corpo', dlg); if (!c) return;
     const nome = nomeV(), esq = esqV();
     if (!SC.conexoes) await scCarregar();
     const contas = SC.conexoes || [];
-    if (!st.con && contas.length === 1) st.con = contas[0].id;
-    if (st.con && !SC.projetos[st.con] && !st.carregando){
-      st.carregando = true; st.erro = '';
-      scFuncao({acao:'projetos', conexao_id:st.con}).then(r => { st.carregando = false; if (r.ok) SC.projetos[st.con] = r.projetos || []; else st.erro = r.erro || 'Não deu para ler os projetos'; pintar(); });
-    }
-    const projs = st.con ? SC.projetos[st.con] : null;
-    if (projs && projs.length === 1 && !st.projeto) st.projeto = projs[0].ref;
+    contas.forEach(x => carregar(x.id));
+    const lendo = contas.some(x => !SC.projetos[x.id] && !(st.erros || {})[x.id]);
+    const todos = contas.flatMap(x => (SC.projetos[x.id] || []).map(p => Object.assign({con:x.id, conta:x.conta}, p)));
+    if (!st.projeto && todos.length === 1){ st.projeto = todos[0].ref; st.con = todos[0].con; }
+    const valor = st.con && st.projeto ? st.con + '|' + st.projeto : '';
+    const grupos = contas.filter(x => (SC.projetos[x.id] || []).length);
     c.innerHTML = '<p class="ifr-meta" style="margin:0">Sem senha: você autoriza o CicloDev no próprio Supabase. Antes de ligar, o CicloDev <b>confere de verdade</b> que consegue ler a estrutura inteira (tabelas, colunas, chaves, ligações, regras de acesso e permissões) e que a leitura é só leitura. Se faltar alguma coisa, não liga e diz o quê. O CicloDev nunca lê o conteúdo das tabelas, só a estrutura.</p>' +
-      '<div class="sc-passo"><h4>1. Conta do Supabase</h4>' + (contas.length
-        ? '<label class="lb">Conta<select class="sel" id="sc-con">' + (contas.length > 1 && !st.con ? '<option value="">Escolha…</option>' : '') + contas.map(x => '<option value="' + x.id + '"' + (x.id === st.con ? ' selected' : '') + '>' + esc(x.conta) + (x.ultimo_erro ? ' (precisa conectar de novo)' : '') + '</option>').join('') + '</select></label>' : '<p class="ifr-meta">Nenhuma conta do Supabase conectada ainda.</p>') +
-        '<button type="button" class="btn ' + (contas.length ? 'sec' : 'acento') + ' peq" data-sc-conectar>' + (contas.length ? 'Conectar outra conta' : 'Conectar ao Supabase') + '</button></div>' +
-      (st.con ? '<div class="sc-passo"><h4>2. Projeto e esquemas</h4>' + (st.erro ? '<p class="ifr-fonte-erro">' + esc(st.erro) + '</p>' : '') +
-        (projs ? (projs.length ? '<label class="lb">Projeto<select class="sel" id="sc-proj">' + (!st.projeto ? '<option value="">Escolha…</option>' : '') + projs.map(p => '<option value="' + esc(p.ref) + '"' + (p.ref === st.projeto ? ' selected' : '') + '>' + esc(p.nome) + ' (' + esc(p.ref) + (p.regiao ? ', ' + esc(p.regiao) : '') + ')</option>').join('') + '</select></label>'
-              : '<p class="ifr-meta">Esta autorização não alcança nenhum projeto. Conecte de novo escolhendo a organização certa.</p>')
-          : st.erro ? '' : '<p class="vazio-linha">Lendo os projetos…</p>') +
+      '<div class="sc-passo"><h4>1. Organizações do Supabase conectadas</h4>' +
+        (contas.length ? '<ul class="sc-orgs">' + contas.map(x => '<li><b>' + esc(x.conta) + '</b>' + (x.ultimo_erro ? ' <span class="en2-erro">precisa conectar de novo</span>' : SC.projetos[x.id] ? ' <span class="ifr-meta">' + SC.projetos[x.id].length + (SC.projetos[x.id].length === 1 ? ' projeto' : ' projetos') + '</span>' : '') + '</li>').join('') + '</ul>' : '<p class="ifr-meta">Nenhuma organização do Supabase conectada ainda.</p>') +
+        '<p class="ifr-meta">O Supabase autoriza <b>uma organização por vez</b>. Se o banco está em outra organização, clique em ' + (contas.length ? '<b>Conectar outra organização</b>' : '<b>Conectar ao Supabase</b>') + ' e escolha a organização na janelinha. Pode conectar quantas precisar: os projetos de todas aparecem juntos abaixo.</p>' +
+        '<button type="button" class="btn ' + (contas.length ? 'sec' : 'acento') + ' peq" data-sc-conectar>' + (contas.length ? 'Conectar outra organização' : 'Conectar ao Supabase') + '</button></div>' +
+      (contas.length ? '<div class="sc-passo"><h4>2. Projeto e esquemas</h4>' +
+        Object.entries(st.erros || {}).map(([cid, m]) => '<p class="ifr-fonte-erro">' + esc((contas.find(x => x.id === cid) || {}).conta || 'Supabase') + ': ' + esc(m) + '</p>').join('') +
+        (todos.length ? '<label class="lb">Projeto<select class="sel" id="sc-proj">' + (!valor ? '<option value="">Escolha…</option>' : '') +
+            grupos.map(x => '<optgroup label="' + esc(x.conta) + '">' + SC.projetos[x.id].map(p => { const v = x.id + '|' + p.ref; return '<option value="' + esc(v) + '"' + (v === valor ? ' selected' : '') + '>' + esc(p.nome) + ' (' + esc(p.ref) + (p.regiao ? ', ' + esc(p.regiao) : '') + ')</option>'; }).join('') + '</optgroup>').join('') + '</select></label>'
+          : lendo ? '<p class="vazio-linha">Lendo os projetos…</p>' : '<p class="ifr-meta">As organizações conectadas não têm nenhum projeto. Conecte a organização onde o banco está.</p>') +
         '<div class="ifr-ed-linha"><label class="lb">Nome<input class="campo" id="sc-nome" value="' + esc(nome != null ? nome : b ? b.nome : 'Banco de produção') + '"></label>' +
         '<label class="lb">Esquemas<input class="campo" id="sc-esq" value="' + esc(esq != null ? esq : b ? (b.esquemas || []).join(', ') : 'public') + '" placeholder="public"></label></div></div>' : '') +
       '<div data-sc-saida>' + scConferenciaHTML(st.resultado) + '</div>' +
       '<p style="margin:0"><button type="button" class="ifr-lnk" data-sc-endereco>Prefiro colar o endereço com usuário e senha</button></p>';
   };
   dlg.addEventListener('change', e => {
-    if (e.target.id === 'sc-con'){ st.con = e.target.value || null; st.projeto = ''; st.resultado = null; pintar(); }
-    else if (e.target.id === 'sc-proj'){ st.projeto = e.target.value; st.resultado = null; const s = $('[data-sc-saida]', dlg); if (s) s.innerHTML = ''; }
+    if (e.target.id === 'sc-proj'){ const [cid, ref] = String(e.target.value || '').split('|'); st.con = cid || null; st.projeto = ref || ''; st.resultado = null; const s = $('[data-sc-saida]', dlg); if (s) s.innerHTML = ''; }
   });
   dlg.addEventListener('click', e => {
-    if (e.target.closest('[data-sc-conectar]')){ scConectar(cid => { st.con = cid; st.projeto = ''; st.resultado = null; if (document.body.contains(dlg)) pintar(); }); return; }
+    if (e.target.closest('[data-sc-conectar]')){ scConectar(cid => { delete SC.projetos[cid]; if (st.erros) delete st.erros[cid]; if (document.body.contains(dlg)) pintar(); }); return; }
     if (e.target.closest('[data-sc-endereco]')){ dlg.close(); dlg.remove(); ifrBancoModal(id, 'supabase', true); }
   });
-  st.pintar = pintar;
+  st.pintar = pintar; dlg.__pintar = pintar;
   pintar();
   return dlg;
 }

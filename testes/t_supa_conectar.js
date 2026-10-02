@@ -61,7 +61,9 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   const esp = conta("select id from public.espacos where dono_id = '" + eu + "' and pessoal limit 1");
   const app = conta("select n.id from public.nos n where n.tipo = 'aplicacao' and n.espaco_id = '" + esp + "' order by n.nome limit 1");
   const CON = conta("insert into public.supa_conexoes (espaco_id, conta, criado_por) values ('" + esp + "', 'Empresa X', '" + eu + "') returning id");
-  conta("delete from public.supa_conexoes where id = '" + CON + "'");   // começa sem conta; volta pela janelinha
+  const CON2 = conta("insert into public.supa_conexoes (espaco_id, conta, criado_por) values ('" + esp + "', 'Empresa Y', '" + eu + "') returning id");
+  conta("delete from public.supa_conexoes where id in ('" + CON + "', '" + CON2 + "')");   // começa sem conta; volta pela janelinha
+  let segunda = false;
   const fns = []; let modo = 'falha', prova = null;
   await p.exposeFunction('__rpc', s => { const {fn, args} = JSON.parse(s);
     if (fn === 'supa_app_status') return JSON.stringify({data:{pronto:true, client_id:'cli-123456', retorno:'https://ciclodev.app/entrar.html?git=supabase'}, error:null});
@@ -72,8 +74,9 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
     return JSON.stringify({data:null, error:null}); });
   const CONF = {so_leitura:true, tabelas:12, colunas:80, chaves:12, ligacoes:9, regras:20, permissoes:30, papeis:2, com_rls:12, migracoes:7, avisos:[], falhas:[], esquemas:['public']};
   await p.exposeFunction('__fn', s => { const c = JSON.parse(s); fns.push(c.acao);
+    if (c.acao === 'concluir' && segunda){ conta("insert into public.supa_conexoes (id, espaco_id, conta, criado_por) values ('" + CON2 + "', '" + esp + "', 'Empresa Y', '" + eu + "') on conflict do nothing"); return JSON.stringify({data:{ok:true, conexao_id:CON2, conta:'Empresa Y', projetos:[{ref:'yyyyyyyyyyyyyyyyyyyy', nome:'Financeiro Y', regiao:'us-east-1'}]}, error:null}); }
     if (c.acao === 'concluir'){ conta("insert into public.supa_conexoes (id, espaco_id, conta, criado_por) values ('" + CON + "', '" + esp + "', 'Empresa X', '" + eu + "') on conflict do nothing"); return JSON.stringify({data:{ok:true, conexao_id:CON, conta:'Empresa X', projetos:[{ref:'abcdefghijklmnopqrst', nome:'Produção', regiao:'sa-east-1'}, {ref:'zyxwvutsrqponmlkjihg', nome:'Testes', regiao:'sa-east-1'}]}, error:null}); }
-    if (c.acao === 'projetos') return JSON.stringify({data:{ok:true, projetos:[{ref:'abcdefghijklmnopqrst', nome:'Produção'}]}, error:null});
+    if (c.acao === 'projetos') return JSON.stringify({data:{ok:true, projetos:c.conexao_id === CON2 ? [{ref:'yyyyyyyyyyyyyyyyyyyy', nome:'Financeiro Y'}] : [{ref:'abcdefghijklmnopqrst', nome:'Produção'}, {ref:'zyxwvutsrqponmlkjihg', nome:'Testes'}]}, error:null});
     if (c.acao === 'conferir'){
       if (modo === 'falha') return JSON.stringify({data:{ok:false, falhas:['Não deu para ler todas as regras de acesso (RLS): o banco tem 20 e vieram 0.'], conferencia:Object.assign({}, CONF, {regras:0})}, error:null});
       prova = conta("insert into interno.supa_provas (conexao_id, projeto, nome_projeto, esquemas, pessoa_id, resultado) values ('" + CON + "', '" + c.projeto + "', 'Produção', '{public}', '" + eu + "', '" + JSON.stringify(Object.assign({ok:true}, CONF)) + "') returning id");
@@ -91,7 +94,7 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   // 1. Ligar banco (Supabase) abre o jeito sem senha
   await p.evaluate(() => window.__tf.ifrBancoModal(null)); await p.waitForTimeout(500);
   let t = await caixa();
-  ok(/Ligar um banco do Supabase/.test(t) && /confere de verdade/.test(t) && /nunca lê o conteúdo das tabelas/.test(t) && /Nenhuma conta do Supabase/.test(t), 'Ligar banco abre o jeito sem senha, explica a conferência e mostra que falta conectar a conta');
+  ok(/Ligar um banco do Supabase/.test(t) && /confere de verdade/.test(t) && /nunca lê o conteúdo das tabelas/.test(t) && /Nenhuma organização do Supabase/.test(t) && /uma organização por vez/.test(t), 'Ligar banco abre o jeito sem senha, explica a conferência e mostra que falta conectar a conta');
   ok(/Prefiro colar o endereço/.test(t), 'o jeito do endereço continua como segunda opção');
   // 2. a janelinha do Supabase, com PKCE
   await p.click('dialog.modal[open] [data-sc-conectar]'); await p.waitForTimeout(500);
@@ -100,7 +103,14 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   await p.evaluate(() => new BroadcastChannel('ciclodev-git').postMessage({git:'supabase', code:'cod-1', state:'est-1'})); await p.waitForTimeout(1500);
   t = await caixa();
   ok(fns.includes('concluir') && /Empresa X/.test(t) && await p.evaluate(() => !!document.querySelector('dialog.modal[open] #sc-proj')), 'a volta da janelinha guarda a conta e mostra os projetos para escolher');
-  await p.selectOption('dialog.modal[open] #sc-proj', 'abcdefghijklmnopqrst');
+  // segunda organização: o Supabase autoriza uma por vez; a lista junta os projetos das duas
+  segunda = true;
+  await p.click('dialog.modal[open] [data-sc-conectar]'); await p.waitForTimeout(400);
+  await p.evaluate(() => new BroadcastChannel('ciclodev-git').postMessage({git:'supabase', code:'cod-2', state:'est-1'})); await p.waitForTimeout(1500);
+  const grupos = await p.evaluate(() => [...document.querySelectorAll('dialog.modal[open] #sc-proj optgroup')].map(g => g.label + ':' + g.querySelectorAll('option').length));
+  t = await caixa();
+  ok(grupos.join() === 'Empresa X:2,Empresa Y:1' && /Conectar outra organização/.test(t), 'duas organizações conectadas: os projetos das duas aparecem juntos, separados pela organização (' + grupos.join(' | ') + ')');
+  await p.selectOption('dialog.modal[open] #sc-proj', CON + '|abcdefghijklmnopqrst');
   // 3. conferência que não passa: não liga
   await p.click('dialog.modal[open] .modal-rod .btn:not(.sec)'); await p.waitForTimeout(800);
   t = await caixa();
@@ -129,6 +139,6 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   const adm = await p.evaluate(() => { window.__tf.SC.status = {pronto:false}; return window.__tf.scAdminHTML(); });
   ok(/OAuth Apps/.test(adm) && /\?git=supabase/.test(adm) && /só leitura/.test(adm) && /Não marque nada de escrita/.test(adm), 'Admin: passo a passo do app do Supabase, com o endereço de volta e só permissões de leitura');
   ok(!erros.length, 'sem erro na página' + (erros.length ? ': ' + erros.join(' | ') : ''));
-  conta("delete from public.infra_bancos where supa_conexao_id = '" + CON + "'"); conta("delete from public.supa_conexoes where id = '" + CON + "'");
+  conta("delete from public.infra_bancos where supa_conexao_id = '" + CON + "'"); conta("delete from public.supa_conexoes where id in ('" + CON + "', '" + CON2 + "')");
   await b.close(); console.log(falhas ? falhas + ' FALHA(S)' : 'TUDO OK'); process.exit(falhas ? 1 : 0);
 })();

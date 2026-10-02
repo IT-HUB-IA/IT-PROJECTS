@@ -464,3 +464,7 @@ Configuração (uma vez, o dono do sistema): Admin, aba GitHub, GitLab e Supabas
 ## Parte 55: o cadastro do app do Supabase confere os dois códigos (aplicada no Supabase em 02/10/2026)
 
 `55_supabase_app_conferir.sql` (mesma assinatura de `supa_app_gravar`). O Client ID é público (aparece na tela e na janelinha do Supabase), então o banco recusa: Client ID fora do formato do Supabase (UUID), Client ID que começa com `sba_` (é o segredo) e segredo igual ao Client ID. A tela confere o mesmo antes de enviar. Motivo: no primeiro cadastro, o Client Secret foi colado nos dois campos; o cadastro foi apagado.
+
+## Parte 56: Supabase com várias organizações (aplicada no Supabase em 02/10/2026)
+
+`56_supabase_varias_organizacoes.sql`. O Supabase autoriza uma organização por vez (a janelinha pede para escolher). `supa_conexoes.organizacao_id` guarda qual é; `supa_conexao_gravar` ganhou `p_organizacao` (a versão antiga saiu na mesma operação) e, se a mesma organização for conectada de novo no mesmo espaço, só troca as chaves. A tela junta os projetos de todas as organizações conectadas num só seletor, separados pelo nome da organização, com o botão "Conectar outra organização".
