@@ -4782,7 +4782,8 @@ function listaFiltrada(){
     l = l.filter(i => partes.every(p => {
       const mm = /^(status|responsável|responsavel|tipo|prioridade)\s*=\s*(.+)$/.exec(p.trim());
       if (mm){ const v = mm[2].trim(); if (mm[1] === 'status') return stNome(i.status).toLowerCase().includes(v); if (mm[1] === 'tipo') return tipoNome(i.tipo).toLowerCase().includes(v); if (mm[1] === 'prioridade') return prioNome(i.prio).toLowerCase().includes(v); const pp = pessoa(i.resp); return pp && pp.nome.toLowerCase().includes(v); }
-      return (i.titulo + ' ' + caminhoTexto(i)).toLowerCase().includes(p.trim());
+      // o código do item (BL-279, ou só 279), o título, a descrição e o caminho
+      return ((typeof chaveDe === 'function' ? chaveDe(i) : i.chave || '') + ' ' + i.titulo + ' ' + (i.desc || '') + ' ' + caminhoTexto(i)).toLowerCase().includes(p.trim());
     }));
   }
   return l;
