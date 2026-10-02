@@ -109,10 +109,59 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   await fr().evaluate(() => { const b = document.querySelector('#busca-x'); b.click(); window.__cvTeste.entrarNoQuadro('raiz'); });
   await p.waitForTimeout(300);
   // linhas: passar o mouse acende as do card e apaga as outras
-  ok(await fr().evaluate(() => getComputedStyle(document.querySelector('#svg-fantasma .aresta')).opacity >= 0.5), 'as linhas por cima dos cards ficam bem visíveis (não mais 16%)');
+  // linhas: fracas o tempo todo e nunca por cima dos cards (só as acesas)
+  await p.mouse.move(2, 2); await p.waitForTimeout(200);
+  const base = await fr().evaluate(() => ({linha:+getComputedStyle(document.querySelector('#g-arestas .aresta')).opacity, porCima:document.querySelectorAll('#svg-fantasma .aresta').length, foco:document.body.classList.contains('foco-no')}));
+  ok(!base.foco && base.linha <= 0.2 && base.porCima === 0, 'sem mouse: as linhas ficam fracas (' + base.linha + ') e nenhuma passa por cima dos cards (' + base.porCima + ')');
   await fr().hover('.no[data-id="tb2"]'); await p.waitForTimeout(300);
-  ok(await fr().evaluate(() => document.body.classList.contains('foco-no') && !!document.querySelector('#g-arestas g[data-aresta="e1"].foco')), 'passar o mouse no card acende as linhas dele');
+  const card = await fr().evaluate(() => { const g = document.querySelector('#g-arestas g[data-aresta="e1"]'); const outras = [...document.querySelectorAll('#g-arestas g[data-aresta]:not(.foco) .aresta')];
+    return {foco:document.body.classList.contains('foco-no') && g.classList.contains('foco'), acesa:+getComputedStyle(g.querySelector('.aresta')).opacity, porCima:document.querySelectorAll('#svg-fantasma .aresta').length, outras:outras.length ? Math.max(...outras.map(x => +getComputedStyle(x).opacity)) : 0}; });
+  ok(card.foco && card.acesa === 1 && card.porCima === 0 && card.outras <= 0.06, 'passar o mouse no card acende as linhas dele (sem passar por cima de nenhum card) e as outras quase somem (' + card.outras + ')');
   if (F) await p.screenshot({path: F + '/linhas_foco.png'});
+  // passar o mouse numa linha: acende ela e as que vêm depois dela
+  await p.mouse.move(2, 2); await p.waitForTimeout(200);
+  const lin = await fr().evaluate(() => {
+    const E = window.__cvTeste && window.__cvTeste.Q ? window.__cvTeste.Q.edges : null;
+    const hit = document.querySelector('#g-arestas g[data-aresta="e1"] .aresta-hit');
+    hit.dispatchEvent(new PointerEvent('pointerover', {bubbles:true}));
+    const acesas = [...document.querySelectorAll('#g-arestas g.foco')].map(g => g.dataset.aresta);
+    return {acesas, foco:document.body.classList.contains('foco-no'), arestas:E ? E.map(a => ({id:a.id, de:a.de, para:a.para})) : null};
+  });
+  let esperadas = ['e1'];
+  if (lin.arestas){ const A = lin.arestas, fila = ['e1'], vistos = new Set(); esperadas = [];
+    while (fila.length){ const id = fila.shift(); if (esperadas.includes(id)) continue; esperadas.push(id); const a = A.find(x => x.id === id); if (!a || vistos.has(a.para)) continue; vistos.add(a.para); A.filter(x => x.de === a.para).forEach(x => fila.push(x.id)); } }
+  ok(lin.foco && lin.acesas.includes('e1') && esperadas.every(id => lin.acesas.includes(id)) && lin.acesas.length === esperadas.length, 'passar o mouse numa linha acende ela e só as que vêm depois dela (' + lin.acesas.join(', ') + ')');
+  // intensidade de cada pessoa: muda pelo Configurar e vai para as preferências dela (no CicloDev, pessoas_preferencias.tela)
+  await p.mouse.move(2, 2); await p.waitForTimeout(150);
+  const abrirConfig = async () => fr().evaluate(() => document.getElementById('b-ajustes').click());
+  const clicarSeg = (rot, txt) => fr().evaluate(([rot, txt]) => { const seg = [...document.querySelectorAll('.m-seg')].find(d => d.textContent.includes(rot)); const b = seg && [...seg.querySelectorAll('button')].find(x => x.textContent === txt); if (b){ b.click(); return true; } const it = [...document.querySelectorAll('#menu .mi, .menu .mi')].find(x => /Configurar|Ajustes do quadro/.test(x.textContent)); if (it) it.click(); return false; }, [rot, txt]);
+  await abrirConfig(); await p.waitForTimeout(200);
+  let achou = await clicarSeg('Linhas paradas', 'Média'); if (!achou){ await p.waitForTimeout(200); achou = await clicarSeg('Linhas paradas', 'Média'); }
+  await p.waitForTimeout(200);
+  await abrirConfig(); await p.waitForTimeout(200);
+  let achou2 = await clicarSeg('Linhas acesas', 'Suave'); if (!achou2){ await p.waitForTimeout(200); achou2 = await clicarSeg('Linhas acesas', 'Suave'); }
+  await p.waitForTimeout(300); await fr().evaluate(() => document.getElementById('vp').dispatchEvent(new PointerEvent('pointerleave'))); await p.waitForTimeout(200);
+  const depois = await fr().evaluate(() => ({base:+getComputedStyle(document.querySelector('#g-arestas g:not(.foco):not(.sel) .aresta') || document.querySelector('#g-arestas .aresta')).opacity, foco:document.body.className, sel:document.querySelectorAll('#g-arestas g.sel, #g-arestas g.foco').length}));
+  if (Math.abs(depois.base - .28) >= .01) console.log('depuração', depois);
+  const guardado = await p.evaluate(() => (window.__tf && window.__tf.UI ? window.__tf.UI : (typeof UI !== 'undefined' ? UI : {})).infraCanvas);
+  ok(achou && achou2 && Math.abs(depois.base - .28) < .01, 'Configurar, Linhas paradas: Média deixa as linhas em 28% (' + depois.base + ')');
+  ok(!guardado || (guardado.cfg && guardado.cfg.linBase === .28 && guardado.cfg.linAcesa === .5), 'e a escolha vai para as preferências da pessoa (paradas 28%, acesas 50%)' + (guardado ? '' : ' (preferências não visíveis no teste)'));
+  // desenho cheio de linhas (como o de acesso ao banco): fracas, por baixo dos cards; a cadeia da linha acende só para a frente
+  await fr().evaluate(() => { const {Q, render} = window.__cvTeste; Q.nodes.length = 0; Q.edges.length = 0;
+    Q.nodes.push({id:'pp', tipo:'cartao', titulo:'authenticated', texto:'papel', x:0, y:0, cor:'ouro'});
+    for (let i = 0; i < 36; i++) Q.nodes.push({id:'t' + i, tipo:'tabela', titulo:'tabela_' + i, x:120 + (i % 9) * 260, y:260 + Math.floor(i / 9) * 220, cor:'ciano', linhas:[{id:'a' + i, nome:'id', tipo:'uuid', chave:'pk'}, {id:'b' + i, nome:'dono_id', tipo:'uuid', chave:'fk'}]});
+    for (let i = 0; i < 36; i++) Q.edges.push({id:'p' + i, de:'pp', para:'t' + i, deLado:'r', paraLado:'t', cor:'ouro', rotulo:'ler, criar, mudar'});
+    Q.edges.push({id:'c1', de:'t1', para:'t2', deLado:'r', paraLado:'l'}, {id:'c2', de:'t2', para:'t3', deLado:'r', paraLado:'l'}, {id:'u1', de:'t20', para:'t21', deLado:'r', paraLado:'l'});
+    render(); });
+  await p.waitForTimeout(300); await fr().evaluate(() => document.getElementById('vp').dispatchEvent(new PointerEvent('pointerleave'))); await p.waitForTimeout(200);
+  const cheio = await fr().evaluate(() => ({rotulosVisiveis:[...document.querySelectorAll('.rotulo-aresta')].filter(r => +getComputedStyle(r).opacity > 0).length, porCima:document.querySelectorAll('#svg-fantasma .aresta').length,
+    fraca:+getComputedStyle(document.querySelector('#g-arestas g[data-aresta="p0"] .aresta')).opacity}));
+  ok(cheio.rotulosVisiveis === 0 && cheio.porCima === 0 && cheio.fraca <= 0.3, 'desenho com muitas linhas: nenhum texto de linha à vista, nenhuma linha por cima dos cards, linhas fracas');
+  if (F) await p.screenshot({path: F + '/muitas_linhas.png'});
+  const cadeia = await fr().evaluate(() => { document.querySelector('#g-arestas g[data-aresta="p1"] .aresta-hit').dispatchEvent(new PointerEvent('pointerover', {bubbles:true}));
+    return {acesas:[...document.querySelectorAll('#g-arestas g.foco')].map(g => g.dataset.aresta).sort(), rotulos:[...document.querySelectorAll('.rotulo-aresta')].filter(r => +getComputedStyle(r).opacity > 0).map(r => r.dataset.aresta)}; });
+  ok(cadeia.acesas.join() === 'c1,c2,p1' && cadeia.rotulos.join() === 'p1', 'mouse na linha do papel para a tabela_1: acende ela e as que seguem (tabela_1 → 2 → 3), só ela mostra o texto; as outras 35 do papel e a solta não (' + cadeia.acesas.join(', ') + ')');
+  if (F) await p.screenshot({path: F + '/cadeia_linha.png'});
   ok(!erros.length, 'sem erro na página' + (erros.length ? ': ' + erros.join(' | ') : ''));
   await b.close(); console.log(falhas ? falhas + ' FALHA(S)' : 'TUDO OK'); process.exit(falhas ? 1 : 0);
 })();

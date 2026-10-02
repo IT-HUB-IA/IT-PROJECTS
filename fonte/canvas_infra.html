@@ -88,13 +88,18 @@
   #camada-nos,#camada-rotulos{position:absolute;left:0;top:0}
   #camada-rotulos{z-index:5000}
   #svg-fantasma{position:absolute;left:-20000px;top:-20000px;width:40000px;height:40000px;overflow:visible;pointer-events:none;z-index:4000}
-  #svg-fantasma .aresta{stroke-width:1.6;opacity:.55;transition:opacity .15s}
-  /* passar o mouse num card ou grupo (ou selecionar): as linhas dele acendem por cima de tudo, as outras apagam */
-  body.foco-no #g-arestas g[data-aresta]:not(.foco) .aresta{opacity:.1}
-  body.foco-no #svg-fantasma .aresta{opacity:.05}
-  #svg-fantasma .aresta.foco{opacity:1 !important;stroke-width:2.6}
-  #g-arestas g.foco .aresta{stroke-width:3}
+  /* linhas fracas o tempo todo (não atrapalham a leitura dos cards) e nunca por cima dos cards, a não ser as acesas */
+  /* a intensidade é de cada pessoa (Configurar quadro, Linhas paradas e Linhas acesas), guardada nas preferências dela */
+  :root{--lin-base:.16;--lin-acesa:1;--lin-apagada:.05}
+  #g-arestas .aresta{opacity:var(--lin-base);stroke-width:1.2;transition:opacity .12s,stroke-width .12s}
+  #svg-fantasma .aresta{stroke-width:1.6;opacity:0;transition:opacity .12s}
+  /* passar o mouse num card, num grupo ou numa linha (ou selecionar): acendem a linha e as ligadas depois dela; as outras quase somem */
+  body.foco-no #g-arestas g[data-aresta]:not(.foco):not(.sel) .aresta{opacity:var(--lin-apagada)}
+  #svg-fantasma .aresta.foco{opacity:var(--lin-acesa) !important;stroke-width:2.2}
+  #g-arestas g.foco .aresta,#g-arestas g.sel .aresta{opacity:var(--lin-acesa);stroke-width:2.2}
   body.foco-no .rotulo-aresta:not(.foco),body.foco-no .rotulo-ponta:not(.foco){opacity:.12}
+  /* desenho com muitas linhas: o texto de cada linha só aparece com o mouse em cima (do card ou da linha) ou selecionada */
+  body.muitas-linhas .rotulo-aresta:not(.foco):not(.sel),body.muitas-linhas .rotulo-ponta:not(.foco):not(.sel),body.muitas-linhas .nota-aresta{opacity:0;pointer-events:none}
   .rotulo-aresta.foco{border-color:var(--ouro2);z-index:2}
   body.sem-fantasma #svg-fantasma{display:none}
 
@@ -1490,16 +1495,29 @@ function rotuloPonta(p, lado, txt, s){
   return '<div class="rotulo-ponta' + (s ? ' sel' : '') + '" style="left:' + x + 'px;top:' + y + 'px">' + esc(txt) + '</div>';
 }
 // cards em foco: o do mouse (e, num grupo, todos os de dentro), os selecionados e os achados na busca
-let focoLinhas = new Set(), focoMouse = null;
+let focoLinhas = new Set(), focoMouse = null, focoAresta = null, focoArestas = new Set();
 function dentroDoGrupo(g){ const sg = tam(g); return Q.nodes.filter(n => n.id !== g.id && n.tipo !== 'grupo' && n.x >= g.x && n.y >= g.y && n.x + tam(n).w <= g.x + sg.w && n.y + tam(n).h <= g.y + sg.h).map(n => n.id); }
 function calcularFoco(){
   const f = new Set(); const add = n => { if (!n) return; f.add(n.id); if (n.tipo === 'grupo') dentroDoGrupo(n).forEach(i => f.add(i)); };
+  // mouse numa linha: ela e as que seguem depois dela (do card de chegada em diante), sem repetir
+  const fa = new Set();
+  if (focoAresta && Q.edges.some(a => a.id === focoAresta)){
+    const fila = [focoAresta], vistos = new Set();
+    while (fila.length){ const id = fila.shift(); if (fa.has(id)) continue; fa.add(id); const a = Q.edges.find(x => x.id === id); if (!a || vistos.has(a.para)) continue; vistos.add(a.para); Q.edges.forEach(x => { if (x.de === a.para && !fa.has(x.id)) fila.push(x.id); }); }
+  } else focoAresta = null;
   if (focoMouse) add(no(focoMouse));
-  else { sel.forEach(id => add(no(id))); if (!f.size) achados.forEach(id => add(no(id))); }
-  focoLinhas = f; document.body.classList.toggle('foco-no', f.size > 0 && Q.edges.some(a => f.has(a.de) || f.has(a.para)));
+  else if (!fa.size){ sel.forEach(id => add(no(id))); if (!f.size) achados.forEach(id => add(no(id))); }
+  focoLinhas = f; focoArestas = fa;
+  document.body.classList.toggle('foco-no', fa.size > 0 || (f.size > 0 && Q.edges.some(a => f.has(a.de) || f.has(a.para))));
 }
-vp.addEventListener('pointerover', e => { const el = e.target.closest && e.target.closest('.no'); const id = el ? el.dataset.id : null; if (id === focoMouse || (e.buttons && id)) return; focoMouse = id; calcularFoco(); renderArestas(); });
-vp.addEventListener('pointerleave', () => { if (!focoMouse) return; focoMouse = null; calcularFoco(); renderArestas(); });
+vp.addEventListener('pointerover', e => {
+  if (e.buttons) return;
+  const el = e.target.closest && e.target.closest('.no'), ar = !el && e.target.closest ? e.target.closest('[data-aresta]') : null;
+  const id = el ? el.dataset.id : null, aid = ar ? ar.dataset.aresta : null;
+  if (id === focoMouse && aid === focoAresta) return;
+  focoMouse = id; focoAresta = aid; calcularFoco(); renderArestas();
+});
+vp.addEventListener('pointerleave', () => { if (!focoMouse && !focoAresta) return; focoMouse = null; focoAresta = null; calcularFoco(); renderArestas(); });
 function renderArestas(){
   if (focoMouse && !no(focoMouse)) focoMouse = null;
   calcularFoco();
@@ -1515,16 +1533,17 @@ function renderArestas(){
     const fimU = a.fim ? pontaURL(a.fim, mk) : (a.setas !== 'nenhuma' ? 'url(#m-' + mk + ')' : ''), iniU = a.inicio ? pontaURL(a.inicio, mk) : (a.setas === 'ambas' ? 'url(#m-' + mk + ')' : '');
     const me = fimU ? ' marker-end="' + fimU + '"' : '';
     const ms = iniU ? ' marker-start="' + iniU + '"' : '';
+    const fo = focoArestas.size ? (focoArestas.has(a.id) ? ' foco' : '') : focoLinhas.size && (focoLinhas.has(a.de) || focoLinhas.has(a.para)) ? ' foco' : '';
     if (a.rotuloInicio) r += rotuloPonta(p1, a.deLado, a.rotuloInicio, s).replace('class="rotulo-ponta', 'class="rotulo-ponta' + fo);
     if (a.rotuloFim) r += rotuloPonta(p2, a.paraLado, a.rotuloFim, s).replace('class="rotulo-ponta', 'class="rotulo-ponta' + fo);
-    const fo = focoLinhas.size && (focoLinhas.has(a.de) || focoLinhas.has(a.para)) ? ' foco' : '';
     h += '<g data-aresta="' + esc(a.id) + '"' + (s || fo ? ' class="' + (s ? 'sel' : '') + fo + '"' : '') + '><path class="aresta-hit" d="' + c.d + '"/><path class="aresta' + (a.tracejada ? ' trac' : '') + '" d="' + c.d + '" stroke="' + hex + '"' + me + ms + '/></g>';
     f += '<path class="aresta' + (a.tracejada ? ' trac' : '') + fo + '" d="' + c.d + '" stroke="' + hex + '"/>';
     if (a.rotulo) r += '<div class="rotulo-aresta' + (s ? ' sel' : '') + fo + '" data-aresta="' + esc(a.id) + '" style="left:' + c.meio.x + 'px;top:' + c.meio.y + 'px">' + esc(a.rotulo) + (a.nota ? '<i class="rot-nota" title="Tem anotação"></i>' : '') + '</div>';
     else if (a.nota) r += '<div class="nota-aresta" data-aresta="' + esc(a.id) + '" title="Anotação da linha" style="left:' + c.meio.x + 'px;top:' + c.meio.y + 'px">' + ico('nota') + '</div>';
   }
   gAr.innerHTML = h;
-  gFantasma.innerHTML = cfg.fantasma === false ? '' : f;
+  document.body.classList.toggle('muitas-linhas', Q.edges.length > 25 && cfg.rotulosSempre !== true);
+  gFantasma.innerHTML = cfg.fantasma === true ? f : '';   // por cima dos cards só se a pessoa ligar
   camadaRot.innerHTML = r;
 }
 function atualizarCaixaSel(){
@@ -1545,7 +1564,16 @@ function atualizarBarra(){
 }
 function aplicarRO(){ document.body.classList.toggle('ro', ro()); atualizarBarra(); ajustarTrilha(); }
 function alternarModoSel(){ cfg.modoSel = !cfg.modoSel; aplicarCfg(); toast(cfg.modoSel ? 'Selecionar área ligado: arraste no fundo pra selecionar' : 'Selecionar área desligado: arrastar o fundo move o canvas'); }
+// intensidade das linhas (de cada pessoa): paradas e acesas
+const LIN_BASE = [{v: .04, rotulo: 'Quase some'}, {v: .1, rotulo: 'Bem fraca'}, {v: .16, rotulo: 'Fraca'}, {v: .28, rotulo: 'Média'}, {v: .45, rotulo: 'Forte'}];
+const LIN_ACESA = [{v: .5, rotulo: 'Suave'}, {v: .7, rotulo: 'Média'}, {v: .85, rotulo: 'Forte'}, {v: 1, rotulo: 'Máxima'}];
+function aplicarLinhas(){
+  const b = LIN_BASE.some(x => x.v === cfg.linBase) ? cfg.linBase : .16, a = LIN_ACESA.some(x => x.v === cfg.linAcesa) ? cfg.linAcesa : 1;
+  const r = document.documentElement.style;
+  r.setProperty('--lin-base', String(b)); r.setProperty('--lin-acesa', String(a)); r.setProperty('--lin-apagada', String(Math.min(.05, +(b * .35).toFixed(3))));
+}
 function aplicarCfg(){
+  aplicarLinhas();
   document.body.classList.toggle('sem-grade', !cfg.grade);
   document.body.classList.toggle('sem-mini', !cfg.minimapa);
   document.body.classList.toggle('modo-sel', !!cfg.modoSel);
@@ -2381,9 +2409,12 @@ function itensConfig(){
     {rotulo: 'Encaixar em outros objetos', marcado: cfg.snapObj, acao: tog('snapObj')},
     {rotulo: 'Mostrar pontos da grade', marcado: cfg.grade, acao: tog('grade')},
     {rotulo: 'Mostrar minimapa', marcado: cfg.minimapa, acao: tog('minimapa', agendarMini)},
-    {rotulo: 'Mostrar linhas por trás dos cards (bem fracas)', marcado: cfg.fantasma !== false, acao: () => { cfg.fantasma = cfg.fantasma === false; salvarCfg(); renderArestas(); }},
+    {rotulo: 'Mostrar por cima dos cards as linhas acesas', marcado: cfg.fantasma === true, acao: () => { cfg.fantasma = cfg.fantasma !== true; salvarCfg(); renderArestas(); }},
     {rotulo: 'Mostrar anotações nos cards', marcado: cfg.notas, acao: tog('notas', () => { for (const el of elsNo.values()) el._assin = null; render(); })},
     {rotulo: 'Somente leitura', marcado: cfg.leitura, desativado: semPermissao, acao: tog('leitura', () => { status(sujos.size ? 'pendente' : (db ? 'salvo' : 'local')); render(); renderPainel(true); })},
+    {segmento: true, rotulo: 'Linhas paradas (intensidade)', atual: LIN_BASE.some(x => x.v === cfg.linBase) ? cfg.linBase : .16, opcoes: LIN_BASE, acao: v => { cfg.linBase = v; aplicarLinhas(); salvarCfg(); toast('Intensidade guardada só para você'); }},
+    {segmento: true, rotulo: 'Linhas acesas, com o mouse em cima (brilho)', atual: LIN_ACESA.some(x => x.v === cfg.linAcesa) ? cfg.linAcesa : 1, opcoes: LIN_ACESA, acao: v => { cfg.linAcesa = v; aplicarLinhas(); salvarCfg(); toast('Brilho guardado só para você'); }},
+    {rotulo: 'Texto das linhas sempre à vista (mesmo com muitas linhas)', marcado: cfg.rotulosSempre === true, acao: () => { cfg.rotulosSempre = cfg.rotulosSempre !== true; salvarCfg(); renderArestas(); }},
     {segmento: true, rotulo: 'Linha nova sai como', atual: cfg.estiloLinha, opcoes: [{v: 'curva', rotulo: 'Curva'}, {v: 'reta', rotulo: 'Reta'}, {v: 'angulo', rotulo: 'Ângulo'}], acao: v => { cfg.estiloLinha = v; salvarCfg(); }}
   ];
 }
