@@ -169,6 +169,24 @@ print(len(html))
 _volta_git = r"""(function(){
   var q = new URLSearchParams(location.search), g = q.get('git'); if (!g) return;
   var e = null; try { e = JSON.parse(localStorage.getItem('ciclodev-git-espera') || 'null'); } catch(x){}
+  var tela = function(t, ok){ document.documentElement.innerHTML = '<head><meta charset="utf-8"><title>CicloDev</title></head><body style="margin:0;background:#0b0b0c;color:#e8e6e3;font:16px system-ui,sans-serif;display:grid;place-items:center;height:100vh;padding:0 24px;text-align:center"><p style="max-width:560px;line-height:1.5;color:' + (ok === false ? '#ff8a8d' : '#e8e6e3') + '">' + t + '</p></body>'; };
+  // Supabase: a volta vale mesmo sem o registro desta aba (o banco confere que o vai e volta é da pessoa e recente),
+  // e a janelinha mostra o resultado que a janela principal devolve
+  if (g === 'supabase' && (q.get('code') || q.get('error'))){
+    var dd = {}; q.forEach(function(v, k){ dd[k] = v; });
+    try { localStorage.setItem('ciclodev-git-volta', JSON.stringify({dados:dd, t:Date.now()})); } catch(x){}
+    var bc = null; try { bc = new BroadcastChannel('ciclodev-git'); bc.postMessage(dd); } catch(x){}
+    try { window.stop(); } catch(x){}
+    var esc = function(t){ return String(t || '').replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); };
+    if (dd.error){ tela('O Supabase não autorizou: ' + esc(dd.error_description || dd.error) + '<br><br>Pode fechar esta janela e tentar de novo.', false); throw new Error('volta do supabase'); }
+    tela('Conectando a organização ao CicloDev…');
+    var respondeu = false;
+    if (bc) bc.onmessage = function(m){ var r = m.data || {}; if (r.resposta !== dd.state) return; respondeu = true;
+      if (r.ok){ tela('Pronto: ' + esc(r.texto || 'organização conectada') + '.<br>Esta janela fecha sozinha.'); setTimeout(function(){ window.close(); }, 1500); }
+      else tela('Não conectou: ' + esc(r.texto || 'erro') + '<br><br>Pode fechar esta janela e tentar de novo.', false); };
+    setTimeout(function(){ if (!respondeu) tela('A janela do CicloDev não respondeu. Deixe a tela de Ligar banco aberta no CicloDev (na mesma janela do navegador) e clique em Conectar outra organização de novo.', false); }, 20000);
+    throw new Error('volta do supabase');
+  }
   if (!e || Date.now() - (e.t || 0) > 1800000) return;
   if (g === 'github' && !q.get('code') && !q.get('error') && e.client_id){
     location.replace('https://github.com/login/oauth/authorize?client_id=' + encodeURIComponent(e.client_id) + '&state=' + encodeURIComponent(q.get('state') || e.estado)); return;

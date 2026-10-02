@@ -40,11 +40,22 @@ async function scConectar(aoTerminar){
   SC.aoConectar = aoTerminar || null;
   gcJanela('https://api.supabase.com/v1/oauth/authorize?' + new URLSearchParams({client_id:SC.status.client_id, redirect_uri:SC.status.retorno, response_type:'code', state:data.estado, code_challenge:data.desafio, code_challenge_method:'S256'}).toString());
 }
+// responde à janelinha (ela mostra o resultado) e, com erro, abre uma janela na tela em vez de só um aviso rápido
+function scResponder(estado, ok, texto){ try { new BroadcastChannel('ciclodev-git').postMessage({resposta:estado, ok, texto}); } catch(e){} }
+let scVoltando = null;
 async function scVolta(d, espera){
-  if (d.error){ toast('O Supabase não conectou: ' + (d.error_description || d.error)); return; }
-  if (!d.code) return;
-  const r = await scFuncao({acao:'concluir', code:d.code, estado:d.state || (espera && espera.estado)});
-  if (!r.ok){ toast('Não deu para conectar o Supabase: ' + (r.erro || 'erro')); return; }
+  const estado = d.state || (espera && espera.estado);
+  if (d.error){ scResponder(estado, false, d.error_description || d.error); modal('O Supabase não autorizou', '<p style="margin:0">' + esc(d.error_description || d.error) + '</p>', [{txt:'Fechar'}]); return; }
+  if (!d.code || scVoltando === d.code) return;
+  scVoltando = d.code;
+  const r = await scFuncao({acao:'concluir', code:d.code, estado});
+  if (!r.ok){
+    // estado de outra aba ou de outra pessoa: outra aba do CicloDev pode ser a dona; só mostra se não for isso
+    if (/expirou ou não é sua/.test(r.erro || '') && !(espera && espera.estado === estado)) return;
+    scResponder(estado, false, r.erro || 'erro');
+    modal('Não deu para conectar o Supabase', '<p style="margin:0">' + esc(r.erro || 'erro') + '</p>', [{txt:'Fechar'}]); return;
+  }
+  scResponder(estado, true, 'organização ' + (r.conta || 'do Supabase') + ' conectada');
   await scCarregar(true);
   tfAviso('Organização ' + (r.conta || 'do Supabase') + ' conectada. Agora escolha o projeto.', [], 3500);
   if (SC.aoConectar) SC.aoConectar(r.conexao_id);

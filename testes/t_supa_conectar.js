@@ -106,7 +106,11 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   // segunda organização: o Supabase autoriza uma por vez; a lista junta os projetos das duas
   segunda = true;
   await p.click('dialog.modal[open] [data-sc-conectar]'); await p.waitForTimeout(400);
-  await p.evaluate(() => new BroadcastChannel('ciclodev-git').postMessage({git:'supabase', code:'cod-2', state:'est-1'})); await p.waitForTimeout(1500);
+  // a volta vale mesmo sem o registro de espera desta aba (foi o que perdia a autorização) e a janelinha recebe a resposta
+  await p.evaluate(() => { localStorage.removeItem('ciclodev-git-espera'); window.__respostas = []; const c = new BroadcastChannel('ciclodev-git'); c.onmessage = m => { if (m.data && m.data.resposta) window.__respostas.push(m.data); }; window.__canal = c;
+    new BroadcastChannel('ciclodev-git').postMessage({git:'supabase', code:'cod-2', state:'est-2'}); }); await p.waitForTimeout(1500);
+  const resp = await p.evaluate(() => window.__respostas);
+  ok(fns.filter(x => x === 'concluir').length === 2 && resp.length === 1 && resp[0].ok && resp[0].resposta === 'est-2' && /Empresa Y/.test(resp[0].texto), 'sem o registro de espera, a volta ainda conclui e a janelinha recebe "organização Empresa Y conectada"');
   const grupos = await p.evaluate(() => [...document.querySelectorAll('dialog.modal[open] #sc-proj optgroup')].map(g => g.label + ':' + g.querySelectorAll('option').length));
   t = await caixa();
   ok(grupos.join() === 'Empresa X:2,Empresa Y:1' && /Conectar outra organização/.test(t), 'duas organizações conectadas: os projetos das duas aparecem juntos, separados pela organização (' + grupos.join(' | ') + ')');

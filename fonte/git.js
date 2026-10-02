@@ -68,8 +68,9 @@ async function gcVolta(d){
   if (GC.feitos.has(chave)) return; GC.feitos.add(chave);
   const espera = gcLer(GC_ESPERA);
   gcGuardar(GC_VOLTA, null);
+  // Supabase: não depende do registro desta aba (o banco confere o vai e volta); só uma aba responde
+  if (d.git === 'supabase'){ if (espera && espera.provedor === 'supabase') gcGuardar(GC_ESPERA, null); if (typeof scVolta === 'function') scVolta(d, espera); return; }
   if (!espera || Date.now() - (espera.t || 0) > 30 * 60000) return;
-  if (d.git === 'supabase'){ gcGuardar(GC_ESPERA, null); if (typeof scVolta === 'function') scVolta(d, espera); return; }
   if (d.error){ gcGuardar(GC_ESPERA, null); toast((d.git === 'gitlab' ? 'O GitLab' : 'O GitHub') + ' não conectou: ' + (d.error_description || d.error)); return; }
   if (!d.code) return;
   gcGuardar(GC_ESPERA, null);
