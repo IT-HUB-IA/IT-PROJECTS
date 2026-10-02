@@ -1,6 +1,6 @@
 /* ===== Agente de IA: permissões (Admin) e chat flutuante (parte 25 do banco) =====
    Admin › Permissões de IA: o dono do sistema liga ou desliga a IA de cada usuário. Começa todo mundo desligado.
-   Balão no canto de baixo, à direita: só aparece para quem tem a IA ligada. As imagens do balão são as que o William
+   Balão no canto de baixo, à direita: só aparece para quem tem a IA ligada. As imagens do balão são as que o dono do sistema
    mandou, usadas como vieram (publico/agente-fechado.webp e publico/agente-aberto.webp), sem recorte nem ajuste.
    A conversa de cada usuário vai para ia_mensagens, e cada pessoa só lê a própria. Nada se apaga: desligar a IA só
    esconde o balão, e o banco também guarda a conversa inteira em .md no agente da pessoa (ia_agentes, parte 26).
@@ -9,7 +9,7 @@
    Regra para quando o agente existir: ele só enxerga o que o dono dele enxerga no sistema, e nunca fala de outro projeto. */
 const IA = {posso:false, aberto:false, novas:0, mouse:false, msgs:null, carregando:false, enviando:false, erro:'', perm:null, permErro:'', busca:'', filtro:'todos', mudando:{}};
 const iaBanco = () => (COM_BANCO && window.ciclodevBanco && typeof MU !== 'undefined' && MU.eu) ? window.ciclodevBanco : null;
-const IA_IMG = {fechado:'agente-fechado.webp', aberto:'agente-aberto.webp', animado:'agente-animado.webp'};   // animado: o robozinho que o William mandou, usado como veio
+const IA_IMG = {fechado:'agente-fechado.webp', aberto:'agente-aberto.webp', animado:'agente-animado.webp'};   // animado: o robozinho enviado pelo dono, usado como veio
 
 /* ---------- Admin › Permissões de IA ---------- */
 async function iaPermCarregar(){

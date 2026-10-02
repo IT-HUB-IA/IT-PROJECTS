@@ -110,7 +110,7 @@ const SM_ICO_MAIS = '<svg width="18" height="18" viewBox="0 0 24 24" fill="curre
 function smCabecalho(){
   const cab = $('.ops-cab'), tit = cab && $('.ops-titulo', cab); if (!tit || tit.dataset.sm) return; tit.dataset.sm = '1';
   const esq = $('.titulo-esq', tit), acoes = $(':scope > .acoes', tit), h1 = esq && $('h1', esq); if (!h1) return;
-  // "Projeto em Blanco & Lisboa": o tipo e onde fica, numa linha só (no lugar da trilha, que repetia o nome)
+  // "Projeto em <cliente>": o tipo e onde fica, numa linha só (no lugar da trilha, que repetia o nome)
   const pequeno = $('small', h1), tipo = UI.sel === 'all' ? 'Todos os clientes e projetos' : (pequeno && (SM_TIPO_NO[pequeno.textContent.trim()] || pequeno.textContent.trim())) || '';
   if (pequeno) pequeno.remove();
   $$('button.info', h1).forEach(b => b.remove());

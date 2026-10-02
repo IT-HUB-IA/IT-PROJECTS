@@ -16,7 +16,7 @@ if (COM_BANCO){
   EU_IDS = {};
   D = dadosVazios();
   salvar = function(){};
-  try { localStorage.removeItem(CHAVE_DADOS); } catch(e){}
+  // a cópia antiga dos dados neste navegador NÃO é apagada aqui: estado.js guarda no banco da pessoa e só tira daqui depois de conferido
 }
 
 const GRUPO_NOME = {backlog:'Backlog', todo:'To Do', doing:'In Progress', review:'In Review', blocked:'Blocked', done:'Done'};

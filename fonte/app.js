@@ -98,7 +98,7 @@ const ETAPAS_MODELO = [
   ['Build','construção','Dev especialista',['Mudança mínima e reversível','Teste escrito antes do código, quando se aplica','Só no repositório e ambiente autorizados']],
   ['QA & Security','testes e segurança','QA · Segurança · Auditoria técnica',['Testes funcionais, de integração e de regressão','Autorização no servidor, segredos e dependências','Isolamento provado com dois clientes']],
   ['Verification','verificação final','Verificador final',['Build, lint e testes rodados, com a saída real','Checklist completo e riscos que sobram declarados','Requisitos obrigatórios da aplicação cumpridos']],
-  ['Approval','aprovação','William',['Push, merge, deploy e migração só com o "sim" dele','Decisões pendentes respondidas']],
+  ['Approval','aprovação','Dono (master)',['Push, merge, deploy e migração só com o "sim" dele','Decisões pendentes respondidas']],
   ['Release','entrega no ar','Dev líder · Impacto e regressão',['Plano de migração com paridade e rollback','Convivência com o sistema antigo','Changelog publicado para o cliente']],
   ['Retrospective','aprender com a entrega','Aprendizado e prevenção',['Causa do que deu errado e o controle que evita repetir','Lições gravadas na memória']]
 ];
@@ -1055,7 +1055,7 @@ function rClientes(){
 }
 function formCliente(c){
   c = c || {nome:'', tipo:'empresa', holding:'', doc:''};
-  return '<div class="grade-form"><label class="lb largo">Nome<input class="campo" id="fc-nome" value="' + esc(c.nome) + '"></label><label class="lb">Tipo' + I('Tipo de cliente: Holding é a empresa que controla outras, como a Blanco & Lisboa. Empresa é uma companhia, do grupo ou de fora. Pessoa é um cliente pessoa física') + '<select class="sel" id="fc-tipo">' + [['holding','Holding'],['empresa','Empresa'],['pessoa','Pessoa']].map(([k, n]) => '<option value="' + k + '"' + (c.tipo === k ? ' selected' : '') + '>' + n + '</option>').join('') + '</select></label>' +
+  return '<div class="grade-form"><label class="lb largo">Nome<input class="campo" id="fc-nome" value="' + esc(c.nome) + '"></label><label class="lb">Tipo' + I('Tipo de cliente: Holding é a empresa que controla outras, como um grupo de empresas. Empresa é uma companhia, do grupo ou de fora. Pessoa é um cliente pessoa física') + '<select class="sel" id="fc-tipo">' + [['holding','Holding'],['empresa','Empresa'],['pessoa','Pessoa']].map(([k, n]) => '<option value="' + k + '"' + (c.tipo === k ? ' selected' : '') + '>' + n + '</option>').join('') + '</select></label>' +
     '<label class="lb">Pertence à holding' + I('Holding: a empresa que controla este cliente. Ao escolher, o sistema cria sozinho a etiqueta automática da ligação') + '<select class="sel" id="fc-hold"><option value="">Nenhuma</option>' + D.clients.filter(x => x.tipo === 'holding' && x.id !== c.id).map(x => '<option value="' + x.id + '"' + (c.holding === x.id ? ' selected' : '') + '>' + esc(x.nome) + '</option>').join('') + '</select></label>' +
     '<label class="lb">CNPJ ou CPF<input class="campo" id="fc-doc" value="' + esc(c.doc || '') + '"></label></div>' +
     '<div class="bloco-g"><h4>Tags</h4><div class="tags">' + D.tags.map(t => '<label class="tag" style="--c:' + esc(t.cor) + ';cursor:pointer"><input type="checkbox" data-fc-tag="' + t.id + '"' + (c.id && D.tagLinks.some(l => l.tipo === 'client' && l.id === c.id && l.tag === t.id) ? ' checked' : '') + '><i class="cor"></i>' + esc(t.nome) + '</label>').join('') + '</div></div>';
@@ -1652,8 +1652,8 @@ function acao(a, x){
   else if (a === 'novo-op') editarOp(null);
   else if (a === 'novo-custo-escopo'){ const c = cadeia(UI.sel); modal('Novo custo em ' + esc(nomeDe(UI.sel)), formCusto(null, {cliente: c.client ? (c.product && c.product.client ? c.product.client : c.client.id) : cliPadrao(), app: c.app ? c.app.id : ''}), [{txt:'Cancelar', cls:'sec'},{txt:'Registrar', acao:d => salvarCusto(d, null)}]); }
   else if (a === 'nova-receita') modal('Nova receita', formReceita(), [{txt:'Cancelar', cls:'sec'},{txt:'Registrar', acao:d => salvarReceita(d, null)}]);
-  else if (a === 'por-foco'){ const ws = x.dataset.ws; if (D.focus) toast('Foco trocado. A frente anterior foi pausada e o tempo dela registrado.'); else toast('Frente em foco'); D.focus = {ws, desde:Date.now(), hist:(D.focus && D.focus.hist) || []}; salvar(); rOperacoes(); }
-  else if (a === 'sair-foco'){ D.focus = null; salvar(); render(); toast('Foco pausado'); }
+  else if (a === 'por-foco'){ const ws = x.dataset.ws; if (D.focus) toast('Foco trocado. A frente anterior foi pausada e o tempo dela registrado.'); else toast('Frente em foco'); esFoco({ws, desde:Date.now(), hist:(D.focus && D.focus.hist) || []}); salvar(); rOperacoes(); }
+  else if (a === 'sair-foco'){ esFoco(null); salvar(); render(); toast('Foco pausado'); }
   else if (a === 'mover-app') moverApp(x.dataset.id);
   else if (a === 'cli-tags'){ UI.cliPag = 'tags'; salvarUI(); rClientes(); }
   else if (a === 'cli-clientes'){ UI.cliPag = 'clientes'; salvarUI(); rClientes(); }

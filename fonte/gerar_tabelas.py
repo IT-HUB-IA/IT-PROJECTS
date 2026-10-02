@@ -73,10 +73,10 @@ h.append('''          </tbody>
 
 # hierarquia
 NIVEIS=[
- ('Client','cliente','Quem contrata. Pode ser holding, empresa ou pessoa. Empresa pode estar ligada a uma holding.','Blanco &amp; Lisboa (holding) · YOU Contabilidade (ligada à holding BL)','Sim'),
+ ('Client','cliente','Quem contrata. Pode ser holding, empresa ou pessoa. Empresa pode estar ligada a uma holding.','Grupo Exemplo (holding) · Empresa A (ligada à holding)','Sim'),
  ('Project','projeto','O trabalho contratado por um cliente.','BL','Sim'),
- ('Product','produto','Conjunto de aplicações de uma mesma unidade de negócio. Opcional.','Blanco &amp; Lisboa · YOU Contabilidade · Realizze · BEEC · Gestão de Lojas · 40%','Opcional'),
- ('Application','aplicação','Cada sistema ou app entregue. Fica dentro de um produto ou direto no projeto.','Java BL · App celular do CEO · Java Fiscal · App Área do Cliente','Sim'),
+ ('Product','produto','Conjunto de aplicações de uma mesma unidade de negócio. Opcional.','Empresa A · Empresa B · Empresa C','Opcional'),
+ ('Application','aplicação','Cada sistema ou app entregue. Fica dentro de um produto ou direto no projeto.','Sistema web · App celular · Portal do cliente','Sim'),
  ('Workstream','frente de trabalho','As trilhas dentro da aplicação.','Frontend · Backend · Database · Integrations · AI','Sim'),
  ('Epic','grande entrega','Um bloco grande de trabalho.','Módulo Financeiro','Opcional'),
  ('Story','funcionalidade vista pelo usuário','O que a pessoa vai conseguir fazer.','O CEO vê o faturamento do mês','Opcional'),

@@ -56,7 +56,7 @@ function leOnde(txt){
   }
   const achados = [];
   Object.entries({clients:'cliente', projects:'projeto', products:'produto', apps:'aplicação', ws:'frente'}).forEach(([col, rot]) => { if (tipo && tipo !== col) return; (D[col] || []).forEach(o => { if (vivo(o) && leNorm(o.nome) === leNorm(v)) achados.push({col, rot, o}); }); });
-  if (!achados.length) return {erro:'"' + txt + '" não existe na estrutura: use o que a coluna Onde mostra (ex.: Java BL › Backend), ou o nome de uma frente, aplicação, produto, projeto ou cliente'};
+  if (!achados.length) return {erro:'"' + txt + '" não existe na estrutura: use o que a coluna Onde mostra (ex.: App web › Backend), ou o nome de uma frente, aplicação, produto, projeto ou cliente'};
   if (achados.length > 1) return {erro:'"' + txt + '" é ambíguo (' + achados.map(a => a.rot).join(', ') + '): escreva antes o que é, como "onde: aplicação ' + v + '", ou use "Aplicação › Frente"'};
   const a = achados[0]; if (a.col === 'ws') return {ws:a.o};
   const apps = D.apps.filter(ap => vivo(ap) && (a.col === 'apps' ? ap.id === a.o.id : a.col === 'products' ? ap.product === a.o.id : a.col === 'projects' ? ap.project === a.o.id : (byId('projects', ap.project) || {}).client === a.o.id));
@@ -252,7 +252,7 @@ function leRegistrar(tipo, resumo, tocados, fazer){
   const marcos = JSON.parse(JSON.stringify(D.marcos.filter(m => pj && dentroDe(m.no, 'project:' + pj.id) || (pj && m.no === 'project:' + pj.id))));
   const r = fazer();
   const reg = {tipo, resumo, quando:new Date().toISOString(), projeto:pj ? pj.id : null, dod:pj ? pj.dod || '' : '', antes, criados:D.issues.filter(x => !idsAntes.has(x.id)).map(x => x.id), marcosCriados:D.marcos.filter(m => !mcAntes.has(m.id)).map(m => m.id), marcos};
-  try { localStorage.setItem(LE_CHAVE, JSON.stringify(reg)); } catch(e){ console.warn('Desfazer: não deu para guardar', e); }
+  esLoteGuardar(reg);   // com login, no banco da pessoa (parte 52)
   return r;
 }
 function leDesfazerHTML(){
@@ -269,7 +269,7 @@ function leDesfazer(){
       D.issues = D.issues.filter(x => !fora.has(x.id)); D.issues.forEach(x => { if (x.links) x.links = x.links.filter(l => !fora.has(l.alvo)); });
       const mf = new Set(u.marcosCriados || []); D.marcos = D.marcos.filter(m => !mf.has(m.id)).map(m => (u.marcos || []).find(a => a.id === m.id) || m);
       const pj = byId('projects', u.projeto); if (pj) pj.dod = u.dod;
-      try { localStorage.removeItem(LE_CHAVE); } catch(e){}
+      esLoteLimpar();
       document.querySelectorAll('dialog.modal').forEach(d => { if (d.open) d.close(); });
       salvar(); rView(); toast('Último lote desfeito.');
     }}]);
@@ -299,7 +299,7 @@ function leAbrir(){
       linhaG('  responsavel: Ana  /  prazo: 15/11/2026', 'Troca <b>responsável</b> e <b>prazo</b>') +
       linhaG('  situação: Pronto para testar', 'Muda a <b>situação</b>: Criado, Priorizado, Em andamento, Pronto para testar, Aceito ou Voltou (com <code>motivo:</code>). Aceitar e devolver, só o P.O.') +
       linhaG('  início: 05/10/2026  /  data alvo: 20/10/2026', 'Troca o <b>início</b> e a <b>data alvo</b>. Início depois do prazo é erro') +
-      linhaG('  onde: Java BL › Backend', 'Muda <b>onde</b> o item fica (a coluna Onde da Lista). Vale também uma frente, aplicação, produto, projeto ou cliente') +
+      linhaG('  onde: App web › Backend', 'Muda <b>onde</b> o item fica (a coluna Onde da Lista). Vale também uma frente, aplicação, produto, projeto ou cliente') +
       linhaG('  descrição: / horas: 6 / cliente vê: sim / sprint: Sprint 3', 'Troca <b>descrição</b>, <b>horas</b>, se o <b>cliente vê</b> e o <b>sprint</b>') +
       linhaG('  aceite: texto  /  tirar aceite: texto', '<b>Acrescenta</b> ou <b>tira</b> um critério (tirar um marcado avisa)') +
       linhaG('  trocar aceites: sim', 'Tira todos os critérios antes dos <code>aceite:</code> do bloco (substitui)') +

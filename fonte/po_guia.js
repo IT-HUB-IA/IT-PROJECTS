@@ -74,7 +74,7 @@ enHTML = function(chave){
 
 /* ---------- 22: O que fazer hoje (no Painel e no topo da Fila) ---------- */
 const PG_SIL = 'ciclodev-po-silenciados';
-const pgSil = () => { try { const o = JSON.parse(localStorage.getItem(PG_SIL) || '{}'); const ag = Date.now(); Object.keys(o).forEach(k => { if (o[k] < ag) delete o[k]; }); return o; } catch(e){ return {}; } };
+const pgSil = () => esSilenciados();   // no banco da pessoa (parte 52); sem login, no navegador
 function pgSilenciar(k){ try { const o = pgSil(); o[k] = Date.now() + 7 * 864e5; localStorage.setItem(PG_SIL, JSON.stringify(o)); } catch(e){} }
 function pgAcoes(chave){
   const its = issuesEm(chave).filter(i => !i.arquivado && poTemPO(i)), A = [];
@@ -244,7 +244,7 @@ const PG_GUIA_EST = {pj:null, passo:-1, aba:''};
 function pgGuiaAbrir(){
   const pj = cadeia(UI.sel).project; if (!pj){ toast('Escolha um projeto na Estrutura'); return; }
   if (typeof cmLerPrefs === 'function') Promise.resolve(cmLerPrefs()).then(() => pgGuiaDesenhar()).catch(() => {});
-  let k = -1; try { k = +(localStorage.getItem('ciclodev-guia-projeto-' + pj.id) || -1); } catch(e){}
+  const k = esGuiaPasso(pj.id);
   Object.assign(PG_GUIA_EST, {pj, passo:k, aba:''});
   modal('Montar o projeto: ' + pj.nome, '<div class="pg-guia"></div>', [{txt:'Fechar', cls:'sec'}]);
   const dl = document.querySelector('dialog.modal:last-of-type'); if (dl) dl.classList.add('pg-guia-modal');
@@ -253,7 +253,7 @@ function pgGuiaAbrir(){
 function pgGuiaDesenhar(){
   const box = $('dialog.pg-guia-modal[open] .pg-guia'); const pj = PG_GUIA_EST.pj; if (!box || !pj) return;
   const prog = pgGuiaProgresso(pj), k = PG_GUIA_EST.passo;
-  try { localStorage.setItem('ciclodev-guia-projeto-' + pj.id, String(k)); } catch(e){}
+  esGuiaGuardar(pj.id, k);
   const lado = '<ol class="pg-g-lado">' + PG_GUIA.map((p, n) => '<li class="' + (n === k ? 'atual ' : '') + (prog.ok[n] ? 'ok' : '') + '"><button type="button" data-pg-g-ir="' + n + '">' + (prog.ok[n] ? '✓ ' : '') + (n + 1) + '. ' + esc(p.tit) + '</button></li>').join('') + '</ol>';
   let meio;
   if (k < 0) meio = '<p class="pg-g-txt">Vou te ajudar a montar o projeto do jeito que um Product Owner faria, um passo por vez. São 9 passos curtos. Ao final, o projeto terá meta, versões com data, regras de pronto, itens e riscos. Você pode parar e voltar quando quiser. Vamos começar?</p>' +
