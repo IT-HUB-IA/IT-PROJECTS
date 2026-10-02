@@ -460,3 +460,7 @@ Cada um dos 8 custos e das 4 receitas também foi conferido item por item.
 - Teste local: `99_teste_supabase_LOCAL.sql` (33 conferências).
 
 Configuração (uma vez, o dono do sistema): Admin, aba GitHub, GitLab e Supabase. Criar o app em OAuth Apps da organização no Supabase, com o endereço de volta `.../entrar.html?git=supabase` e só permissões de leitura (Projects, Organizations e Database), e colar o Client ID e o Client Secret.
+
+## Parte 55: o cadastro do app do Supabase confere os dois códigos (aplicada no Supabase em 02/10/2026)
+
+`55_supabase_app_conferir.sql` (mesma assinatura de `supa_app_gravar`). O Client ID é público (aparece na tela e na janelinha do Supabase), então o banco recusa: Client ID fora do formato do Supabase (UUID), Client ID que começa com `sba_` (é o segredo) e segredo igual ao Client ID. A tela confere o mesmo antes de enviar. Motivo: no primeiro cadastro, o Client Secret foi colado nos dois campos; o cadastro foi apagado.

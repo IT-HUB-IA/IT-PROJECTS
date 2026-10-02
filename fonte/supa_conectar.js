@@ -153,11 +153,11 @@ function scAdminHTML(){
         '<li><b>Website URL</b>: <code>' + esc(location.origin) + '</code></li>' +
         '<li><b>Authorization callback URL</b>: <code>' + esc(ret) + '</code> <button type="button" class="btn sec mini" data-gc-copiar="' + esc(ret) + '">Copiar</button></li>' +
         '<li><b>Permissões</b>: marque só leitura (<b>Read</b>) em <b>Projects</b>, <b>Organizations</b> e <b>Database</b>. Não marque nada de escrita. Se a conferência disser que falta a permissão de banco, volte aqui e veja a mensagem.</li></ul></li>' +
-      '<li>Confirme. O Supabase mostra o <b>Client ID</b> e o <b>Client Secret</b>. Copie cada um para os campos abaixo. O Secret só aparece uma vez.</li>' +
+      '<li>Confirme. O Supabase mostra dois códigos diferentes: o <b>Client ID</b> (formato <code>a1b2c3d4-e5f6-...</code>) e o <b>Client Secret</b> (começa com <code>sba_</code>). Copie cada um para o seu campo abaixo. O Secret só aparece uma vez.</li>' +
       '<li>Clique em <b>Salvar o Supabase</b>.</li></ol>') +
     '<p class="sec">O CicloDev só usa essa autorização para ler a <b>estrutura</b> do banco (pelo modo só leitura do Supabase, com consultas fixas no catálogo) e confere isso antes de ligar. Nunca lê o conteúdo das tabelas. Os campos abaixo não são o seu login: recuse se o navegador oferecer para preencher.</p>' +
-    '<div class="grade-form"><label class="lb">Client ID<input class="campo" id="sc-adm-id" value="' + esc(s.client_id || '') + '" autocomplete="off" spellcheck="false" data-lpignore="true" data-1p-ignore></label>' +
-    '<label class="lb">Client Secret<input class="campo gc-oculto" id="sc-adm-seg" type="text" autocomplete="off" spellcheck="false" data-lpignore="true" data-1p-ignore placeholder="' + (s.pronto ? 'deixe vazio para manter' : '') + '"></label></div>' +
+    '<div class="grade-form"><label class="lb">Client ID<input class="campo" id="sc-adm-id" value="' + esc(s.client_id || '') + '" autocomplete="off" spellcheck="false" data-lpignore="true" data-1p-ignore placeholder="a1b2c3d4-e5f6-7890-abcd-ef1234567890"></label>' +
+    '<label class="lb">Client Secret<input class="campo gc-oculto" id="sc-adm-seg" type="text" autocomplete="off" spellcheck="false" data-lpignore="true" data-1p-ignore placeholder="' + (s.pronto ? 'deixe vazio para manter' : 'começa com sba_') + '"></label></div>' +
     '<p class="sec">' + (s.pronto ? 'Pronto. As empresas ligam o banco delas em Infraestrutura, Ligar banco, Conectar ao Supabase.' : 'Ainda não configurado.') + '</p>' +
     '<button type="button" class="btn ' + (s.pronto ? 'sec' : 'acento') + '" data-sc-adm-salvar>' + (s.pronto ? 'Salvar mudanças' : 'Salvar o Supabase') + '</button></section>';
 }
@@ -166,6 +166,10 @@ gcAdminHTML = function(){ const h = _gcAdminHTMLSc(); return h.endsWith('</div>'
 async function scAdminSalvar(){
   const id = ($('#sc-adm-id') || {}).value.trim(), seg = ($('#sc-adm-seg') || {}).value.trim();
   if (!id){ toast('Cole o Client ID que o Supabase mostrou.'); return; }
+  // o Client ID é público (aparece na tela e na janelinha): o segredo nunca pode ir nele
+  if (/^sba_/i.test(id)){ $('#sc-adm-id').value = ''; toast('Isso é o Client Secret (começa com sba_), não o Client ID. Cole o segredo só no campo Client Secret. O Client ID é o código no formato a1b2c3d4-e5f6-...'); return; }
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)){ toast('O Client ID do Supabase tem o formato a1b2c3d4-e5f6-7890-abcd-ef1234567890. Confira se copiou o código certo.'); return; }
+  if (seg && seg.toLowerCase() === id.toLowerCase()){ toast('O Client Secret não pode ser igual ao Client ID.'); return; }
   if (!seg && !(SC.status && SC.status.pronto)){ toast('Cole o Client Secret que o Supabase mostrou junto com o Client ID.'); return; }
   const {error} = await window.ciclodevBanco.rpc('supa_app_gravar', {p_client_id:id, p_client_secret:seg || null, p_retorno:scRetorno()});
   if (error){ toast('Não deu para salvar: ' + tfErro(error)); return; }

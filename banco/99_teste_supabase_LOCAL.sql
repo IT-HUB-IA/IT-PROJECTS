@@ -19,10 +19,16 @@ select pg_temp.ok((select fora from t) is not null, 'pessoa de fora cadastrada')
 
 -- ---------- 1. o app do Supabase: só o dono do sistema cadastra; ninguém lê o segredo ----------
 select pg_temp.como(:'fora_auth'); set role authenticated;
-do $$ begin perform supa_app_gravar('cliente-123456', 'segredo-123456', 'https://ciclodev.app/entrar.html?git=supabase'); raise exception 'aceitou'; exception when others then if sqlerrm = 'aceitou' then raise; end if; end $$;
+do $$ begin perform supa_app_gravar('1b2c3d4e-0000-4000-8000-00000000abcd', 'segredo-123456', 'https://ciclodev.app/entrar.html?git=supabase'); raise exception 'aceitou'; exception when others then if sqlerrm = 'aceitou' then raise; end if; end $$;
 select pg_temp.ok(true, 'quem não é dono do sistema não cadastra o app');
 reset role; select pg_temp.como('00000000-0000-0000-0000-00000000000a'); set role authenticated;
-select pg_temp.ok((supa_app_gravar('cliente-123456', 'segredo-123456', 'https://ciclodev.app/entrar.html?git=supabase'))->>'pronto' = 'true', 'o dono cadastra o app do Supabase');
+do $$ begin perform supa_app_gravar('sba_123456789abcdef', 'sba_123456789abcdef', 'https://ciclodev.app/entrar.html?git=supabase'); raise exception 'aceitou'; exception when others then if sqlerrm = 'aceitou' then raise; end if; end $$;
+select pg_temp.ok(true, 'o segredo (sba_) colado no campo Client ID é recusado');
+do $$ begin perform supa_app_gravar('cliente-qualquer', 'segredo-123456', 'https://ciclodev.app/entrar.html?git=supabase'); raise exception 'aceitou'; exception when others then if sqlerrm = 'aceitou' then raise; end if; end $$;
+select pg_temp.ok(true, 'Client ID fora do formato do Supabase é recusado');
+do $$ begin perform supa_app_gravar('1b2c3d4e-0000-4000-8000-00000000abcd', '1b2c3d4e-0000-4000-8000-00000000abcd', 'https://ciclodev.app/entrar.html?git=supabase'); raise exception 'aceitou'; exception when others then if sqlerrm = 'aceitou' then raise; end if; end $$;
+select pg_temp.ok(true, 'segredo igual ao Client ID é recusado');
+select pg_temp.ok((supa_app_gravar('1b2c3d4e-0000-4000-8000-00000000abcd', 'segredo-123456', 'https://ciclodev.app/entrar.html?git=supabase'))->>'pronto' = 'true', 'o dono cadastra o app do Supabase');
 select pg_temp.ok(not (supa_app_status() ? 'client_secret'), 'a tela sabe que está pronto, sem ver o segredo');
 do $$ begin perform supa_app_ler(); raise exception 'leu'; exception when insufficient_privilege then null; end $$;
 select pg_temp.ok(true, 'a tela não lê o segredo do app');
