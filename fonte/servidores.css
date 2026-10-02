@@ -1,8 +1,8 @@
 /* ===== Aba Servidores ===== */
-.sv-tela{display:grid;gap:16px;max-width:1200px}
+.sv-tela{display:grid;gap:16px}
 .sv-topo{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-start;justify-content:space-between}
 .sv-topo h2{margin:0;font-family:var(--font-display);font-size:24px;letter-spacing:-.02em}
-.sv-topo .lead{margin:4px 0 0;max-width:72ch;color:var(--text-secondary);line-height:1.5}
+.sv-topo .lead{margin:4px 0 0;color:var(--text-secondary);line-height:1.5}
 .sv-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
 .sv-kpi{display:grid;gap:2px;padding:14px 16px;background:var(--branco);border:1px solid #E2E2E6;border-top:3px solid var(--preto)}
 .sv-kpi b{font-family:var(--font-display);font-size:24px;font-variant-numeric:tabular-nums}
@@ -74,3 +74,10 @@ dialog.sv-modal{width:min(1040px,96vw)}
 .sv-ed-sub{margin:14px 0 6px;font-size:13px}.sv-ed-sub small{font-weight:400;color:var(--preto-60, #666)}
 .sv-prox{grid-column:1/-1;margin:0;font-size:13px}
 .lb[hidden]{display:none}
+
+.sv-topo > div:first-child{flex:1 1 0;min-width:0}
+
+/* os cards de número dividem a linha inteira; cada um do tamanho do seu texto, sem quebrar linha (quebra o card, não o texto) */
+.sv-kpis{display:flex;flex-wrap:wrap}
+.sv-kpis > .sv-kpi{flex:1 1 auto}
+.sv-kpi span{white-space:nowrap}

@@ -69,7 +69,7 @@
   .jn-item .sm-dobra > summary{padding:14px 16px}
 
   /* cada bloco com a sua cara */
-  .jn-item .g-principal > *{max-width:760px;width:100%}
+  .jn-item .g-principal > *{width:100%}
   .jn-item .g-principal .g-add .btn,.jn-item .g-principal .g-add button[type="submit"]{min-width:104px;height:40px;justify-content:center}
   .jn-item .g-principal .g-add .campo,.jn-item .g-principal .g-add .sel{height:40px}
   .jn-item .g-lateral{min-width:0}

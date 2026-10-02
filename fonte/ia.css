@@ -1,6 +1,6 @@
 /* Agente de IA (ia.js): aba Permissões de IA no Admin e chat flutuante */
 .ia-adm{display:grid;gap:14px}
-.ia-adm-intro{margin:0;max-width:760px}
+.ia-adm-intro{margin:0}
 .ia-tab td{vertical-align:middle}
 .ia-chave{display:inline-flex;align-items:center;gap:8px;border:0;background:none;padding:4px 0;font:inherit;font-size:13px;color:var(--tinta-2);cursor:pointer}
 .ia-chave i{position:relative;width:34px;height:18px;border:1px solid var(--nevoa);background:var(--branco);flex:none;transition:background var(--dur,.15s)}

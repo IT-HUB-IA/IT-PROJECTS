@@ -1,7 +1,7 @@
 /* ---------- Entregas: versões, publicações, repositórios e o código no item ---------- */
   .en{display:grid;gap:28px}
   .en-cab{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
-  .en-cab .lead{margin:0;max-width:640px}
+  .en-cab .lead{margin:0}
   .en-cab .acoes{display:flex;gap:8px;flex-wrap:wrap}
   .en-cab .btn{gap:6px}
   .en-sec{display:grid;gap:12px}
@@ -112,7 +112,7 @@
   .en2-lista > li:last-child{border-bottom:0}
   .en2-v{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px 12px}
   .en2-v > .en2-pilula{justify-self:end}
-  .en2-v > .en2-prog{max-width:320px}
+  .en2-v > .en2-prog{}
   .en2-v-nome{display:flex;align-items:center;gap:10px;min-width:0}
   .en2-v-nome > svg{flex:none;color:var(--tinta-2)}
   .en2-v-nome b{display:block;font-size:14px}

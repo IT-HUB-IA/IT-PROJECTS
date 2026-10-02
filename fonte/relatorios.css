@@ -3,10 +3,10 @@
   .rl-barra.fina{height:4px;border:0;background:var(--linha,#E3E3E7)}
   .rl-barra > i{display:block;height:100%;background:var(--preto)}
   .rl-cab{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px}
-  .rl-cab .lead{margin:4px 0 0;max-width:640px}
+  .rl-cab .lead{margin:4px 0 0}
   .rl-carregando,.rl-erro{margin:0;padding:24px;color:var(--grafite)}
   .rl-erro{border-left:2px solid var(--vermelho);background:var(--preto-04)}
-  .rl-vazio{padding:28px;border:1px dashed var(--nevoa);background:var(--branco);max-width:680px}
+  .rl-vazio{padding:28px;border:1px dashed var(--nevoa);background:var(--branco)}
   .rl-vazio p{margin:6px 0 0;color:var(--grafite)}
   .rl-perigo,.btn.rl-perigo{color:var(--vermelho)}
   .rl-ruim{color:var(--vermelho)!important;font-weight:600}

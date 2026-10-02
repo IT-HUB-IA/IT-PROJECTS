@@ -10,6 +10,10 @@ Gestão de projetos, entregas e custos da IT.IA, feita no CicloDev. Cliente atua
 | `testes/` | Testes da tela (Playwright) |
 | `emails/` | Os e-mails do login em português (esqueci a senha, convite, confirmação), para colar no Supabase |
 
+## Regra de tela: usar toda a largura
+
+Texto, telas e cards ocupam toda a largura da janela. Não se limita a largura de nada (nada de `max-width` em px, ch ou `min(...)` em texto, tela ou card) e nada quebra linha enquanto houver espaço. As exceções são poucas: janela (modal), menu suspenso, aviso flutuante, balão de conversa, nome de arquivo cortado com "..." e barra de gráfico. `node testes/t_largura.js` barra qualquer CSS novo que desobedeça.
+
 ## Gerar a página
 
 ```

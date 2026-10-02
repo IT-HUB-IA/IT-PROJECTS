@@ -747,5 +747,5 @@
 .cria-barra .espaco{flex:1 1 auto}
 @media (max-width:640px){ .cria-barra .espaco{display:none} }
 .lt-ia{display:grid;gap:6px;justify-items:start;margin-top:10px;font-size:12.5px;line-height:1.5}
-.lt-ia p{margin:0;color:var(--tinta-2);max-width:60ch}
+.lt-ia p{margin:0;color:var(--tinta-2)}
 .lt-ia span{display:flex;flex-wrap:wrap;gap:6px}
