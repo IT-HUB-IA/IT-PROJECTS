@@ -3397,8 +3397,23 @@ dialog.sv-modal{width:min(1040px,96vw)}
 .sv-ed-onde{display:grid;gap:4px;max-height:260px;overflow:auto}
 .sv-ed-no{display:flex;gap:8px;align-items:center;font-size:13px}
 .sv-ed-no small{color:var(--text-secondary)}
-.sv-peso{width:72px;display:none}
-.sv-com-peso .sv-peso{display:inline-block;margin-left:auto}
+.sv-parte{display:inline-flex;align-items:center;gap:4px;margin-left:auto;flex-wrap:wrap;justify-content:flex-end}
+.sv-parte .campo{width:96px;padding:4px 6px}
+.sv-parte i{font-style:normal;font-size:12px;color:var(--preto-60, #666)}
+.sv-in-peso,.sv-in-pct,.sv-in-val{display:none !important}
+.sv-modo-peso .sv-in-peso,.sv-modo-pct .sv-in-pct,.sv-modo-val .sv-in-val{display:inline-block !important}
+.sv-calc{font-size:12px;font-variant-numeric:tabular-nums;color:var(--preto-60, #666);min-width:0}
+.sv-modo-peso .sv-calc,.sv-modo-pct .sv-calc,.sv-modo-val .sv-calc{min-width:150px;text-align:right}
+.sv-resumo{display:flex;flex-wrap:wrap;gap:6px 18px;margin:10px 0 6px;padding:10px 12px;background:var(--preto-04);font-size:13px;font-variant-numeric:tabular-nums}
+.sv-resumo .sv-falta{color:#B45309}.sv-resumo .sv-erro{color:#B91C1C}.sv-resumo .sv-ok{color:#15803D}
+.sv-so-div{display:none}.sv-modo-pct .sv-so-div,.sv-modo-val .sv-so-div{display:inline-flex}
+.sv-ed-custo{align-items:flex-end}
+.sv-c{display:flex;flex-direction:column;gap:3px;font-size:12px;flex:1 1 130px;min-width:0}
+.sv-c .campo,.sv-c .sel{width:100%}
+.sv-c-desc{flex:2 1 220px}.sv-c-peq{flex:0 1 80px}
+.sv-c[hidden]{display:none}
+.sv-div .sv-resta{color:#B45309}
+.sv-lanc{margin-top:8px;font-size:13px}.sv-lanc summary{cursor:pointer}
 /* ===== Inventário de TI ===== */
 .inv-tela{display:grid;gap:14px;max-width:1280px}
 .inv-topo{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-start;justify-content:space-between}
@@ -16634,14 +16649,18 @@ if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {sg
    A máquina (provedor, plano, sistema, CPU, memória, disco, rede, contrato, backup, monitoramento e ONDE fica o acesso,
    nunca a senha), onde ela se aplica (cliente, projeto ou produto valem para todas as aplicações de dentro; aplicação,
    só para ela), o que roda nela (cada serviço com a aplicação que atende) e os custos, divididos entre as aplicações
-   atendidas (por igual ou por peso). Aparece também em Custos, na Ficha técnica (Ambientes) e vira item na frente
+   atendidas (por igual, por peso, por percentual ou por valor; o que não fecha aparece como restante). Cada custo tem
+   recorrência (mensal, trimestral, semestral, anual ou único) e renova até cancelar ou para numa data; o banco gera um
+   lançamento por período (parte 50). Aparece também em Custos, na Ficha técnica (Ambientes) e vira item na frente
    Infraestrutura quando a renovação está chegando. Tudo direto no banco, com as regras de acesso da parte 47. */
-const SRV = {lido:false, carregando:null, erro:'', lista:[], alcance:[], servicos:[], custos:[]};
+const SRV = {lido:false, carregando:null, erro:'', lista:[], alcance:[], servicos:[], custos:[], lancamentos:[]};
 const SV_TIPOS = [['vps','VPS'],['dedicado','Dedicado'],['nuvem','Máquina na nuvem'],['container','Container gerenciado'],['fisico','Servidor físico'],['outro','Outro']];
 const SV_AMB = [['producao','Produção'],['homologacao','Homologação'],['desenvolvimento','Desenvolvimento'],['backup','Backup'],['outro','Outro']];
 const SV_STATUS = [['ativo','Ativo'],['pausado','Pausado'],['desligado','Desligado']];
 const SV_SERV = [['aplicacao','Aplicação'],['api','API'],['site','Site'],['banco','Banco de dados'],['proxy','Proxy / servidor web'],['container','Container'],['fila','Fila'],['cache','Cache'],['agendada','Rotina agendada'],['monitoramento','Monitoramento'],['backup','Backup'],['painel','Painel'],['outro','Outro']];
-const SV_REC = [['mensal','Mensal'],['anual','Anual'],['unico','Único']];
+const SV_REC = [['mensal','Mensal'],['trimestral','Trimestral'],['semestral','Semestral'],['anual','Anual'],['unico','Único (uma vez)']];
+const SV_MESES = {mensal:1, trimestral:3, semestral:6, anual:12};
+const SV_RATEIO = [['igual','Por igual entre as aplicações'],['percentual','Por percentual (%) de cada aplicação'],['valor','Por valor (R$ por mês) de cada aplicação'],['peso','Por peso de cada aplicação']];
 const SV_DISCO = [['','—'],['ssd','SSD'],['nvme','NVMe'],['hdd','HDD']];
 const svNome = (lista, k) => (lista.find(x => x[0] === k) || [k, k])[1];
 const svPodeTer = sel => /^(client|project|product|app):/.test(sel || '');
@@ -16675,10 +16694,11 @@ async function svCarregar(forcar){
   if (SRV.carregando && !forcar) return SRV.carregando;
   SRV.carregando = (async () => {
     try {
-      const [s, a, v, c] = await Promise.all([sb.from('servidores').select('*').order('nome').limit(2000), sb.from('servidores_alcance').select('*').limit(10000),
-        sb.from('servidores_servicos').select('*').order('ordem').limit(20000), sb.from('servidores_custos').select('*').limit(20000)]);
+      const [s, a, v, c, l] = await Promise.all([sb.from('servidores').select('*').order('nome').limit(2000), sb.from('servidores_alcance').select('*').limit(10000),
+        sb.from('servidores_servicos').select('*').order('ordem').limit(20000), sb.from('servidores_custos').select('*').limit(20000),
+        sb.from('servidores_lancamentos').select('*').order('competencia').limit(50000)]);
       const e = [s, a, v, c].find(x => x.error); if (e) throw e.error;
-      SRV.lista = s.data || []; SRV.alcance = a.data || []; SRV.servicos = v.data || []; SRV.custos = c.data || []; SRV.erro = '';
+      SRV.lista = s.data || []; SRV.alcance = a.data || []; SRV.servicos = v.data || []; SRV.custos = c.data || []; SRV.lancamentos = l.error ? [] : (l.data || []); SRV.erro = '';
     } catch (e){ SRV.erro = e.message || String(e); }
     SRV.lido = true; SRV.carregando = null;
   })();
@@ -16687,6 +16707,7 @@ async function svCarregar(forcar){
 const svAlcanceDe = s => SRV.alcance.filter(a => a.servidor_id === s.id);
 const svServicosDe = s => SRV.servicos.filter(a => a.servidor_id === s.id).sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
 const svCustosDe = s => SRV.custos.filter(a => a.servidor_id === s.id);
+const svLancamentosDe = s => SRV.lancamentos.filter(a => a.servidor_id === s.id);
 // como o servidor chega neste ponto: aplicado aqui, herdado de cima, ou atende parte do que está dentro
 function svRelacao(s, sel){
   const acima = svAcima(sel), dentro = svDentro(sel), al = svAlcanceDe(s).map(a => a.no_id), aqui = svIdDe(sel);
@@ -16700,23 +16721,49 @@ const svDoPonto = sel => SRV.lista.filter(s => svRelacao(s, sel));
 
 /* ---------- custos e divisão ---------- */
 const svMesAtual = () => iso(HOJE).slice(0, 7);
-function svCustoMensal(s){
-  const m = svMesAtual();
-  return svCustosDe(s).reduce((t, c) => { if (String(c.inicio).slice(0, 7) > m || (c.fim && String(c.fim).slice(0, 7) < m)) return t;
-    const v = svBRL(+c.valor || 0, c.moeda); return t + (c.recorrencia === 'mensal' ? v : c.recorrencia === 'anual' ? v / 12 : 0); }, 0);
-}
+// o custo de um item por mês (trimestral /3, semestral /6, anual /12; único não entra no mês)
+const svMensalDe = c => SV_MESES[c.recorrencia] ? svBRL(+c.valor || 0, c.moeda) / SV_MESES[c.recorrencia] : 0;
+const svCustoVale = (c, m) => !(String(c.inicio).slice(0, 7) > m || (c.fim && String(c.fim).slice(0, 7) < m));
+function svCustoMensal(s){ const m = svMesAtual(); return svCustosDe(s).reduce((t, c) => t + (svCustoVale(c, m) ? svMensalDe(c) : 0), 0); }
 const svCustoUnico = s => svCustosDe(s).filter(c => c.recorrencia === 'unico').reduce((t, c) => t + svBRL(+c.valor || 0, c.moeda), 0);
-// a parte de cada aplicação: por igual entre as atendidas, ou pelo peso de cada ponto (o peso do ponto se divide entre as aplicações dele)
-function svDivisao(s){
-  const pesos = new Map();
-  for (const a of svAlcanceDe(s)){ const apps = svAppsDe(a.no_id); if (!apps.length) continue;
-    apps.forEach(x => pesos.set(x, s.rateio === 'peso' ? (pesos.get(x) || 0) + (+a.peso || 1) / apps.length : 1)); }
-  const total = [...pesos.values()].reduce((t, v) => t + v, 0);
-  return [...pesos.entries()].map(([app, p]) => ({app, fracao:total ? p / total : 0}));
+// as aplicações atendidas e a parte de cada uma. Igual: o mesmo para todas. Peso, percentual e valor: o da linha da
+// própria aplicação; sem linha própria, o do ponto de cima (projeto, produto, cliente) dividido entre as aplicações dele.
+// Percentual e valor podem não fechar 100%: o que sobra fica em "restante" (sem dono).
+function svDivisao(s, mensal){
+  const al = svAlcanceDe(s), modo = s.rateio || 'igual', prop = new Map(), cobre = new Map();
+  if (mensal == null) mensal = svCustoMensal(s);
+  for (const a of al) for (const x of svAppsDe(a.no_id)) { if (!cobre.has(x)) cobre.set(x, []); cobre.get(x).push(a); }
+  const campo = a => modo === 'peso' ? (a.peso == null ? 1 : +a.peso) : modo === 'percentual' ? +a.percentual || 0 : +a.valor || 0;
+  for (const [x, linhas] of cobre){
+    if (modo === 'igual'){ prop.set(x, 1); continue; }
+    const propria = linhas.find(a => a.no_id === x);
+    prop.set(x, propria ? campo(propria) : linhas.reduce((t, a) => t + campo(a) / svAppsDe(a.no_id).length, 0));
+  }
+  const tot = [...prop.values()].reduce((t, v) => t + v, 0);
+  const fr = v => modo === 'percentual' ? v / 100 : modo === 'valor' ? (mensal ? v / mensal : 0) : (tot ? v / tot : 0);
+  const lista = [...prop.entries()].map(([app, v]) => ({app, fracao:fr(v)}));
+  lista.restante = Math.max(0, 1 - lista.reduce((t, d) => t + d.fracao, 0));
+  lista.passou = lista.reduce((t, d) => t + d.fracao, 0) > 1.0001;
+  return lista;
+}
+// lançamentos: cada período do custo, do início até hoje (ou até o fim). O banco grava; aqui serve para mostrar e conferir.
+function svPeriodos(c, ate){
+  const ini = String(c.inicio || '').slice(0, 10); if (!ini) return [];
+  const fim = [c.fim ? String(c.fim).slice(0, 10) : null, ate || iso(HOJE)].filter(Boolean).sort()[0];
+  if (ini > fim) return []; if (c.recorrencia === 'unico') return [ini];
+  const passo = SV_MESES[c.recorrencia] || 1, out = []; const [y, m, d] = ini.split('-').map(Number);
+  for (let k = 0; k < 1200; k++){ const dt = new Date(y, m - 1 + k * passo, 1); const ult = new Date(dt.getFullYear(), dt.getMonth() + 1, 0).getDate();
+    const s2 = iso(new Date(dt.getFullYear(), dt.getMonth(), Math.min(d, ult))); if (s2 > fim) break; out.push(s2); }
+  return out;
+}
+function svProximo(c){
+  if (c.recorrencia === 'unico') return String(c.inicio) > iso(HOJE) ? String(c.inicio) : null;
+  const futuro = svPeriodos(c, iso(new Date(HOJE.getFullYear() + 2, HOJE.getMonth(), HOJE.getDate()))).find(x => x > iso(HOJE));
+  return futuro && (!c.fim || futuro <= String(c.fim)) ? futuro : null;
 }
 // quanto do custo mensal cai neste ponto
 function svParte(s, sel){
-  const div = svDivisao(s), mensal = svCustoMensal(s); if (!mensal) return 0;
+  const mensal = svCustoMensal(s), div = svDivisao(s, mensal); if (!mensal) return 0;
   if (!div.length){ const r = svRelacao(s, sel); return r && r.tipo !== 'herdado' ? mensal : 0; }
   const dentro = new Set(svDentro(sel)); return div.filter(d => dentro.has(d.app)).reduce((t, d) => t + d.fracao * mensal, 0);
 }
@@ -16753,10 +16800,14 @@ function svCardHTML(s, sel, pode){
     (espec.length || s.sistema ? '<p class="sv-espec">' + esc([s.sistema].concat(espec).filter(Boolean).join(' · ')) + '</p>' : '') +
     '<div class="sv-grade">' +
       '<section><h4>Onde se aplica</h4>' + (al.length ? '<ul class="sv-onde">' + al.map(a => { const k = svChaveDe(a.no_id), n = svAppsDe(a.no_id).length;
-          return '<li><b>' + esc(k ? nomeDe(k) : 'Ponto sem acesso') + '</b><small>' + esc(k ? ({client:'cliente', project:'projeto', product:'produto', app:'aplicação'})[k.split(':')[0]] : '') + (k && !k.startsWith('app:') ? ' · vale para ' + n + (n === 1 ? ' aplicação' : ' aplicações') : '') + (s.rateio === 'peso' ? ' · peso ' + (+a.peso) : '') + '</small></li>'; }).join('') + '</ul>' : '<p class="sv-vazio">Não diz onde se aplica.</p>') + '</section>' +
-      '<section><h4>Custos</h4>' + (cs.length ? '<table class="sv-tab"><tbody>' + cs.map(c => '<tr><td>' + esc(c.descricao) + (c.fim ? '<small> até ' + svDia(c.fim) + '</small>' : '') + '</td><td>' + esc(svNome(SV_REC, c.recorrencia)) + '</td><td class="sv-num">' + esc((c.moeda !== 'BRL' ? c.moeda + ' ' : '') + (+c.valor).toLocaleString('pt-BR', {minimumFractionDigits:2})) + '</td></tr>').join('') + '</tbody></table>' +
-          '<p class="sv-total">' + brl(mensal) + ' por mês' + (unico ? ' · ' + brl(unico) + ' em custo único' : '') + '</p>' : '<p class="sv-vazio">Sem custo cadastrado.</p>') +
-        (div.length && mensal ? '<h5>Divisão (' + (s.rateio === 'peso' ? 'por peso' : 'por igual') + ')</h5><ul class="sv-div">' + div.map(d => '<li><span>' + esc((byId('apps', d.app) || {}).nome || '') + '</span><b>' + brl(d.fracao * mensal) + '</b><small>' + Math.round(d.fracao * 100) + '%</small></li>').join('') + '</ul>' : '') + '</section>' +
+          return '<li><b>' + esc(k ? nomeDe(k) : 'Ponto sem acesso') + '</b><small>' + esc(k ? ({client:'cliente', project:'projeto', product:'produto', app:'aplicação'})[k.split(':')[0]] : '') + (k && !k.startsWith('app:') ? ' · vale para ' + n + (n === 1 ? ' aplicação' : ' aplicações') : '') + (s.rateio === 'peso' && a.no_id && byId('apps', a.no_id) ? ' · peso ' + (+a.peso) : s.rateio === 'percentual' && a.percentual != null ? ' · ' + (+a.percentual).toLocaleString('pt-BR') + '%' : s.rateio === 'valor' && a.valor != null ? ' · ' + brl(+a.valor) + ' por mês' : '') + '</small></li>'; }).join('') + '</ul>' : '<p class="sv-vazio">Não diz onde se aplica.</p>') + '</section>' +
+      '<section><h4>Custos</h4>' + (cs.length ? '<table class="sv-tab"><tbody>' + cs.map(c => { const prox = svProximo(c), enc = c.fim && String(c.fim) < iso(HOJE);
+          return '<tr data-sv-custo-linha="' + esc(c.id) + '"><td>' + esc(c.descricao) + '<small>' + (c.recorrencia === 'unico' ? 'uma vez em ' + svDia(c.inicio) : enc ? 'encerrado em ' + svDia(c.fim) : c.fim ? 'para de cobrar em ' + svDia(c.fim) : 'renova até cancelar') + (prox ? ' · próximo lançamento ' + svDia(prox) : '') + '</small></td><td>' + esc(svNome(SV_REC, c.recorrencia)) + '</td><td class="sv-num">' + esc((c.moeda !== 'BRL' ? c.moeda + ' ' : 'R$ ') + (+c.valor).toLocaleString('pt-BR', {minimumFractionDigits:2})) + '</td>' +
+            (pode && svPodeMudar(s) && c.recorrencia !== 'unico' && !enc && !c.fim ? '<td><button type="button" class="btn fant peq" data-sv-cancelar="' + esc(c.id) + '">Cancelar</button></td>' : '<td></td>') + '</tr>'; }).join('') + '</tbody></table>' +
+          '<p class="sv-total">' + brl(mensal) + ' por mês' + (unico ? ' · ' + brl(unico) + ' em custo único' : '') + '</p>' + svLancHTML(s) : '<p class="sv-vazio">Sem custo cadastrado.</p>') +
+        (div.length && mensal ? '<h5>Divisão (' + esc(({igual:'por igual', peso:'por peso', percentual:'por percentual', valor:'por valor'})[s.rateio] || 'por igual') + ')</h5><ul class="sv-div">' + div.map(d => '<li><span>' + esc((byId('apps', d.app) || {}).nome || '') + '</span><b>' + brl(d.fracao * mensal) + '</b><small>' + (Math.round(d.fracao * 1000) / 10).toLocaleString('pt-BR') + '%</small></li>').join('') +
+          (div.restante > 0.0001 ? '<li class="sv-resta"><span>Sem dono (falta distribuir)</span><b>' + brl(div.restante * mensal) + '</b><small>' + (Math.round(div.restante * 1000) / 10).toLocaleString('pt-BR') + '%</small></li>' : '') +
+          (div.passou ? '<li class="sv-resta"><span>A divisão passa do custo do mês</span></li>' : '') + '</ul>' : '') + '</section>' +
     '</div>' +
     '<section><h4>O que roda nela' + (sv.length ? ' <small>' + sv.length + '</small>' : '') + '</h4>' + (sv.length ? '<div class="tabela-rolo"><table class="sv-tab sv-tab-l"><thead><tr><th>Serviço</th><th>Tipo</th><th>Tecnologia</th><th>Porta</th><th>Endereço</th><th>Atende</th></tr></thead><tbody>' +
         sv.map(x => '<tr><td><b>' + esc(x.nome) + '</b>' + (x.caminho ? '<small>' + esc(x.caminho) + '</small>' : '') + '</td><td>' + esc(svNome(SV_SERV, x.tipo)) + '</td><td>' + esc([x.tecnologia, x.versao].filter(Boolean).join(' ')) + '</td><td class="sv-num">' + (x.porta || '') + '</td><td>' + esc(x.endereco) + '</td><td>' + esc(x.no_id && svChaveDe(x.no_id) ? nomeDe(svChaveDe(x.no_id)) : '') + '</td></tr>').join('') + '</tbody></table></div>' : '<p class="sv-vazio">Nada cadastrado ainda.</p>') + '</section>' +
@@ -16793,10 +16844,27 @@ function svLinhaServico(x, apps){
     '<select class="sel" data-k="no_id"><option value="">Atende: nenhuma em especial</option>' + apps.map(a => '<option value="' + esc(a.id) + '"' + (a.id === x.no_id ? ' selected' : '') + '>Atende: ' + esc(a.nome) + '</option>').join('') + '</select>' +
     '<input class="campo" data-k="caminho" placeholder="Pasta ou compose (ex.: /opt/bl/docker-compose.yml)" value="' + esc(x.caminho || '') + '"><button type="button" class="ico-btn" data-sv-tirar aria-label="Tirar">' + ICO.fechar + '</button></div>';
 }
+// o que já foi lançado (o banco gera um por período; até ele gerar, mostra a conta)
+function svLancHTML(s){
+  const gravados = svLancamentosDe(s), cs = svCustosDe(s);
+  const lista = gravados.length ? gravados.map(l => ({c:l.descricao, d:String(l.competencia), v:svBRL(+l.valor || 0, l.moeda)}))
+    : cs.flatMap(c => svPeriodos(c).map(d => ({c:c.descricao, d, v:svBRL(+c.valor || 0, c.moeda)})));
+  if (!lista.length) return '';
+  lista.sort((a, b) => b.d.localeCompare(a.d)); const total = lista.reduce((t, x) => t + x.v, 0);
+  return '<details class="sv-lanc"><summary>' + lista.length + (lista.length === 1 ? ' lançamento' : ' lançamentos') + ' até hoje · ' + brl(total) + '</summary><table class="sv-tab"><tbody>' +
+    lista.slice(0, 60).map(x => '<tr><td>' + svDia(x.d) + '</td><td>' + esc(x.c) + '</td><td class="sv-num">' + brl(x.v) + '</td></tr>').join('') + '</tbody></table>' +
+    (lista.length > 60 ? '<p class="sv-ajuda">Mostrando os 60 mais recentes.</p>' : '') + '</details>';
+}
 function svLinhaCusto(x){
-  return '<div class="sv-ed-lin sv-ed-custo" data-sv-custo><input class="campo" data-k="descricao" placeholder="O quê (ex.: Plano KVM 4, Backup, IP extra)" value="' + esc(x.descricao || '') + '">' +
-    '<input class="campo" data-k="valor" type="number" min="0" step="0.01" placeholder="Valor" value="' + esc(x.valor == null ? '' : x.valor) + '"><select class="sel" data-k="moeda">' + svOpts([['BRL','R$'],['USD','US$'],['EUR','€']], x.moeda || 'BRL') + '</select>' +
-    '<select class="sel" data-k="recorrencia">' + svOpts(SV_REC, x.recorrencia || 'mensal') + '</select><input class="campo" data-k="inicio" type="date" value="' + esc(x.inicio || iso(HOJE)) + '"><input class="campo" data-k="fim" type="date" value="' + esc(x.fim || '') + '" title="Fim (vazio: sem fim)">' +
+  const para = !!x.fim;
+  return '<div class="sv-ed-lin sv-ed-custo" data-sv-custo' + (x.id ? ' data-id="' + esc(x.id) + '"' : '') + '>' +
+    '<label class="sv-c sv-c-desc">O quê<input class="campo" data-k="descricao" placeholder="Ex.: Plano KVM 4, Backup, IP extra" value="' + esc(x.descricao || '') + '"></label>' +
+    '<label class="sv-c">Valor<input class="campo" data-k="valor" type="number" min="0" step="0.01" placeholder="0,00" value="' + esc(x.valor == null ? '' : x.valor) + '"></label>' +
+    '<label class="sv-c sv-c-peq">Moeda<select class="sel" data-k="moeda">' + svOpts([['BRL','R$'],['USD','US$'],['EUR','€']], x.moeda || 'BRL') + '</select></label>' +
+    '<label class="sv-c">Recorrência<select class="sel" data-k="recorrencia">' + svOpts(SV_REC, x.recorrencia || 'mensal') + '</select></label>' +
+    '<label class="sv-c">Começa em<input class="campo" data-k="inicio" type="date" value="' + esc(x.inicio || iso(HOJE)) + '"></label>' +
+    '<label class="sv-c sv-c-renova">Cobrança<select class="sel" data-k="ate">' + svOpts([['sempre','Renova até cancelar'],['data','Para numa data']], para ? 'data' : 'sempre') + '</select></label>' +
+    '<label class="sv-c sv-c-fim"' + (para ? '' : ' hidden') + '>Para em<input class="campo" data-k="fim" type="date" value="' + esc(x.fim || '') + '"></label>' +
     '<button type="button" class="ico-btn" data-sv-tirar aria-label="Tirar">' + ICO.fechar + '</button></div>';
 }
 function svEditar(id){
@@ -16804,8 +16872,18 @@ function svEditar(id){
   const s = id ? SRV.lista.find(x => x.id === id) : {tipo:'vps', ambiente:'producao', status:'ativo', rateio:'igual', disco_tipo:''};
   if (!s) return;
   const base = id ? (svChaveDe(s.no_id) || UI.sel) : UI.sel, pontos = svPontosDoCliente(base), apps = pontos.filter(p => p.tipo === 'aplicação');
-  const al = id ? svAlcanceDe(s) : [{no_id:svIdDe(UI.sel), peso:1}], marcado = new Map(al.map(a => [a.no_id, a]));
-  const pessoas = D.people.filter(p => p.acesso !== 'stakeholder');
+  // novo: o ponto da tela já vem marcado com tudo o que está dentro dele
+  let al = id ? svAlcanceDe(s) : [{no_id:svIdDe(UI.sel), peso:1}];
+  if (!id){ const i0 = pontos.findIndex(p => p.id === svIdDe(UI.sel)); if (i0 >= 0) for (let i = i0 + 1; i < pontos.length && pontos[i].nivel > pontos[i0].nivel; i++) al.push({no_id:pontos[i].id, peso:1}); }
+  const marcado = new Map(al.map(a => [a.no_id, a]));
+  // o que está marcado vale para o que está dentro: abre já com as aplicações de dentro marcadas
+  pontos.forEach((p, i) => { if (!marcado.has(p.id)) return; for (let j = i + 1; j < pontos.length && pontos[j].nivel > p.nivel; j++) if (!marcado.has(pontos[j].id)) marcado.set(pontos[j].id, {no_id:pontos[j].id, peso:1, herdado:true}); });
+  const custos = svCustosDe(s); const pessoas = D.people.filter(p => p.acesso !== 'stakeholder');
+  const parteHTML = p => { const a = marcado.get(p.id) || {};
+    return p.tipo !== 'aplicação' ? '' : '<span class="sv-parte"><input class="campo sv-in-peso" type="number" min="0.1" step="0.1" data-sv-peso="' + esc(p.id) + '" value="' + esc(a.peso != null ? +a.peso : 1) + '" title="Peso na divisão" aria-label="Peso de ' + esc(p.nome) + '">' +
+      '<input class="campo sv-in-pct" type="number" min="0" max="100" step="0.01" data-sv-pct="' + esc(p.id) + '" value="' + esc(a.percentual != null ? +a.percentual : '') + '" placeholder="%" aria-label="Percentual de ' + esc(p.nome) + '"><i class="sv-in-pct">%</i>' +
+      '<i class="sv-in-val">R$</i><input class="campo sv-in-val" type="number" min="0" step="0.01" data-sv-val="' + esc(p.id) + '" value="' + esc(a.valor != null ? +a.valor : '') + '" placeholder="0,00" aria-label="Valor por mês de ' + esc(p.nome) + '">' +
+      '<output class="sv-calc" data-sv-calc="' + esc(p.id) + '"></output></span>'; };
   const corpo = '<div class="sv-form">' +
     '<fieldset><legend>Identificação</legend><div class="grade-form">' + svCampo('Nome', svIn('sv-nome', s.nome, ' maxlength="120" placeholder="Ex.: VPS produção BL"')) +
       svCampo('Tipo', '<select class="sel" id="sv-tipo">' + svOpts(SV_TIPOS, s.tipo) + '</select>') + svCampo('Ambiente', '<select class="sel" id="sv-amb">' + svOpts(SV_AMB, s.ambiente) + '</select>') +
@@ -16818,23 +16896,71 @@ function svEditar(id){
       svCampo('Painel do provedor', svIn('sv-painel', s.painel_url, ' maxlength="500" placeholder="https://"')) +
       svCampo('Onde fica o acesso (nunca a senha)', svIn('sv-acesso', s.acesso_onde, ' maxlength="300" placeholder="Ex.: cofre 1Password, item VPS BL; chave SSH do William"'), true) +
       svCampo('Backup', svIn('sv-backup', s.backup, ' maxlength="500" placeholder="Como, onde e de quanto em quanto tempo"'), true) + svCampo('Monitoramento', svIn('sv-mon', s.monitoramento, ' maxlength="500" placeholder="Ex.: Uptime Kuma avisa no WhatsApp"'), true) + '</div></fieldset>' +
-    '<fieldset><legend>Contrato</legend><div class="grade-form">' + svCampo('Contratado em', svIn('sv-desde', s.contratado_em, ' type="date"')) + svCampo('Renova em', svIn('sv-renova', s.renova_em, ' type="date"')) +
-      svCampo('Divisão do custo', '<select class="sel" id="sv-rateio">' + svOpts([['igual','Por igual entre as aplicações atendidas'],['peso','Por peso de cada ponto']], s.rateio) + '</select>') + '</div>' +
-      '<div class="sv-ed-lista" data-sv-custos>' + svCustosDe(s).map(svLinhaCusto).join('') + '</div><button type="button" class="btn sec peq" data-sv-mais-custo>+ Custo</button></fieldset>' +
-    '<fieldset><legend>Onde se aplica</legend><p class="sv-ajuda">Marcar um projeto ou produto vale para todas as aplicações de dentro. Marque só a aplicação quando o servidor é só dela.</p><div class="sv-ed-onde">' +
-      pontos.map(p => { const a = marcado.get(p.id); return '<label class="sv-ed-no" style="padding-left:' + (p.nivel * 18) + 'px"><input type="checkbox" data-sv-no="' + esc(p.id) + '"' + (a ? ' checked' : '') + '> <b>' + esc(p.nome) + '</b> <small>' + esc(p.tipo) + '</small><input class="campo sv-peso" type="number" min="0.1" step="0.1" data-sv-peso="' + esc(p.id) + '" value="' + esc(a ? +a.peso : 1) + '" title="Peso na divisão do custo"></label>'; }).join('') + '</div></fieldset>' +
+    '<fieldset><legend>Custos</legend><p class="sv-ajuda">Cada custo com o valor e a recorrência. "Renova até cancelar" gera o lançamento de todo período até você cancelar; "Para numa data" para de cobrar no dia escolhido.</p>' +
+      '<div class="sv-ed-lista" data-sv-custos>' + (custos.length ? custos : [{}]).map(svLinhaCusto).join('') + '</div><button type="button" class="btn sec peq" data-sv-mais-custo>+ Custo</button>' +
+      '<div class="grade-form">' + svCampo('Contratado em', svIn('sv-desde', s.contratado_em, ' type="date"')) + svCampo('Renova em', svIn('sv-renova', s.renova_em, ' type="date"')) + '</div></fieldset>' +
+    '<fieldset><legend>Onde se aplica e quem paga</legend><p class="sv-ajuda">Marcar o cliente, um projeto ou um produto marca todas as aplicações de dentro. Depois escolha como dividir o custo entre elas.</p>' +
+      '<div class="grade-form">' + svCampo('Divisão do custo', '<select class="sel" id="sv-rateio">' + svOpts(SV_RATEIO, s.rateio || 'igual') + '</select>') + '</div>' +
+      '<div class="sv-ed-onde">' + pontos.map(p => '<label class="sv-ed-no" style="padding-left:' + (p.nivel * 18) + 'px"><input type="checkbox" data-sv-no="' + esc(p.id) + '" data-nivel="' + p.nivel + '"' + (marcado.has(p.id) ? ' checked' : '') + '> <b>' + esc(p.nome) + '</b> <small>' + esc(p.tipo) + '</small>' + parteHTML(p) + '</label>').join('') + '</div>' +
+      '<div class="sv-resumo" data-sv-resumo aria-live="polite"></div>' +
+      '<button type="button" class="btn sec peq sv-so-div" data-sv-igualar>Dividir o que falta por igual</button></fieldset>' +
     '<fieldset><legend>O que roda nela</legend><div class="sv-ed-lista" data-sv-servs>' + svServicosDe(s).map(x => svLinhaServico(x, apps)).join('') + '</div><button type="button" class="btn sec peq" data-sv-mais-serv>+ Serviço</button></fieldset>' +
     '<fieldset><legend>Anotações</legend><textarea class="campo" id="sv-notas" rows="3" maxlength="4000">' + esc(s.notas || '') + '</textarea></fieldset>' +
   '</div>';
   const dlg = modal(id ? 'Editar servidor' : 'Cadastrar servidor', corpo, [{txt:'Cancelar', cls:'sec'}, {txt:id ? 'Salvar' : 'Cadastrar', acao:d => { svSalvar(d, s, base); return false; }}]);
   dlg.classList.add('sv-modal');
-  const pesoVis = () => dlg.classList.toggle('sv-com-peso', dlg.querySelector('#sv-rateio').value === 'peso'); pesoVis();
-  dlg.addEventListener('change', e => { if (e.target.id === 'sv-rateio') pesoVis(); });
+  const caixas = () => [...dlg.querySelectorAll('[data-sv-no]')];
+  // a divisão com o que está na tela agora (mesma conta do cartão)
+  const conta = () => {
+    const modo = dlg.querySelector('#sv-rateio').value;
+    const cs = svLinhasDe(dlg, '[data-sv-custo]').filter(x => x.valor !== ''), m = svMesAtual();
+    const mensal = cs.reduce((t, c) => t + (svCustoVale(Object.assign({}, c, {fim:c.ate === 'data' ? c.fim : null}), m) ? svMensalDe(c) : 0), 0);
+    const tmp = {id:'__sv_tela', rateio:modo}, guard = SRV.alcance;
+    SRV.alcance = guard.filter(a => a.servidor_id !== tmp.id).concat(svAlcanceDaTela(dlg, tmp.id));
+    const div = svDivisao(tmp, mensal); SRV.alcance = guard;
+    dlg.classList.toggle('sv-modo-peso', modo === 'peso'); dlg.classList.toggle('sv-modo-pct', modo === 'percentual'); dlg.classList.toggle('sv-modo-val', modo === 'valor');
+    dlg.querySelectorAll('[data-sv-calc]').forEach(o => { const d = div.find(x => x.app === o.dataset.svCalc); o.textContent = d && mensal ? '= ' + brl(d.fracao * mensal) + ' (' + (Math.round(d.fracao * 1000) / 10).toLocaleString('pt-BR') + '%)' : ''; });
+    const dist = div.reduce((t, d) => t + d.fracao, 0);
+    dlg.querySelector('[data-sv-resumo]').innerHTML = '<span>Custo por mês: <b>' + brl(mensal) + '</b></span><span>Distribuído: <b>' + brl(Math.min(dist, 9e9) * mensal) + '</b> (' + (Math.round(dist * 1000) / 10).toLocaleString('pt-BR') + '%)</span>' +
+      '<span class="' + (div.passou ? 'sv-erro' : div.restante > 0.0001 ? 'sv-falta' : 'sv-ok') + '">' + (div.passou ? 'Passou do custo em <b>' + brl((dist - 1) * mensal) + '</b>' : 'Restando: <b>' + brl(div.restante * mensal) + '</b> (' + (Math.round(div.restante * 1000) / 10).toLocaleString('pt-BR') + '%)') + '</span>' +
+      '<span>' + div.length + (div.length === 1 ? ' aplicação atendida' : ' aplicações atendidas') + '</span>';
+    return {div, mensal, modo};
+  };
+  dlg.addEventListener('change', e => {
+    const cx = e.target.closest('[data-sv-no]');
+    if (cx){ const lista = caixas(), i = lista.indexOf(cx), n = +cx.dataset.nivel;
+      // marcar ou desmarcar vale para tudo o que está dentro; desmarcar algo de dentro desmarca os de cima
+      for (let j = i + 1; j < lista.length && +lista[j].dataset.nivel > n; j++) lista[j].checked = cx.checked;
+      if (!cx.checked){ let nv = n; for (let j = i - 1; j >= 0 && nv > 0; j--) if (+lista[j].dataset.nivel < nv){ lista[j].checked = false; nv = +lista[j].dataset.nivel; } }
+    }
+    const ate = e.target.closest('[data-k="ate"]');
+    if (ate){ const f = ate.closest('[data-sv-custo]').querySelector('.sv-c-fim'); f.hidden = ate.value !== 'data'; if (ate.value === 'data' && !f.querySelector('input').value) f.querySelector('input').value = iso(HOJE); }
+    conta();
+  });
+  dlg.addEventListener('input', () => conta());
   dlg.addEventListener('click', e => {
     if (e.target.closest('[data-sv-mais-serv]')) dlg.querySelector('[data-sv-servs]').insertAdjacentHTML('beforeend', svLinhaServico({}, apps));
     if (e.target.closest('[data-sv-mais-custo]')) dlg.querySelector('[data-sv-custos]').insertAdjacentHTML('beforeend', svLinhaCusto({}));
-    const t = e.target.closest('[data-sv-tirar]'); if (t) t.closest('.sv-ed-lin').remove();
+    const t = e.target.closest('[data-sv-tirar]'); if (t){ t.closest('.sv-ed-lin').remove(); conta(); }
+    if (e.target.closest('[data-sv-igualar]')){
+      // as aplicações marcadas sem parte ficam com o que falta, em partes iguais
+      const {modo, mensal, div} = conta(); if (modo !== 'percentual' && modo !== 'valor') return;
+      const sem = caixas().filter(c => c.checked && dlg.querySelector((modo === 'percentual' ? '[data-sv-pct="' : '[data-sv-val="') + c.dataset.svNo + '"]')).map(c => dlg.querySelector((modo === 'percentual' ? '[data-sv-pct="' : '[data-sv-val="') + c.dataset.svNo + '"]')).filter(i => !(+i.value > 0));
+      if (!sem.length){ toast('Todas as aplicações marcadas já têm parte'); return; }
+      const falta = modo === 'percentual' ? div.restante * 100 : div.restante * mensal; if (falta <= 0.004){ toast('Não falta nada para distribuir'); return; }
+      const cada = Math.floor(falta / sem.length * 100) / 100; sem.forEach((i, k) => { i.value = k === sem.length - 1 ? (Math.round((falta - cada * (sem.length - 1)) * 100) / 100) : cada; });
+      conta();
+    }
   });
+  conta();
+}
+// as linhas de uma lista do formulário (custos, serviços), como objetos
+const svLinhasDe = (dlg, sel) => [...dlg.querySelectorAll(sel)].map(l => Object.assign({id:l.dataset.id || null}, Object.fromEntries([...l.querySelectorAll('[data-k]')].map(i => [i.dataset.k, i.value.trim()]))));
+// onde se aplica como está na tela (todas as caixas marcadas, com a parte de cada aplicação)
+function svAlcanceDaTela(dlg, id){
+  const num = (sel, k) => { const i = dlg.querySelector(sel + '="' + k + '"]'); return i && i.value !== '' ? +i.value : null; };
+  return [...dlg.querySelectorAll('[data-sv-no]:checked')].map(c => { const k = c.dataset.svNo, pe = num('[data-sv-peso', k);
+    return {servidor_id:id, no_id:k, peso:pe != null && pe > 0 ? Math.max(0.1, pe) : 1, percentual:num('[data-sv-pct', k), valor:num('[data-sv-val', k)}; });
 }
 const svNum = v => v === '' || v == null ? null : +v;
 async function svSalvar(dlg, antigo, base){
@@ -16847,20 +16973,31 @@ async function svSalvar(dlg, antigo, base){
   const row = {nome, tipo:v('sv-tipo'), ambiente:v('sv-amb'), status:v('sv-status'), responsavel_id:v('sv-resp') || null, provedor:v('sv-prov'), plano:v('sv-plano'), regiao:v('sv-reg'), sistema:v('sv-so'),
     cpu:svNum(v('sv-cpu')), memoria_gb:svNum(v('sv-mem')), disco_gb:svNum(v('sv-disco')), disco_tipo:v('sv-dt'), banda_tb:svNum(v('sv-banda')), hostname:v('sv-host'), ip_publico:v('sv-ip'), ip_privado:v('sv-ipi'),
     painel_url:painel, acesso_onde:acesso, backup:v('sv-backup'), monitoramento:v('sv-mon'), contratado_em:v('sv-desde') || null, renova_em:v('sv-renova') || null, rateio:v('sv-rateio'), notas:dlg.querySelector('#sv-notas').value.trim()};
-  const alcance = [...dlg.querySelectorAll('[data-sv-no]:checked')].map(c => ({servidor_id:id, no_id:c.dataset.svNo, peso:Math.max(0.1, +dlg.querySelector('[data-sv-peso="' + c.dataset.svNo + '"]').value || 1)}));
-  if (!alcance.length){ toast('Marque onde o servidor se aplica (o projeto inteiro ou as aplicações)'); return; }
-  const linhas = sel => [...dlg.querySelectorAll(sel)].map(l => Object.fromEntries([...l.querySelectorAll('[data-k]')].map(i => [i.dataset.k, i.value.trim()])));
+  const alcance = svAlcanceDaTela(dlg, id).map(a => Object.assign(a, {percentual:row.rateio === 'percentual' && a.percentual != null ? Math.min(100, Math.max(0, a.percentual)) : null, valor:row.rateio === 'valor' && a.valor != null ? Math.max(0, a.valor) : null}));
+  if (!alcance.length){ toast('Marque onde o servidor se aplica (o cliente, o projeto inteiro ou as aplicações)'); return; }
+  if (row.rateio === 'percentual' && alcance.reduce((t, a) => t + (a.percentual || 0), 0) > 100.0001){ toast('Os percentuais passam de 100%'); return; }
+  const linhas = sel => svLinhasDe(dlg, sel);
   const servicos = linhas('[data-sv-serv]').filter(x => x.nome).map((x, i) => ({servidor_id:id, nome:x.nome.slice(0, 120), tipo:x.tipo, tecnologia:x.tecnologia, versao:x.versao, porta:x.porta ? Math.min(65535, Math.max(1, +x.porta)) : null, endereco:x.endereco, no_id:x.no_id || null, caminho:x.caminho, ordem:i}));
-  const custos = linhas('[data-sv-custo]').filter(x => x.descricao && x.valor !== '');
+  const custos = linhas('[data-sv-custo]').filter(x => x.descricao || x.valor !== '');
+  const semNome = custos.find(x => !x.descricao || x.valor === ''); if (semNome){ toast('Cada custo precisa do que é e do valor'); return; }
+  custos.forEach(x => { if (x.ate !== 'data') x.fim = ''; });
+  const semFim = custos.find(x => x.ate === 'data' && !x.fim); if (semFim){ toast('Diga em que data o custo "' + semFim.descricao + '" para de cobrar'); return; }
   const ruim = custos.find(x => x.fim && x.fim < (x.inicio || iso(HOJE))); if (ruim){ toast('O fim do custo "' + ruim.descricao + '" está antes do início'); return; }
-  const cRows = custos.map(x => ({servidor_id:id, descricao:x.descricao.slice(0, 200), valor:Math.max(0, +x.valor || 0), moeda:x.moeda, recorrencia:x.recorrencia, inicio:x.inicio || iso(HOJE), fim:x.fim || null}));
+  const cRows = custos.map(x => ({id:x.id || novoUuid(), servidor_id:id, descricao:x.descricao.slice(0, 200), valor:Math.max(0, +x.valor || 0), moeda:x.moeda, recorrencia:x.recorrencia, inicio:x.inicio || iso(HOJE), fim:x.recorrencia === 'unico' ? null : (x.fim || null)}));
   const botao = dlg.querySelector('.modal-rod .btn:not(.sec)'); if (botao) botao.disabled = true;
   try {
     if (antigo.id){ const {data, error} = await sb.from('servidores').update(row).eq('id', id).select('id'); if (error) throw error; if (!data || !data.length) throw new Error('o banco não deixou mudar este servidor (só quem edita o ponto dono muda)'); }
     else { const {error} = await sb.from('servidores').insert(Object.assign({id, no_id:svIdDe(base)}, row)); if (error) throw error; }
-    // o que está dentro é regravado inteiro (onde se aplica, o que roda e os custos)
-    for (const t of ['servidores_alcance', 'servidores_servicos', 'servidores_custos']){ const {error} = await sb.from(t).delete().eq('servidor_id', id); if (error) throw error; }
-    for (const [t, rows] of [['servidores_alcance', alcance], ['servidores_servicos', servicos], ['servidores_custos', cRows]]) if (rows.length){ const {error} = await sb.from(t).insert(rows); if (error) throw error; }
+    // onde se aplica e o que roda são regravados inteiros; os custos mudam no lugar (os lançamentos ficam ligados a eles)
+    for (const t of ['servidores_alcance', 'servidores_servicos']){ const {error} = await sb.from(t).delete().eq('servidor_id', id); if (error) throw error; }
+    for (const [t, rows] of [['servidores_alcance', alcance], ['servidores_servicos', servicos]]) if (rows.length){ const {error} = await sb.from(t).insert(rows); if (error) throw error; }
+    const antes = new Set(svCustosDe(antigo).map(c => c.id)), agora = new Set(cRows.map(c => c.id));
+    for (const c of svCustosDe(antigo)) if (!agora.has(c.id)){ const {error} = await sb.from('servidores_custos').delete().eq('id', c.id); if (error) throw error; }
+    for (const c of cRows){
+      if (antes.has(c.id)){ const {id:cid, ...resto} = c; const {data, error} = await sb.from('servidores_custos').update(resto).eq('id', cid).select('id'); if (error) throw error; if (!data || !data.length) throw new Error('o banco não deixou mudar o custo ' + c.descricao); }
+      else { const {error} = await sb.from('servidores_custos').insert(c); if (error) throw error; }
+    }
+    if (cRows.length){ const {error} = await sb.rpc('servidores_lancar', {p_servidor:id}); if (error) console.warn('lançamentos', error.message); }
   } catch (e){ if (botao) botao.disabled = false; toast('Não deu para gravar: ' + (e.message || e)); return; }
   dlg.close(); dlg.remove();
   await svCarregar(true); rView(); toast(antigo.id ? 'Servidor salvo' : 'Servidor cadastrado');
@@ -16870,6 +17007,15 @@ function svApagar(id){
   modal('Excluir servidor', '<p>Excluir <b>' + esc(s.nome) + '</b>, com o que roda nela, onde se aplica e os custos? Para só parar de contar, troque a situação para Desligado.</p>',
     [{txt:'Cancelar', cls:'sec'}, {txt:'Excluir', acao:() => { (async () => { const {data, error} = await svBanco().from('servidores').delete().eq('id', id).select('id');
       if (error || !data || !data.length){ toast('Não deu para excluir: ' + (error ? error.message : 'o banco não deixou')); return; } await svCarregar(true); rView(); toast('Servidor excluído'); })(); }}]);
+}
+// cancelar um custo que renova: para de cobrar hoje (os lançamentos até aqui ficam)
+function svCancelarCusto(cid){
+  const c = SRV.custos.find(x => x.id === cid); if (!c) return;
+  modal('Cancelar custo', '<p>Parar de cobrar <b>' + esc(c.descricao) + '</b> a partir de hoje (' + svDia(iso(HOJE)) + ')? Os lançamentos até aqui ficam no histórico.</p>',
+    [{txt:'Voltar', cls:'sec'}, {txt:'Cancelar o custo', acao:() => { (async () => { const fim = String(c.inicio) > iso(HOJE) ? String(c.inicio) : iso(HOJE);
+      const {data, error} = await svBanco().from('servidores_custos').update({fim}).eq('id', cid).select('id');
+      if (error || !data || !data.length){ toast('Não deu para cancelar: ' + (error ? error.message : 'o banco não deixou')); return; }
+      await svCarregar(true); rView(); toast('Custo cancelado: para de cobrar em ' + svDia(fim)); })(); }}]);
 }
 // renovação chegando: vira item na frente Infraestrutura de uma aplicação atendida
 function svRenovar(id){
@@ -16894,7 +17040,7 @@ function svCustosHTML(chave){
   const lista = svDoPonto(chave).filter(s => s.status !== 'desligado'); if (!lista.length) return '';
   return '<h2 class="sub">Servidores <span class="rotulo-mini">' + lista.length + '</span></h2><div class="tabela-rolo"><table class="tabela"><thead><tr><th>Servidor</th><th>Onde se aplica</th><th>Custo do servidor por mês</th><th>Parte deste ponto por mês</th></tr></thead><tbody>' +
     lista.map(s => '<tr><th scope="row">' + esc(s.nome) + '<div class="sec" style="font-family:var(--font-body);font-size:12px;font-weight:400">' + esc([s.provedor, s.plano].filter(Boolean).join(' · ')) + '</div></th><td>' + esc(svAlcanceDe(s).map(a => svChaveDe(a.no_id) ? nomeDe(svChaveDe(a.no_id)) : '').filter(Boolean).join(', ')) + '</td><td>' + brl(svCustoMensal(s)) + '</td><td><b>' + brl(svParte(s, chave)) + '</b></td></tr>').join('') +
-    '</tbody></table></div><p class="sec" style="font-size:12.5px">A parte deste ponto segue a divisão de cada servidor (por igual entre as aplicações atendidas, ou por peso). O cadastro fica na aba Servidores.</p>';
+    '</tbody></table></div><p class="sec" style="font-size:12.5px">A parte deste ponto segue a divisão de cada servidor (por igual, por peso, por percentual ou por valor de cada aplicação). O cadastro fica na aba Servidores.</p>';
 }
 // Ficha técnica: a seção Ambientes mostra os servidores que atendem o ponto
 function svFichaLigacao(sec, chave){
@@ -16935,8 +17081,9 @@ document.addEventListener('click', e => {
   const ed = e.target.closest('[data-sv-editar]'); if (ed) return svEditar(ed.dataset.svEditar);
   const ap = e.target.closest('[data-sv-apagar]'); if (ap) return svApagar(ap.dataset.svApagar);
   const rn = e.target.closest('[data-sv-renovar]'); if (rn) return svRenovar(rn.dataset.svRenovar);
+  const cn = e.target.closest('[data-sv-cancelar]'); if (cn) return svCancelarCusto(cn.dataset.svCancelar);
 });
-if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {SRV, svCarregar, svDivisao, svParte, svCustoMensal, svDoPonto, svRelacao, svFichaLigacao, svCustosHTML});
+if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {SRV, svCarregar, svDivisao, svParte, svCustoMensal, svPeriodos, svProximo, svDoPonto, svRelacao, svFichaLigacao, svCustosHTML});
 
 //---------------------------------------------------------------------
 //

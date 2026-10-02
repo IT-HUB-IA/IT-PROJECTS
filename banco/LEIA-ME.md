@@ -155,6 +155,17 @@ Na tela: Entregas, **Ligar repositório** (conectar a conta, escolher o reposit�
 
 `43_analise_seguranca.sql`: `analise_achados` (cada achado com regra, gravidade, onde, trecho com segredo mascarado, identidade estável, status aberto/corrigido/ignorado, motivo e item ligado) e `analise_rodadas` (o resumo de cada leitura). `analise_gravar` (só o robô, service_role) grava o que achou e marca como corrigido o que sumiu; `analise_marcar` (quem edita o ponto) ignora com motivo, volta a abrir e liga ao item. As regras ficam em `supabase/functions/diagramas-auto/seguranca.ts` (fonte única: a tela pega o mesmo catálogo no build). A tela: `fonte/seguranca.js` (aba Segurança).
 
+## Parte 50: servidores com divisão por percentual ou valor, recorrências e lançamentos (aplicada no Supabase em 02/10/2026, em partes)
+
+`50_servidores_rateio.sql`:
+
+- `servidores.rateio` aceita também `percentual` e `valor`.
+- `servidores_alcance` ganhou `percentual` e `valor`: a parte de cada aplicação. O que não fecha 100% aparece na tela como "Restando" (sem dono).
+- `servidores_custos.recorrencia` aceita também `trimestral` e `semestral`. `fim` vazio quer dizer renova até cancelar; com data, para de cobrar nela.
+- Tabela nova `servidores_lancamentos`: um lançamento por período de cada custo, do início até hoje ou até o fim. Tem RLS (vê quem vê o servidor) e só GRANT de leitura: ninguém escreve direto.
+- Quem gera os lançamentos: `interno.servidores_lancar()`, rodada todo dia pela rotina `ciclodev_servidores_lancamentos` (`17 3 * * *`) e também por `public.servidores_lancar(p_servidor)` logo depois de salvar (só quem edita o servidor pode chamar).
+- Na tela, marcar o cliente, um projeto ou um produto marca tudo o que está dentro. Os custos agora mudam no lugar em vez de serem apagados e gravados de novo, então os lançamentos continuam ligados a eles. O botão "Cancelar" de um custo põe `fim` = hoje.
+
 ## Parte 48: inventário de TI por cliente (aplicada no Supabase em 02/10/2026, em partes) e parte 49 (arquivos e aviso diário, só no Supabase)
 
 `48_inventario.sql`: cada cliente tem o seu inventário, isolado pelo `cliente_id` (todas as chaves estrangeiras entre tabelas do inventário levam o cliente junto, então nada aponta para outro cliente).

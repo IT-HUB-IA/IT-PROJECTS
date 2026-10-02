@@ -49,7 +49,7 @@ function q(t){ const st = {t, op:'select', filtro:{}, de:0, ate:998};
 window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1', email:'admin@it-ia.tec.br'}}; return { auth:{ async getSession(){ return {data:{session:sess}}; }, onAuthStateChange(){ return {data:{subscription:{unsubscribe(){}}}}; }, async signOut(){} },
   storage:{ from(){ return { async upload(caminho, blob){ window.__deposito = window.__deposito || {}; window.__deposito[caminho] = blob.size; return {data:{path:caminho}, error:null}; }, async createSignedUrls(ps){ return {data:ps.map(p => ({path:p, signedUrl:'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'})), error:null}; }, async createSignedUrl(p, s, o){ window.__baixou = (window.__baixou || []).concat(p + '|' + ((o || {}).download || '')); return {data:{signedUrl:'data:application/octet-stream;base64,SGVsbG8='}, error:null}; } }; } },
   functions:{ async invoke(nome, o){ return JSON.parse(await window.__fn(JSON.stringify(o.body || {}))); } },
-  from:q, async rpc(fn, args){ if (/^(ia_|admin_ia_|admin_usuarios|infra_|analise_)/.test(fn)) return JSON.parse(await window.__rpc(JSON.stringify({fn, args:args || {}}))); if (fn === 'sou_dono_sistema') return {data:true, error:null}; if (/^admin_/.test(fn)) return {data:fn === 'admin_resumo' ? {gerado_em:new Date().toISOString()} : [], error:null}; if (fn !== 'vincular_meu_login') return {data:null, error:null}; return {data:[{pessoa_id:window.__eu, nome:'William', papel:'master', numero:100001, espaco_id:window.__esp || null}], error:null}; } }; } };`;
+  from:q, async rpc(fn, args){ if (/^(ia_|admin_ia_|admin_usuarios|infra_|analise_|servidores_)/.test(fn)) return JSON.parse(await window.__rpc(JSON.stringify({fn, args:args || {}}))); if (fn === 'sou_dono_sistema') return {data:true, error:null}; if (/^admin_/.test(fn)) return {data:fn === 'admin_resumo' ? {gerado_em:new Date().toISOString()} : [], error:null}; if (fn !== 'vincular_meu_login') return {data:null, error:null}; return {data:[{pessoa_id:window.__eu, nome:'William', papel:'master', numero:100001, espaco_id:window.__esp || null}], error:null}; } }; } };`;
 (async () => {
   prepararLogin();
   const eu = COMO ? 'd148fdc5-eef3-5398-bf89-f49b55b5cd28' : psql("select id from public.pessoas where papel='master' order by nome limit 1").trim();
@@ -63,13 +63,14 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
     if (fn === 'analise_inventario_ligar'){ try { return JSON.stringify({data:+psql(COMO + "select public.analise_inventario_ligar($j$" + JSON.stringify(args.p_pares) + "$j$::jsonb)").trim(), error:null}); } catch (e) { return JSON.stringify({data:null, error:{message:String(e.stderr || e.message).slice(0, 200)}}); } }
     if (fn === 'analise_marcar'){ const v = x => x == null ? 'null' : "'" + String(x).replace(/'/g, "''") + "'"; try { const r = psql(COMO + "select row_to_json(public.analise_marcar(" + v(args.p_id) + "::uuid, " + v(args.p_status) + "::text, " + v(args.p_motivo) + "::text, " + v(args.p_item) + "::uuid))").trim(); return JSON.stringify({data:JSON.parse(r), error:null}); }
       catch (e) { return JSON.stringify({data:null, error:{message:String(e.stderr || e.message).split('\n').find(l => /ERROR/.test(l)) || 'erro'}}); } }
+    if (fn === 'servidores_lancar'){ try { return JSON.stringify({data:+psql(COMO + "select public.servidores_lancar('" + args.p_servidor + "'::uuid)").trim(), error:null}); } catch (e) { return JSON.stringify({data:null, error:{message:String(e.stderr || e.message).slice(0, 200)}}); } }
     return JSON.stringify({data:'x', error:null}); });
 
   await p.exposeFunction('__fn', s => JSON.stringify({data:{ok:true}, error:null}));
   const conta = sql => psql(sql).trim();
   const esp = COMO ? psql("select id from public.espacos where dono_id = '" + eu + "' and pessoal limit 1").trim() : '';
   await p.addInitScript(([id, e]) => { window.__eu = id; window.__esp = e || null; }, [eu, esp]);
-  await p.route('**/supabase-js@*/**', r => r.fulfill({ contentType: 'text/javascript', body: FALSO.replace("if (/^(ia_|admin_ia_|admin_usuarios|infra_)/.test(fn))", "if (/^(ia_|admin_ia_|admin_usuarios|infra_)/.test(fn))") }));
+  await p.route('**/supabase-js@*/**', r => r.fulfill({ contentType: 'text/javascript', body: FALSO.replace("if (/^(ia_|admin_ia_|admin_usuarios|infra_)/.test(fn))", "if (/^(ia_|admin_ia_|admin_usuarios|infra_|servidores_)/.test(fn))") }));
   await p.goto('file://' + process.cwd() + '/vercel/index.html'); await p.waitForTimeout(2500);
   await p.evaluate(() => document.querySelector('[data-tela="operacoes"]').click()); await p.waitForTimeout(500);
 
@@ -86,7 +87,13 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   await p.fill('#sv-nome', 'VPS produção BL'); await p.fill('#sv-prov', 'Hostinger'); await p.fill('#sv-plano', 'KVM 4'); await p.fill('#sv-so', 'Ubuntu 24.04');
   await p.fill('#sv-cpu', '4'); await p.fill('#sv-mem', '16'); await p.fill('#sv-disco', '200'); await p.selectOption('#sv-dt', 'nvme'); await p.fill('#sv-host', 'srv1.bl.com.br'); await p.fill('#sv-ip', '177.10.20.30');
   await p.fill('#sv-acesso', 'senha: abc123'); await p.fill('#sv-renova', new Date(Date.now() + 10 * 86400000).toISOString().slice(0, 10));
-  await p.click('[data-sv-mais-custo]'); await p.click('[data-sv-mais-custo]');
+  // cascata: o projeto aberto já vem marcado com todas as aplicações; desmarcar uma desmarca o projeto; marcar o projeto marca tudo
+  const marcadas = () => p.evaluate(() => [...document.querySelectorAll('[data-sv-no]')].filter(c => c.checked).map(c => c.dataset.svNo));
+  ok(await marcadas().then(m => m.includes(proj) && apps.every(a => m.includes(a))), 'cadastrar no projeto já marca o projeto e tudo o que está dentro');
+  await p.click('[data-sv-no="' + apps[0] + '"]'); ok(!(await marcadas()).includes(proj) && !(await marcadas()).includes(apps[0]), 'desmarcar uma aplicação desmarca o projeto (ele não vale mais para tudo)');
+  await p.click('[data-sv-no="' + proj + '"]'); ok(await marcadas().then(m => m.includes(proj) && apps.every(a => m.includes(a))), 'marcar o projeto marca de novo todas as aplicações');
+  ok(await p.evaluate(() => document.querySelectorAll('[data-sv-custo]').length === 1 && !!document.querySelector('[data-sv-custo] [data-k="valor"]')), 'o custo já aparece com o campo do valor');
+  await p.click('[data-sv-mais-custo]');
   const custos = await p.$$('[data-sv-custo]');
   await (await custos[0].$('[data-k="descricao"]')).fill('Plano KVM 4'); await (await custos[0].$('[data-k="valor"]')).fill('100');
   await (await custos[1].$('[data-k="descricao"]')).fill('Backup anual'); await (await custos[1].$('[data-k="valor"]')).fill('240'); await (await custos[1].$('[data-k="recorrencia"]')).selectOption('anual');
@@ -98,14 +105,15 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   ok(conta("select count(*) from servidores") === '0' && await p.evaluate(() => !!document.querySelector('dialog.sv-modal[open]')), 'senha escrita em "Onde fica o acesso" não grava (só onde ela está guardada)');
   await p.fill('#sv-acesso', 'cofre 1Password, item VPS BL'); await salvarModal();
   ok(conta("select nome || '|' || provedor || '|' || cpu || '|' || memoria_gb::int || '|' || disco_tipo || '|' || acesso_onde from servidores") === 'VPS produção BL|Hostinger|4|16|nvme|cofre 1Password, item VPS BL', 'cadastra a máquina: provedor, CPU, memória, disco e onde fica o acesso');
-  ok(conta("select string_agg(no_id::text, ',') from servidores_alcance") === proj, 'onde se aplica: o projeto inteiro (já vem marcado o ponto aberto)');
+  ok(conta("select count(*) from servidores_alcance where no_id = '" + proj + "'") === '1' && apps.every(a => conta("select count(*) from servidores_alcance where no_id = '" + a + "'") === '1'), 'onde se aplica: o projeto e cada aplicação de dentro');
+  ok(conta("select count(*) || '|' || string_agg(distinct descricao, ',' order by descricao) from servidores_lancamentos") === '2|Backup anual,Plano KVM 4', 'salvar já gera o lançamento do período de cada custo');
   ok(conta("select string_agg(nome || ':' || tipo || ':' || porta || ':' || no_id, ',') from servidores_servicos") === 'API Java:api:8080:' + apps[0], 'o que roda nela, com a aplicação que o serviço atende');
   ok(conta("select string_agg(descricao || ':' || valor::int || ':' || recorrencia, ',' order by descricao) from servidores_custos") === 'Backup anual:240:anual,Plano KVM 4:100:mensal', 'os custos, mensal e anual');
   ok(await p.evaluate(() => /R\$\s?120,00 por mês/.test(document.querySelector('.sv-card').textContent)), 'custo mensal: 100 por mês mais 240 por ano (20 por mês) = 120');
   // cada aplicação do projeto vê a VPS herdada e a parte dela no custo (por igual)
   await ir('app:' + apps[0], 'servidores');
   const parte = (120 / apps.length).toFixed(2).replace('.', ',');
-  ok(await p.evaluate(pt => { const t = document.querySelector('.sv-tela').textContent; return /Herdado de/.test(t) && t.includes(pt); }, parte), 'a aplicação vê a VPS herdada do projeto e a parte dela no custo (' + parte + ' por mês)');
+  ok(await p.evaluate(pt => { const t = document.querySelector('.sv-tela').textContent; return /Aplicado aqui/.test(t) && t.includes(pt); }, parte), 'a aplicação vê a VPS do projeto (marcada nela pela cascata) e a parte dela no custo (' + parte + ' por mês)');
   // uma segunda máquina só para uma aplicação, com divisão por peso não muda nada para as outras
   await p.click('[data-sv-novo]'); await p.waitForTimeout(300);
   await p.fill('#sv-nome', 'Banco MySQL dedicado'); await p.selectOption('#sv-tipo', 'dedicado'); await p.click('[data-sv-mais-custo]');
@@ -128,9 +136,39 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   const vps = conta("select id from servidores where nome = 'VPS produção BL'");
   await p.click('[data-sv-editar="' + vps + '"]'); await p.waitForTimeout(300); await p.selectOption('#sv-rateio', 'peso'); await p.fill('#sv-plano', 'KVM 8'); await salvarModal();
   ok(conta("select plano || '|' || rateio from servidores where nome = 'VPS produção BL'") === 'KVM 8|peso' && conta("select count(*) from servidores_servicos") === '1' && conta("select count(*) from servidores_custos s join servidores v on v.id = s.servidor_id where v.nome = 'VPS produção BL'") === '2', 'editar grava e mantém o que roda e os custos');
+  const idsAntes = conta("select string_agg(c.id::text, ',' order by c.id) from servidores_custos c where c.servidor_id = '" + vps + "'");
+  // divisão por percentual: 60% para uma, o resto por igual nas outras, com a conta do que falta na hora
+  await p.click('[data-sv-editar="' + vps + '"]'); await p.waitForTimeout(300); await p.selectOption('#sv-rateio', 'percentual');
+  ok(await p.evaluate(() => getComputedStyle(document.querySelector('.sv-in-pct')).display !== 'none' && getComputedStyle(document.querySelector('.sv-in-peso')).display === 'none'), 'por percentual: aparece o campo de % de cada aplicação');
+  await p.fill('[data-sv-pct="' + apps[0] + '"]', '60');
+  ok(await p.evaluate(() => /Restando:\s*R\$\s?48,00 \(40%\)/.test(document.querySelector('[data-sv-resumo]').textContent)), 'a conta mostra o que falta: 40% de 120 = 48 por mês');
+  ok(await p.evaluate(a => /72,00 \(60%\)/.test(document.querySelector('[data-sv-calc="' + a + '"]').textContent), apps[0]), 'cada aplicação mostra quanto paga (60% = 72 por mês)');
+  await p.click('[data-sv-igualar]');
+  ok(await p.evaluate(() => /Restando:\s*R\$\s?0,00/.test(document.querySelector('[data-sv-resumo]').textContent)), '"Dividir o que falta por igual" fecha 100%');
+  await p.selectOption('#sv-rateio', 'valor'); await p.fill('[data-sv-val="' + apps[0] + '"]', '30');
+  ok(await p.evaluate(() => /Restando:\s*R\$\s?90,00/.test(document.querySelector('[data-sv-resumo]').textContent)), 'por valor: 30 de 120 deixa 90 restando');
+  await p.selectOption('#sv-rateio', 'percentual');
+  // um custo trimestral que começou há uns 4 meses e para numa data
+  await p.click('[data-sv-mais-custo]'); const c3 = (await p.$$('[data-sv-custo]')).pop();
+  const ini3 = new Date(Date.now() - 125 * 86400000).toISOString().slice(0, 10), fim3 = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+  await (await c3.$('[data-k="descricao"]')).fill('Licença painel'); await (await c3.$('[data-k="valor"]')).fill('90'); await (await c3.$('[data-k="recorrencia"]')).selectOption('trimestral');
+  await (await c3.$('[data-k="inicio"]')).fill(ini3); await (await c3.$('[data-k="ate"]')).selectOption('data'); await (await c3.$('[data-k="fim"]')).fill(fim3);
+  if (F) await p.screenshot({path:F + 'sv_rateio.png', fullPage:false});
+  if (F){ await p.evaluate(() => document.querySelector('[data-sv-resumo]').scrollIntoView({block:'end'})); await p.screenshot({path:F + 'sv_rateio2.png', fullPage:false}); }
+  await salvarModal();
+  ok(conta("select rateio from servidores where id = '" + vps + "'") === 'percentual' && conta("select sum(percentual)::int from servidores_alcance where servidor_id = '" + vps + "'") === '100' && conta("select percentual::int from servidores_alcance where servidor_id = '" + vps + "' and no_id = '" + apps[0] + "'") === '60', 'grava o percentual de cada aplicação (fecha 100%)');
+  ok(conta("select string_agg(c.id::text, ',' order by c.id) from servidores_custos c where c.servidor_id = '" + vps + "' and descricao <> 'Licença painel'") === idsAntes, 'editar mantém os custos (os lançamentos continuam ligados a eles)');
+  ok(conta("select recorrencia || '|' || fim from servidores_custos where descricao = 'Licença painel'") === 'trimestral|' + fim3 && conta("select count(*) from servidores_lancamentos where descricao = 'Licença painel'") === '2', 'trimestral que para numa data: 2 lançamentos até hoje (há 4 meses e há 1)');
+  ok(await p.evaluate(v => /para de cobrar em/.test(document.querySelector('.sv-card[data-sv="' + v + '"]').textContent) && /renova até cancelar/.test(document.querySelector('.sv-card[data-sv="' + v + '"]').textContent) && /Divisão \(por percentual\)/.test(document.querySelector('.sv-card[data-sv="' + v + '"]').textContent), vps), 'o cartão diz o que renova até cancelar, o que para numa data e a divisão por percentual');
+  ok(await p.evaluate(v => /R\$\s?150,00 por mês/.test(document.querySelector('.sv-card[data-sv="' + v + '"]').textContent), vps), 'custo mensal com o trimestral: 100 + 20 + 30 = 150');
+  // cancelar um custo que renova: para de cobrar hoje
+  const plano = conta("select id from servidores_custos where descricao = 'Plano KVM 4'");
+  await p.click('[data-sv-cancelar="' + plano + '"]'); await p.waitForTimeout(300); await salvarModal();
+  ok(conta("select fim = current_date from servidores_custos where id = '" + plano + "'") === 't' && conta("select count(*) from servidores_lancamentos where custo_id = '" + plano + "'") === '1', 'cancelar para de cobrar hoje e o lançamento que já foi fica');
+  ok(await p.evaluate(() => window.__tf.svPeriodos({inicio:'2026-01-31', recorrencia:'mensal', fim:'2026-04-30'}).join(',') === '2026-01-31,2026-02-28,2026-03-31,2026-04-30' && window.__tf.svPeriodos({inicio:'2025-01-10', recorrencia:'semestral', fim:'2026-02-01'}).length === 3), 'períodos: fim de mês e semestral contados certo');
   // excluir
   await p.click('[data-sv-apagar="' + vps + '"]'); await p.waitForTimeout(300); await salvarModal();
-  ok(conta("select count(*) from servidores where nome = 'VPS produção BL'") === '0' && conta("select count(*) from servidores_custos") === '1', 'excluir tira a máquina com tudo o que é dela');
+  ok(conta("select count(*) from servidores where nome = 'VPS produção BL'") === '0' && conta("select count(*) from servidores_custos") === '1' && conta("select count(*) from servidores_lancamentos l where not exists (select 1 from servidores s where s.id = l.servidor_id)") === '0', 'excluir tira a máquina com tudo o que é dela');
   // divisão por peso: 3 para uma aplicação e 1 para a outra = 75% e 25%
   ok(await p.evaluate(([a0, a1]) => { const S = window.__tf.SRV; const s = {id:'peso-teste', rateio:'peso'}; S.alcance.push({servidor_id:'peso-teste', no_id:a0, peso:3}, {servidor_id:'peso-teste', no_id:a1, peso:1});
     const d = window.__tf.svDivisao(s); S.alcance = S.alcance.filter(x => x.servidor_id !== 'peso-teste');

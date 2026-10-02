@@ -53,5 +53,20 @@ dialog.sv-modal{width:min(1040px,96vw)}
 .sv-ed-onde{display:grid;gap:4px;max-height:260px;overflow:auto}
 .sv-ed-no{display:flex;gap:8px;align-items:center;font-size:13px}
 .sv-ed-no small{color:var(--text-secondary)}
-.sv-peso{width:72px;display:none}
-.sv-com-peso .sv-peso{display:inline-block;margin-left:auto}
+.sv-parte{display:inline-flex;align-items:center;gap:4px;margin-left:auto;flex-wrap:wrap;justify-content:flex-end}
+.sv-parte .campo{width:96px;padding:4px 6px}
+.sv-parte i{font-style:normal;font-size:12px;color:var(--preto-60, #666)}
+.sv-in-peso,.sv-in-pct,.sv-in-val{display:none !important}
+.sv-modo-peso .sv-in-peso,.sv-modo-pct .sv-in-pct,.sv-modo-val .sv-in-val{display:inline-block !important}
+.sv-calc{font-size:12px;font-variant-numeric:tabular-nums;color:var(--preto-60, #666);min-width:0}
+.sv-modo-peso .sv-calc,.sv-modo-pct .sv-calc,.sv-modo-val .sv-calc{min-width:150px;text-align:right}
+.sv-resumo{display:flex;flex-wrap:wrap;gap:6px 18px;margin:10px 0 6px;padding:10px 12px;background:var(--preto-04);font-size:13px;font-variant-numeric:tabular-nums}
+.sv-resumo .sv-falta{color:#B45309}.sv-resumo .sv-erro{color:#B91C1C}.sv-resumo .sv-ok{color:#15803D}
+.sv-so-div{display:none}.sv-modo-pct .sv-so-div,.sv-modo-val .sv-so-div{display:inline-flex}
+.sv-ed-custo{align-items:flex-end}
+.sv-c{display:flex;flex-direction:column;gap:3px;font-size:12px;flex:1 1 130px;min-width:0}
+.sv-c .campo,.sv-c .sel{width:100%}
+.sv-c-desc{flex:2 1 220px}.sv-c-peq{flex:0 1 80px}
+.sv-c[hidden]{display:none}
+.sv-div .sv-resta{color:#B45309}
+.sv-lanc{margin-top:8px;font-size:13px}.sv-lanc summary{cursor:pointer}
