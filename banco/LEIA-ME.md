@@ -155,6 +155,16 @@ Na tela: Entregas, **Ligar repositório** (conectar a conta, escolher o reposit�
 
 `43_analise_seguranca.sql`: `analise_achados` (cada achado com regra, gravidade, onde, trecho com segredo mascarado, identidade estável, status aberto/corrigido/ignorado, motivo e item ligado) e `analise_rodadas` (o resumo de cada leitura). `analise_gravar` (só o robô, service_role) grava o que achou e marca como corrigido o que sumiu; `analise_marcar` (quem edita o ponto) ignora com motivo, volta a abrir e liga ao item. As regras ficam em `supabase/functions/diagramas-auto/seguranca.ts` (fonte única: a tela pega o mesmo catálogo no build). A tela: `fonte/seguranca.js` (aba Segurança).
 
+## Parte 51: o custo do plano marcado como principal (aplicada no Supabase em 02/10/2026)
+
+`51_servidores_custo_principal.sql`: `servidores_custos.principal` (no máximo um por servidor, por índice único parcial).
+
+O cadastro do servidor não repete mais nada:
+- O bloco "Contrato e custo" tem contratado em, valor do plano, moeda, recorrência e "renova até cancelar" ou "para numa data".
+- O nome do custo vem do campo Plano.
+- A próxima renovação é calculada pela recorrência; não existe mais o campo "Renova em" para digitar.
+- Os custos extras (backup, IP extra, licença) têm só o quê, o valor e a recorrência. Pegam a moeda e a cobrança do contrato e começam hoje (num servidor novo, na data da contratação).
+
 ## Parte 50: servidores com divisão por percentual ou valor, recorrências e lançamentos (aplicada no Supabase em 02/10/2026, em partes)
 
 `50_servidores_rateio.sql`:

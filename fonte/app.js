@@ -1737,7 +1737,10 @@ function novoItem(){
 function criarDentro(chave){
   const [tipo, id] = chave.split(':');
   const opts = tipo === 'client' ? [['project','Novo projeto']] : tipo === 'project' ? [['product','Novo produto'],['app','Nova aplicação direto no projeto']] : tipo === 'product' ? [['app','Nova aplicação']] : [['ws','Nova frente de trabalho']];
-  modal('Criar dentro de ' + esc(nomeDe(chave)), '<div class="grade-form"><label class="lb">O que criar<select class="sel" id="cd-o">' + opts.map(([k, n]) => '<option value="' + k + '">' + n + '</option>').join('') + '</select></label><label class="lb">Nome<input class="campo" id="cd-n"></label><label class="lb">Plataforma, se for aplicação<select class="sel" id="cd-p"><option value="desktop">Desktop</option><option value="web">Web</option><option value="mobile">Celular</option></select></label></div>',
+  const soFrente = opts.length === 1 && opts[0][0] === 'ws';
+  const dicaNome = {project:'Ex.: Portal do cliente', product:'Ex.: Gestão de clientes', app:'Ex.: Portal web, App do motorista', ws:'Ex.: Pagamentos, Relatórios, Migração'};
+  const dlgCd = modal(soFrente ? 'Nova frente de trabalho em ' + esc(nomeDe(chave)) : 'Criar dentro de ' + esc(nomeDe(chave)), (soFrente ? '<p class="intro">Frente de trabalho é uma linha de trabalho dentro da aplicação. As frentes padrão (Frontend, Backend, Database, Integrações, Infraestrutura, Segurança, Testes, Design e Documentação) já nascem com a aplicação; crie uma nova só para um assunto que não cabe nelas. Para uma nova aplicação, use o + do produto ou do projeto.</p>' : '') +
+    '<div class="grade-form"><label class="lb"' + (soFrente ? ' hidden' : '') + '>O que criar<select class="sel" id="cd-o">' + opts.map(([k, n]) => '<option value="' + k + '">' + n + '</option>').join('') + '</select></label><label class="lb">Nome<input class="campo" id="cd-n" placeholder="' + esc(dicaNome[opts[0][0]]) + '"></label><label class="lb" id="cd-p-lb"' + (opts[0][0] === 'app' ? '' : ' hidden') + '>Plataforma da aplicação<select class="sel" id="cd-p"><option value="desktop">Desktop</option><option value="web">Web</option><option value="mobile">Celular</option></select></label></div>',
     [{txt:'Cancelar', cls:'sec'},{txt:'Criar', acao:d => {
       const o = $('#cd-o', d).value, n = $('#cd-n', d).value.trim(); if (!n){ toast('Escreva o nome'); return false; }
       let nova;
@@ -1747,6 +1750,8 @@ function criarDentro(chave){
       else { const w = {id:uid('ws'), app:id, nome:n, status:'active', wip:3}; D.ws.push(w); nova = 'ws:' + w.id; }
       UI.abertos[chave] = true; UI.sel = nova; salvar(); salvarUI(); rOperacoes(); toast('Criado: ' + n);
     }}]);
+  // a plataforma só vale para aplicação; o exemplo do nome acompanha o que vai ser criado
+  const oSel = $('#cd-o', dlgCd); if (oSel) oSel.addEventListener('change', () => { $('#cd-p-lb', dlgCd).hidden = oSel.value !== 'app'; $('#cd-n', dlgCd).placeholder = dicaNome[oSel.value] || ''; });
 }
 function novoProjeto(){
   modal('Novo projeto', '<div class="grade-form"><label class="lb">Cliente<select class="sel" id="np-c">' + D.clients.map(c => '<option value="' + c.id + '">' + esc(c.nome) + '</option>').join('') + '</select></label><label class="lb">Nome do projeto<input class="campo" id="np-n"></label><label class="lb">Origem' + I('Origem do projeto: Greenfield é um sistema novo, feito do zero. Brownfield é um sistema que já existe e chega para continuar') + '<select class="sel" id="np-o"><option value="greenfield">Greenfield · do zero</option><option value="brownfield">Brownfield · já em andamento</option></select></label></div>',

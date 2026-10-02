@@ -841,4 +841,4 @@ linhasDaTela = function(d){
 };
 
 // só nos testes locais (arquivo aberto direto, file://): acesso aos dados para conferir o resultado
-if (location.protocol === 'file:') window.__tf = {get D(){ return D; }, get UI(){ return UI; }, get itemAberto(){ return itemAberto; }, byId, abrirItem, fecharItem, rOperacoes, abrirArvore, salvarUI, tfEu, tfChecarLembretes, tfMd, tfAviso, toast};
+if (location.protocol === 'file:') window.__tf = {get D(){ return D; }, get UI(){ return UI; }, get itemAberto(){ return itemAberto; }, byId, abrirItem, fecharItem, rOperacoes, abrirArvore, salvarUI, tfEu, tfChecarLembretes, tfMd, tfAviso, toast, criarDentro};

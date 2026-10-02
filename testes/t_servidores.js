@@ -86,17 +86,17 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   await p.click('[data-sv-novo]'); await p.waitForTimeout(300);
   await p.fill('#sv-nome', 'VPS produção BL'); await p.fill('#sv-prov', 'Hostinger'); await p.fill('#sv-plano', 'KVM 4'); await p.fill('#sv-so', 'Ubuntu 24.04');
   await p.fill('#sv-cpu', '4'); await p.fill('#sv-mem', '16'); await p.fill('#sv-disco', '200'); await p.selectOption('#sv-dt', 'nvme'); await p.fill('#sv-host', 'srv1.bl.com.br'); await p.fill('#sv-ip', '177.10.20.30');
-  await p.fill('#sv-acesso', 'senha: abc123'); await p.fill('#sv-renova', new Date(Date.now() + 10 * 86400000).toISOString().slice(0, 10));
+  await p.fill('#sv-acesso', 'senha: abc123');
   // cascata: o projeto aberto já vem marcado com todas as aplicações; desmarcar uma desmarca o projeto; marcar o projeto marca tudo
   const marcadas = () => p.evaluate(() => [...document.querySelectorAll('[data-sv-no]')].filter(c => c.checked).map(c => c.dataset.svNo));
   ok(await marcadas().then(m => m.includes(proj) && apps.every(a => m.includes(a))), 'cadastrar no projeto já marca o projeto e tudo o que está dentro');
   await p.click('[data-sv-no="' + apps[0] + '"]'); ok(!(await marcadas()).includes(proj) && !(await marcadas()).includes(apps[0]), 'desmarcar uma aplicação desmarca o projeto (ele não vale mais para tudo)');
   await p.click('[data-sv-no="' + proj + '"]'); ok(await marcadas().then(m => m.includes(proj) && apps.every(a => m.includes(a))), 'marcar o projeto marca de novo todas as aplicações');
-  ok(await p.evaluate(() => document.querySelectorAll('[data-sv-custo]').length === 1 && !!document.querySelector('[data-sv-custo] [data-k="valor"]')), 'o custo já aparece com o campo do valor');
-  await p.click('[data-sv-mais-custo]');
+  ok(await p.evaluate(() => !document.querySelector('#sv-renova') && !!document.querySelector('#sv-valor') && !document.querySelectorAll('[data-sv-custo]').length && !document.querySelector('[data-sv-custo] [data-k="inicio"]')), 'o contrato tem o valor do plano, sem repetir o nome do plano nem a data (a renovação é calculada)');
+  await p.fill('#sv-valor', '100'); ok(await p.evaluate(() => /Próxima renovação/.test(document.querySelector('#sv-prox').textContent)), 'a próxima renovação aparece calculada pela recorrência'); await p.click('[data-sv-mais-custo]');
   const custos = await p.$$('[data-sv-custo]');
-  await (await custos[0].$('[data-k="descricao"]')).fill('Plano KVM 4'); await (await custos[0].$('[data-k="valor"]')).fill('100');
-  await (await custos[1].$('[data-k="descricao"]')).fill('Backup anual'); await (await custos[1].$('[data-k="valor"]')).fill('240'); await (await custos[1].$('[data-k="recorrencia"]')).selectOption('anual');
+  ok(custos.length === 1, 'custo extra com só o que é dele (o quê, valor, recorrência)');
+  await (await custos[0].$('[data-k="descricao"]')).fill('Backup anual'); await (await custos[0].$('[data-k="valor"]')).fill('240'); await (await custos[0].$('[data-k="recorrencia"]')).selectOption('anual');
   await p.click('[data-sv-mais-serv]'); const sv1 = await p.$('[data-sv-serv]');
   await (await sv1.$('[data-k="nome"]')).fill('API Java'); await (await sv1.$('[data-k="tipo"]')).selectOption('api'); await (await sv1.$('[data-k="tecnologia"]')).fill('Java 21'); await (await sv1.$('[data-k="porta"]')).fill('8080'); await (await sv1.$('[data-k="no_id"]')).selectOption(apps[0]);
   const salvarModal = async () => { await p.evaluate(() => [...document.querySelectorAll('dialog.modal[open] .modal-rod .btn')].pop().click()); await p.waitForTimeout(2500); };
@@ -116,8 +116,8 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   ok(await p.evaluate(pt => { const t = document.querySelector('.sv-tela').textContent; return /Aplicado aqui/.test(t) && t.includes(pt); }, parte), 'a aplicação vê a VPS do projeto (marcada nela pela cascata) e a parte dela no custo (' + parte + ' por mês)');
   // uma segunda máquina só para uma aplicação, com divisão por peso não muda nada para as outras
   await p.click('[data-sv-novo]'); await p.waitForTimeout(300);
-  await p.fill('#sv-nome', 'Banco MySQL dedicado'); await p.selectOption('#sv-tipo', 'dedicado'); await p.click('[data-sv-mais-custo]');
-  const c2 = await p.$('[data-sv-custo]'); await (await c2.$('[data-k="descricao"]')).fill('Servidor'); await (await c2.$('[data-k="valor"]')).fill('300');
+  await p.fill('#sv-nome', 'Banco MySQL dedicado'); await p.selectOption('#sv-tipo', 'dedicado'); await p.fill('#sv-desde', new Date(Date.now() - 65 * 86400000).toISOString().slice(0, 10));
+  await p.fill('#sv-valor', '300');
   await salvarModal();
   ok(conta("select string_agg(a.no_id::text, ',') from servidores_alcance a join servidores s on s.id = a.servidor_id where s.nome = 'Banco MySQL dedicado'") === apps[0], 'a máquina cadastrada dentro da aplicação vale só para ela');
   ok(await p.evaluate(() => document.querySelectorAll('.sv-card').length === 2), 'a aplicação vê as duas máquinas');
@@ -148,23 +148,31 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   await p.selectOption('#sv-rateio', 'valor'); await p.fill('[data-sv-val="' + apps[0] + '"]', '30');
   ok(await p.evaluate(() => /Restando:\s*R\$\s?90,00/.test(document.querySelector('[data-sv-resumo]').textContent)), 'por valor: 30 de 120 deixa 90 restando');
   await p.selectOption('#sv-rateio', 'percentual');
-  // um custo trimestral que começou há uns 4 meses e para numa data
+  // um custo extra trimestral: pega a moeda e a cobrança do contrato e começa hoje
   await p.click('[data-sv-mais-custo]'); const c3 = (await p.$$('[data-sv-custo]')).pop();
-  const ini3 = new Date(Date.now() - 125 * 86400000).toISOString().slice(0, 10), fim3 = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
   await (await c3.$('[data-k="descricao"]')).fill('Licença painel'); await (await c3.$('[data-k="valor"]')).fill('90'); await (await c3.$('[data-k="recorrencia"]')).selectOption('trimestral');
-  await (await c3.$('[data-k="inicio"]')).fill(ini3); await (await c3.$('[data-k="ate"]')).selectOption('data'); await (await c3.$('[data-k="fim"]')).fill(fim3);
   if (F) await p.screenshot({path:F + 'sv_rateio.png', fullPage:false});
   if (F){ await p.evaluate(() => document.querySelector('[data-sv-resumo]').scrollIntoView({block:'end'})); await p.screenshot({path:F + 'sv_rateio2.png', fullPage:false}); }
   await salvarModal();
   ok(conta("select rateio from servidores where id = '" + vps + "'") === 'percentual' && conta("select sum(percentual)::int from servidores_alcance where servidor_id = '" + vps + "'") === '100' && conta("select percentual::int from servidores_alcance where servidor_id = '" + vps + "' and no_id = '" + apps[0] + "'") === '60', 'grava o percentual de cada aplicação (fecha 100%)');
   ok(conta("select string_agg(c.id::text, ',' order by c.id) from servidores_custos c where c.servidor_id = '" + vps + "' and descricao <> 'Licença painel'") === idsAntes, 'editar mantém os custos (os lançamentos continuam ligados a eles)');
-  ok(conta("select recorrencia || '|' || fim from servidores_custos where descricao = 'Licença painel'") === 'trimestral|' + fim3 && conta("select count(*) from servidores_lancamentos where descricao = 'Licença painel'") === '2', 'trimestral que para numa data: 2 lançamentos até hoje (há 4 meses e há 1)');
-  ok(await p.evaluate(v => /para de cobrar em/.test(document.querySelector('.sv-card[data-sv="' + v + '"]').textContent) && /renova até cancelar/.test(document.querySelector('.sv-card[data-sv="' + v + '"]').textContent) && /Divisão \(por percentual\)/.test(document.querySelector('.sv-card[data-sv="' + v + '"]').textContent), vps), 'o cartão diz o que renova até cancelar, o que para numa data e a divisão por percentual');
+  ok(conta("select descricao || '|' || principal from servidores_custos where servidor_id = '" + vps + "' and principal") === 'Plano KVM 8|true', 'o custo do plano leva o nome do plano do cadastro (sem digitar de novo)');
+  ok(conta("select recorrencia || '|' || moeda || '|' || (inicio = current_date) || '|' || coalesce(fim::text, 'sem fim') from servidores_custos where descricao = 'Licença painel'") === 'trimestral|BRL|true|sem fim' && conta("select count(*) from servidores_lancamentos where descricao = 'Licença painel'") === '1', 'extra trimestral: começa hoje, renova até cancelar e já tem o 1º lançamento');
+  ok(await p.evaluate(v => /renova até cancelar/.test(document.querySelector('.sv-card[data-sv="' + v + '"]').textContent) && /Divisão \(por percentual\)/.test(document.querySelector('.sv-card[data-sv="' + v + '"]').textContent), vps), 'o cartão diz o que renova até cancelar e a divisão por percentual');
   ok(await p.evaluate(v => /R\$\s?150,00 por mês/.test(document.querySelector('.sv-card[data-sv="' + v + '"]').textContent), vps), 'custo mensal com o trimestral: 100 + 20 + 30 = 150');
+  // a máquina dedicada contratada há uns 2 meses: 3 lançamentos mensais
+  ok(conta("select count(*) from servidores_lancamentos l join servidores s on s.id = l.servidor_id where s.nome = 'Banco MySQL dedicado'") === '3', 'contrato com data no passado lança cada mês desde a contratação (3)');
   // cancelar um custo que renova: para de cobrar hoje
-  const plano = conta("select id from servidores_custos where descricao = 'Plano KVM 4'");
+  const plano = conta("select id from servidores_custos where servidor_id = '" + vps + "' and principal");
   await p.click('[data-sv-cancelar="' + plano + '"]'); await p.waitForTimeout(300); await salvarModal();
   ok(conta("select fim = current_date from servidores_custos where id = '" + plano + "'") === 't' && conta("select count(*) from servidores_lancamentos where custo_id = '" + plano + "'") === '1', 'cancelar para de cobrar hoje e o lançamento que já foi fica');
+  // o contrato para numa data: os extras param junto
+  const fim3 = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+  await p.click('[data-sv-editar="' + vps + '"]'); await p.waitForTimeout(300);
+  ok(await p.evaluate(() => document.querySelector('#sv-ate').value === 'data' && !document.querySelector('#sv-fim-lb').hidden), 'o contrato cancelado abre como "Para numa data"');
+  await p.fill('#sv-fim', fim3); await salvarModal();
+  ok(conta("select string_agg(distinct coalesce(fim::text, '-'), ',') from servidores_custos where servidor_id = '" + vps + "' and recorrencia <> 'unico'") === fim3, 'para numa data: o plano e os extras param de cobrar no mesmo dia');
+  ok(await p.evaluate(v => /para de cobrar em/.test(document.querySelector('.sv-card[data-sv="' + v + '"]').textContent), vps), 'o cartão mostra a data em que para de cobrar');
   ok(await p.evaluate(() => window.__tf.svPeriodos({inicio:'2026-01-31', recorrencia:'mensal', fim:'2026-04-30'}).join(',') === '2026-01-31,2026-02-28,2026-03-31,2026-04-30' && window.__tf.svPeriodos({inicio:'2025-01-10', recorrencia:'semestral', fim:'2026-02-01'}).length === 3), 'períodos: fim de mês e semestral contados certo');
   // excluir
   await p.click('[data-sv-apagar="' + vps + '"]'); await p.waitForTimeout(300); await salvarModal();

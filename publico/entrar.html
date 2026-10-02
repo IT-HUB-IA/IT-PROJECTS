@@ -3414,6 +3414,10 @@ dialog.sv-modal{width:min(1040px,96vw)}
 .sv-c[hidden]{display:none}
 .sv-div .sv-resta{color:#B45309}
 .sv-lanc{margin-top:8px;font-size:13px}.sv-lanc summary{cursor:pointer}
+
+.sv-ed-sub{margin:14px 0 6px;font-size:13px}.sv-ed-sub small{font-weight:400;color:var(--preto-60, #666)}
+.sv-prox{grid-column:1/-1;margin:0;font-size:13px}
+.lb[hidden]{display:none}
 /* ===== Inventário de TI ===== */
 .inv-tela{display:grid;gap:14px;max-width:1280px}
 .inv-topo{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-start;justify-content:space-between}
@@ -5934,7 +5938,10 @@ function novoItem(){
 function criarDentro(chave){
   const [tipo, id] = chave.split(':');
   const opts = tipo === 'client' ? [['project','Novo projeto']] : tipo === 'project' ? [['product','Novo produto'],['app','Nova aplicação direto no projeto']] : tipo === 'product' ? [['app','Nova aplicação']] : [['ws','Nova frente de trabalho']];
-  modal('Criar dentro de ' + esc(nomeDe(chave)), '<div class="grade-form"><label class="lb">O que criar<select class="sel" id="cd-o">' + opts.map(([k, n]) => '<option value="' + k + '">' + n + '</option>').join('') + '</select></label><label class="lb">Nome<input class="campo" id="cd-n"></label><label class="lb">Plataforma, se for aplicação<select class="sel" id="cd-p"><option value="desktop">Desktop</option><option value="web">Web</option><option value="mobile">Celular</option></select></label></div>',
+  const soFrente = opts.length === 1 && opts[0][0] === 'ws';
+  const dicaNome = {project:'Ex.: Portal do cliente', product:'Ex.: Gestão de clientes', app:'Ex.: Portal web, App do motorista', ws:'Ex.: Pagamentos, Relatórios, Migração'};
+  const dlgCd = modal(soFrente ? 'Nova frente de trabalho em ' + esc(nomeDe(chave)) : 'Criar dentro de ' + esc(nomeDe(chave)), (soFrente ? '<p class="intro">Frente de trabalho é uma linha de trabalho dentro da aplicação. As frentes padrão (Frontend, Backend, Database, Integrações, Infraestrutura, Segurança, Testes, Design e Documentação) já nascem com a aplicação; crie uma nova só para um assunto que não cabe nelas. Para uma nova aplicação, use o + do produto ou do projeto.</p>' : '') +
+    '<div class="grade-form"><label class="lb"' + (soFrente ? ' hidden' : '') + '>O que criar<select class="sel" id="cd-o">' + opts.map(([k, n]) => '<option value="' + k + '">' + n + '</option>').join('') + '</select></label><label class="lb">Nome<input class="campo" id="cd-n" placeholder="' + esc(dicaNome[opts[0][0]]) + '"></label><label class="lb" id="cd-p-lb"' + (opts[0][0] === 'app' ? '' : ' hidden') + '>Plataforma da aplicação<select class="sel" id="cd-p"><option value="desktop">Desktop</option><option value="web">Web</option><option value="mobile">Celular</option></select></label></div>',
     [{txt:'Cancelar', cls:'sec'},{txt:'Criar', acao:d => {
       const o = $('#cd-o', d).value, n = $('#cd-n', d).value.trim(); if (!n){ toast('Escreva o nome'); return false; }
       let nova;
@@ -5944,6 +5951,8 @@ function criarDentro(chave){
       else { const w = {id:uid('ws'), app:id, nome:n, status:'active', wip:3}; D.ws.push(w); nova = 'ws:' + w.id; }
       UI.abertos[chave] = true; UI.sel = nova; salvar(); salvarUI(); rOperacoes(); toast('Criado: ' + n);
     }}]);
+  // a plataforma só vale para aplicação; o exemplo do nome acompanha o que vai ser criado
+  const oSel = $('#cd-o', dlgCd); if (oSel) oSel.addEventListener('change', () => { $('#cd-p-lb', dlgCd).hidden = oSel.value !== 'app'; $('#cd-n', dlgCd).placeholder = dicaNome[oSel.value] || ''; });
 }
 function novoProjeto(){
   modal('Novo projeto', '<div class="grade-form"><label class="lb">Cliente<select class="sel" id="np-c">' + D.clients.map(c => '<option value="' + c.id + '">' + esc(c.nome) + '</option>').join('') + '</select></label><label class="lb">Nome do projeto<input class="campo" id="np-n"></label><label class="lb">Origem' + I('Origem do projeto: Greenfield é um sistema novo, feito do zero. Brownfield é um sistema que já existe e chega para continuar') + '<select class="sel" id="np-o"><option value="greenfield">Greenfield · do zero</option><option value="brownfield">Brownfield · já em andamento</option></select></label></div>',
@@ -9637,7 +9646,7 @@ linhasDaTela = function(d){
 };
 
 // só nos testes locais (arquivo aberto direto, file://): acesso aos dados para conferir o resultado
-if (location.protocol === 'file:') window.__tf = {get D(){ return D; }, get UI(){ return UI; }, get itemAberto(){ return itemAberto; }, byId, abrirItem, fecharItem, rOperacoes, abrirArvore, salvarUI, tfEu, tfChecarLembretes, tfMd, tfAviso, toast};
+if (location.protocol === 'file:') window.__tf = {get D(){ return D; }, get UI(){ return UI; }, get itemAberto(){ return itemAberto; }, byId, abrirItem, fecharItem, rOperacoes, abrirArvore, salvarUI, tfEu, tfChecarLembretes, tfMd, tfAviso, toast, criarDentro};
 
 /* =====================================================================
    Entregas: código (GitHub e GitLab) ligado aos itens, versões com notas geradas
@@ -16767,6 +16776,9 @@ function svParte(s, sel){
   if (!div.length){ const r = svRelacao(s, sel); return r && r.tipo !== 'herdado' ? mensal : 0; }
   const dentro = new Set(svDentro(sel)); return div.filter(d => dentro.has(d.app)).reduce((t, d) => t + d.fracao * mensal, 0);
 }
+// o custo do plano (o contrato) e a próxima renovação, calculada pela recorrência dele
+const svPrincipalDe = s => { const cs = svCustosDe(s); return cs.find(c => c.principal) || null; };
+function svRenovaEm(s){ const pr = svPrincipalDe(s); if (!pr) return s.renova_em || null; return pr.recorrencia === 'unico' ? null : svProximo(pr); }
 const svDiasAte = d => d ? Math.round((parse(String(d).slice(0, 10)) - HOJE) / 86400000) : null;
 
 /* ---------- a tela ---------- */
@@ -16777,7 +16789,7 @@ function svTelaHTML(){
   if (SRV.erro) return '<div class="sv-tela"><p class="entrada-erro">Não deu para ler os servidores: ' + esc(SRV.erro) + '</p></div>';
   const lista = svDoPonto(sel), ativos = lista.filter(s => s.status !== 'desligado');
   const mensal = ativos.reduce((t, s) => t + svCustoMensal(s), 0), parte = ativos.reduce((t, s) => t + svParte(s, sel), 0);
-  const renov = ativos.filter(s => { const d = svDiasAte(s.renova_em); return d != null && d <= 30; });
+  const renov = ativos.filter(s => { const d = svDiasAte(svRenovaEm(s)); return d != null && d <= 30; });
   return '<div class="sv-tela">' +
     '<header class="sv-topo"><div><h2>Servidores</h2><p class="lead">As máquinas que rodam ' + esc(nomeDe(sel)) + ': o que roda em cada uma, onde se aplica e quanto custa. Servidor ligado a um projeto vale para todas as aplicações de dentro; ligado a uma aplicação, só para ela.</p></div>' +
       (pode ? '<button type="button" class="btn" data-sv-novo>Cadastrar servidor</button>' : '') + '</header>' +
@@ -16791,7 +16803,7 @@ function svTelaHTML(){
 function svCardHTML(s, sel, pode){
   const r = svRelacao(s, sel), al = svAlcanceDe(s), sv = svServicosDe(s), cs = svCustosDe(s), div = svDivisao(s), mensal = svCustoMensal(s), unico = svCustoUnico(s);
   const rel = r.tipo === 'aqui' ? 'Aplicado aqui' : r.tipo === 'herdado' ? 'Herdado de ' + nomeDe(svChaveDe(r.de) || '') : r.tipo === 'parte' ? 'Atende parte do que está dentro' : 'Cadastrado aqui, sem onde se aplica';
-  const dias = svDiasAte(s.renova_em), pess = s.responsavel_id && pessoa(s.responsavel_id);
+  const dias = svDiasAte(svRenovaEm(s)), pess = s.responsavel_id && pessoa(s.responsavel_id);
   const espec = [s.cpu != null ? s.cpu + ' vCPU' : '', s.memoria_gb != null ? (+s.memoria_gb) + ' GB de memória' : '', s.disco_gb != null ? (+s.disco_gb) + ' GB ' + (s.disco_tipo ? s.disco_tipo.toUpperCase() : 'de disco') : '', s.banda_tb != null ? (+s.banda_tb) + ' TB de tráfego' : ''].filter(Boolean);
   const lin = (rot, v) => v ? '<div class="sv-lin"><dt>' + rot + '</dt><dd>' + v + '</dd></div>' : '';
   return '<article class="sv-card sv-st-' + esc(s.status) + '" data-sv="' + esc(s.id) + '">' +
@@ -16814,7 +16826,7 @@ function svCardHTML(s, sel, pode){
     '<dl class="sv-info">' + lin('Endereço', esc([s.hostname, s.ip_publico].filter(Boolean).join(' · '))) + lin('IP interno', esc(s.ip_privado)) +
       lin('Painel', s.painel_url ? '<a href="' + esc(s.painel_url) + '" target="_blank" rel="noopener">' + esc(s.painel_url.replace(/^https?:\/\//, '')) + '</a>' : '') +
       lin('Onde fica o acesso', esc(s.acesso_onde)) + lin('Backup', esc(s.backup)) + lin('Monitoramento', esc(s.monitoramento)) + lin('Responsável', esc(pess ? pess.nome : '')) +
-      lin('Contrato', esc([s.contratado_em ? 'desde ' + svDia(s.contratado_em) : '', s.renova_em ? 'renova em ' + svDia(s.renova_em) + (dias != null ? (dias < 0 ? ' (venceu há ' + -dias + ' dias)' : ' (em ' + dias + ' dias)') : '') : ''].filter(Boolean).join(', '))) +
+      lin('Contrato', esc([s.contratado_em ? 'desde ' + svDia(s.contratado_em) : '', svRenovaEm(s) ? 'renova em ' + svDia(svRenovaEm(s)) + (dias != null ? (dias < 0 ? ' (venceu há ' + -dias + ' dias)' : ' (em ' + dias + ' dias)') : '') : ''].filter(Boolean).join(', '))) +
       lin('Anotações', esc(s.notas).replace(/\n/g, '<br>')) + '</dl>' +
     (pode && svPodeMudar(s) ? '<footer class="sv-bts"><button type="button" class="btn sec peq" data-sv-editar="' + esc(s.id) + '">Editar</button>' +
       (dias != null && dias <= 45 ? '<button type="button" class="btn sec peq" data-sv-renovar="' + esc(s.id) + '">Criar item de renovação</button>' : '') +
@@ -16855,17 +16867,26 @@ function svLancHTML(s){
     lista.slice(0, 60).map(x => '<tr><td>' + svDia(x.d) + '</td><td>' + esc(x.c) + '</td><td class="sv-num">' + brl(x.v) + '</td></tr>').join('') + '</tbody></table>' +
     (lista.length > 60 ? '<p class="sv-ajuda">Mostrando os 60 mais recentes.</p>' : '') + '</details>';
 }
+// custo extra (backup, IP, licença): só o que é dele; a moeda, o começo e a cobrança vêm do contrato
 function svLinhaCusto(x){
-  const para = !!x.fim;
-  return '<div class="sv-ed-lin sv-ed-custo" data-sv-custo' + (x.id ? ' data-id="' + esc(x.id) + '"' : '') + '>' +
-    '<label class="sv-c sv-c-desc">O quê<input class="campo" data-k="descricao" placeholder="Ex.: Plano KVM 4, Backup, IP extra" value="' + esc(x.descricao || '') + '"></label>' +
+  return '<div class="sv-ed-lin sv-ed-custo" data-sv-custo' + (x.id ? ' data-id="' + esc(x.id) + '" data-inicio="' + esc(x.inicio || '') + '" data-fim="' + esc(x.fim || '') + '"' : '') + '>' +
+    '<label class="sv-c sv-c-desc">O quê<input class="campo" data-k="descricao" placeholder="Ex.: Backup, IP extra, licença do painel" value="' + esc(x.descricao || '') + '"></label>' +
     '<label class="sv-c">Valor<input class="campo" data-k="valor" type="number" min="0" step="0.01" placeholder="0,00" value="' + esc(x.valor == null ? '' : x.valor) + '"></label>' +
-    '<label class="sv-c sv-c-peq">Moeda<select class="sel" data-k="moeda">' + svOpts([['BRL','R$'],['USD','US$'],['EUR','€']], x.moeda || 'BRL') + '</select></label>' +
     '<label class="sv-c">Recorrência<select class="sel" data-k="recorrencia">' + svOpts(SV_REC, x.recorrencia || 'mensal') + '</select></label>' +
-    '<label class="sv-c">Começa em<input class="campo" data-k="inicio" type="date" value="' + esc(x.inicio || iso(HOJE)) + '"></label>' +
-    '<label class="sv-c sv-c-renova">Cobrança<select class="sel" data-k="ate">' + svOpts([['sempre','Renova até cancelar'],['data','Para numa data']], para ? 'data' : 'sempre') + '</select></label>' +
-    '<label class="sv-c sv-c-fim"' + (para ? '' : ' hidden') + '>Para em<input class="campo" data-k="fim" type="date" value="' + esc(x.fim || '') + '"></label>' +
     '<button type="button" class="ico-btn" data-sv-tirar aria-label="Tirar">' + ICO.fechar + '</button></div>';
+}
+// os custos como estão na tela: o do plano (contrato) e os extras
+function svCustosDaTela(dlg, antigo, id){
+  const v = k => { const e = dlg.querySelector('#' + k); return e ? e.value.trim() : ''; };
+  const desde = v('sv-desde') || iso(HOJE), moeda = v('sv-moeda') || 'BRL', para = v('sv-ate') === 'data', fim = para ? v('sv-fim') : '';
+  const out = [], pr = svPrincipalDe(antigo || {});
+  if (v('sv-valor') !== '') out.push({id:pr ? pr.id : null, principal:true, descricao:('Plano ' + v('sv-plano')).trim(), valor:v('sv-valor'), moeda, recorrencia:v('sv-rec') || 'mensal', inicio:desde, fim});
+  dlg.querySelectorAll('[data-sv-custo]').forEach(l => { const g = k => l.querySelector('[data-k="' + k + '"]').value.trim();
+    if (!g('descricao') && g('valor') === '') return;
+    // extra novo num servidor que já existe começa hoje; num servidor novo, junto com o contrato
+    const ini = l.dataset.inicio || (antigo && antigo.id && desde < iso(HOJE) ? iso(HOJE) : desde);
+    out.push({id:l.dataset.id || null, principal:false, descricao:g('descricao'), valor:g('valor'), moeda, recorrencia:g('recorrencia'), inicio:ini, fim:l.dataset.fim || fim}); });
+  return out.map(c => Object.assign(c, {fim:c.recorrencia === 'unico' ? '' : c.fim}));
 }
 function svEditar(id){
   if (!svBanco()){ toast('Precisa do banco do CicloDev ligado.'); return; }
@@ -16878,7 +16899,7 @@ function svEditar(id){
   const marcado = new Map(al.map(a => [a.no_id, a]));
   // o que está marcado vale para o que está dentro: abre já com as aplicações de dentro marcadas
   pontos.forEach((p, i) => { if (!marcado.has(p.id)) return; for (let j = i + 1; j < pontos.length && pontos[j].nivel > p.nivel; j++) if (!marcado.has(pontos[j].id)) marcado.set(pontos[j].id, {no_id:pontos[j].id, peso:1, herdado:true}); });
-  const custos = svCustosDe(s); const pessoas = D.people.filter(p => p.acesso !== 'stakeholder');
+  const custos = svCustosDe(s), pr = svPrincipalDe(s); const pessoas = D.people.filter(p => p.acesso !== 'stakeholder');
   const parteHTML = p => { const a = marcado.get(p.id) || {};
     return p.tipo !== 'aplicação' ? '' : '<span class="sv-parte"><input class="campo sv-in-peso" type="number" min="0.1" step="0.1" data-sv-peso="' + esc(p.id) + '" value="' + esc(a.peso != null ? +a.peso : 1) + '" title="Peso na divisão" aria-label="Peso de ' + esc(p.nome) + '">' +
       '<input class="campo sv-in-pct" type="number" min="0" max="100" step="0.01" data-sv-pct="' + esc(p.id) + '" value="' + esc(a.percentual != null ? +a.percentual : '') + '" placeholder="%" aria-label="Percentual de ' + esc(p.nome) + '"><i class="sv-in-pct">%</i>' +
@@ -16896,9 +16917,16 @@ function svEditar(id){
       svCampo('Painel do provedor', svIn('sv-painel', s.painel_url, ' maxlength="500" placeholder="https://"')) +
       svCampo('Onde fica o acesso (nunca a senha)', svIn('sv-acesso', s.acesso_onde, ' maxlength="300" placeholder="Ex.: cofre 1Password, item VPS BL; chave SSH do William"'), true) +
       svCampo('Backup', svIn('sv-backup', s.backup, ' maxlength="500" placeholder="Como, onde e de quanto em quanto tempo"'), true) + svCampo('Monitoramento', svIn('sv-mon', s.monitoramento, ' maxlength="500" placeholder="Ex.: Uptime Kuma avisa no WhatsApp"'), true) + '</div></fieldset>' +
-    '<fieldset><legend>Custos</legend><p class="sv-ajuda">Cada custo com o valor e a recorrência. "Renova até cancelar" gera o lançamento de todo período até você cancelar; "Para numa data" para de cobrar no dia escolhido.</p>' +
-      '<div class="sv-ed-lista" data-sv-custos>' + (custos.length ? custos : [{}]).map(svLinhaCusto).join('') + '</div><button type="button" class="btn sec peq" data-sv-mais-custo>+ Custo</button>' +
-      '<div class="grade-form">' + svCampo('Contratado em', svIn('sv-desde', s.contratado_em, ' type="date"')) + svCampo('Renova em', svIn('sv-renova', s.renova_em, ' type="date"')) + '</div></fieldset>' +
+    '<fieldset><legend>Contrato e custo</legend><p class="sv-ajuda">O valor do plano e de quanto em quanto tempo ele é cobrado. "Renova até cancelar" lança o valor todo período até você cancelar; "Para numa data" para de cobrar no dia escolhido. A próxima renovação é calculada sozinha.</p><div class="grade-form">' +
+      svCampo('Contratado em', svIn('sv-desde', s.contratado_em || (id ? '' : iso(HOJE)), ' type="date"')) +
+      svCampo('Valor do plano', svIn('sv-valor', pr ? pr.valor : '', ' type="number" min="0" step="0.01" placeholder="0,00"')) +
+      svCampo('Moeda', '<select class="sel" id="sv-moeda">' + svOpts([['BRL','R$'],['USD','US$'],['EUR','€']], pr ? pr.moeda : (custos[0] || {}).moeda || 'BRL') + '</select>') +
+      svCampo('Recorrência', '<select class="sel" id="sv-rec">' + svOpts(SV_REC, pr ? pr.recorrencia : 'mensal') + '</select>') +
+      svCampo('Cobrança', '<select class="sel" id="sv-ate">' + svOpts([['sempre','Renova até cancelar'],['data','Para numa data']], pr && pr.fim ? 'data' : 'sempre') + '</select>') +
+      '<label class="lb" id="sv-fim-lb"' + (pr && pr.fim ? '' : ' hidden') + '>Para em' + svIn('sv-fim', pr ? pr.fim : '', ' type="date"') + '</label>' +
+      '<p class="sv-prox" id="sv-prox" aria-live="polite"></p></div>' +
+      '<h5 class="sv-ed-sub">Custos extras <small>backup, IP extra, licença... (opcional)</small></h5>' +
+      '<div class="sv-ed-lista" data-sv-custos>' + custos.filter(c => !c.principal).map(svLinhaCusto).join('') + '</div><button type="button" class="btn sec peq" data-sv-mais-custo>+ Custo extra</button></fieldset>' +
     '<fieldset><legend>Onde se aplica e quem paga</legend><p class="sv-ajuda">Marcar o cliente, um projeto ou um produto marca todas as aplicações de dentro. Depois escolha como dividir o custo entre elas.</p>' +
       '<div class="grade-form">' + svCampo('Divisão do custo', '<select class="sel" id="sv-rateio">' + svOpts(SV_RATEIO, s.rateio || 'igual') + '</select>') + '</div>' +
       '<div class="sv-ed-onde">' + pontos.map(p => '<label class="sv-ed-no" style="padding-left:' + (p.nivel * 18) + 'px"><input type="checkbox" data-sv-no="' + esc(p.id) + '" data-nivel="' + p.nivel + '"' + (marcado.has(p.id) ? ' checked' : '') + '> <b>' + esc(p.nome) + '</b> <small>' + esc(p.tipo) + '</small>' + parteHTML(p) + '</label>').join('') + '</div>' +
@@ -16913,8 +16941,11 @@ function svEditar(id){
   // a divisão com o que está na tela agora (mesma conta do cartão)
   const conta = () => {
     const modo = dlg.querySelector('#sv-rateio').value;
-    const cs = svLinhasDe(dlg, '[data-sv-custo]').filter(x => x.valor !== ''), m = svMesAtual();
-    const mensal = cs.reduce((t, c) => t + (svCustoVale(Object.assign({}, c, {fim:c.ate === 'data' ? c.fim : null}), m) ? svMensalDe(c) : 0), 0);
+    const cs = svCustosDaTela(dlg, s).filter(x => x.valor !== ''), m = svMesAtual();
+    const mensal = cs.reduce((t, c) => t + (svCustoVale(Object.assign({}, c, {fim:c.fim || null}), m) ? svMensalDe(c) : 0), 0);
+    const pc = cs.find(c => c.principal), px = dlg.querySelector('#sv-prox');
+    if (px){ const prox = pc && pc.recorrencia !== 'unico' ? svProximo(Object.assign({}, pc, {fim:pc.fim || null})) : null;
+      px.innerHTML = !pc ? 'Coloque o valor do plano para calcular a renovação.' : pc.recorrencia === 'unico' ? 'Pago uma vez, sem renovação.' : (prox ? 'Próxima renovação: <b>' + svDia(prox) + '</b>' : 'Sem próxima renovação') + (pc.fim ? ' · para de cobrar em <b>' + svDia(pc.fim) + '</b>' : ' · renova até cancelar'); }
     const tmp = {id:'__sv_tela', rateio:modo}, guard = SRV.alcance;
     SRV.alcance = guard.filter(a => a.servidor_id !== tmp.id).concat(svAlcanceDaTela(dlg, tmp.id));
     const div = svDivisao(tmp, mensal); SRV.alcance = guard;
@@ -16933,8 +16964,7 @@ function svEditar(id){
       for (let j = i + 1; j < lista.length && +lista[j].dataset.nivel > n; j++) lista[j].checked = cx.checked;
       if (!cx.checked){ let nv = n; for (let j = i - 1; j >= 0 && nv > 0; j--) if (+lista[j].dataset.nivel < nv){ lista[j].checked = false; nv = +lista[j].dataset.nivel; } }
     }
-    const ate = e.target.closest('[data-k="ate"]');
-    if (ate){ const f = ate.closest('[data-sv-custo]').querySelector('.sv-c-fim'); f.hidden = ate.value !== 'data'; if (ate.value === 'data' && !f.querySelector('input').value) f.querySelector('input').value = iso(HOJE); }
+    if (e.target.id === 'sv-ate'){ const f = dlg.querySelector('#sv-fim-lb'); f.hidden = e.target.value !== 'data'; if (e.target.value === 'data' && !dlg.querySelector('#sv-fim').value) dlg.querySelector('#sv-fim').value = iso(HOJE); }
     conta();
   });
   dlg.addEventListener('input', () => conta());
@@ -16972,18 +17002,18 @@ async function svSalvar(dlg, antigo, base){
   const id = antigo.id || novoUuid();
   const row = {nome, tipo:v('sv-tipo'), ambiente:v('sv-amb'), status:v('sv-status'), responsavel_id:v('sv-resp') || null, provedor:v('sv-prov'), plano:v('sv-plano'), regiao:v('sv-reg'), sistema:v('sv-so'),
     cpu:svNum(v('sv-cpu')), memoria_gb:svNum(v('sv-mem')), disco_gb:svNum(v('sv-disco')), disco_tipo:v('sv-dt'), banda_tb:svNum(v('sv-banda')), hostname:v('sv-host'), ip_publico:v('sv-ip'), ip_privado:v('sv-ipi'),
-    painel_url:painel, acesso_onde:acesso, backup:v('sv-backup'), monitoramento:v('sv-mon'), contratado_em:v('sv-desde') || null, renova_em:v('sv-renova') || null, rateio:v('sv-rateio'), notas:dlg.querySelector('#sv-notas').value.trim()};
+    painel_url:painel, acesso_onde:acesso, backup:v('sv-backup'), monitoramento:v('sv-mon'), contratado_em:v('sv-desde') || null, renova_em:null, rateio:v('sv-rateio'), notas:dlg.querySelector('#sv-notas').value.trim()};
   const alcance = svAlcanceDaTela(dlg, id).map(a => Object.assign(a, {percentual:row.rateio === 'percentual' && a.percentual != null ? Math.min(100, Math.max(0, a.percentual)) : null, valor:row.rateio === 'valor' && a.valor != null ? Math.max(0, a.valor) : null}));
   if (!alcance.length){ toast('Marque onde o servidor se aplica (o cliente, o projeto inteiro ou as aplicações)'); return; }
   if (row.rateio === 'percentual' && alcance.reduce((t, a) => t + (a.percentual || 0), 0) > 100.0001){ toast('Os percentuais passam de 100%'); return; }
   const linhas = sel => svLinhasDe(dlg, sel);
   const servicos = linhas('[data-sv-serv]').filter(x => x.nome).map((x, i) => ({servidor_id:id, nome:x.nome.slice(0, 120), tipo:x.tipo, tecnologia:x.tecnologia, versao:x.versao, porta:x.porta ? Math.min(65535, Math.max(1, +x.porta)) : null, endereco:x.endereco, no_id:x.no_id || null, caminho:x.caminho, ordem:i}));
-  const custos = linhas('[data-sv-custo]').filter(x => x.descricao || x.valor !== '');
-  const semNome = custos.find(x => !x.descricao || x.valor === ''); if (semNome){ toast('Cada custo precisa do que é e do valor'); return; }
-  custos.forEach(x => { if (x.ate !== 'data') x.fim = ''; });
-  const semFim = custos.find(x => x.ate === 'data' && !x.fim); if (semFim){ toast('Diga em que data o custo "' + semFim.descricao + '" para de cobrar'); return; }
-  const ruim = custos.find(x => x.fim && x.fim < (x.inicio || iso(HOJE))); if (ruim){ toast('O fim do custo "' + ruim.descricao + '" está antes do início'); return; }
-  const cRows = custos.map(x => ({id:x.id || novoUuid(), servidor_id:id, descricao:x.descricao.slice(0, 200), valor:Math.max(0, +x.valor || 0), moeda:x.moeda, recorrencia:x.recorrencia, inicio:x.inicio || iso(HOJE), fim:x.recorrencia === 'unico' ? null : (x.fim || null)}));
+  if (v('sv-ate') === 'data' && !v('sv-fim')){ toast('Diga em que data o contrato para de cobrar'); return; }
+  if (v('sv-ate') === 'data' && v('sv-fim') < (v('sv-desde') || iso(HOJE))){ toast('A data em que para de cobrar está antes da contratação'); return; }
+  const custos = svCustosDaTela(dlg, antigo, id);
+  const semNome = custos.find(x => !x.descricao || x.valor === ''); if (semNome){ toast('Cada custo extra precisa do que é e do valor'); return; }
+  const cRows = custos.map(x => ({id:x.id || novoUuid(), servidor_id:id, principal:x.principal, descricao:x.descricao.slice(0, 200), valor:Math.max(0, +x.valor || 0), moeda:x.moeda, recorrencia:x.recorrencia, inicio:x.inicio, fim:x.fim && x.fim >= x.inicio ? x.fim : (x.fim ? x.inicio : null)}));
+  const pc = cRows.find(c => c.principal); if (pc && pc.recorrencia !== 'unico') row.renova_em = svProximo(pc);
   const botao = dlg.querySelector('.modal-rod .btn:not(.sec)'); if (botao) botao.disabled = true;
   try {
     if (antigo.id){ const {data, error} = await sb.from('servidores').update(row).eq('id', id).select('id'); if (error) throw error; if (!data || !data.length) throw new Error('o banco não deixou mudar este servidor (só quem edita o ponto dono muda)'); }
@@ -17024,9 +17054,9 @@ function svRenovar(id){
   const app = apps[0] || (UI.sel.startsWith('app:') ? svIdDe(UI.sel) : null);
   const w = app && ((typeof frenteSugerida === 'function' && frenteSugerida(app, '', 'infraestrutura')) || byId('ws', primeiroWs('app:' + app)));
   if (!w){ toast('Não achei uma aplicação com frente para criar o item'); return; }
-  const titulo = 'Renovar o servidor ' + s.nome + (s.renova_em ? ' (vence em ' + svDia(s.renova_em) + ')' : '');
+  const ren = svRenovaEm(s), titulo = 'Renovar o servidor ' + s.nome + (ren ? ' (vence em ' + svDia(ren) + ')' : '');
   if (D.issues.some(i => !i.arquivado && i.titulo === titulo)){ toast('O item de renovação já existe'); return; }
-  const ni = novoIssue({titulo, ws:w.id, tipo:'task', status:'todo', prio:'high', fim:s.renova_em || iso(HOJE), alvo:s.renova_em || iso(HOJE), resp:s.responsavel_id || null});
+  const ni = novoIssue({titulo, ws:w.id, tipo:'task', status:'todo', prio:'high', fim:ren || iso(HOJE), alvo:ren || iso(HOJE), resp:s.responsavel_id || null});
   ni.desc = 'Renovação do servidor ' + s.nome + ' (' + [s.provedor, s.plano].filter(Boolean).join(' · ') + '). Custo mensal hoje: ' + brl(svCustoMensal(s)) + '.';
   ni.crit = [{t:'Contrato renovado e a nova data de renovação anotada no cadastro do servidor', f:false}];
   D.issues.push(ni); registrar('criou', ni); salvar(); toast('Item criado na frente ' + w.nome);
@@ -17083,7 +17113,7 @@ document.addEventListener('click', e => {
   const rn = e.target.closest('[data-sv-renovar]'); if (rn) return svRenovar(rn.dataset.svRenovar);
   const cn = e.target.closest('[data-sv-cancelar]'); if (cn) return svCancelarCusto(cn.dataset.svCancelar);
 });
-if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {SRV, svCarregar, svDivisao, svParte, svCustoMensal, svPeriodos, svProximo, svDoPonto, svRelacao, svFichaLigacao, svCustosHTML});
+if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {SRV, svCarregar, svDivisao, svParte, svCustoMensal, svPeriodos, svProximo, svRenovaEm, svDoPonto, svRelacao, svFichaLigacao, svCustosHTML});
 
 //---------------------------------------------------------------------
 //

@@ -70,3 +70,7 @@ dialog.sv-modal{width:min(1040px,96vw)}
 .sv-c[hidden]{display:none}
 .sv-div .sv-resta{color:#B45309}
 .sv-lanc{margin-top:8px;font-size:13px}.sv-lanc summary{cursor:pointer}
+
+.sv-ed-sub{margin:14px 0 6px;font-size:13px}.sv-ed-sub small{font-weight:400;color:var(--preto-60, #666)}
+.sv-prox{grid-column:1/-1;margin:0;font-size:13px}
+.lb[hidden]{display:none}
