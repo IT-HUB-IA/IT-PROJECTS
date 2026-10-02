@@ -16227,7 +16227,7 @@ async function sgCarregar(){
   } catch (e){ SG.erro = e.message || String(e); }
   SG.carregando = false;
   // o que o robô leu e ainda não virou item é montado sozinho
-  const novos = SG.inventario.filter(x => !x.item_id);
+  const novos = SG.inventario.filter(sgPendente);
   if (novos.length && podeEditar() && !SG.importando && SG.chave === chave) setTimeout(() => sgImportarAgora(novos, {auto:true}), 0);
 }
 function sgNota(lista){ const p = {critica:25, alta:10, media:4, baixa:1}; return Math.max(0, 100 - lista.reduce((s, a) => s + (p[a.gravidade] || 0), 0)); }
@@ -16246,7 +16246,7 @@ function sgTelaHTML(){
     .sort((a, b) => SG_ORDEM[a.gravidade] - SG_ORDEM[b.gravidade] || a.onde.localeCompare(b.onde));
   const n2 = st => SG.achados.filter(a => a.status === st && (!SG.tipo || sgTipo(a.regra) === SG.tipo)).length;
   const semItem = abertos.filter(a => !a.item_id && (a.gravidade === 'critica' || a.gravidade === 'alta'));
-  const inv = SG.inventario, invNovo = inv.filter(x => !x.item_id);
+  const inv = SG.inventario, invNovo = inv.filter(sgPendente);
   let h = '<div class="sg-tela"><section class="sg-topo"><div class="sg-nota sg-' + cor + '"><b>' + (fontes.length ? n : '–') + '</b><span>nota de segurança</span></div>' +
     '<div class="sg-resumo"><h3>Análise do código e do banco</h3><p>O CicloDev lê o código e o banco ligados a este ' + (UI.sel.startsWith('project:') ? 'projeto (e aos produtos e aplicações dele)' : UI.sel.startsWith('product:') ? 'produto (e às aplicações dele)' : 'ponto') + ' a cada publicação e confere as regras de segurança (guias da OWASP), de qualidade do código e de arquitetura do banco. Nada é mudado no seu sistema: ele só lê.</p>' +
     '<div class="sg-contas">' + ['critica','alta','media','baixa'].map(g => '<span class="sg-conta sg-g-' + g + '"><b>' + cont(g) + '</b>' + SG_GRAV[g][0] + '</span>').join('') + '</div>' +
@@ -16274,7 +16274,9 @@ function sgTelaHTML(){
   return h + '</div>';
 }
 // ---------- o que já existe: importar como épicos e itens ----------
-const SG_INV_TIPO = {tela:'Telas', api:'APIs', job:'Tarefas agendadas', tabela:'Tabelas', integracao:'Integrações', infra:'Infraestrutura', teste:'Testes'};
+// ainda falta montar: não virou item (a versão conta como montada quando já existe em Entregas)
+const sgPendente = x => !x.item_id && (x.tipo !== 'versao' || !D.marcos.some(z => z.tipo === 'release' && z.nome.toLowerCase() === String(x.nome).toLowerCase()));
+const SG_INV_TIPO = {tela:'Telas', api:'APIs', job:'Tarefas agendadas', tabela:'Tabelas', integracao:'Integrações', infra:'Infraestrutura', teste:'Testes', versao:'Versões publicadas'};
 function sgMotivos(x){ const s = x.sinais || {}, m = [];
   if (s.todo) m.push(s.todo + (s.todo === 1 ? ' marca TODO/FIXME no arquivo' : ' marcas TODO/FIXME no arquivo'));
   if (s.inacabado) m.push('o código diz "' + s.inacabado + '"');
@@ -16288,46 +16290,98 @@ function sgInventarioHTML(inv, novo, pode){
     (pode && novo.length ? '<button type="button" class="btn peq" data-sg-importar>Importar como épicos e itens</button>' : '') + '</section>';
 }
 function sgImportar(){
-  const novo = SG.inventario.filter(x => !x.item_id); if (!novo.length){ toast('Tudo já virou item.'); return; }
+  const novo = SG.inventario.filter(sgPendente); if (!novo.length){ toast('Tudo já virou item.'); return; }
   const tipos = Object.keys(SG_INV_TIPO).filter(t => novo.some(x => x.tipo === t));
   const grupos = [...new Set(novo.map(x => x.grupo))];
   modal('Importar o que já existe', '<p>O CicloDev cria um <b>épico</b> para cada grupo (módulo, controlador ou família de tabelas) e um <b>item</b> para cada tela, API, tarefa ou tabela, com onde está no código e o que foi visto.</p>' +
-    '<ul class="sg-imp-regras"><li><b>Já pronto</b> (sem TODO, sem "não implementado", tabela usada pelo código): entra como <b>Concluído</b>, como se tivesse sido feito aqui desde o começo. Mudança daqui para frente vira Melhoria.</li><li><b>Precisa análise</b>: entra em <b>Criado</b>, com o motivo escrito no item e o critério "Conferir o que falta".</li></ul>' +
+    '<ul class="sg-imp-regras"><li>Tudo é montado como se o P.O. tivesse feito o projeto aqui: história, critérios, prioridade, pontos, início e prazo pelas datas das publicações, e as versões publicadas viram Entregas.</li><li><b>Parece pronto</b> (sem TODO, sem "não implementado", tabela usada pelo código): entra em <b>Pronto para testar</b>, para o P.O. analisar e aceitar.</li><li><b>Precisa análise</b>: entra em <b>Criado</b>, com o motivo escrito no item e o critério "Conferir o que falta".</li></ul>' +
     '<fieldset class="sg-imp-tipos"><legend>O que importar</legend>' + tipos.map(t => { const n = novo.filter(x => x.tipo === t).length, ok = novo.filter(x => x.tipo === t && !sgMotivos(x).length).length;
       return '<label class="cm-ck"><input type="checkbox" data-sg-imp-tipo="' + t + '"' + (t === 'tabela' && n > 60 ? '' : ' checked') + '> ' + SG_INV_TIPO[t] + ' <small>' + n + ' (' + ok + ' prontos, ' + (n - ok) + ' para analisar)</small></label>'; }).join('') + '</fieldset>' +
     '<p class="sec">' + grupos.length + (grupos.length === 1 ? ' épico' : ' épicos') + ' no total. Épico com o mesmo nome de um que já existe recebe os itens, sem duplicar. O que já foi importado não entra de novo.' + (novo.some(x => x.tipo === 'tabela') && novo.filter(x => x.tipo === 'tabela').length > 60 ? ' As tabelas vêm desmarcadas porque são muitas: marque se quiser um item por tabela.' : '') + '</p>',
     [{txt:'Cancelar', cls:'sec'}, {txt:'Importar', acao:d => { const marcados = [...d.querySelectorAll('[data-sg-imp-tipo]:checked')].map(x => x.dataset.sgImpTipo); if (!marcados.length){ toast('Marque o que importar'); return false; }
       sgImportarAgora(novo.filter(x => marcados.includes(x.tipo))); }}]);
 }
-// o que já existe entra como se tivesse sido feito no CicloDev desde o começo: o que parece pronto nasce Concluído
-// (sem critério pendente, para não travar o aceite); o que tem sinal de inacabado entra em Criado, com o motivo.
+// O que já existe é montado como se o P.O. do CicloDev tivesse feito o projeto desde o começo: épicos com meta, itens com
+// história, critérios de aceite, prioridade, pontos, início e prazo pelas datas reais (primeiro e último commit do arquivo, ou a
+// migration da tabela) e a versão em que cada um foi publicado (as releases do repositório viram Entregas, com a data delas).
+// Nada é aceito sozinho: o que parece pronto vai para Pronto para testar, para o P.O. analisar e aceitar;
+// o que tem sinal de inacabado entra em Criado, com o motivo.
+const SG_PO = {
+  tela:{quem:'usuário do sistema', quero:x => 'usar a ' + x.nome.replace(/^Tela\s+/i, 'tela '), para:'fazer o que esta tela oferece hoje em produção', pontos:3},
+  api:{quem:'sistema (as telas e as integrações)', quero:x => 'chamar ' + x.nome.replace(/^API\s+/i, ''), para:'ler e gravar os dados desta parte do sistema', pontos:2},
+  job:{quem:'sistema', quero:x => 'rodar sozinho a ' + x.nome.replace(/^Tarefa\s+/i, 'tarefa ').toLowerCase(), para:'que a rotina aconteça sem ninguém precisar lembrar', pontos:2},
+  tabela:{quem:'sistema', quero:x => 'guardar os dados na ' + x.nome.replace(/^Tabela\s+/i, 'tabela '), para:'que as telas, as APIs e os relatórios usem estes dados', pontos:1},
+  integracao:{quem:'sistema', quero:x => 'trocar dados ' + x.nome.replace(/^Integração\s+/i, '').replace(/^com\s+/i, 'com '), para:'funcionar junto com o sistema de fora', pontos:5},
+  infra:{quem:'time de desenvolvimento', quero:x => 'manter ' + x.nome.charAt(0).toLowerCase() + x.nome.slice(1), para:'montar e publicar o sistema do mesmo jeito sempre', pontos:2},
+  teste:{quem:'time de desenvolvimento', quero:x => 'que o ' + x.nome.replace(/^Teste\s+/i, 'teste de ').toLowerCase() + ' rode sozinho', para:'saber na hora quando algo quebrar', pontos:1}
+};
+const sgDia = s => s && /^\d{4}-\d{2}-\d{2}/.test(s) ? s.slice(0, 10) : null;
+const sgDiaBR = s => s ? s.slice(8, 10) + '/' + s.slice(5, 7) + '/' + s.slice(0, 4) : '';
+function sgMontarItem(x, m, w, ep, versoes){
+  const s = x.sinais || {}, po = SG_PO[x.tipo] || SG_PO.api, ini = sgDia(s.criado), fim = sgDia(s.publicado) || ini;
+  const it = novoIssue({titulo:x.nome.slice(0, 300), ws:w.id, tipo:'story', status:m.length ? 'backlog' : 'review', pai:ep.id});
+  it.hQuem = po.quem; it.hQuero = po.quero(x).slice(0, 500); it.hPara = po.para;
+  it.moscow = 'deve'; it.nivel = m.length ? 2 : 3; it.prio = m.length ? 'high' : 'medium'; it.pontos = po.pontos;
+  it.valor = x.tipo === 'tela' || x.tipo === 'integracao' ? 8 : x.tipo === 'api' ? 7 : 5; it.valorMotivo = 'já está em produção e é usado hoje';
+  if (ini){ it.ini = ini; it.criado = ini; } if (fim){ it.fim = fim; it.alvo = fim; }
+  // a versão em que foi publicado: a primeira publicação na data do primeiro commit ou depois dela
+  const v = ini && versoes.find(z => z.data >= ini); if (v) it.marco = v.id;
+  const crit = [];
+  if (fim) crit.push({t:'Está publicado em produção (última mudança em ' + sgDiaBR(fim) + (s.commits ? ', ' + s.commits + (s.commits === 1 ? ' commit' : ' commits') : '') + ')', f:true});
+  if (x.tipo === 'tela') crit.push({t:'A tela abre e funciona como em produção hoje', f:false});
+  else if (x.tipo === 'api') crit.push({t:'Responde ' + x.nome.replace(/^API\s+/i, '') + ' como em produção hoje', f:false});
+  else if (x.tipo === 'tabela') crit.push({t:'A tabela guarda os dados certos' + (s.rls === false ? ' (atenção: RLS desligada)' : ''), f:false}, {t:'É usada pelo código', f:s.usada === true});
+  else if (x.tipo === 'integracao') crit.push({t:'A troca de dados com o sistema de fora funciona', f:false});
+  else crit.push({t:'Funciona como está em produção hoje', f:false});
+  if (x.tipo !== 'teste' && x.tipo !== 'infra') crit.push({t:'Tem teste automático', f:!!s.teste});
+  if (m.length) crit.push({t:'Conferir o que falta: ' + m.join('; '), f:false});
+  it.crit = crit;
+  it.desc = 'Montado pelo CicloDev a partir do que já existe (' + (x.rotulo || '') + '), como se o P.O. tivesse feito este projeto aqui desde o começo.\nOnde: ' + x.onde +
+    (ini ? '\nComeçou em ' + sgDiaBR(ini) + (fim && fim !== ini ? '; última publicação em ' + sgDiaBR(fim) : '') + '.' : '') +
+    (x.tipo === 'tabela' && s.colunas ? '\nColunas: ' + s.colunas + (s.rls === false ? ' · RLS desligada' : '') : '') +
+    (m.length ? '\n\nPrecisa análise: ' + m.join('; ') + '.' : '\n\nParece pronto: o P.O. analisa, marca os critérios e aceita.');
+  return it;
+}
+// as publicações (releases) viram versões em Entregas, com a data e as notas de cada uma
+function sgVersoes(lista){
+  const out = [];
+  for (const x of lista.filter(y => y.tipo === 'versao')){
+    const w = sgFrente(x.no_id), ap = w && byId('apps', w.app), no = ap ? 'project:' + ap.project : null; if (!no) continue;
+    const data = sgDia((x.sinais || {}).data); if (!data) continue;
+    let mc = D.marcos.find(z => z.tipo === 'release' && z.no === no && z.nome.toLowerCase() === x.nome.toLowerCase());
+    if (!mc){ mc = {id:uid('mc'), no, tipo:'release', nome:x.nome.slice(0, 120), desc:'Publicação ' + x.onde + ' do repositório ' + (x.rotulo || ''), data, vis:true, entregue:data, notas:(x.sinais.notas || '').slice(0, 1200), meta:''}; D.marcos.push(mc); }
+    out.push({x, mc});
+  }
+  return out;
+}
 async function sgImportarAgora(lista, opc = {}){
   const sb = sgBanco(); if (!sb || SG.importando) return;
   SG.importando = true;
   const criados = [], epicos = {}, novosEp = new Set();
+  const vs = sgVersoes(lista); vs.forEach(v => criados.push({id:v.x.id, item:null, marco:v.mc.id}));
+  const versoes = D.marcos.filter(z => z.tipo === 'release' && z.data).sort((a, b) => a.data.localeCompare(b.data));
   for (const x of lista){
+    if (x.tipo === 'versao') continue;
     const w = sgFrentePara(x.no_id, frAssuntoInventario(x)); if (!w) continue;
     const ap = w.app, chaveEp = ap + '|' + x.grupo;
     let ep = epicos[chaveEp] || D.issues.find(i => i.tipo === 'epic' && !i.arquivado && i.titulo.toLowerCase() === x.grupo.toLowerCase() && (byId('ws', i.ws) || {}).app === ap);
-    if (!ep){ ep = novoIssue({titulo:x.grupo.slice(0, 300), ws:w.id, tipo:'epic', status:'todo'}); ep.desc = 'Épico criado pela importação do que já existe no sistema (análise automática do código e do banco).'; if (typeof garantirBoard === 'function') garantirBoard({issues:[ep], boards:D.boards, equipes:D.equipes}); D.issues.push(ep); registrar('criou', ep); novosEp.add(ep.id); }
+    if (!ep){ ep = novoIssue({titulo:x.grupo.slice(0, 300), ws:w.id, tipo:'epic', status:'todo'}); ep.desc = 'Épico montado pelo CicloDev a partir do que já existe no sistema, como se o P.O. tivesse feito o projeto aqui desde o começo.'; ep.meta = 'Ter ' + x.grupo + ' documentado e aceito no CicloDev, como já funciona em produção'; if (typeof garantirBoard === 'function') garantirBoard({issues:[ep], boards:D.boards, equipes:D.equipes}); D.issues.push(ep); registrar('criou', ep); novosEp.add(ep.id); }
     epicos[chaveEp] = ep;
-    const m = sgMotivos(x), s = x.sinais || {};
-    const it = novoIssue({titulo:x.nome.slice(0, 300), ws:w.id, tipo:'story', status:m.length ? 'backlog' : 'done', pai:ep.id});
-    if (!m.length){ it.feito = iso(HOJE); it.fim = iso(HOJE); }
-    it.desc = 'Importado da análise automática (' + (x.rotulo || '') + '): já existia no sistema quando ele foi ligado ao CicloDev.\nOnde: ' + x.onde + (s.teste ? '\nTem teste automático.' : '') + (x.tipo === 'tabela' && s.colunas ? '\nColunas: ' + s.colunas + (s.rls === false ? ' · RLS desligada' : '') : '') +
-      (m.length ? '\n\nPrecisa análise: ' + m.join('; ') + '.' : '\n\nJá pronto: nenhum sinal de trabalho pendente foi visto. Entrou como Concluído, como se tivesse sido feito aqui desde o começo. Mudança daqui para frente vira Melhoria.');
-    it.crit = m.length ? [{t:'Conferir o que falta: ' + m.join('; '), f:false}] : [];
+    const it = sgMontarItem(x, sgMotivos(x), w, ep, versoes.filter(v => v.no === 'project:' + (byId('apps', ap) || {}).project));
     if (typeof garantirBoard === 'function') garantirBoard({issues:[it], boards:D.boards, equipes:D.equipes});
     it.ordem = Math.max(0, ...D.issues.map(y => +y.ordem || 0)) + 1;
     D.issues.push(it); criados.push({id:x.id, item:it.id});
   }
-  // épico com tudo pronto também fica Concluído
-  Object.values(epicos).forEach(ep => { const f = D.issues.filter(i => i.pai === ep.id && !i.arquivado); if (f.length && f.every(i => i.status === 'done') && ep.status !== 'done' && novosEp.has(ep.id)){ ep.status = 'done'; ep.feito = iso(HOJE); } });
+  // o épico vai do primeiro começo ao último prazo dos itens dele
+  Object.values(epicos).forEach(ep => { const f = D.issues.filter(i => i.pai === ep.id && !i.arquivado); if (!f.length || !novosEp.has(ep.id)) return;
+    const inis = f.map(i => i.ini).filter(Boolean).sort(), fins = f.map(i => i.fim).filter(Boolean).sort(); if (inis.length) ep.ini = inis[0]; if (fins.length){ ep.fim = fins[fins.length - 1]; ep.alvo = ep.fim; } });
   salvar(); rView();
-  if (criados.length) toast((opc.auto ? 'O sistema ligado foi montado no CicloDev: ' : '') + criados.length + (criados.length === 1 ? ' item' : ' itens') + ' em ' + Object.keys(epicos).length + (Object.keys(epicos).length === 1 ? ' épico' : ' épicos') + ', cada um na frente do assunto.');
+  const nIt = criados.filter(c => c.item).length;
+  if (criados.length) toast((opc.auto ? 'O sistema ligado foi montado no CicloDev: ' : '') + nIt + (nIt === 1 ? ' item' : ' itens') + ' em ' + Object.keys(epicos).length + (Object.keys(epicos).length === 1 ? ' épico' : ' épicos') + (vs.length ? ' e ' + vs.length + (vs.length === 1 ? ' versão' : ' versões') : '') + '. O P.O. analisa e aceita.');
   const t0 = Date.now(); while (window.ciclodevSync && (window.ciclodevSync.rodando || window.ciclodevSync.pendente) && Date.now() - t0 < 60000) await new Promise(ok => setTimeout(ok, 500));
-  for (let i = 0; i < criados.length; i += 500){ const {error} = await sb.rpc('analise_inventario_ligar', {p_pares:criados.slice(i, i + 500)}); if (error){ toast('Os itens foram criados, mas não deu para marcar o inventário: ' + (error.message || error)); break; } }
-  criados.forEach(c => { const x = SG.inventario.find(y => y.id === c.id); if (x) x.item_id = c.item; });
+  const pares = criados.filter(c => c.item).map(c => ({id:c.id, item:c.item}));
+  for (let i = 0; i < pares.length; i += 500){ const {error} = await sb.rpc('analise_inventario_ligar', {p_pares:pares.slice(i, i + 500)}); if (error){ toast('Os itens foram criados, mas não deu para marcar o inventário: ' + (error.message || error)); break; } }
+  criados.forEach(c => { const x = SG.inventario.find(y => y.id === c.id); if (x) x.item_id = c.item || 'versao'; });
   SG.importando = false;
   if (UI.view === 'seguranca') rView();
 }
@@ -16378,7 +16432,7 @@ async function sgAutoImportar(){
   if (!sb || SG.importando || !podeEditar() || !sgPodeTer(chave) || SG_AUTO.has(chave)) return;
   SG_AUTO.add(chave); setTimeout(() => SG_AUTO.delete(chave), 10000);
   const {data, error} = await sb.from('analise_inventario').select('id, no_id, origem, rotulo, tipo, chave, grupo, nome, onde, sinais, item_id').in('no_id', sgNos(chave)).limit(5000);
-  const novos = (data || []).filter(x => !x.item_id);
+  const novos = (data || []).filter(sgPendente);
   if (error || !novos.length || UI.sel !== chave) return;
   const ja = new Set(SG.inventario.map(x => x.id)); novos.forEach(x => { if (!ja.has(x.id)) SG.inventario.push(x); });
   await sgImportarAgora(novos, {auto:true});

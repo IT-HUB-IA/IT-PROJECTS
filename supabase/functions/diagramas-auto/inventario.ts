@@ -5,8 +5,9 @@
 import { SERVICOS_SDK, type Arquivos, type Estrutura } from './gerar.ts';
 import { empacotado, dependenciasDe } from './seguranca.ts';
 
-export type Sinais = { arquivo?: string; todo?: number; teste?: boolean; inacabado?: string; usada?: boolean | null; rls?: boolean; colunas?: number };
-export type ItemInv = { tipo: 'tela' | 'api' | 'job' | 'tabela' | 'integracao' | 'infra' | 'teste'; chave: string; grupo: string; nome: string; onde: string; sinais: Sinais };
+export type Sinais = { arquivo?: string; todo?: number; teste?: boolean; inacabado?: string; usada?: boolean | null; rls?: boolean; colunas?: number;
+  criado?: string; publicado?: string; commits?: number; data?: string; notas?: string };   // datas: o primeiro e o último commit (ou a migration), dia/mês/ano em ISO
+export type ItemInv = { tipo: 'tela' | 'api' | 'job' | 'tabela' | 'integracao' | 'infra' | 'teste' | 'versao'; chave: string; grupo: string; nome: string; onde: string; sinais: Sinais };
 
 const CODIGO = /\.(ts|tsx|js|jsx|mjs|cjs|vue|svelte|py|java|kt|go|cs|php|rb)$/i;
 const TESTE = /(^|\/)(test|tests|testes?|__tests__|spec|e2e|cypress)\/|\.(test|spec)\.[a-z]+$|Tests?\.(java|kt|cs)$/i;
@@ -49,8 +50,8 @@ export function inventarioDoCodigo(arq: Arquivos, caminhos: string[]): ItemInv[]
       add({ tipo: 'integracao', chave: 'int:' + h, grupo: 'Integrações', nome: 'Integração com ' + h, onde: c + ':' + linhaDe(txt, m.index!), sinais: sinaisDoArquivo(txt, c, testes) });
     }
   }
-  const deps = dependenciasDe(arq).map(d => d.nome);
-  for (const [re, n] of SERVICOS_SDK) { const d = deps.find(x => re.test(x)); if (d) add({ tipo: 'integracao', chave: 'sdk:' + n, grupo: 'Integrações', nome: 'Integração com ' + n, onde: 'biblioteca ' + d, sinais: {} }); }
+  const deps = dependenciasDe(arq);
+  for (const [re, n] of SERVICOS_SDK) { const d = deps.find(x => re.test(x.nome)); if (d) add({ tipo: 'integracao', chave: 'sdk:' + n, grupo: 'Integrações', nome: 'Integração com ' + n, onde: d.arquivo + ' (biblioteca ' + d.nome + ')', sinais: { arquivo: d.arquivo } }); }
   for (const [c, txt] of arq) {
     if (TESTE.test(c) || empacotado(txt)) continue;
     const sin = () => sinaisDoArquivo(txt, c, testes);
@@ -105,7 +106,7 @@ export function inventarioDoBanco(e: Estrutura, palavras?: Set<string> | null): 
     const p = pref(t.nome), grupoP = (conta.get(t.esquema + '.' + p) || 0) >= 3;
     return { tipo: 'tabela', chave: 'tabela:' + t.esquema + '.' + t.nome, grupo: 'Banco: ' + (grupoP ? titulo(p) : (t.esquema === 'public' ? 'outras tabelas' : t.esquema)),
       nome: 'Tabela ' + t.nome, onde: t.esquema + '.' + t.nome,
-      sinais: { rls: t.rls, colunas: t.colunas.length, usada: palavras ? palavras.has(t.nome.toLowerCase()) : null } } as ItemInv;
+      sinais: { rls: t.rls, colunas: t.colunas.length, usada: palavras ? palavras.has(t.nome.toLowerCase()) : null, ...datasDaTabela(e, t.esquema + '.' + t.nome) } } as ItemInv;
   });
 }
 // as palavras do código (para saber se uma tabela é usada por ele)
@@ -122,3 +123,10 @@ export function motivosInacabado(i: ItemInv): string[] {
   if (i.tipo === 'tabela' && s.usada === false) m.push('o código não usa esta tabela');
   return m;
 }
+// as datas de uma tabela: da migration que a criou e da última que mexeu nela (Supabase), ou do próprio banco (MySQL)
+function datasDaTabela(e: Estrutura, chave: string): Sinais {
+  const x = e.datas && e.datas[chave]; if (!x) return {};
+  return { ...(x.criado ? { criado: x.criado.slice(0, 10) } : {}), ...(x.mudou ? { publicado: x.mudou.slice(0, 10) } : {}) };
+}
+// o arquivo de onde veio cada coisa do inventário (para buscar as datas no histórico do repositório)
+export const arquivoDe = (i: ItemInv) => i.sinais.arquivo || (i.tipo === 'tabela' || i.tipo === 'versao' ? '' : i.onde.replace(/:\d+$/, ''));

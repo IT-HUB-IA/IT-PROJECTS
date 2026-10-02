@@ -927,10 +927,26 @@ export type Coluna = { nome: string; tipo: string; nao_nulo: boolean; padrao: st
 export type Restricao = { nome: string; tipo: string; cols: string[]; ref_esquema: string | null; ref_tabela: string | null; ref_cols: string[] | null };
 export type Tabela = { esquema: string; nome: string; tipo: string; rls: boolean; rls_forcado: boolean; nota: string | null; colunas: Coluna[]; restricoes: Restricao[];
   permissoes: { papel: string; privs: string[] }[]; indices?: string[][]; regras: { nome: string; comando: string; permissiva: boolean; papeis: string[]; usando?: string | null; checa?: string | null }[] };
-export type Estrutura = { tabelas: Tabela[]; papeis: { nome: string; ignora_rls: boolean }[] };
+// datas (opcional, "esquema.tabela"): quando a tabela foi criada e mexida pela última vez; não entram no resumo (a data muda sem a estrutura mudar)
+export type Estrutura = { tabelas: Tabela[]; papeis: { nome: string; ignora_rls: boolean }[]; datas?: Record<string, { criado?: string; mudou?: string }> };
+
+// Supabase: as migrations aplicadas (a versão é a data, AAAAMMDDhhmmss). Lida à parte: o banco pode não ter essa tabela.
+export const CONSULTA_MIGRACOES = `select version::text as versao, left(array_to_string(statements, E'\\n'), 300000) as sql from supabase_migrations.schema_migrations order by version limit 3000`;
+export function datasDasMigracoes(linhas: { versao: string; sql: string | null }[], esquemas: string[]): Record<string, { criado?: string; mudou?: string }> {
+  const out: Record<string, { criado?: string; mudou?: string }> = {};
+  const nome = (s: string) => s.replace(/"/g, '');
+  for (const l of linhas) {
+    const m = /^(\d{4})(\d{2})(\d{2})/.exec(l.versao || ''); if (!m) continue;
+    const dia = m[1] + '-' + m[2] + '-' + m[3], sql = l.sql || '';
+    const chave = (esq: string | undefined, tab: string) => { const e = esq ? nome(esq) : (esquemas.includes('public') ? 'public' : esquemas[0]); return e + '.' + nome(tab); };
+    for (const c of sql.matchAll(/create\s+table\s+(?:if\s+not\s+exists\s+)?(?:("?[\w]+"?)\.)?("?[\w]+"?)/gi)) { const k = chave(c[1], c[2]); out[k] = out[k] || {}; if (!out[k].criado) out[k].criado = dia; out[k].mudou = dia; }
+    for (const c of sql.matchAll(/alter\s+table\s+(?:if\s+exists\s+)?(?:only\s+)?(?:("?[\w]+"?)\.)?("?[\w]+"?)/gi)) { const k = chave(c[1], c[2]); out[k] = out[k] || {}; out[k].mudou = dia; }
+  }
+  return out;
+}
 
 export async function resumoEstrutura(e: Estrutura): Promise<string> {
-  const b = new TextEncoder().encode(JSON.stringify(e));
+  const b = new TextEncoder().encode(JSON.stringify({ tabelas: e.tabelas, papeis: e.papeis }));
   const h = new Uint8Array(await crypto.subtle.digest('SHA-256', b));
   return [...h].map(x => x.toString(16).padStart(2, '0')).join('');
 }
@@ -1112,7 +1128,7 @@ export function gerarDoBanco(e: Estrutura, esquemas: string[], info: InfoBanco =
 // MySQL (AWS RDS e Aurora MySQL): as linhas do information_schema viram a mesma estrutura que o Postgres dá
 export type LinhaMysql = Record<string, any>;
 export const CONSULTAS_MYSQL = {
-  tabelas: "select table_schema as esquema, table_name as nome, table_type as tipo, table_comment as nota from information_schema.tables where table_schema in (?) order by 1, 2",
+  tabelas: "select table_schema as esquema, table_name as nome, table_type as tipo, table_comment as nota, create_time as criado, update_time as mudou from information_schema.tables where table_schema in (?) order by 1, 2",
   colunas: "select table_schema as esquema, table_name as tabela, column_name as nome, column_type as tipo, is_nullable as nulo, column_default as padrao, column_comment as nota, ordinal_position as ordem from information_schema.columns where table_schema in (?) order by 1, 2, ordinal_position",
   restricoes: "select k.table_schema as esquema, k.table_name as tabela, k.constraint_name as nome, c.constraint_type as tipo, k.column_name as coluna, k.ordinal_position as ordem, k.referenced_table_schema as ref_esquema, k.referenced_table_name as ref_tabela, k.referenced_column_name as ref_coluna from information_schema.key_column_usage k join information_schema.table_constraints c on c.constraint_schema = k.constraint_schema and c.table_name = k.table_name and c.constraint_name = k.constraint_name where k.table_schema in (?) order by 1, 2, 3, k.ordinal_position",
 };
@@ -1129,7 +1145,11 @@ export function estruturaMysql(tabelas: LinhaMysql[], colunas: LinhaMysql[], res
     if (!x) { x = { nome: String(v(r, 'nome')), tipo: tp, cols: [], ref_esquema: tp === 'f' ? String(v(r, 'ref_esquema')) : null, ref_tabela: tp === 'f' ? String(v(r, 'ref_tabela')) : null, ref_cols: tp === 'f' ? [] : null }; t.restricoes.push(x); }
     x.cols.push(String(v(r, 'coluna'))); if (tp === 'f' && v(r, 'ref_coluna') != null) x.ref_cols!.push(String(v(r, 'ref_coluna')));
   }
-  return { tabelas: out, papeis: [] };
+  // o MySQL guarda quando a tabela foi criada e mexida (update_time pode vir vazio)
+  const datas: Record<string, { criado?: string; mudou?: string }> = {};
+  const dia = (x: unknown) => { if (x == null) return undefined; const d = x instanceof Date ? x : new Date(String(x)); return isNaN(+d) ? undefined : d.toISOString().slice(0, 10); };
+  for (const t of tabelas) { const c = dia(v(t, 'criado')), u = dia(v(t, 'mudou')); if (c || u) datas[String(v(t, 'esquema')) + '.' + String(v(t, 'nome'))] = { criado: c, mudou: u || c }; }
+  return { tabelas: out, papeis: [], ...(Object.keys(datas).length ? { datas } : {}) };
 }
 
 /* ================= ficha técnica automática =================

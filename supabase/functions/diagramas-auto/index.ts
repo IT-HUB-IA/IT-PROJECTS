@@ -6,7 +6,7 @@ import { parseAllDocuments } from "npm:yaml@2";
 import postgres from "npm:postgres@3";
 import mysql from "npm:mysql2@3/promise";
 import { tratar } from "./logica.ts";
-import { CONSULTA_BANCO, CONSULTAS_MYSQL, estruturaMysql } from "./gerar.ts";
+import { CONSULTA_BANCO, CONSULTA_MIGRACOES, CONSULTAS_MYSQL, datasDasMigracoes, estruturaMysql } from "./gerar.ts";
 import type { Estrutura } from "./gerar.ts";
 
 const env = (n: string) => Deno.env.get(n);
@@ -22,7 +22,10 @@ async function lerBanco(conexao: string, esquemas: string[], motor: "postgres" |
   } as any);
   try {
     const linhas = await sql.unsafe(CONSULTA_BANCO, [esquemas]);
-    return (linhas[0] as any).estrutura as Estrutura;
+    const e = (linhas[0] as any).estrutura as Estrutura;
+    // as datas de cada tabela, pelas migrations do Supabase (sem elas, o banco segue sem datas)
+    try { const m = await sql.unsafe(CONSULTA_MIGRACOES); const d = datasDasMigracoes(m as any[], esquemas); if (Object.keys(d).length) e.datas = d; } catch { /* banco sem migrations do Supabase */ }
+    return e;
   } finally { await sql.end({ timeout: 2 }).catch(() => {}); }
 }
 

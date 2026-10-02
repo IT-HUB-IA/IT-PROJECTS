@@ -150,3 +150,37 @@ export async function lerArquivo(d: DepsGit, a: Acesso, repo: RepoGit, caminho: 
   const r = await d.buscar(url, { headers: a.provedor === 'github' ? { ...cabecalhos(a), accept: 'application/vnd.github.raw+json' } : cabecalhos(a) });
   return r.ok ? await r.text() : null;
 }
+
+// ---------- histórico: quando cada arquivo nasceu e quando foi publicado pela última vez, e as publicações (releases) ----------
+export type Historico = { criado: string; publicado: string; commits: number };
+export type Publicacao = { tag: string; nome: string; data: string; notas: string };
+// para cada arquivo, o primeiro e o último commit na branch (até `limite` arquivos, de 6 em 6 ao mesmo tempo)
+export async function historicoDosArquivos(d: DepsGit, a: Acesso, repo: RepoGit, ref: string, caminhos: string[], limite = 250): Promise<Map<string, Historico>> {
+  const out = new Map<string, Historico>(), fila = [...new Set(caminhos)].slice(0, limite);
+  const um = async (c: string) => {
+    const url = a.provedor === 'github'
+      ? a.base + '/repos/' + caminhoGh(repo.nome) + '/commits?per_page=100&sha=' + encodeURIComponent(ref) + '&path=' + encodeURIComponent(c)
+      : a.base + '/projects/' + projetoGl(repo) + '/repository/commits?per_page=100&ref_name=' + encodeURIComponent(ref) + '&path=' + encodeURIComponent(c);
+    const r = await d.buscar(url, { headers: cabecalhos(a) }); if (!r.ok) return;
+    const lista = await r.json(); if (!Array.isArray(lista) || !lista.length) return;
+    const dataDe = (x: any) => String(a.provedor === 'github' ? (x.commit?.committer?.date || x.commit?.author?.date || '') : (x.committed_date || x.created_at || ''));
+    let primeiro = dataDe(lista[lista.length - 1]), n = lista.length;
+    // mais de 100 commits no arquivo: a última página tem o primeiro (GitHub diz pelo Link; o GitLab, pelo x-total-pages)
+    const ultima = a.provedor === 'github' ? ((r.headers.get('link') || '').match(/[?&]page=(\d+)>;\s*rel="last"/) || [])[1] : r.headers.get('x-total-pages');
+    if (ultima && +ultima > 1) {
+      const r2 = await d.buscar(url + '&page=' + ultima, { headers: cabecalhos(a) });
+      if (r2.ok) { const l2 = await r2.json(); if (Array.isArray(l2) && l2.length) { primeiro = dataDe(l2[l2.length - 1]); n = (+ultima - 1) * 100 + l2.length; } }
+    }
+    out.set(c, { criado: primeiro, publicado: dataDe(lista[0]), commits: n });
+  };
+  for (let i = 0; i < fila.length; i += 6) await Promise.all(fila.slice(i, i + 6).map(c => um(c).catch(() => null)));
+  return out;
+}
+// as publicações do repositório (releases), da mais antiga para a mais nova
+export async function listarPublicacoes(d: DepsGit, a: Acesso, repo: RepoGit): Promise<Publicacao[]> {
+  const url = a.provedor === 'github' ? a.base + '/repos/' + caminhoGh(repo.nome) + '/releases?per_page=100' : a.base + '/projects/' + projetoGl(repo) + '/releases?per_page=100';
+  const r = await d.buscar(url, { headers: cabecalhos(a) }); if (!r.ok) return [];
+  const l = await r.json(); if (!Array.isArray(l)) return [];
+  return l.filter((x: any) => !x.draft).map((x: any) => ({ tag: String(x.tag_name || ''), nome: String(x.name || x.tag_name || ''), data: String(x.published_at || x.released_at || x.created_at || ''), notas: String(x.body || x.description || '').slice(0, 1500) }))
+    .filter(p => p.tag && p.data).sort((x, y) => x.data.localeCompare(y.data));
+}

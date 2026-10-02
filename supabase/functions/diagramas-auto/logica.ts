@@ -13,9 +13,9 @@ import type { Desenho, Estrutura, LerYaml, Pacote } from './gerar.ts';
 import { montarQuadro, manterPosicoes } from '../_shared/quadro.ts';
 import { analisarCodigo, analisarBanco, analisarQualidade, dependenciasDe, analisarDependencias } from './seguranca.ts';
 import type { Achado } from './seguranca.ts';
-import { inventarioDoCodigo, inventarioDoBanco, palavrasDoCodigo } from './inventario.ts';
+import { inventarioDoCodigo, inventarioDoBanco, palavrasDoCodigo, arquivoDe } from './inventario.ts';
 import type { ItemInv } from './inventario.ts';
-import { acessoDaConexao, cabecalhos, urlPacote } from '../_shared/git.ts';
+import { acessoDaConexao, cabecalhos, urlPacote, historicoDosArquivos, listarPublicacoes } from '../_shared/git.ts';
 
 export type Rpc = (nome: string, args: Record<string, unknown>) => Promise<{ data: any; error: { message?: string } | null }>;
 export interface DepsAuto {
@@ -93,9 +93,22 @@ async function gravarAnalise(d: DepsAuto, no: string, de: { repositorio?: string
   } catch (e) { return 'não gravou: ' + limparErro(e); }
 }
 // o inventário do que já existe (parte 44): para a tela importar como épicos e itens; um erro aqui não atrapalha o resto
-async function gravarInventario(d: DepsAuto, no: string, de: { repositorio?: string; banco?: string }, rotulo: string, itens: () => ItemInv[]): Promise<string> {
-  try { const n = await chamar(d, 'analise_inventario_gravar', { p_no: no, p_repositorio: de.repositorio || null, p_banco: de.banco || null, p_rotulo: rotulo, p_itens: itens() }); return n == null ? 'não gravou' : plural(n, 'coisa', 'coisas'); }
+async function gravarInventario(d: DepsAuto, no: string, de: { repositorio?: string; banco?: string }, rotulo: string, itens: () => ItemInv[] | Promise<ItemInv[]>): Promise<string> {
+  try { const n = await chamar(d, 'analise_inventario_gravar', { p_no: no, p_repositorio: de.repositorio || null, p_banco: de.banco || null, p_rotulo: rotulo, p_itens: await itens() }); return n == null ? 'não gravou' : plural(n, 'coisa', 'coisas'); }
   catch (e) { return 'não gravou: ' + limparErro(e); }
+}
+// o inventário do código com as datas de verdade: o primeiro e o último commit de cada arquivo e as publicações (releases),
+// para a tela montar o projeto como se o P.O. o tivesse feito no CicloDev (início, prazo e versão de cada item). Sem o histórico, segue sem datas.
+async function inventarioComDatas(d: DepsAuto, repo: Repo, ref: string, pac: Pacote): Promise<ItemInv[]> {
+  const itens = inventarioDoCodigo(pac.arquivos, pac.caminhos);
+  try {
+    const a = await acessoDaConexao(d, repo.conexao_id);
+    const h = await historicoDosArquivos(d, a, repo, ref, itens.map(arquivoDe).filter(Boolean));
+    for (const i of itens) { const x = h.get(arquivoDe(i)); if (x) Object.assign(i.sinais, { criado: x.criado.slice(0, 10), publicado: x.publicado.slice(0, 10), commits: x.commits }); }
+    const pubs = await listarPublicacoes(d, a, repo);
+    for (const p of pubs.slice(-200)) itens.push({ tipo: 'versao', chave: 'versao:' + p.tag.slice(0, 380), grupo: 'Versões', nome: (p.nome || p.tag).slice(0, 300), onde: p.tag.slice(0, 500), sinais: { data: p.data.slice(0, 10), notas: p.notas.slice(0, 1200) } });
+  } catch { /* sem acesso ao histórico: o inventário vai sem datas */ }
+  return itens;
 }
 const plural = (n: number, um: string, varios: string) => n + ' ' + (n === 1 ? um : varios);
 const commitDe = (pac: Pacote, pedido: string | null) => pedido || (pac.raiz.match(/-([0-9a-f]{7,40})$/) || [])[1] || '';
@@ -119,7 +132,7 @@ export async function processar(d: DepsAuto, p: Pedido): Promise<void> {
           const dep = await analisarDependencias(dependenciasDe(pac.arquivos), d.buscar);
           return { achados: analisarCodigo(pac.arquivos, pac.caminhos).concat(dep.achados, analisarQualidade(pac.arquivos, pac.caminhos)), avisos: [dep.erro, pac.cortado ? 'o repositório é grande e parte dos arquivos não foi lida' : ''].filter(Boolean).join('; ') };
         });
-        const inventario = await gravarInventario(d, p.no_id, { repositorio: repo.id }, repo.nome, () => inventarioDoCodigo(pac.arquivos, pac.caminhos));
+        const inventario = await gravarInventario(d, p.no_id, { repositorio: repo.id }, repo.nome, () => inventarioComDatas(d, repo, doCommit || repo.branch || 'main', pac));
         try { const ps = palavrasDoCodigo(pac.arquivos); palavras = palavras ? new Set([...palavras, ...ps]) : ps; } catch { /* sem palavras: a tabela fica sem saber se é usada */ }
         resumo.push({ repositorio: repo.nome, commit, arquivos: pac.caminhos.length, desenhos: desenhos.map(x => x.nome), ficha, seguranca, inventario, avisos, cortado: pac.cortado || undefined });
         feitos++;

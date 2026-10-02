@@ -1,5 +1,7 @@
 // Testes do inventário do que já existe. Rodar da raiz: node --experimental-strip-types supabase/functions/diagramas-auto/inventario.test.ts
-import { inventarioDoCodigo, inventarioDoBanco, palavrasDoCodigo, motivosInacabado } from './inventario.ts';
+import { inventarioDoCodigo, inventarioDoBanco, palavrasDoCodigo, motivosInacabado, arquivoDe } from './inventario.ts';
+import { datasDasMigracoes, estruturaMysql } from './gerar.ts';
+import { historicoDosArquivos, listarPublicacoes } from '../_shared/git.ts';
 let falhas = 0;
 const ok = (c: unknown, m: string) => { console.log((c ? 'OK    ' : 'FALHA ') + m); if (!c) falhas++; };
 const arq = new Map<string, string>([
@@ -40,4 +42,30 @@ ok(ch('int:api.conexa.app') && ch('int:api.conexa.app')!.tipo === 'integracao' &
 ok(ch('sdk:Stripe') && ch('sdk:Stripe')!.tipo === 'integracao', 'integrações: a biblioteca de um serviço conhecido (Stripe)');
 ok(ch('infra:Dockerfile') && ch('infra:.github/workflows/deploy.yml')!.nome === 'Automação GitHub Actions: Publicar na VPS' && ch('infra:vercel.json')!.nome === 'Publicação na Vercel' && inv.filter(i => i.tipo === 'infra').every(i => i.grupo === 'Infraestrutura'), 'infraestrutura: Docker, GitHub Actions e Vercel');
 ok(ch('teste:src/test/java/bl/ClienteControllerTest.java') && ch('teste:src/test/java/bl/ClienteControllerTest.java')!.grupo === 'Testes', 'testes: cada arquivo de teste vira item em Testes');
+// ---------- datas de verdade ----------
+const dm = datasDasMigracoes([
+  { versao: '20250110120000', sql: 'create table public.clientes (id uuid);\ncreate table if not exists "pedidos" (id int)' },
+  { versao: '20250305090000', sql: 'alter table public.clientes add column cpf text' }], ['public']);
+ok(dm['public.clientes']?.criado === '2025-01-10' && dm['public.clientes']?.mudou === '2025-03-05' && dm['public.pedidos']?.criado === '2025-01-10', 'Supabase: a tabela nasce na migration que a criou e muda na última que mexeu nela');
+const em = estruturaMysql([{ esquema: 'loja', nome: 'vendas', tipo: 'BASE TABLE', nota: '', criado: '2024-11-02 10:00:00', mudou: null }], [], []);
+ok(em.datas?.['loja.vendas']?.criado === '2024-11-02' && em.datas?.['loja.vendas']?.mudou === '2024-11-02', 'MySQL: a data de criação da tabela vem do próprio banco');
+const eD = { tabelas: [{ esquema: 'public', nome: 'clientes', tipo: 'r', rls: true, rls_forcado: false, nota: null, colunas: [], restricoes: [], permissoes: [], regras: [] }], papeis: [], datas: dm } as any;
+ok(inventarioDoBanco(eD, null)[0].sinais.criado === '2025-01-10' && inventarioDoBanco(eD, null)[0].sinais.publicado === '2025-03-05', 'a tabela no inventário leva as datas');
+ok(arquivoDe(ch('api:GET /clientes')!) === 'src/main/java/bl/ClienteController.java' && arquivoDe(ch('sdk:Stripe')!) === 'package.json', 'cada coisa sabe de que arquivo veio (para buscar as datas)');
+// GitHub de mentira: commits por arquivo (com mais de 100, na última página) e as publicações
+const chamadas: string[] = [];
+const commit = (d: string) => ({ commit: { committer: { date: d } } });
+const buscarGh = async (u: string) => { chamadas.push(u); const url = new URL(u);
+  if (url.pathname.endsWith('/releases')) return new Response(JSON.stringify([{ tag_name: 'v1.1', name: 'Versão 1.1', published_at: '2025-05-01T10:00:00Z', body: 'b' }, { tag_name: 'v1.0', name: '', published_at: '2025-02-01T10:00:00Z' }, { tag_name: 'x', draft: true, published_at: '2025-01-01T00:00:00Z' }]));
+  const path = url.searchParams.get('path');
+  if (path === 'A.java') return new Response(JSON.stringify([commit('2025-06-01T00:00:00Z'), commit('2025-01-01T00:00:00Z')]));
+  if (path === 'B.java' && url.searchParams.get('page') === '3') return new Response(JSON.stringify([commit('2024-05-05T00:00:00Z')]));
+  if (path === 'B.java') return new Response(JSON.stringify(Array.from({ length: 100 }, (_, i) => commit(i ? '2025-01-01T00:00:00Z' : '2025-07-07T00:00:00Z'))), { headers: { link: '<https://api.github.com/x?page=2>; rel="next", <https://api.github.com/x?page=3>; rel="last"' } });
+  return new Response('[]', { status: 404 }); };
+const acesso = { provedor: 'github' as const, token: 't', base: 'https://api.github.com', conta: 'c' };
+const h = await historicoDosArquivos({ rpc: async () => ({ data: null, error: null }), buscar: buscarGh as any }, acesso, { nome: 'it/bl' }, 'main', ['A.java', 'B.java', 'C.java']);
+ok(h.get('A.java')?.criado.startsWith('2025-01-01') && h.get('A.java')?.publicado.startsWith('2025-06-01') && h.get('A.java')?.commits === 2, 'histórico: o primeiro e o último commit do arquivo');
+ok(h.get('B.java')?.criado.startsWith('2024-05-05') && h.get('B.java')?.publicado.startsWith('2025-07-07') && h.get('B.java')?.commits === 201 && !h.has('C.java'), 'arquivo com mais de 100 commits: o primeiro vem da última página; sem histórico, fica sem data');
+const pubs = await listarPublicacoes({ rpc: async () => ({ data: null, error: null }), buscar: buscarGh as any }, acesso, { nome: 'it/bl' });
+ok(pubs.map(p => p.tag + ':' + p.nome + ':' + p.data.slice(0, 10)).join(',') === 'v1.0:v1.0:2025-02-01,v1.1:Versão 1.1:2025-05-01', 'publicações (releases): da mais antiga para a mais nova, sem rascunho');
 console.log(falhas ? falhas + ' FALHA(S)' : 'TUDO OK'); process.exit(falhas ? 1 : 0);
