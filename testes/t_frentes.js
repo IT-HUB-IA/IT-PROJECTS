@@ -56,7 +56,7 @@ ctx.UI.abertos['vazias:a1'] = true;
 ok(F.frWsArvore('a1').vis.length === 9, '"+ frentes vazias" mostra todas');
 // ficha técnica
 const fi = F.frFichaLigacao('Integrations', 'app:a1');
-ok(/Integrações/.test(fi) && /1 item \(1 concluídos, 0 em aberto\)/.test(fi) && /data-ir-ops="ws:/.test(fi), 'ficha técnica: a seção Integrações mostra a frente Integrações e os itens dela');
+ok(/Integrações/.test(fi) && /1 item \(1 aceitos, 0 em aberto\)/.test(fi) && /data-ir-ops="ws:/.test(fi), 'ficha técnica: a seção Integrações mostra a frente Integrações e os itens dela');
 ok(F.frFichaLigacao('Stack', 'app:a1') === '', 'seção sem frente do mesmo assunto não mostra nada');
 // aplicações antigas ganham as frentes que faltam ao abrir
 D.ws.push({id:'w_v1', app:'a4', nome:'Frontend', status:'active'});

@@ -152,3 +152,39 @@ dialog.modal.pg-guia-modal{width:min(1000px, calc(100vw - 32px));max-width:none}
 .pg-g-conf.ok{color:#15803D;font-weight:700}
 .pg-g-faq{display:grid;gap:6px;font-size:13px;padding:10px 12px;background:var(--preto-04)}
 .pg-g-faq p{margin:4px 0 0}
+
+/* ===== segunda leva do P.O. (po_leva2.js) ===== */
+.lv2-rev{color:#7A3E00;background:#FFF1DC}.lv2-terc{color:#7B1FA2}.lv2-tarde{color:#B42318}.lv2-auto{color:var(--grafite);border-style:dashed}.lv2-outra{color:#1D4ED8;margin-left:8px}
+.lv2-lista-topo{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px;margin:0 0 10px}
+.lv2-conta{margin:0;font-size:13px;color:var(--text-secondary);font-variant-numeric:tabular-nums}.lv2-fora{color:#7A3E00}
+.lv2-contas{font-size:13px}.lv2-contas .lv2-erro{color:#B42318}
+.lv2-ep-tit{display:inline-flex;align-items:center;gap:6px;font:inherit;font-weight:700}
+.lv2-prova{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;margin:2px 0 4px 26px;font-size:12px}
+.lv2-prova-txt{color:var(--text-secondary)}.lv2-prova-txt.lv2-falhou{color:#B42318}
+.lv2-sem-prova{color:#7A3E00;font-weight:600}
+.lv2-aviso{margin:0 0 8px;padding:6px 10px;background:#FFF6E5;border-left:3px solid #C26A00;font-size:12.5px}
+.lv2-gherkin{margin-top:8px;font-size:13px}.lv2-gherkin summary{cursor:pointer;color:var(--text-secondary)}
+.lv2-gk-campos{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;margin-top:8px;align-items:end}
+.lv2-gk-campos label{display:grid;gap:3px;font-size:12px;font-weight:600}
+.lv2-dod-frente{margin-top:8px;padding-top:8px;border-top:1px dashed var(--nevoa)}
+.lv2-dod-aviso{margin-top:8px;padding:8px 10px;background:#FFF6E5;border-left:3px solid #C26A00;font-size:13px}.lv2-dod-aviso ul{margin:4px 0;padding-left:18px}
+.lv2-revisar{border-left:3px solid #C26A00;padding-left:10px}
+.lv2-afetados{margin:6px 0 0;padding-left:18px;display:grid;gap:3px;font-size:13px}
+.lv2-terceiros{color:#7B1FA2}
+.lv2-tela{display:grid;gap:16px}
+.lv2-topo{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-start;justify-content:space-between}
+.lv2-topo > div:first-child{flex:1 1 0;min-width:0}.lv2-topo h2{margin:0;font-family:var(--font-display);font-size:22px}.lv2-topo .lead{margin:4px 0 0;font-size:14px;line-height:1.5}
+.lv2-piramide{padding:14px 16px;background:var(--branco);border:1px solid #E2E2E6;display:grid;gap:6px}
+.lv2-piramide header h3{margin:0;font-size:14px;text-transform:uppercase;letter-spacing:.06em}.lv2-piramide header p{margin:2px 0 6px;font-size:13px;color:var(--text-secondary)}
+.lv2-pir-lin{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:12px;align-items:center;font-size:13px}
+.lv2-pir-barra{justify-self:center;height:26px;display:flex;align-items:center;justify-content:center;color:#fff;font-variant-numeric:tabular-nums}
+.lv2-pir-pronto .lv2-pir-barra{background:#15803D}.lv2-pir-medio .lv2-pir-barra{background:#C26A00}.lv2-pir-epico .lv2-pir-barra{background:var(--grafite)}
+.lv2-mapa{border-collapse:collapse;width:100%;font-size:12.5px}
+.lv2-mapa th,.lv2-mapa td{border:1px solid #E2E2E6;padding:6px;vertical-align:top;text-align:left;min-width:160px}
+.lv2-mapa thead th{background:var(--preto-04, #F4F4F5);position:sticky;top:0}.lv2-mapa th small,.lv2-mapa th small{display:block;font-weight:400;color:var(--text-secondary)}
+.lv2-mapa tbody th{background:var(--preto-04, #F4F4F5);white-space:nowrap}
+.lv2-mapa-it{display:grid;gap:1px;width:100%;margin:0 0 4px;padding:5px 7px;text-align:left;font:inherit;background:var(--branco);border:1px solid #D4D4D8;border-left:4px solid var(--nevoa);cursor:pointer}
+.lv2-mapa-it small{color:var(--text-secondary);font-size:11px}
+.lv2-st-todo{border-left-color:#2563EB}.lv2-st-doing{border-left-color:#C26A00}.lv2-st-review{border-left-color:#7B1FA2}.lv2-st-blocked{border-left-color:#B42318}.lv2-st-done{border-left-color:#15803D}.lv2-st-voltou{border-left-color:#B42318}
+.lv2-filtros{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:end}
+.lv2-mudou td{vertical-align:top}

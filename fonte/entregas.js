@@ -158,7 +158,7 @@ function enHTML(chave){
   const trilho = '<ol class="en2-trilho" aria-label="Do código ao ar">' +
     passo(1, repos.length ? 'feito' : '', 'Código', repos.length ? repos.length + (repos.length === 1 ? ' repositório ligado' : ' repositórios ligados') : 'Nenhum repositório', 'Branch, commit e PR com a chave do item (ex.: BL-37) aparecem no item sozinhos',
       '<button type="button" class="btn sec peq" data-en-novo-repo>' + EN_ICO.branch + 'Ligar repositório</button>') +
-    passo(2, prox ? 'feito' : '', 'Próxima versão', prox ? esc(prox.nome) + ' <em>' + esc(situ(prox)[1]) + '</em>' : 'Nenhuma versão planejada', prox ? (pt ? pf + ' de ' + pt + ' itens concluídos' : 'Sem itens ligados: as notas pegam o que foi concluído') : 'Uma versão junta o que vai para o ar de uma vez',
+    passo(2, prox ? 'feito' : '', 'Próxima versão', prox ? esc(prox.nome) + ' <em>' + esc(situ(prox)[1]) + '</em>' : 'Nenhuma versão planejada', prox ? (pt ? pf + ' de ' + pt + ' itens aceitos' : 'Sem itens ligados: as notas pegam o que foi concluído') : 'Uma versão junta o que vai para o ar de uma vez',
       '<button type="button" class="btn peq" data-en-nova-versao>' + ICO.mais + 'Nova versão</button>') +
     passo(3, ult ? 'feito' : '', 'No ar', ult ? esc(ult.versao || 'Sem versão') + ' <em>' + esc(enAmb(ult.ambiente)) + ', ' + esc(enHa(ult.publicado_em)) + '</em>' : 'Nada publicado ainda', ult ? (EN_ST_PUB[ult.status] || ult.status) : 'Registre aqui ou deixe chegar sozinho do repositório',
       '<button type="button" class="btn sec peq" data-en-nova-pub>' + EN_ICO.foguete + 'Registrar publicação</button>') + '</ol>';
@@ -220,7 +220,7 @@ function enNovaVersao(){
     '<div class="grade-form"><label class="lb">Nome<input class="campo" id="en-v-n" value="' + esc(enProximoNome(chave)) + '"></label><label class="lb">Data de entrega<input class="campo" type="date" id="en-v-d" required value="' + iso(dAdd(HOJE, 14)) + '"></label>' +
     '<label class="lb largo">Resumo (opcional)<input class="campo" id="en-v-r" placeholder="Ex.: cadastro de clientes e painel do CEO"></label>' +
     '<label class="lb largo">Meta da versão<input class="campo" id="en-v-m" maxlength="1000" placeholder="Ex.: o lojista publica anúncios sem ligar para o suporte"></label></div>' +
-    '<div class="tf-opcoes">' + (novosFeitos.length ? '<label><input type="checkbox" id="en-v-f" checked> Ligar os ' + novosFeitos.length + ' itens concluídos desde a última versão</label>' : '') +
+    '<div class="tf-opcoes">' + (novosFeitos.length ? '<label><input type="checkbox" id="en-v-f" checked> Ligar os ' + novosFeitos.length + ' itens aceitos desde a última versão</label>' : '') +
       (pendentes.length ? '<label><input type="checkbox" id="en-v-p"> Ligar também os ' + pendentes.length + ' itens em aberto sem versão</label>' : '') +
       '<label><input type="checkbox" id="en-v-c" checked> O cliente vê esta versão</label></div>',
     [{txt:'Cancelar', cls:'sec'}, {txt:'Criar versão', acao:dl => {

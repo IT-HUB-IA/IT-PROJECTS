@@ -64,7 +64,7 @@ function exItemMd(i){
   let md = exCabecalho(tipoNome(i.tipo), exNomeItem(i)) + exIdentItem(i) + exSituacao(i) + exCorpoItem(i, 2);
   if (filhos.length){
     const feitos = filhos.filter(x => x.status === 'done').length;
-    md += '\n## ' + (i.tipo === 'epic' ? 'Itens do épico' : 'Subitens') + ' (' + feitos + ' de ' + filhos.length + ' concluídos)\n\n' +
+    md += '\n## ' + (i.tipo === 'epic' ? 'Itens do épico' : 'Subitens') + ' (' + feitos + ' de ' + filhos.length + ' aceitos)\n\n' +
       filhos.map(f => '- ' + (f.status === 'done' ? '[x] ' : '[ ] ') + exNomeItem(f) + ' · ' + exStatus(f) + (f.resp ? ' · ' + exPessoa(f.resp) : '') + (f.fim ? ' · prazo ' + exData(f.fim) : '')).join('\n') + '\n';
     if (i.tipo === 'epic') md += '\n' + filhos.map(f => '### ' + exNomeItem(f) + '\n\n' +
       exLinha('Tipo', tipoNome(f.tipo)) + exLinha('Onde fica', exCaminho('ws:' + f.ws)) + exLinha('Status', exStatus(f)) + exLinha('Prioridade', prioNome(f.prio)) + exLinha('Responsável', exPessoa(f.resp)) + exLinha('Prazo', exData(f.fim)) + exLinha('Id interno', '`' + f.id + '`') + '\n' +
@@ -75,13 +75,20 @@ function exItemMd(i){
 // um ponto da Estrutura: o caminho, o que tem dentro, a ficha técnica, as versões e os épicos com os itens
 function exNoMd(chave){
   const [tipo, id] = chave.split(':'), o = tfObjNo(chave); if (!o) return '';
-  const itens = issuesEm(chave).filter(i => !i.arquivado), epics = itens.filter(i => i.tipo === 'epic');
-  const semEpico = itens.filter(i => i.tipo !== 'epic' && !(i.pai && epics.some(e => e.id === i.pai)) && !(i.pai && itens.some(x => x.id === i.pai)));
-  const feitos = itens.filter(i => i.status === 'done').length;
+  const itens = issuesEm(chave).filter(i => !i.arquivado);
+  // o épico de cada item vem pela cadeia de pais (subitem › história › épico), mesmo quando o épico é de outra frente
+  const epDe = i => typeof epicDe === 'function' ? epicDe(i) : (i.pai ? byId('issues', i.pai) : null);
+  const epics = itens.filter(i => i.tipo === 'epic'); itens.forEach(i => { const e = i.tipo !== 'epic' && epDe(i); if (e && !e.arquivado && !epics.some(x => x.id === e.id)) epics.push(e); });
+  const semEpico = itens.filter(i => i.tipo !== 'epic' && !epDe(i));
+  const soItens = itens.filter(i => i.tipo !== 'epic'), feitos = soItens.filter(i => i.status === 'done').length, ext = soItens.filter(i => i.externa && !i.decisao).length;
+  const wsNo = new Set(D.ws.filter(w => { const a = byId('apps', w.app) || {}; return tipo === 'ws' ? w.id === id : tipo === 'app' ? w.app === id : tipo === 'product' ? a.product === id : tipo === 'project' ? a.project === id : tipo === 'client' ? (byId('projects', a.project) || {}).client === id : false; }).map(w => w.id));
+  const arq = D.issues.filter(i => i.arquivado && i.tipo !== 'epic' && wsNo.has(i.ws)).length;
+  const onde = {ws:'nesta frente', app:'nesta aplicação', product:'neste produto', project:'no projeto', client:'neste cliente'}[tipo] || 'aqui';
   let md = exCabecalho(EX_NIVEL[tipo], o.nome) + '## Identificação\n\n' + exLinha('Sistema', EX_SISTEMA) + exLinha('Nível', EX_NIVEL[tipo]) + exLinha('Onde fica', exCaminho(chave)) +
     exLinha('Situação', (EST.find(e => e.id === o.status) || {nome:o.status}).nome) + (o.motivo ? exLinha('Motivo da pausa', o.motivo) : '') +
     (tipo === 'app' ? exLinha('Plataforma', {web:'Web', desktop:'Desktop', mobile:'Celular'}[o.plataforma] || o.plataforma) : '') + (tipo === 'project' ? exLinha('Origem', o.origem === 'brownfield' ? 'Brownfield (já em andamento)' : 'Greenfield (do zero)') : '') +
-    exLinha('Id interno', '`' + o.id + '`') + exLinha('Itens', itens.length + ' (' + feitos + ' concluídos)') + '\n';
+    exLinha('Id interno', '`' + o.id + '`') + exLinha('Itens ' + onde, soItens.length + ' (' + feitos + ' aceitos' + (ext ? '; ' + ext + (ext === 1 ? ' é tarefa externa e fica fora dos totais' : ' são tarefas externas e ficam fora dos totais') : '') + ')') +
+    exLinha('Épicos', epics.length + (epics.some(e => tipo === 'ws' && e.ws !== id) ? ' (inclui épicos de outra frente que têm itens aqui)' : '')) + (arq ? exLinha('Fora da lista', arq + (arq === 1 ? ' item arquivado ou cancelado' : ' itens arquivados ou cancelados')) : '') + '\n';
   // o que tem dentro
   const dentro = [];
   if (tipo === 'client') D.projects.filter(p => p.client === id).forEach(p => dentro.push('- Projeto: ' + p.nome));
@@ -94,9 +101,10 @@ function exNoMd(chave){
   const valores = []; FICHA.forEach(([sec, , campos]) => campos.forEach(cp => { const k = sec + '|' + cp; const v = fichas.map(f => f.campos[k]).find(x => x && String(x).trim()); if (v) valores.push('- **' + sec + ' › ' + cp + ':** ' + String(v).replace(/\n/g, ' ')); }));
   if (valores.length) md += '## Ficha técnica\n\n' + valores.join('\n') + '\n\n';
   const vs = typeof enVersoes === 'function' && tipo !== 'client' ? enVersoes(chave) : [];
-  if (vs.length) md += '## Versões\n\n' + vs.map(v => { const lig = itens.filter(i => i.marco === v.id); return '- **' + v.nome + '**' + (v.desc ? ': ' + v.desc : '') + ' · ' + (v.entregue ? 'no ar desde ' + exData(v.entregue) : 'prevista para ' + exData(v.data)) + (lig.length ? ' · ' + lig.filter(i => i.status === 'done').length + ' de ' + lig.length + ' itens' : ''); }).join('\n') + '\n\n';
+  if (vs.length) md += '## Versões\n\n' + vs.map(v => { const lig = itens.filter(i => i.marco === v.id); return '- **' + v.nome + '**' + (v.desc ? ': ' + v.desc : '') + ' · ' + (v.entregue ? 'no ar desde ' + exData(v.entregue) : 'prevista para ' + exData(v.data)) + (lig.length ? ' · ' + lig.filter(i => i.status === 'done').length + ' de ' + lig.length + ' itens ' + onde + ' aceitos' : ''); }).join('\n') + '\n\n';
   const linhaIt = i => '- ' + (i.status === 'done' ? '[x] ' : '[ ] ') + exNomeItem(i) + ' · ' + exStatus(i) + (i.resp ? ' · ' + exPessoa(i.resp) : '') + (i.fim ? ' · prazo ' + exData(i.fim) : '') + (tipo !== 'ws' ? ' · ' + ((byId('ws', i.ws) || {}).nome || '') : '');
-  if (epics.length) md += '## Épicos\n\n' + epics.map(e => { const f = itens.filter(i => i.pai === e.id); return '### ' + exNomeItem(e) + '\n\n' + exLinha('Status', exStatus(e)) + exLinha('Frente', (byId('ws', e.ws) || {}).nome) + exLinha('Versão', (D.marcos.find(m => m.id === e.marco) || {}).nome) +
+  if (epics.length) md += '## Épicos\n\n' + epics.map(e => { const f = itens.filter(i => i.tipo !== 'epic' && (epDe(i) || {}).id === e.id); const outra = tipo === 'ws' && e.ws !== id;
+    return '### ' + exNomeItem(e) + (outra ? ' _(épico de outra frente: ' + ((byId('ws', e.ws) || {}).nome || '') + ')_' : '') + '\n\n' + exLinha('Status', exStatus(e)) + exLinha('Frente', (byId('ws', e.ws) || {}).nome) + exLinha('Versão', (D.marcos.find(m => m.id === e.marco) || {}).nome) +
     ((e.desc || '').trim() ? '\n' + e.desc.trim() + '\n' : '') + (f.length ? '\n' + f.map(linhaIt).join('\n') + '\n' : '\n_Sem itens._\n'); }).join('\n') + '\n';
   if (semEpico.length) md += '## Itens sem épico\n\n' + semEpico.map(linhaIt).join('\n') + '\n';
   return md;

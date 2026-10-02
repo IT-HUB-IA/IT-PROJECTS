@@ -88,7 +88,7 @@ function ltLer(texto){
     const item = /^[-*•–]\s*/.test(l); if (item) l = l.replace(/^[-*•–]\s*/, '').trim(); if (!l) return;
     // linha de detalhe: um dos campos conhecidos, com dois pontos (recuo opcional)
     const md = !item && /^([A-Za-zÀ-ÿ ]{2,22}):\s*(.*)$/.exec(l), campo = md && LT_CAMPOS[ltNorm(md[1])];
-    if (md && !campo && /^\s/.test(bruta)){ erro(k, 'campo "' + md[1].trim() + '" não existe. Use: como, quero, para, aceite, prioridade, valor, pontos, tipo, origem, meta, versão, entrega ou pronto', alvo); return; }
+    if (md && !campo && /^\s/.test(bruta)){ erro(k, 'campo "' + md[1].trim() + '" não existe. Use: como, quero, para, aceite, prioridade, valor, pontos, tipo, situação, origem, meta, versão, entrega ou pronto', alvo); return; }
     if (campo){
       // a Definição de Pronto do projeto: uma linha por regra, em qualquer lugar do texto
       // o nome deste lote e de quais lotes ele vem depois (quando o trabalho é dividido em vários textos)

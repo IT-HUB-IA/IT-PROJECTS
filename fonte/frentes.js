@@ -114,6 +114,6 @@ function frFichaLigacao(sec, chave){
   if (!ws.length) return '';
   const itens = D.issues.filter(i => !i.arquivado && i.tipo !== 'epic' && ws.some(w => w.id === i.ws)), feitos = itens.filter(i => i.status === 'done').length;
   const nome = FRENTES_PADRAO.find(x => x.chave === k).nome;
-  return '<p class="ficha-fr">Frente <b>' + esc(nome) + '</b>: ' + (itens.length ? itens.length + (itens.length === 1 ? ' item' : ' itens') + ' (' + feitos + ' concluídos, ' + (itens.length - feitos) + ' em aberto)' : 'nenhum item ainda') +
+  return '<p class="ficha-fr">Frente <b>' + esc(nome) + '</b>: ' + (itens.length ? itens.length + (itens.length === 1 ? ' item' : ' itens') + ' (' + feitos + ' aceitos, ' + (itens.length - feitos) + ' em aberto)' : 'nenhum item ainda') +
     ws.map(w => ' <button type="button" class="btn fant peq" data-ir-ops="ws:' + w.id + '">' + esc(apps.length > 1 ? (byId('apps', w.app) || {}).nome + ' › ' + w.nome : 'Abrir a frente') + '</button>').join('') + '</p>';
 }

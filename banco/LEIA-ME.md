@@ -155,6 +155,49 @@ Na tela: Entregas, **Ligar repositório** (conectar a conta, escolher o reposit�
 
 `43_analise_seguranca.sql`: `analise_achados` (cada achado com regra, gravidade, onde, trecho com segredo mascarado, identidade estável, status aberto/corrigido/ignorado, motivo e item ligado) e `analise_rodadas` (o resumo de cada leitura). `analise_gravar` (só o robô, service_role) grava o que achou e marca como corrigido o que sumiu; `analise_marcar` (quem edita o ponto) ignora com motivo, volta a abrir e liga ao item. As regras ficam em `supabase/functions/diagramas-auto/seguranca.ts` (fonte única: a tela pega o mesmo catálogo no build). A tela: `fonte/seguranca.js` (aba Segurança).
 
+## Parte 53: segunda leva do P.O. (aplicada no Supabase em 02/10/2026)
+
+`53_po_leva2.sql`:
+
+- `itens_criterios` ganhou `prova`, `prova_quem`, `prova_em` e `prova_resultado` (passou, falhou ou parcial). A prova pode ser texto, link ou `anexo:<id>` de um anexo do item. Pode entrar mesmo com o item já aceito: só o texto e o "marcado" ficam travados.
+- `frentes.definicao_pronto`: as regras de pronto de cada frente, somadas à comum do projeto.
+- `itens.auto_origem`: de onde veio cada preenchimento automático, por exemplo o prazo padrão de 7 dias ou "criado já em Pronto para testar, por lote".
+- `itens.revisar`: a marca de revisar quando uma decisão muda.
+- `itens.decisao_texto`, `decisao_por` e `decisao_em`: o texto da decisão fechada. Quem e quando são carimbados pelo banco.
+- Histórico: tudo isso entra em `itens_historico`.
+  - O gatilho `itens_po_historico_leva2` registra a origem automática, o "marcado para revisar", o "revisado" e a decisão registrada ou mudada.
+  - `po_historico_criterio` passou a registrar também a prova.
+
+A tela está em `fonte/po_leva2.js`.
+- Mostra o épico de outra frente na Lista (com "Agrupar por épico") e na exportação.
+- Cada contagem diz o que conta.
+- As tarefas externas ficam fora dos totais, com uma linha "aguardando terceiros", e os itens que dependem delas mostram "bloqueado por terceiro".
+- Avisos no "O que fazer hoje":
+  - prazo depois da entrega da versão;
+  - item sem responsável;
+  - itens para revisar;
+  - critério sem prova.
+- Situação inicial no Criar em lote (`situação:`, até Pronto para testar).
+- Contas na prévia do Editar em lote.
+- Modelo Dado / Quando / Então para os critérios.
+- Abas novas: "Mapa de histórias" (com a pirâmide do backlog) e "O que mudou".
+- Exportação do projeto inteiro e do épico com os itens de todas as frentes.
+
+## Parte 52: o que ficava só no navegador vai para o banco (aplicada no Supabase em 02/10/2026)
+
+`52_estado_pessoa_e_permissoes.sql`:
+
+- `pessoas_preferencias.estado`: a frente em foco, as fichas automáticas já vistas, o guia do P.O. (passo e avisos silenciados) e o Desfazer do último lote. Cada pessoa só lê e grava o seu.
+- `pessoas_preferencias.navegador_antigo`: a cópia antiga de todos os dados achada no navegador (versão sem login), guardada inteira.
+- Ao entrar, `fonte/estado.js`:
+  - junta o que estava no navegador com o que está no banco, sem apagar nada do banco;
+  - grava, relê e confere;
+  - só depois tira a cópia do navegador.
+- Se não der para gravar, a cópia continua no navegador e o sistema tenta de novo.
+- O registro das automações passa a ser lido de `automacoes_execucoes`, que o banco já gravava.
+- Tira de `authenticated` e `anon` as permissões TRUNCATE, TRIGGER e REFERENCES em todas as tabelas, e também para as tabelas futuras. Nenhuma era usada; TRUNCATE passaria por cima das regras de acesso.
+- `banco/99_teste_isolamento_LOCAL.sql`: uma pessoa nova não enxerga nenhuma linha que já existia, em nenhuma tabela.
+
 ## Parte 51: o custo do plano marcado como principal (aplicada no Supabase em 02/10/2026)
 
 `51_servidores_custo_principal.sql`: `servidores_custos.principal` (no máximo um por servidor, por índice único parcial).
