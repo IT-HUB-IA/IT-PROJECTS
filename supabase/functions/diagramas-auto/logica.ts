@@ -16,6 +16,7 @@ import type { Achado } from './seguranca.ts';
 import { inventarioDoCodigo, inventarioDoBanco, palavrasDoCodigo, arquivoDe } from './inventario.ts';
 import type { ItemInv } from './inventario.ts';
 import { acessoDaConexao, cabecalhos, urlPacote, historicoDosArquivos, listarPublicacoes } from '../_shared/git.ts';
+import { tokenSupabase, lerEstrutura as lerEstruturaSupabase } from '../_shared/supabase.ts';
 
 export type Rpc = (nome: string, args: Record<string, unknown>) => Promise<{ data: any; error: { message?: string } | null }>;
 export interface DepsAuto {
@@ -29,7 +30,9 @@ export interface DepsAuto {
   orcamentoMs?: number;                       // depois disso não começa pedido novo (o resto fica para a próxima chamada)
 }
 type Repo = { id: string; nome: string; branch: string; provedor: 'github' | 'gitlab'; conexao_id: string; externo_id: string | null };
-export type Banco = { id: string; no_id?: string; nome: string; provedor: string; motor: 'postgres' | 'mysql'; esquemas: string[]; conexao: string };
+// supa_conexao_id e supa_projeto: ligado pelo Supabase sem senha (parte 54); aí não há conexao
+export type Banco = { id: string; no_id?: string; nome: string; provedor: string; motor: 'postgres' | 'mysql'; esquemas: string[]; conexao: string | null;
+  supa_conexao_id?: string | null; supa_projeto?: string | null };
 type Pedido = { id: string; no_id: string; origem: 'github' | 'gitlab' | 'banco' | 'manual'; referencia: string | null; repositorios: Repo[]; bancos: Banco[] };
 
 const resposta = (corpo: unknown, status = 200) => new Response(JSON.stringify(corpo), { status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' } });
@@ -146,7 +149,7 @@ export async function processar(d: DepsAuto, p: Pedido): Promise<void> {
         resumo.push({ banco: b.nome, motor: b.motor, esquemas: b.esquemas.join(', '), tabelas: e.tabelas.length, desenhos: ds.map(x => x.nome), ficha: fi, seguranca: sg });
         feitos++;
       } catch (e) {
-        erros++; const m = limparErro(e, b.conexao);
+        erros++; const m = limparErro(e, b.conexao || undefined);
         await chamar(d, 'infra_auto_banco_lido', { p_banco: b.id, p_hash: null, p_erro: m, p_abrir: false }).catch(() => null);
         resumo.push({ banco: b.nome, erro: m });
       }
@@ -155,15 +158,24 @@ export async function processar(d: DepsAuto, p: Pedido): Promise<void> {
     const msgErro = erros ? resumo.filter(x => x.erro).map(x => (x.repositorio || ('banco ' + x.banco)) + ': ' + x.erro).join(' · ') : null;
     await chamar(d, 'infra_auto_concluir', { p_id: p.id, p_status: erros && !feitos ? 'erro' : 'pronto', p_erro: msgErro, p_diagramas: ids, p_resumo: resumo, p_prefixos: prefixos });
   } catch (e) {
-    await chamar(d, 'infra_auto_concluir', { p_id: p.id, p_status: 'erro', p_erro: limparErro(e, p.bancos?.[0]?.conexao), p_diagramas: ids, p_resumo: resumo, p_prefixos: [] }).catch(() => null);
+    await chamar(d, 'infra_auto_concluir', { p_id: p.id, p_status: 'erro', p_erro: limparErro(e, p.bancos?.[0]?.conexao || undefined), p_diagramas: ids, p_resumo: resumo, p_prefixos: [] }).catch(() => null);
   }
 }
 
 // cada banco tem a própria família de desenhos: banco:<id>:der:public, banco:<id>:acesso...
 const prefixoBanco = (b: Banco, _n?: number) => 'banco:' + b.id + ':';
+// a estrutura: pelo modo só leitura do Supabase (sem senha, só consultas fixas no catálogo) ou pelo endereço guardado
+export async function lerEstruturaDe(d: DepsAuto, b: Banco): Promise<Estrutura> {
+  if (b.supa_conexao_id && b.supa_projeto) {
+    const token = await tokenSupabase(d, b.supa_conexao_id);
+    return (await lerEstruturaSupabase(d, token, b.supa_projeto, b.esquemas)).estrutura;
+  }
+  if (!b.conexao) throw new Error('Este banco não tem endereço nem autorização do Supabase. Use Trocar para ligar de novo.');
+  return d.lerBanco(b.conexao, b.esquemas, b.motor || 'postgres');
+}
 // lê a estrutura de um banco, guarda o resumo e grava os desenhos dele
 async function lerEDesenhar(d: DepsAuto, no: string, b: Banco, abrir: boolean, palavras: Set<string> | null = null) {
-  const e = await d.lerBanco(b.conexao, b.esquemas, b.motor || 'postgres');
+  const e = await lerEstruturaDe(d, b);
   const hash = await resumoEstrutura(e);
   const pedido = await chamar(d, 'infra_auto_banco_lido', { p_banco: b.id, p_hash: hash, p_erro: null, p_abrir: abrir });
   if (abrir && !pedido) return { ids: [] as string[], e, ds: [], pedido: null, ficha: null, seguranca: null };
@@ -179,7 +191,7 @@ async function lerEDesenhar(d: DepsAuto, no: string, b: Banco, abrir: boolean, p
 export async function lerBancoDevido(d: DepsAuto, b: Banco & { no_id: string }): Promise<void> {
   let r: Awaited<ReturnType<typeof lerEDesenhar>>;
   try { r = await lerEDesenhar(d, b.no_id, b, true); }
-  catch (x) { await chamar(d, 'infra_auto_banco_lido', { p_banco: b.id, p_hash: null, p_erro: limparErro(x, b.conexao), p_abrir: true }).catch(() => null); return; }
+  catch (x) { await chamar(d, 'infra_auto_banco_lido', { p_banco: b.id, p_hash: null, p_erro: limparErro(x, b.conexao || undefined), p_abrir: true }).catch(() => null); return; }
   if (!r.pedido) return;
   await chamar(d, 'infra_auto_concluir', { p_id: r.pedido, p_status: 'pronto', p_erro: null, p_diagramas: r.ids, p_resumo: [{ banco: b.nome, motor: b.motor, tabelas: r.e.tabelas.length, desenhos: r.ds.map(x => x.nome) }], p_prefixos: [prefixoBanco(b)] })
     .catch(() => null);

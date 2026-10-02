@@ -69,6 +69,7 @@ async function gcVolta(d){
   const espera = gcLer(GC_ESPERA);
   gcGuardar(GC_VOLTA, null);
   if (!espera || Date.now() - (espera.t || 0) > 30 * 60000) return;
+  if (d.git === 'supabase'){ gcGuardar(GC_ESPERA, null); if (typeof scVolta === 'function') scVolta(d, espera); return; }
   if (d.error){ gcGuardar(GC_ESPERA, null); toast((d.git === 'gitlab' ? 'O GitLab' : 'O GitHub') + ' não conectou: ' + (d.error_description || d.error)); return; }
   if (!d.code) return;
   gcGuardar(GC_ESPERA, null);

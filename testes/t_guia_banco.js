@@ -99,8 +99,8 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   await p.locator('dialog.ifr-gp-dlg .modal-rod button', {hasText: 'Ligar banco agora'}).click(); await p.waitForTimeout(300);
   ok(await p.evaluate(() => !document.querySelector('dialog.ifr-gp-dlg') && [...document.querySelectorAll('dialog.modal')].some(d => /Ligar um banco de dados/.test(d.textContent) && d.querySelector('input[name="ifr-b-prov"][value="aws"]').checked && d.querySelector('#ifr-b-host'))), 'Ligar banco agora fecha o guia e abre a janela de ligar já na AWS');
   await p.evaluate(() => document.querySelectorAll('dialog.modal').forEach(d => { d.close(); d.remove(); }));
-  // janela de ligar (Supabase): o link do guia abre por cima, e o endereço é conferido antes de salvar
-  await p.evaluate(() => window.__tf.ifrBancoModal(null, 'supabase')); await p.waitForTimeout(200);
+  // janela de ligar pelo endereço (Supabase, a segunda opção; a primeira é sem senha, em t_supa_conectar.js): o link do guia abre por cima, e o endereço é conferido antes de salvar
+  await p.evaluate(() => window.__tf.ifrBancoModal(null, 'supabase', true)); await p.waitForTimeout(200);
   await p.locator('dialog.modal [data-ifr-guia-abrir]').click(); await p.waitForTimeout(200);
   ok(await p.evaluate(() => document.querySelectorAll('dialog[open]').length === 2 && document.querySelector('dialog.ifr-gp-dlg [data-ifr-gp="supabase"].sel')), 'dentro da janela de ligar, o link abre o guia por cima, na aba do provedor escolhido');
   await p.locator('dialog.ifr-gp-dlg .modal-rod button', {hasText: 'Fechar'}).click(); await p.waitForTimeout(200);

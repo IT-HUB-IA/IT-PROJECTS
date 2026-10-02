@@ -202,5 +202,33 @@ ok(limparErro(new Error('falhou em postgres://u:p@h/db agora')) === 'falhou em [
   ok(r.pedidos === 2 && t.de('infra_auto_proximos').length === 2, 'passou do tempo: para de pegar pedido (o resto fica para a próxima chamada)');
 }
 
+
+// ---------- banco ligado pelo Supabase sem senha (parte 54): lê pelo modo só leitura, só consultas fixas ----------
+{
+  const SUPA = { id: 'b9', nome: 'Produção', provedor: 'supabase', motor: 'postgres' as const, esquemas: ['public'], conexao: null, supa_conexao_id: 'sc1', supa_projeto: 'abcdefghijklmnopqrst' };
+  const comSupa = (soLeitura: string) => {
+    const t = montar({ banco: async () => { throw new Error('não devia usar o endereço'); }, fila: [[{ id: 'm9', no_id: 'prod', origem: 'manual', referencia: null, repositorios: [], bancos: [SUPA] }]] });
+    const sqls: string[] = [], rpc0 = t.d.rpc, b0 = t.d.buscar;
+    t.d.rpc = async (nome, args) => nome === 'supa_conexao_ler' ? (t.chamadas.push({ nome, args }), { data: { id: 'sc1', tokens: { acesso: 'tok', renovacao: 'r', expira_em: new Date(Date.now() + 3600e3).toISOString() } }, error: null }) : rpc0(nome, args);
+    t.d.buscar = (async (u: string, init?: any) => {
+      if (!String(u).includes('api.supabase.com')) return (b0 as any)(u, init);
+      const q = JSON.parse(init.body).query as string; sqls.push(q);
+      const r = (j: unknown) => new Response(JSON.stringify(j), { status: 201 });
+      if (/transaction_read_only/.test(q)) return r([{ usuario: 'supabase_read_only_user', so_leitura: soLeitura }]);
+      if (/as estrutura/.test(q)) return r([{ estrutura: ESTR }]);
+      if (/schema_migrations/.test(q)) return r([]);
+      return new Response('{}', { status: 400 });
+    }) as typeof fetch;
+    return { t, sqls };
+  };
+  { const { t, sqls } = comSupa('on'); await rodar(t.d);
+    const c = t.de('infra_auto_concluir')[0].args;
+    ok(c.p_status === 'pronto' && c.p_prefixos.join() === 'banco:b9:' && t.de('infra_auto_gravar').length >= 1, 'banco pelo Supabase: lê pela API e desenha');
+    ok(/transaction_read_only/.test(sqls[0]) && sqls.every(q => !/from\s+public\./i.test(q)) && sqls.some(q => q.includes("array['public']::text[]")), 'confere só leitura primeiro e só roda as consultas fixas do catálogo'); }
+  { const { t, sqls } = comSupa('off'); await rodar(t.d);
+    const c = t.de('infra_auto_concluir')[0].args;
+    ok(c.p_status === 'erro' && /só leitura/.test(c.p_erro) && sqls.length === 1, 'se não estiver em só leitura: não lê nada e fecha com erro'); }
+}
+
 console.log(falhas ? falhas + ' FALHAS' : 'TUDO OK');
 if (falhas) process.exit(1);

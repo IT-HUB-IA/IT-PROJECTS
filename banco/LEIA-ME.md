@@ -444,3 +444,19 @@ Cada um dos 8 custos e das 4 receitas também foi conferido item por item.
 - **A tela ainda guarda os dados no navegador.** A troca para o banco é o próximo passo, e depende do login e das instruções que você vai passar.
 - **Provedor de IA** para o Agent Studio: as tabelas de execuções, avaliações e mensagens da IA já existem.
 - **Arquivos de exemplo:** os anexos da semente apontam para `exemplo/...` no depósito, mas os arquivos em si não existem. Só o nome veio dos dados de exemplo.
+
+## Parte 54: ligar um banco do Supabase sem senha (aplicada no Supabase em 02/10/2026)
+
+`54_supabase_conectar.sql`. O jeito novo e padrão para bancos do Supabase: a pessoa autoriza o CicloDev no próprio Supabase (OAuth com PKCE) e escolhe o projeto. Nada de criar usuário, copiar endereço ou senha.
+
+- `interno.supa_app`: o app OAuth do CicloDev no Supabase (Client ID e Client Secret). Só o dono do sistema grava (`supa_app_gravar`); a tela só sabe se está pronto (`supa_app_status`).
+- `public.supa_conexoes`: a autorização conectada a um espaço (quem é do espaço vê; stakeholder não). As chaves ficam em `interno.supa_tokens`, que nenhuma tela lê.
+- `interno.supa_estados`: o vai e volta da janelinha, com o verificador do PKCE guardado só no banco (`supa_estado_novo`, `supa_estado_usar`).
+- **Só liga quando a leitura está completa.** A função `supabase-conectar` (ação `conferir`) lê de verdade a estrutura do projeto escolhido e confere: a leitura está em modo só leitura (`transaction_read_only = on`), os esquemas existem, há tabelas, colunas, chaves, permissões e todas as regras de acesso (a contagem direta no catálogo bate com o que veio). Só então grava uma prova em `interno.supa_provas` (`supa_prova_gravar`, só service_role, que também recusa resultado incompleto). `infra_banco_supabase_ligar` (a pessoa) só liga com uma prova dela, de menos de 15 minutos, usada uma vez. A tela não consegue pular a conferência.
+- `infra_bancos` ganhou `supa_conexao_id`, `supa_projeto`, `validado_em` e `validacao` (o que a conferência achou). Banco ligado assim não tem endereço nem senha guardados. Mudar os esquemas exige conferir de novo; colar um endereço volta o banco para o jeito antigo.
+- `infra_auto_proximos` e `infra_auto_bancos_devidos` (mesmas assinaturas) entregam ao robô também os bancos sem endereço, com o projeto e a conta.
+- O robô (`diagramas-auto`) lê esses bancos pelo modo só leitura do próprio Supabase (`/v1/projects/{ref}/database/query/read-only`, usuário `supabase_read_only_user`), conferindo antes de cada leitura que está em só leitura. Só roda as consultas fixas de `_shared/supabase.ts` e `gerar.ts`, todas no catálogo: nunca lê o conteúdo das tabelas.
+- O jeito antigo (endereço com usuário e senha) continua, como segunda opção e para AWS e MySQL, e agora o endereço é **testado de verdade antes de salvar** (ação `testar_endereco`, só para quem pode mudar o ponto; `supa_pode_editar`). Se não passar, não salva e diz por quê.
+- Teste local: `99_teste_supabase_LOCAL.sql` (33 conferências).
+
+Configuração (uma vez, o dono do sistema): Admin, aba GitHub, GitLab e Supabase. Criar o app em OAuth Apps da organização no Supabase, com o endereço de volta `.../entrar.html?git=supabase` e só permissões de leitura (Projects, Organizations e Database), e colar o Client ID e o Client Secret.

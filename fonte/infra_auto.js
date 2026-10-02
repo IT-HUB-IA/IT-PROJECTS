@@ -23,7 +23,7 @@ async function ifrAutoCarregar(){
   const nos = ifrNosDoCodigo(UI.sel);
   const [rp, bc, pd] = await Promise.all([
     sb.from('repositorios').select('id, no_id, provedor, nome, branch_principal, ativo').in('no_id', nos),
-    sb.from('infra_bancos').select('id, no_id, nome, provedor, motor, esquemas, servidor, ativo, ultima_leitura_em, ultima_mudanca_em, ultimo_erro, conexao_trocada_em').eq('no_id', no),
+    sb.from('infra_bancos').select('id, no_id, nome, provedor, motor, esquemas, servidor, ativo, ultima_leitura_em, ultima_mudanca_em, ultimo_erro, conexao_trocada_em, supa_conexao_id, supa_projeto, validado_em, validacao').eq('no_id', no),
     sb.from('infra_automacoes').select('id, origem, status, referencia, criado_em, concluido_em, erro, resumo, diagramas').eq('no_id', no).order('criado_em', {ascending:false}).limit(5)
   ]);
   if (IFR_AUTO.no !== no) return;
@@ -39,6 +39,8 @@ const IFR_STATUS = {pendente:'na fila', rodando:'montando agora', pronto:'pronto
 // erro técnico do banco em português, com o que fazer (o texto original fica embaixo, pequeno)
 function ifrErroAmigavel(m){
   const t = String(m || '').toLowerCase();
+  if (/autorização do supabase|conecte de novo/.test(t)) return 'A autorização do Supabase foi tirada ou venceu. Clique em Trocar e conecte de novo ao Supabase.';
+  if (/não está em modo só leitura/.test(t)) return 'A leitura não estava em modo só leitura: por segurança, o CicloDev não leu.';
   if (/password authentication|access denied/.test(t)) return 'A senha do usuário do CicloDev não confere. Crie uma senha nova (só letras e números) e use Trocar.';
   if (/tenant or user not found/.test(t)) return 'Falta o código do projeto no usuário: o certo é leitura_ciclodev.codigodoprojeto.';
   if (/timeout|timed out|etimedout|econnrefused|enotfound|getaddrinfo|could not connect|connection refused/.test(t)) return 'O CicloDev não conseguiu alcançar o banco pela internet.';
@@ -67,15 +69,16 @@ function ifrAutoHTML(){
     : '<p class="ifr-vazio">Nenhum repositório ligado ' + (/^app:/.test(UI.sel || '') ? 'a esta aplicação' : eProd ? 'a este produto' : 'direto neste projeto') + '.</p>') +
     (pode ? '<div class="ifr-auto-add"><button type="button" class="btn sec peq" data-ifr-repo>+ ' + (repos.length ? 'Ligar outro repositório' : 'Ligar repositório') + '</button></div>' : '') + '</div>';
   // bancos
-  const qual = x => (IFR_PROV[x.provedor] || 'Outro') + ' · ' + (x.motor === 'mysql' ? 'MySQL' : 'PostgreSQL') + ' · ' + (x.motor === 'mysql' ? 'banco ' : 'esquema' + ((x.esquemas || []).length > 1 ? 's ' : ' ')) + (x.esquemas || []).join(', ');
+  const qual = x => (IFR_PROV[x.provedor] || 'Outro') + (x.supa_conexao_id ? ' · sem senha' : '') + ' · ' + (x.motor === 'mysql' ? 'MySQL' : 'PostgreSQL') + ' · ' + (x.motor === 'mysql' ? 'banco ' : 'esquema' + ((x.esquemas || []).length > 1 ? 's ' : ' ')) + (x.esquemas || []).join(', ');
   h += '<div class="ifr-auto-bloco"><h4 class="ifr-auto-tit">Bancos de dados</h4>' + (bs.length
     ? bs.map(x => {
         const selo = !x.ativo ? ifrSelo('cinza', 'Desligado') : x.ultimo_erro ? ifrSelo('erro', 'Não conectou') : x.ultima_leitura_em ? ifrSelo('ok', 'Lido ' + ifrQuando(x.ultima_leitura_em)) : ifrSelo('cinza', 'Aguardando leitura');
         return '<div class="ifr-fonte' + (x.ultimo_erro ? ' com-erro' : '') + '"><div class="ifr-fonte-cab"><b>' + esc(x.nome) + '</b>' + selo + '</div>' +
           '<p class="ifr-fonte-meta">' + esc(qual(x)) + '</p>' + (x.servidor ? '<p class="ifr-fonte-host" title="Servidor">' + esc(x.servidor) + '</p>' : '') +
-          (x.conexao_trocada_em ? '<p class="ifr-fonte-meta" data-ifr-trocado>Endereço salvo em ' + esc(fmtData(x.conexao_trocada_em.slice(0, 10))) + ' às ' + esc(new Date(x.conexao_trocada_em).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})) + '</p>' : '') +
+          (x.supa_conexao_id && x.validado_em ? '<p class="ifr-fonte-meta" data-ifr-conferido>Ligado pelo Supabase, sem senha. Conferido em ' + esc(fmtData(x.validado_em.slice(0, 10))) + ' às ' + esc(new Date(x.validado_em).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})) + (x.validacao ? ': ' + esc((x.validacao.tabelas || 0) + ' tabelas, ' + (x.validacao.regras || 0) + ' regras de acesso') : '') + '</p>' : '') +
+          (!x.supa_conexao_id && x.conexao_trocada_em ? '<p class="ifr-fonte-meta" data-ifr-trocado>Endereço salvo em ' + esc(fmtData(x.conexao_trocada_em.slice(0, 10))) + ' às ' + esc(new Date(x.conexao_trocada_em).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})) + '</p>' : '') +
           (x.ultimo_erro ? '<div class="ifr-fonte-erro"><b>' + esc(ifrErroAmigavel(x.ultimo_erro)) + '</b><small>' + esc(x.ultimo_erro) + (x.ultima_leitura_em ? ' · tentativa ' + esc(ifrQuando(x.ultima_leitura_em)) : '') + '</small>' +
-            (/password authentication/.test(x.ultimo_erro) && x.conexao_trocada_em ? '<p class="ifr-fonte-dica">O CicloDev ainda usa a senha do endereço salvo em ' + esc(fmtData(x.conexao_trocada_em.slice(0, 10))) + '. Se você criou ou trocou a senha no banco depois disso, clique em <b>Trocar</b> e cole o endereço com a senha nova. Se a data não mudar depois de salvar, a troca não foi gravada.</p>' : '') +
+            (/password authentication/.test(x.ultimo_erro) && x.conexao_trocada_em && !x.supa_conexao_id ? '<p class="ifr-fonte-dica">O CicloDev ainda usa a senha do endereço salvo em ' + esc(fmtData(x.conexao_trocada_em.slice(0, 10))) + '. Se você criou ou trocou a senha no banco depois disso, clique em <b>Trocar</b> e cole o endereço com a senha nova. Se a data não mudar depois de salvar, a troca não foi gravada.</p>' : '') +
             '<button type="button" class="btn peq" data-ifr-guia>Resolver com o DevIT</button></div>'
             : x.ultima_mudanca_em ? '<p class="ifr-fonte-meta">Estrutura mudou ' + esc(ifrQuando(x.ultima_mudanca_em)) + '</p>' : '') +
           (pode ? '<div class="ifr-fonte-acoes"><button type="button" class="ifr-lnk" data-ifr-banco="' + x.id + '">Trocar</button><button type="button" class="ifr-lnk" data-ifr-banco-tirar="' + x.id + '">Desligar</button></div>' : '') + '</div>'; }).join('')
@@ -190,8 +193,10 @@ function ifrConferirSupabase(url){
   if (!u.password) return 'Falta a senha no endereço.';
   return '';
 }
-function ifrBancoModal(id, provInicial){
+function ifrBancoModal(id, provInicial, soEndereco){
   const b = id ? IFR_AUTO.bancos.find(x => x.id === id) : null;
+  // Supabase: o jeito sem senha (com conferência antes de ligar) é o padrão; o endereço fica como segunda opção
+  if (!soEndereco && COM_BANCO && typeof scLigarModal === 'function' && ((b && b.supa_conexao_id) || (!b && (provInicial || 'supabase') === 'supabase'))) return scLigarModal(id);
   let prov = b ? b.provedor : (IFR_PROV[provInicial] ? provInicial : 'supabase'), motor = b ? b.motor : 'postgres';
   const dlg = modal(b ? 'Trocar o banco ' + esc(b.nome) : 'Ligar um banco de dados', '<div class="ifr-ed" id="ifr-b-corpo"></div>', [{txt:'Cancelar', cls:'sec'}, {txt:'Salvar', acao:dl => {
     const sb = ifrBanco(); if (!sb){ toast('Precisa do banco do CicloDev ligado.'); return false; }
@@ -213,11 +218,21 @@ function ifrBancoModal(id, provInicial){
     const esq = $('#ifr-b-esq', dl).value.split(',').map(s => s.trim()).filter(Boolean);
     if (!esq.length){ toast(motor === 'mysql' ? 'Diga qual banco (database) ler.' : 'Diga quais esquemas ler.'); return false; }
     const args = {p_no:IFR.no, p_id:b ? b.id : null, p_nome:$('#ifr-b-nome', dl).value.trim(), p_provedor:prov, p_motor:motor, p_esquemas:esq, p_conexao:url || null, p_ativo:true};
-    sb.rpc('infra_banco_salvar', args).then(async ({error}) => {
+    const salvar = (teste) => sb.rpc('infra_banco_salvar', args).then(async ({error}) => {
       if (error){ toast('Não deu para salvar o banco: ' + (error.message || error)); return; }
+      if (document.body.contains(dl)){ dl.close(); dl.remove(); }
       await ifrAutoCarregar(); ifrLado();
-      toast('Banco salvo. Em alguns minutos o DER' + (motor === 'postgres' ? ' e o mapa de acesso aparecem nas sub-abas DER e Segurança.' : ' aparece na sub-aba DER.'));
+      toast('Banco salvo' + (teste ? ' e testado (' + teste.tabelas + ' tabelas, ' + teste.regras + ' regras de acesso)' : '') + '. Em alguns minutos o DER' + (motor === 'postgres' ? ' e o mapa de acesso aparecem nas sub-abas DER e Segurança.' : ' aparece na sub-aba DER.'));
     });
+    // endereço novo: testa de verdade antes de salvar (só leitura); se não passar, não salva e diz por quê
+    if (!url || typeof scTestarEndereco !== 'function'){ salvar(null); return; }
+    const bt = $$('.modal-rod .btn', dl).pop(); if (bt){ bt.disabled = true; bt.textContent = 'Testando…'; }
+    scTestarEndereco(url, motor, esq).then(r => {
+      if (bt){ bt.disabled = false; bt.textContent = 'Salvar'; }
+      const s = $('#ifr-b-teste', dl); if (s) s.innerHTML = scTesteHTML(r);
+      if (r.ok) salvar(r.resultado); else if (s && s.scrollIntoView) s.scrollIntoView({block:'nearest'});
+    });
+    return false;
   }}]);
   const pintar = () => {
     const c = $('#ifr-b-corpo', dlg); if (!c) return;
@@ -225,6 +240,7 @@ function ifrBancoModal(id, provInicial){
     c.innerHTML = '<p class="ifr-meta" style="margin:0">O DER' + (motor === 'postgres' ? ' e o mapa de acesso passam' : ' passa') + ' a sair sozinho' + (motor === 'postgres' ? 's' : '') + ' deste banco. O robô só lê a estrutura (tabelas, colunas, chaves' + (motor === 'postgres' ? ', RLS e permissões' : '') + '), nunca os dados, e a conexão abre em modo somente leitura. Dá para ligar vários bancos no mesmo lugar.</p>' +
       '<div class="ifr-prov" role="radiogroup" aria-label="Onde o banco está">' + Object.entries(IFR_PROV).map(([k, n]) => '<label class="ifr-prov-op' + (prov === k ? ' sel' : '') + '"><input type="radio" name="ifr-b-prov" value="' + k + '"' + (prov === k ? ' checked' : '') + '> ' + n + '</label>').join('') + '</div>' +
       (prov !== 'supabase' ? '<label class="lb">Motor<select class="sel" id="ifr-b-motor"><option value="postgres"' + (motor === 'postgres' ? ' selected' : '') + '>PostgreSQL (RDS, Aurora PostgreSQL)</option><option value="mysql"' + (motor === 'mysql' ? ' selected' : '') + '>MySQL (RDS, Aurora MySQL)</option></select></label>' : '') +
+      (prov === 'supabase' && typeof scLigarModal === 'function' ? '<div class="sc-recomenda"><b>Mais fácil e sem senha:</b> autorize o CicloDev no próprio Supabase. A leitura é conferida antes de ligar. <button type="button" class="btn acento peq" data-sc-sem-senha>Conectar ao Supabase</button></div>' : '') +
       IFR_GUIA[prov] + (prov !== 'outro' ? '<p style="margin:0"><button type="button" class="ifr-lnk" data-ifr-guia-abrir>' + (typeof IA !== 'undefined' && IA.posso ? 'Fazer o passo a passo com o DevIT' : 'Ver o guia passo a passo') + (prov === 'aws' ? ' (AWS)' : ' (Supabase)') + '</button></p>' : '') +
       '<div class="ifr-ed-linha"><label class="lb">Nome<input class="campo" id="ifr-b-nome" value="' + esc(nome != null ? nome : b ? b.nome : 'Banco de produção') + '"></label>' +
       '<label class="lb">' + (motor === 'mysql' ? 'Bancos (databases)' : 'Esquemas') + '<input class="campo" id="ifr-b-esq" value="' + esc(esq != null ? esq : b ? (b.esquemas || []).join(', ') : motor === 'mysql' ? '' : 'public') + '" placeholder="' + (motor === 'mysql' ? 'nome_do_banco' : 'public') + '"></label></div>' +
@@ -233,9 +249,9 @@ function ifrBancoModal(id, provInicial){
           '<div class="ifr-ed-linha"><label class="lb">Banco (database)<input class="campo" id="ifr-b-base" autocomplete="off" spellcheck="false" placeholder="' + (motor === 'mysql' ? 'nome_do_banco' : 'postgres') + '"></label><label class="lb">Usuário<input class="campo" id="ifr-b-usu" autocomplete="off" spellcheck="false" value="leitura_ciclodev"></label>' +
           '<label class="lb">Senha<input class="campo gc-oculto" id="ifr-b-senha" type="text" autocomplete="off" spellcheck="false" data-lpignore="true" data-1p-ignore></label></div>' + (b ? '<p class="ifr-meta">Deixe os campos de conexão vazios para manter os atuais.</p>' : '')
         : '<label class="lb">Endereço de conexão' + (b ? ' (deixe vazio para manter o atual)' : '') + '<input class="campo gc-oculto" id="ifr-b-url" type="text" autocomplete="off" spellcheck="false" data-lpignore="true" data-1p-ignore placeholder="' + (prov === 'supabase' ? 'postgresql://leitura_ciclodev.xxxx:senha@aws-0-sa-east-1.pooler.supabase.com:5432/postgres' : motor === 'mysql' ? 'mysql://usuario:senha@servidor:3306/banco' : 'postgresql://usuario:senha@servidor:5432/banco') + '"></label>') +
-      '<p class="ifr-meta">O endereço e a senha ficam numa área do banco do CicloDev que nenhuma tela lê; só o robô usa. Ninguém consegue ver a senha depois de salvar.</p>';
+      '<p class="ifr-meta">O endereço e a senha ficam numa área do banco do CicloDev que nenhuma tela lê; só o robô usa. Ninguém consegue ver a senha depois de salvar. Antes de salvar, o CicloDev testa a conexão de verdade (só leitura).</p><div id="ifr-b-teste"></div>';
   };
-  dlg.addEventListener('click', e => { if (e.target.closest('[data-ifr-guia-abrir]')){ if (typeof IA !== 'undefined' && IA.posso){ dlg.close(); dlg.remove(); } ifrGuiar(prov === 'aws' ? 'aws' : 'supabase'); } });
+  dlg.addEventListener('click', e => { if (e.target.closest('[data-sc-sem-senha]')){ dlg.close(); dlg.remove(); scLigarModal(id); return; } if (e.target.closest('[data-ifr-guia-abrir]')){ if (typeof IA !== 'undefined' && IA.posso){ dlg.close(); dlg.remove(); } ifrGuiar(prov === 'aws' ? 'aws' : 'supabase'); } });
   dlg.addEventListener('change', e => {
     if (e.target.name === 'ifr-b-prov'){ prov = e.target.value; if (prov === 'supabase') motor = 'postgres'; pintar(); }
     else if (e.target.id === 'ifr-b-motor'){ motor = e.target.value; pintar(); }

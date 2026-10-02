@@ -181,3 +181,17 @@ textarea[data-ficha].fa-escondido{display:none}
 .ifv-b:focus-visible{outline:2px solid var(--vermelho);outline-offset:2px}
 .ifv-dica{font-size:12px;color:var(--tinta-3)}
 .ifr-fonte-dica{margin:0;font-size:12px;line-height:1.45;color:var(--preto);border-left:2px solid var(--vermelho);padding-left:8px}
+/* ligar banco do Supabase sem senha (supa_conectar.js) */
+.sc-corpo{display:grid;gap:12px}
+.sc-passo{display:grid;gap:8px;justify-items:start;border-top:1px solid var(--preto-08,#0001);padding-top:10px}
+.sc-passo h4,.sc-conf h4{margin:0;font-size:13px;font-weight:600}
+.sc-passo .lb{width:100%}
+.sc-conf{display:grid;gap:8px;padding:10px 12px;border-left:3px solid var(--tinta-3);background:var(--preto-04)}
+.sc-conf.ok{border-left-color:#1f8a4c}
+.sc-conf.erro{border-left-color:#c0392b}
+.sc-falhas{margin:0;padding-left:18px;display:grid;gap:4px;font-size:12.5px}
+.sc-itens{display:grid;grid-template-columns:max-content 1fr;gap:3px 14px;margin:0;font-size:12.5px}
+.sc-itens dt{color:var(--tinta-3)}
+.sc-itens dd{margin:0;font-variant-numeric:tabular-nums}
+.sc-recomenda{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:10px 12px;background:var(--preto-04);border-left:3px solid #1f8a4c;font-size:13px}
+.sc-corpo .ifr-ed-linha{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%}.sc-corpo .ifr-ed-linha .lb{width:100%}
