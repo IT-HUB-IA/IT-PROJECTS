@@ -486,3 +486,7 @@ Regras que valem daqui em diante:
 - Cada achado tem `visto_em`/`visto_por`. O alerta fica aceso (nulo) quando o achado é novo, volta depois de corrigido, piora ou a biblioteca ganha falha nova.
 - Biblioteca com falha que acende o alerta manda um aviso no sininho para quem participa do ponto (`interno.pessoas_do_no`; nunca stakeholder), um por rodada.
 - A pessoa marca como visto na aba Análise (`analise_marcar_visto`, um, vários ou todos). Visto não é corrigido nem ignorado: o achado segue aberto até sumir do código. Nada trava a entrega.
+
+## Parte 64: repositório ou banco que sai de um ponto leva junto o que o robô fez com ele ali (aplicada no Supabase em 03/10/2026)
+- Ao mudar o ponto de um repositório ou banco, ao apagá-lo, e no fim de toda atualização do robô (`interno.infra_limpar_no`): desenho automático cuja fonte não é mais do ponto vai para o arquivo; o quadro dele vai para `arquivo/` (não é apagado) e o card sai do quadro principal; a ficha técnica feita por essa fonte no ponto sai.
+- Desenho feito à mão não é mexido. No produto ou projeto, o desenho fica enquanto o repositório estiver em alguma aplicação dele.
