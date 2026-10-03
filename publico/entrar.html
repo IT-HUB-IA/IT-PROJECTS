@@ -1695,42 +1695,22 @@ dialog.modal.modal-larga{max-width:min(960px,calc(100% - 32px))}
 .ops-cab{gap:6px;padding-top:12px}
 .ops-cab .views{margin-top:2px}
 .ops-cab .view-b{height:36px}
-/* progresso por frente (progresso.js): barra empilhada em cinco faixas, dois números e os sinais embaixo */
-.pg2 h3 .info{margin-left:6px}
-.pg2-lista{display:grid;gap:14px}
-.pg2-lin{display:grid;grid-template-columns:minmax(120px,1fr) minmax(0,3fr) minmax(96px,auto);grid-template-areas:"nome barra num" ". sinais sinais";gap:4px 16px;align-items:center}
-.pg2-lin.total{padding-bottom:14px;margin-bottom:14px;border-bottom:1px solid var(--linha,#E4E4E8)}
-.pg2-lin.total .pg2-nome{font-weight:700}
-.pg2-nome{grid-area:nome;border:0;background:transparent;padding:0;font:inherit;font-size:13px;font-weight:500;color:var(--preto);text-align:left;cursor:pointer;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pg2-nome:hover{text-decoration:underline}
-.pg2-bar{grid-area:barra;display:flex;gap:2px;height:16px;min-width:0}
-.pg2-bar.grande{height:22px}
-.pg2-bar.vazia{background:repeating-linear-gradient(90deg,var(--papel,#F2F2F4) 0 6px,transparent 6px 9px);height:8px;opacity:.7}
-.pg2-bar i{display:block;height:100%;min-width:3px;cursor:pointer}
-.pg2-bar i:first-child{border-radius:4px 0 0 4px}
-.pg2-bar i:last-child{border-radius:0 4px 4px 0}
-.pg2-bar i:only-child{border-radius:4px}
-.pg2-bar i:hover{filter:brightness(1.12);outline:2px solid var(--preto);outline-offset:1px}
+/* progresso por frente (progresso.js): o mesmo cartão de antes (pp), com a barra em cinco faixas */
+.pg2-bar{display:flex;gap:2px}
+.pg2-bar i{min-width:3px;cursor:pointer}
+.pg2-bar i:hover{filter:brightness(1.12);box-shadow:inset 0 0 0 2px var(--preto)}
 .pg2-done{background:var(--st-done)}
 .pg2-review{background:var(--st-review)}
 .pg2-doing{background:var(--st-doing)}
 .pg2-blocked{background:var(--st-blocked);background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.55) 0 2px,transparent 2px 6px)}
-.pg2-afazer{background:var(--papel,#E9E9EC);box-shadow:inset 0 0 0 1px var(--linha,#DCDCE0)}
-.pg2-num{grid-area:num;display:grid;grid-template-columns:auto auto;align-items:baseline;justify-content:end;gap:0 5px;font-variant-numeric:tabular-nums}
-.pg2-num b{font-family:var(--font-display);font-size:18px;font-weight:600;line-height:1}
-.pg2-num small{font-family:var(--font-mono);font-size:10px;color:var(--tinta-3)}
-.pg2-num em{grid-column:1 / -1;font-style:normal;font-family:var(--font-mono);font-size:11px;color:var(--tinta-2,#4B4B52);text-align:right}
-.pg2-sinais{grid-area:sinais;display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11.5px;color:var(--tinta-3)}
-.pg2-s.alerta{color:var(--st-blocked);font-weight:600}
-.pg2-lin.vazia{opacity:.6;grid-template-areas:"nome barra num"}
-.pg2-vazias{margin-top:12px}
-.pg2-vazias summary{cursor:pointer;font-size:12px;color:var(--tinta-3);margin-bottom:10px}
-.pg2-leg{margin-top:14px}
-.pg2-leg i{border-radius:2px}
-.pg2-leg b{font-variant-numeric:tabular-nums;font-weight:600;color:var(--preto)}
-@media (max-width:640px){ .pg2-lin{grid-template-columns:1fr auto;grid-template-areas:"nome num" "barra barra" "sinais sinais"} }
-.pg2{grid-column:1 / -1;container-type:inline-size}
-@container (max-width:620px){ .pg2-lin{grid-template-columns:1fr auto;grid-template-areas:"nome num" "barra barra" "sinais sinais"} .pg2-lin.vazia{grid-template-areas:"nome num"} .pg2-lin.vazia .pg2-bar{display:none} }
+.pg2-afazer{background:transparent}
+.pg2-lin .pp-nome{display:grid;line-height:1.2}
+.pg2-alerta{font-size:10.5px;font-weight:600;color:var(--st-blocked);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pg2-lin b small{white-space:nowrap}
+.pg2-lin.vazia{opacity:.55}
+.pg2-leg i.pg2-afazer{background:var(--papel);box-shadow:inset 0 0 0 1px var(--linha,#DCDCE0)}
+.pg2-tot{margin-left:auto;color:var(--tinta-3)}
+.pg2-tot b{color:var(--preto);font-variant-numeric:tabular-nums}
 /* ---------- Itens: menu ⋯, lembrete, repetição, descrição formatada, modelos e lixeira ---------- */
   /* menu ⋯ */
   .tf-menu{position:fixed;z-index:60;min-width:260px;max-width:min(340px,calc(100vw - 16px));background:var(--branco);border:1px solid var(--nevoa);border-top:2px solid var(--preto);box-shadow:0 16px 40px -12px rgba(5,5,6,.35);padding:6px 0;display:grid}
@@ -20893,37 +20873,30 @@ function progressoDe(lista){
     atrasados:l.filter(atrasado).length, semPontos:l.length - comPts.length, crit, aceitos14:l.filter(i => i.status === 'done' && i.feito && parse(i.feito) > limite).length};
 }
 const pg2Num = v => (Math.round(v * 10) / 10).toLocaleString('pt-BR');
-// a barra empilhada: cada faixa com a largura do peso dela, separadas por 2px; clique leva à lista filtrada naquela situação
-function pg2Barra(no, p, grande){
-  if (!p.n) return '<span class="pg2-bar vazia" aria-hidden="true"></span>';
-  return '<span class="pg2-bar' + (grande ? ' grande' : '') + '" role="img" aria-label="' + esc(PG2_FAIXAS.map(x => x.nome + ' ' + Math.round(p.pc(x.k)) + '%').join(', ')) + '">' +
-    PG2_FAIXAS.filter(x => p.faixas[x.k].n).map(x => '<i class="pg2-' + x.k + '" style="flex:' + p.faixas[x.k].pts.toFixed(3) + ' 1 0" data-pg2-no="' + esc(no) + '" data-pg2-st="' + x.k + '" title="' + esc(x.nome + ': ' + p.faixas[x.k].n + (p.faixas[x.k].n === 1 ? ' item' : ' itens') + ' · ' + pg2Num(p.faixas[x.k].pts) + ' pontos (' + Math.round(p.pc(x.k)) + '%). Clique para ver a lista.') + '"></i>').join('') + '</span>';
+// o que não cabe na linha vai no texto ao passar o mouse
+function pg2Detalhe(nome, p){
+  if (!p.n) return nome + ': sem itens';
+  return nome + ' · ' + PG2_FAIXAS.map(x => x.nome + ' ' + p.faixas[x.k].n + ' (' + Math.round(p.pc(x.k)) + '%)').join(' · ') +
+    (p.atrasados ? ' · ' + p.atrasados + ' atrasados' : '') + (p.semPontos ? ' · ' + p.semPontos + ' sem pontos' : '') +
+    (p.crit.t ? ' · ' + p.crit.f + ' de ' + p.crit.t + ' critérios comprovados' : '') + ' · ' + (p.aceitos14 ? p.aceitos14 + ' aceitos em 14 dias' : 'nenhum aceito em 14 dias');
 }
-function pg2Sinais(p){
-  const s = [];
-  if (p.faixas.blocked.n) s.push('<span class="pg2-s alerta">' + p.faixas.blocked.n + (p.faixas.blocked.n === 1 ? ' bloqueado' : ' bloqueados') + '</span>');
-  if (p.atrasados) s.push('<span class="pg2-s alerta">' + p.atrasados + (p.atrasados === 1 ? ' atrasado' : ' atrasados') + '</span>');
-  if (p.semPontos) s.push('<span class="pg2-s">' + p.semPontos + ' sem pontos</span>');
-  if (p.crit.t) s.push('<span class="pg2-s">' + p.crit.f + ' de ' + p.crit.t + ' critérios comprovados</span>');
-  s.push('<span class="pg2-s">' + (p.aceitos14 ? p.aceitos14 + ' aceitos em 14 dias' : 'nenhum aceito em 14 dias') + '</span>');
-  return '<span class="pg2-sinais">' + s.join('') + '</span>';
+// no mesmo formato e tamanho do cartão de antes (pp, pp-lin, pp-bar): nome | barra em cinco faixas | % aceito com % construído embaixo
+function pg2Linha(no, nome, p){
+  const alerta = [p.faixas.blocked.n ? p.faixas.blocked.n + (p.faixas.blocked.n === 1 ? ' bloqueado' : ' bloqueados') : '', p.atrasados ? p.atrasados + (p.atrasados === 1 ? ' atrasado' : ' atrasados') : ''].filter(Boolean).join(' · ');
+  return '<button type="button" class="pp-lin pg2-lin' + (p.n ? '' : ' vazia') + '" data-ir="' + esc(no) + '" title="' + esc(pg2Detalhe(nome, p)) + '">' +
+    '<span class="pp-nome">' + esc(nome) + (alerta ? '<small class="pg2-alerta">' + esc(alerta) + '</small>' : '') + '</span>' +
+    '<span class="pp-bar pg2-bar">' + (p.n ? PG2_FAIXAS.filter(x => p.faixas[x.k].n).map(x => '<i class="pg2-' + x.k + '" style="flex:' + p.faixas[x.k].pts.toFixed(3) + ' 1 0" data-pg2-no="' + esc(no) + '" data-pg2-st="' + x.k + '" title="' + esc(x.nome + ': ' + p.faixas[x.k].n + (p.faixas[x.k].n === 1 ? ' item' : ' itens') + ' · ' + pg2Num(p.faixas[x.k].pts) + ' pontos (' + Math.round(p.pc(x.k)) + '%). Clique para ver a lista.') + '"></i>').join('') : '') + '</span>' +
+    '<b>' + (p.n ? p.aceito + '%<small>' + p.construido + '% constr.</small>' : '–<small>sem itens</small>') + '</b></button>';
 }
-function pg2Linha(no, nome, p, total){
-  return '<div class="pg2-lin' + (total ? ' total' : '') + '"><button type="button" class="pg2-nome" data-ir="' + esc(no) + '" title="Abrir ' + esc(nome) + '">' + esc(nome) + '</button>' + pg2Barra(no, p, total) +
-    '<span class="pg2-num"><b>' + p.aceito + '%</b><small>aceito</small><em>' + p.construido + '% construído</em></span>' + pg2Sinais(p) + '</div>';
-}
-// o bloco inteiro: total no topo, uma linha por parte com itens, as vazias recolhidas no fim, e a legenda com os totais
+// o cartão: mesma estrutura do de antes (título, uma linha por parte, legenda); o total vai na legenda
 function progressoPartesHTML(chave, nos, rot, opts){
   const filtrar = l => opts && opts.soCliente ? l.filter(i => i.vis === 'cliente' || i.status === 'done') : l;
-  const linhas = nos.map(f => ({f, p:progressoDe(filtrar(issuesEm(f)))}));
-  const cheias = linhas.filter(x => x.p.n), vazias = linhas.filter(x => !x.p.n);
   const tudo = progressoDe(filtrar(issuesEm(chave)));
-  const legenda = '<div class="pc-leg pg2-leg">' + PG2_FAIXAS.map(x => '<span><i class="pg2-' + x.k + '"></i>' + esc(x.nome) + ' <b>' + Math.round(tudo.pc(x.k)) + '%</b></span>').join('') + '</div>';
-  return '<section class="pc-c pg2"><h3>Progresso por ' + esc(rot) + '<span>' + cheias.length + (vazias.length ? ' de ' + nos.length : '') + '</span>' + I('Conta só itens de trabalho (épico não conta: ele é a soma dos filhos), pesados pelos pontos; item sem pontos vale a média. Aceito: o P.O. aceitou. Construído: aceito mais o que está pronto e falta aceitar.') + '</h3>' +
-    (nos.length > 1 && tudo.n ? pg2Linha(chave, 'Total', tudo, true) : '') +
-    '<div class="pg2-lista">' + (cheias.length ? cheias.map(x => pg2Linha(x.f, nomeDe(x.f), x.p)).join('') : '<p class="vazio-linha">Nenhum item de trabalho aqui ainda.</p>') + '</div>' +
-    (vazias.length ? '<details class="pg2-vazias"><summary>+ ' + vazias.length + (vazias.length === 1 ? ' sem itens' : ' sem itens') + '</summary><div class="pg2-lista">' + vazias.map(x => '<div class="pg2-lin vazia"><button type="button" class="pg2-nome" data-ir="' + esc(x.f) + '">' + esc(nomeDe(x.f)) + '</button><span class="pg2-bar vazia"></span><span class="pg2-num"><small>sem itens</small></span></div>').join('') + '</div></details>' : '') +
-    legenda + '</section>';
+  const linhas = nos.map(f => ({f, p:progressoDe(filtrar(issuesEm(f)))}));
+  return '<section class="pc-c pg2"><h3>Progresso por ' + esc(rot) + '<span>' + nos.length + '</span></h3>' +
+    '<div class="pp">' + linhas.map(x => pg2Linha(x.f, nomeDe(x.f), x.p)).join('') + '</div>' +
+    '<div class="pc-leg pg2-leg">' + PG2_FAIXAS.map(x => '<span><i class="pg2-' + x.k + '"></i>' + esc(x.nome) + '</span>').join('') +
+    '<span class="pg2-tot" title="' + esc(pg2Detalhe('Total', tudo)) + '">Total: <b>' + tudo.aceito + '%</b> aceito · <b>' + tudo.construido + '%</b> construído' + I('Conta só itens de trabalho (épico não conta: ele é a soma dos filhos), pesados pelos pontos; item sem pontos vale a média. Aceito: o P.O. aceitou. Construído: aceito mais o que está pronto e falta aceitar. Passe o mouse numa linha para ver o detalhe; clique numa cor para ver a lista.') + '</span></div></section>';
 }
 // a saúde e a tabela "Por parte" usam a mesma conta (sem épicos, pesada pelos pontos)
 const _metricasPg2 = metricas;

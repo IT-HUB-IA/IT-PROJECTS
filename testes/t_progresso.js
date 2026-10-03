@@ -15,17 +15,19 @@ const { chromium } = require('/opt/node22/lib/node_modules/playwright');
   const app = await p.evaluate(() => { const D = window.ciclodevDados(); const a = D.apps.find(x => D.ws.filter(w => w.app === x.id).length >= 3) || D.apps[0]; const T = window.__tf; T.UI.sel = 'app:' + a.id; T.UI.view = 'dashboard'; T.rOperacoes(); return a.id; });
   await p.waitForTimeout(600);
   const t = await p.evaluate(() => { const s = [...document.querySelectorAll('.pg2')].find(x => /Progresso por frente/.test(x.querySelector('h3').textContent)); if (!s) return null;
-    return {titulo:s.querySelector('h3').textContent, total:!!s.querySelector('.pg2-lin.total'), linhas:s.querySelectorAll('.pg2-lista > .pg2-lin').length, faixas:s.querySelectorAll('.pg2-bar i').length,
-      num:(s.querySelector('.pg2-lin:not(.total) .pg2-num') || {}).textContent || '', leg:s.querySelector('.pg2-leg').textContent}; });
-  ok(t && /Progresso por frente/.test(t.titulo) && t.linhas > 0 && t.faixas > 0, 'a aplicação mostra o progresso por frente com barras empilhadas (' + (t && t.linhas) + ' frentes com itens)');
-  ok(t && /aceito/.test(t.num) && /construído/.test(t.num), 'cada frente mostra % aceito e % construído');
-  ok(t && /Aceito/.test(t.leg) && /Pronto, falta aceitar/.test(t.leg) && /Em andamento/.test(t.leg) && /Bloqueado/.test(t.leg) && /A fazer/.test(t.leg), 'a legenda tem as cinco faixas com o total de cada uma');
-  const F = process.env.FOTOS; if (F) await p.locator('.pg2', {hasText:'Progresso por frente'}).screenshot({path: F + '/progresso.png'});
-  // clique numa faixa abre a lista filtrada
-  const alvo = await p.evaluate(() => { const i = [...document.querySelectorAll('.pg2')].find(x => /por frente/.test(x.textContent)).querySelector('.pg2-lista .pg2-bar i:not(.pg2-afazer)'); return i ? {no:i.dataset.pg2No, st:i.dataset.pg2St} : null; });
-  if (alvo){ await p.locator('.pg2', {hasText:'Progresso por frente'}).locator('.pg2-lista .pg2-bar i[data-pg2-st="' + alvo.st + '"]').first().click(); await p.waitForTimeout(500);
+    const ws = window.ciclodevDados().ws.filter(w => 'app:' + w.app === window.__tf.UI.sel).length;
+    const r = s.getBoundingClientRect(), g = s.parentElement.getBoundingClientRect();
+    return {linhas:s.querySelectorAll('.pp > .pp-lin').length, ws, faixas:s.querySelectorAll('.pg2-bar i').length, num:(s.querySelector('.pp-lin:not(.vazia) b') || {}).textContent || '', leg:s.querySelector('.pg2-leg').textContent,
+      largura:Math.round(r.width), pai:Math.round(g.width), ocupaTudo:Math.abs(r.width - g.width) < 4}; });
+  ok(t && t.linhas === t.ws && t.faixas > 0, 'o cartão mantém uma linha por frente, como antes (' + (t && t.linhas) + ' de ' + (t && t.ws) + '), com barras em faixas');
+  ok(t && !t.ocupaTudo, 'o cartão continua do tamanho de antes, ao lado dos outros, sem ocupar a largura toda (' + (t && t.largura) + ' de ' + (t && t.pai) + ' px)');
+  ok(t && /%/.test(t.num) && /constr\./.test(t.num), 'cada frente mostra % aceito com % construído embaixo');
+  ok(t && /Aceito/.test(t.leg) && /Pronto, falta aceitar/.test(t.leg) && /Em andamento/.test(t.leg) && /Bloqueado/.test(t.leg) && /A fazer/.test(t.leg) && /Total: \d+% aceito · \d+% construído/.test(t.leg), 'a legenda tem as cinco faixas e o total');
+  const F = process.env.FOTOS; if (F){ await p.locator('.pg2', {hasText:'Progresso por frente'}).screenshot({path: F + '/progresso.png'}); await p.locator('.pg2', {hasText:'Progresso por frente'}).evaluate(e => e.parentElement.scrollIntoView()); await p.screenshot({path: F + '/painel.png'}); }
+  const alvo = await p.evaluate(() => { const i = [...document.querySelectorAll('.pg2')].find(x => /por frente/.test(x.textContent)).querySelector('.pg2-bar i'); return i ? {no:i.dataset.pg2No, st:i.dataset.pg2St} : null; });
+  if (alvo){ await p.locator('.pg2', {hasText:'Progresso por frente'}).locator('.pg2-bar i[data-pg2-st="' + alvo.st + '"]').first().click(); await p.waitForTimeout(500);
     const d = await p.evaluate(() => ({sel:window.__tf.UI.sel, view:window.__tf.UI.view, busca:window.__tf.UI.busca}));
-    ok(d.sel === alvo.no && d.view === 'table' && /^status = /.test(d.busca), 'clicar na faixa abre a lista daquela frente filtrada na situação (' + d.busca + ')'); }
+    ok(d.sel === alvo.no && d.view === 'table' && (alvo.st === 'afazer' || /^status = /.test(d.busca)), 'clicar numa cor abre a lista daquela frente filtrada (' + (d.busca || 'sem filtro') + ')'); }
   ok(!erros.length, 'sem erro na página ' + erros.join(' | '));
   await b.close(); console.log(falhas ? falhas + ' FALHA(S)' : 'TUDO OK'); process.exit(falhas ? 1 : 0);
 })();

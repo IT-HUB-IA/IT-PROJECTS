@@ -30,37 +30,30 @@ function progressoDe(lista){
     atrasados:l.filter(atrasado).length, semPontos:l.length - comPts.length, crit, aceitos14:l.filter(i => i.status === 'done' && i.feito && parse(i.feito) > limite).length};
 }
 const pg2Num = v => (Math.round(v * 10) / 10).toLocaleString('pt-BR');
-// a barra empilhada: cada faixa com a largura do peso dela, separadas por 2px; clique leva à lista filtrada naquela situação
-function pg2Barra(no, p, grande){
-  if (!p.n) return '<span class="pg2-bar vazia" aria-hidden="true"></span>';
-  return '<span class="pg2-bar' + (grande ? ' grande' : '') + '" role="img" aria-label="' + esc(PG2_FAIXAS.map(x => x.nome + ' ' + Math.round(p.pc(x.k)) + '%').join(', ')) + '">' +
-    PG2_FAIXAS.filter(x => p.faixas[x.k].n).map(x => '<i class="pg2-' + x.k + '" style="flex:' + p.faixas[x.k].pts.toFixed(3) + ' 1 0" data-pg2-no="' + esc(no) + '" data-pg2-st="' + x.k + '" title="' + esc(x.nome + ': ' + p.faixas[x.k].n + (p.faixas[x.k].n === 1 ? ' item' : ' itens') + ' · ' + pg2Num(p.faixas[x.k].pts) + ' pontos (' + Math.round(p.pc(x.k)) + '%). Clique para ver a lista.') + '"></i>').join('') + '</span>';
+// o que não cabe na linha vai no texto ao passar o mouse
+function pg2Detalhe(nome, p){
+  if (!p.n) return nome + ': sem itens';
+  return nome + ' · ' + PG2_FAIXAS.map(x => x.nome + ' ' + p.faixas[x.k].n + ' (' + Math.round(p.pc(x.k)) + '%)').join(' · ') +
+    (p.atrasados ? ' · ' + p.atrasados + ' atrasados' : '') + (p.semPontos ? ' · ' + p.semPontos + ' sem pontos' : '') +
+    (p.crit.t ? ' · ' + p.crit.f + ' de ' + p.crit.t + ' critérios comprovados' : '') + ' · ' + (p.aceitos14 ? p.aceitos14 + ' aceitos em 14 dias' : 'nenhum aceito em 14 dias');
 }
-function pg2Sinais(p){
-  const s = [];
-  if (p.faixas.blocked.n) s.push('<span class="pg2-s alerta">' + p.faixas.blocked.n + (p.faixas.blocked.n === 1 ? ' bloqueado' : ' bloqueados') + '</span>');
-  if (p.atrasados) s.push('<span class="pg2-s alerta">' + p.atrasados + (p.atrasados === 1 ? ' atrasado' : ' atrasados') + '</span>');
-  if (p.semPontos) s.push('<span class="pg2-s">' + p.semPontos + ' sem pontos</span>');
-  if (p.crit.t) s.push('<span class="pg2-s">' + p.crit.f + ' de ' + p.crit.t + ' critérios comprovados</span>');
-  s.push('<span class="pg2-s">' + (p.aceitos14 ? p.aceitos14 + ' aceitos em 14 dias' : 'nenhum aceito em 14 dias') + '</span>');
-  return '<span class="pg2-sinais">' + s.join('') + '</span>';
+// no mesmo formato e tamanho do cartão de antes (pp, pp-lin, pp-bar): nome | barra em cinco faixas | % aceito com % construído embaixo
+function pg2Linha(no, nome, p){
+  const alerta = [p.faixas.blocked.n ? p.faixas.blocked.n + (p.faixas.blocked.n === 1 ? ' bloqueado' : ' bloqueados') : '', p.atrasados ? p.atrasados + (p.atrasados === 1 ? ' atrasado' : ' atrasados') : ''].filter(Boolean).join(' · ');
+  return '<button type="button" class="pp-lin pg2-lin' + (p.n ? '' : ' vazia') + '" data-ir="' + esc(no) + '" title="' + esc(pg2Detalhe(nome, p)) + '">' +
+    '<span class="pp-nome">' + esc(nome) + (alerta ? '<small class="pg2-alerta">' + esc(alerta) + '</small>' : '') + '</span>' +
+    '<span class="pp-bar pg2-bar">' + (p.n ? PG2_FAIXAS.filter(x => p.faixas[x.k].n).map(x => '<i class="pg2-' + x.k + '" style="flex:' + p.faixas[x.k].pts.toFixed(3) + ' 1 0" data-pg2-no="' + esc(no) + '" data-pg2-st="' + x.k + '" title="' + esc(x.nome + ': ' + p.faixas[x.k].n + (p.faixas[x.k].n === 1 ? ' item' : ' itens') + ' · ' + pg2Num(p.faixas[x.k].pts) + ' pontos (' + Math.round(p.pc(x.k)) + '%). Clique para ver a lista.') + '"></i>').join('') : '') + '</span>' +
+    '<b>' + (p.n ? p.aceito + '%<small>' + p.construido + '% constr.</small>' : '–<small>sem itens</small>') + '</b></button>';
 }
-function pg2Linha(no, nome, p, total){
-  return '<div class="pg2-lin' + (total ? ' total' : '') + '"><button type="button" class="pg2-nome" data-ir="' + esc(no) + '" title="Abrir ' + esc(nome) + '">' + esc(nome) + '</button>' + pg2Barra(no, p, total) +
-    '<span class="pg2-num"><b>' + p.aceito + '%</b><small>aceito</small><em>' + p.construido + '% construído</em></span>' + pg2Sinais(p) + '</div>';
-}
-// o bloco inteiro: total no topo, uma linha por parte com itens, as vazias recolhidas no fim, e a legenda com os totais
+// o cartão: mesma estrutura do de antes (título, uma linha por parte, legenda); o total vai na legenda
 function progressoPartesHTML(chave, nos, rot, opts){
   const filtrar = l => opts && opts.soCliente ? l.filter(i => i.vis === 'cliente' || i.status === 'done') : l;
-  const linhas = nos.map(f => ({f, p:progressoDe(filtrar(issuesEm(f)))}));
-  const cheias = linhas.filter(x => x.p.n), vazias = linhas.filter(x => !x.p.n);
   const tudo = progressoDe(filtrar(issuesEm(chave)));
-  const legenda = '<div class="pc-leg pg2-leg">' + PG2_FAIXAS.map(x => '<span><i class="pg2-' + x.k + '"></i>' + esc(x.nome) + ' <b>' + Math.round(tudo.pc(x.k)) + '%</b></span>').join('') + '</div>';
-  return '<section class="pc-c pg2"><h3>Progresso por ' + esc(rot) + '<span>' + cheias.length + (vazias.length ? ' de ' + nos.length : '') + '</span>' + I('Conta só itens de trabalho (épico não conta: ele é a soma dos filhos), pesados pelos pontos; item sem pontos vale a média. Aceito: o P.O. aceitou. Construído: aceito mais o que está pronto e falta aceitar.') + '</h3>' +
-    (nos.length > 1 && tudo.n ? pg2Linha(chave, 'Total', tudo, true) : '') +
-    '<div class="pg2-lista">' + (cheias.length ? cheias.map(x => pg2Linha(x.f, nomeDe(x.f), x.p)).join('') : '<p class="vazio-linha">Nenhum item de trabalho aqui ainda.</p>') + '</div>' +
-    (vazias.length ? '<details class="pg2-vazias"><summary>+ ' + vazias.length + (vazias.length === 1 ? ' sem itens' : ' sem itens') + '</summary><div class="pg2-lista">' + vazias.map(x => '<div class="pg2-lin vazia"><button type="button" class="pg2-nome" data-ir="' + esc(x.f) + '">' + esc(nomeDe(x.f)) + '</button><span class="pg2-bar vazia"></span><span class="pg2-num"><small>sem itens</small></span></div>').join('') + '</div></details>' : '') +
-    legenda + '</section>';
+  const linhas = nos.map(f => ({f, p:progressoDe(filtrar(issuesEm(f)))}));
+  return '<section class="pc-c pg2"><h3>Progresso por ' + esc(rot) + '<span>' + nos.length + '</span></h3>' +
+    '<div class="pp">' + linhas.map(x => pg2Linha(x.f, nomeDe(x.f), x.p)).join('') + '</div>' +
+    '<div class="pc-leg pg2-leg">' + PG2_FAIXAS.map(x => '<span><i class="pg2-' + x.k + '"></i>' + esc(x.nome) + '</span>').join('') +
+    '<span class="pg2-tot" title="' + esc(pg2Detalhe('Total', tudo)) + '">Total: <b>' + tudo.aceito + '%</b> aceito · <b>' + tudo.construido + '%</b> construído' + I('Conta só itens de trabalho (épico não conta: ele é a soma dos filhos), pesados pelos pontos; item sem pontos vale a média. Aceito: o P.O. aceitou. Construído: aceito mais o que está pronto e falta aceitar. Passe o mouse numa linha para ver o detalhe; clique numa cor para ver a lista.') + '</span></div></section>';
 }
 // a saúde e a tabela "Por parte" usam a mesma conta (sem épicos, pesada pelos pontos)
 const _metricasPg2 = metricas;
