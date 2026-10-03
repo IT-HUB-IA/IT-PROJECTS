@@ -468,3 +468,15 @@ Configuração (uma vez, o dono do sistema): Admin, aba GitHub, GitLab e Supabas
 ## Parte 56: Supabase com várias organizações (aplicada no Supabase em 02/10/2026)
 
 `56_supabase_varias_organizacoes.sql`. O Supabase autoriza uma organização por vez (a janelinha pede para escolher). `supa_conexoes.organizacao_id` guarda qual é; `supa_conexao_gravar` ganhou `p_organizacao` (a versão antiga saiu na mesma operação) e, se a mesma organização for conectada de novo no mesmo espaço, só troca as chaves. A tela junta os projetos de todas as organizações conectadas num só seletor, separados pelo nome da organização, com o botão "Conectar outra organização".
+
+## Partes 57 a 62: ordem de serviço do banco nº1 (aplicadas no Supabase em 03/10/2026)
+
+Relatório completo, item por item, com as provas: `ORDEM_SERVICO_01_RELATORIO.md`. Testes: `sh testar.sh` (suíte inteira num comando).
+Regras que valem daqui em diante:
+- **Segredo nunca em coluna legível.** As colunas de segredo antigas ficam vazias (regra `segredo_fora_do_vault`); um gatilho leva o valor para o Vault e `interno.segredos_vault` diz de qual linha é cada segredo. Ler: `interno.segredo_de(tabela, chave, coluna)` (só funções do servidor).
+- **Função da API que roda com o poder do dono:** o corpo fica em `logica.<nome>` (security definer, não exposto); no `public` fica só a porta fina (security invoker) com o mesmo nome. Para mudar uma delas: `create or replace function logica.<nome>`. Se alguém recriar por engano uma security definer no `public`, rodar a parte 58 de novo leva para `logica`.
+- **Histórico e auditoria são só de inserção** (parte 59). Para a carga de exemplo trocar as linhas "semente" da auditoria, ela avisa com `ciclodev.trocando_semente`.
+- **Tabela nova não ganha permissão sozinha** (parte 60): cada parte dá o GRANT que a tabela precisa, além da RLS.
+- **Nó na lixeira leva os itens de dentro** com a mesma hora; restaurar traz os mesmos (parte 60).
+- Preparados e **não aplicados** (esperam o dono): `PRECISA_CONFIRMACAO_*.sql`.
+- Plano de volta de cada parte: `<parte>_VOLTA.sql`.

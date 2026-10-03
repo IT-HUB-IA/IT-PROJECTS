@@ -309,7 +309,10 @@ for e in D['eventos']:
     em = datetime.datetime.fromtimestamp(e['quando'] / 1000, datetime.timezone.utc).isoformat()
     reg.append("  ('itens', %s, '%s', %s, %s, %s)" % (q(U(e['item'])), acao, q(dict(({campo: [None, None]} if campo else {'titulo': e.get('txt')}), semente=True)),
                                                      q(U(e['quem'])) if e.get('quem') else 'null', q(em)))
+w("-- a auditoria é só de inserção (parte 59); a carga de exemplo avisa que está trocando só as linhas \"semente\"")
+w("select set_config('ciclodev.trocando_semente', 'sim', false);")
 w("delete from auditoria.registros where tabela = 'itens' and mudancas ? 'semente';")
+w("select set_config('ciclodev.trocando_semente', '', false);")
 if reg:
     w('insert into auditoria.registros (tabela, registro_id, acao, mudancas, pessoa_id, em) values')
     w(',\n'.join(reg) + ';\n')

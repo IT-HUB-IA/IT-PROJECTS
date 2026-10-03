@@ -75,10 +75,13 @@ do $$ declare w uuid; e uuid; m uuid; begin
 end $$;
 
 -- ---------- 3. espaco_id em tudo o que é do sistema da pessoa ----------
-create or replace function interno.espaco_do_william() returns uuid language sql stable set search_path = public, pg_temp as $$
+-- espaço inicial (o mais antigo, pessoal e não modelo): só serve para as mudanças de uma vez abaixo, que levam os dados
+-- de antes do multiusuário para o primeiro espaço. Fica em pg_temp (some no fim da sessão): nada no banco depende de pessoa.
+-- Antes era uma função em interno com nome de pessoa; trocada na parte 59 (ordem de serviço do banco nº1, S6).
+create or replace function pg_temp.espaco_inicial() returns uuid language sql stable as $$
   select e.id from public.espacos e where e.pessoal and not e.modelo order by e.criado_em limit 1
 $$;
-do $$ declare t text; esp uuid := interno.espaco_do_william(); begin
+do $$ declare t text; esp uuid := pg_temp.espaco_inicial(); begin
   foreach t in array array['nos','servicos','requisitos','regras_calculo','etapas_modelo','custos_operacao','dominios','etiquetas','equipes','integracoes','pessoas_custos'] loop
     execute format('alter table public.%I add column if not exists espaco_id uuid references public.espacos(id) on delete cascade', t);
     if esp is not null then execute format('update public.%I set espaco_id = %L where espaco_id is null', t, esp); end if;
@@ -91,7 +94,7 @@ alter table public.anexos alter column enviado_por set default interno.pessoa_at
 -- pessoa nova sem login (planejamento) nasce no espaço de quem cria
 alter table public.pessoas alter column espaco_id set default interno.meu_espaco();
 -- pessoas sem login que já existem (planejamento) ficam no espaço do William
-update public.pessoas set espaco_id = interno.espaco_do_william() where auth_user_id is null and espaco_id is null and interno.espaco_do_william() is not null;
+update public.pessoas set espaco_id = pg_temp.espaco_inicial() where auth_user_id is null and espaco_id is null and pg_temp.espaco_inicial() is not null;
 
 -- nomes e códigos passam a ser únicos por espaço (dois usuários podem ter uma etiqueta "Urgente")
 do $$ declare c record; begin
@@ -578,7 +581,7 @@ grant all on public.espacos, public.espaco_membros, public.convites to service_r
 grant usage, select on sequence public.pessoas_numero_seq to authenticated, service_role;
 grant select, insert, update, delete on public.cambio to authenticated;
 revoke execute on function interno.nos_caminho(), interno.meus_espacos(), interno.meu_espaco(), interno.pessoas_visiveis(), interno.semear_espaco(uuid), interno.receber_convites(uuid, text),
-  interno.preparar_pessoa(uuid, text, text), interno.ao_criar_usuario(), interno.cpf_valido(text), interno.vincular_meu_login(), interno.buscar_pessoa(text), interno.espaco_do_no(), interno.espaco_do_william() from public, anon;
+  interno.preparar_pessoa(uuid, text, text), interno.ao_criar_usuario(), interno.cpf_valido(text), interno.vincular_meu_login(), interno.buscar_pessoa(text), interno.espaco_do_no() from public, anon;
 grant execute on function interno.nos_caminho(), interno.meus_espacos(), interno.meu_espaco(), interno.pessoas_visiveis(), interno.vincular_meu_login(), interno.buscar_pessoa(text), interno.cpf_valido(text) to authenticated, service_role;
 grant execute on function public.vincular_meu_login(), public.buscar_pessoa(text) to authenticated;
 revoke execute on function public.vincular_meu_login(), public.buscar_pessoa(text) from anon, public;
@@ -603,7 +606,7 @@ do $$ declare t text; begin
 end $$;
 
 -- ---------- 9. o espaço Modelo nasce com a cópia do padrão atual (etapas, requisitos e regras de cálculo) ----------
-do $$ declare v_modelo uuid; w uuid := interno.espaco_do_william(); r record; novo uuid; begin
+do $$ declare v_modelo uuid; w uuid := pg_temp.espaco_inicial(); r record; novo uuid; begin
   select e.id into v_modelo from public.espacos e where e.modelo;
   if v_modelo is null or w is null then return; end if;
   if not exists (select 1 from public.etapas_modelo where espaco_id = v_modelo) then

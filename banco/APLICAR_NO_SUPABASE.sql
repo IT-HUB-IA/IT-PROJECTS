@@ -2,7 +2,7 @@
 -- CicloDev · banco completo para o Supabase tfcvoszeewmpghgxztuy
 -- Rodar UMA VEZ, inteiro, num banco sem estas tabelas (SQL Editor ou migration). Ordem: 01 a 20.
 -- Depois disso, 05, 06, 07, 08, 09 e 10 podem ser rodados de novo sozinhos (recriam funções e regras; a semente não duplica).
--- Gerado em 2026-10-01. Os arquivos 00, 90 a 98 são só de teste local e NÃO entram aqui. A parte 21 (e-mail) entra separada, depois da função enviar-avisos; a 24 (webhook do portal), a 27 (arquivos do chat) e a 31 (chamada automática dos desenhos) também.
+-- Gerado em 2026-10-03. Os arquivos 00, 90 a 98 são só de teste local e NÃO entram aqui. A parte 21 (e-mail) entra separada, depois da função enviar-avisos; a 24 (webhook do portal), a 27 (arquivos do chat) e a 31 (chamada automática dos desenhos) também.
 -- =====================================================================
 
 -- >>>>>>>>>> 01_base_estrutura.sql
@@ -2694,7 +2694,10 @@ insert into public.anexos (id, nome, tipo, tamanho_bytes, storage_path, url, ite
   ('99a0b436-b169-506c-a7ae-112a95dcedb6', 'audio-duvida.m4a', 'audio', null, 'exemplo/audio-duvida.m4a', null, null, '2246aac4-fcc9-5564-af95-054b9cc42889', '92e61f72-37c7-5606-9391-2850c2c953ef')
 on conflict (id) do nothing;
 
+-- a auditoria é só de inserção (parte 59); a carga de exemplo avisa que está trocando só as linhas "semente"
+select set_config('ciclodev.trocando_semente', 'sim', false);
 delete from auditoria.registros where tabela = 'itens' and mudancas ? 'semente';
+select set_config('ciclodev.trocando_semente', '', false);
 insert into auditoria.registros (tabela, registro_id, acao, mudancas, pessoa_id, em) values
   ('itens', '9e11825c-aed2-5d36-968d-03a62362c33c', 'U', '{"comentario": [null, null], "semente": true}'::jsonb, 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', '2026-09-26T15:22:00+00:00'),
   ('itens', 'bdb0cca2-c9ee-5385-bf36-765defb34811', 'I', '{"titulo": "Integração com a Conexa", "semente": true}'::jsonb, 'b5510531-2c75-59fb-b2c1-006a90d0775f', '2026-09-26T12:41:00+00:00'),
@@ -3370,10 +3373,13 @@ do $$ declare w uuid; e uuid; m uuid; begin
 end $$;
 
 -- ---------- 3. espaco_id em tudo o que é do sistema da pessoa ----------
-create or replace function interno.espaco_do_william() returns uuid language sql stable set search_path = public, pg_temp as $$
+-- espaço inicial (o mais antigo, pessoal e não modelo): só serve para as mudanças de uma vez abaixo, que levam os dados
+-- de antes do multiusuário para o primeiro espaço. Fica em pg_temp (some no fim da sessão): nada no banco depende de pessoa.
+-- Antes era uma função em interno com nome de pessoa; trocada na parte 59 (ordem de serviço do banco nº1, S6).
+create or replace function pg_temp.espaco_inicial() returns uuid language sql stable as $$
   select e.id from public.espacos e where e.pessoal and not e.modelo order by e.criado_em limit 1
 $$;
-do $$ declare t text; esp uuid := interno.espaco_do_william(); begin
+do $$ declare t text; esp uuid := pg_temp.espaco_inicial(); begin
   foreach t in array array['nos','servicos','requisitos','regras_calculo','etapas_modelo','custos_operacao','dominios','etiquetas','equipes','integracoes','pessoas_custos'] loop
     execute format('alter table public.%I add column if not exists espaco_id uuid references public.espacos(id) on delete cascade', t);
     if esp is not null then execute format('update public.%I set espaco_id = %L where espaco_id is null', t, esp); end if;
@@ -3386,7 +3392,7 @@ alter table public.anexos alter column enviado_por set default interno.pessoa_at
 -- pessoa nova sem login (planejamento) nasce no espaço de quem cria
 alter table public.pessoas alter column espaco_id set default interno.meu_espaco();
 -- pessoas sem login que já existem (planejamento) ficam no espaço do William
-update public.pessoas set espaco_id = interno.espaco_do_william() where auth_user_id is null and espaco_id is null and interno.espaco_do_william() is not null;
+update public.pessoas set espaco_id = pg_temp.espaco_inicial() where auth_user_id is null and espaco_id is null and pg_temp.espaco_inicial() is not null;
 
 -- nomes e códigos passam a ser únicos por espaço (dois usuários podem ter uma etiqueta "Urgente")
 do $$ declare c record; begin
@@ -3873,7 +3879,7 @@ grant all on public.espacos, public.espaco_membros, public.convites to service_r
 grant usage, select on sequence public.pessoas_numero_seq to authenticated, service_role;
 grant select, insert, update, delete on public.cambio to authenticated;
 revoke execute on function interno.nos_caminho(), interno.meus_espacos(), interno.meu_espaco(), interno.pessoas_visiveis(), interno.semear_espaco(uuid), interno.receber_convites(uuid, text),
-  interno.preparar_pessoa(uuid, text, text), interno.ao_criar_usuario(), interno.cpf_valido(text), interno.vincular_meu_login(), interno.buscar_pessoa(text), interno.espaco_do_no(), interno.espaco_do_william() from public, anon;
+  interno.preparar_pessoa(uuid, text, text), interno.ao_criar_usuario(), interno.cpf_valido(text), interno.vincular_meu_login(), interno.buscar_pessoa(text), interno.espaco_do_no() from public, anon;
 grant execute on function interno.nos_caminho(), interno.meus_espacos(), interno.meu_espaco(), interno.pessoas_visiveis(), interno.vincular_meu_login(), interno.buscar_pessoa(text), interno.cpf_valido(text) to authenticated, service_role;
 grant execute on function public.vincular_meu_login(), public.buscar_pessoa(text) to authenticated;
 revoke execute on function public.vincular_meu_login(), public.buscar_pessoa(text) from anon, public;
@@ -3898,7 +3904,7 @@ do $$ declare t text; begin
 end $$;
 
 -- ---------- 9. o espaço Modelo nasce com a cópia do padrão atual (etapas, requisitos e regras de cálculo) ----------
-do $$ declare v_modelo uuid; w uuid := interno.espaco_do_william(); r record; novo uuid; begin
+do $$ declare v_modelo uuid; w uuid := pg_temp.espaco_inicial(); r record; novo uuid; begin
   select e.id into v_modelo from public.espacos e where e.modelo;
   if v_modelo is null or w is null then return; end if;
   if not exists (select 1 from public.etapas_modelo where espaco_id = v_modelo) then
@@ -7896,7 +7902,7 @@ drop trigger if exists itens_po_historico_edicao on public.itens;
 create trigger itens_po_historico_edicao after update on public.itens for each row execute function interno.po_historico_edicao();
 revoke all on function interno.po_historico_edicao() from public, anon;
 
--- ===== 40_po_guia_projeto.sql =====
+-- >>>>>>>>>> 40_po_guia_projeto.sql
 -- Parte 40: guia "Montar o projeto", tipo Decisão e limites do método por projeto. 02/10/2026.
 -- itens.decisao: tipo Decisão (algo a decidir, com prazo de decisão no campo prazo). Fica com tipo 'task'; não conta nos pontos da versão.
 -- projetos: visão, sinais de sucesso, partes interessadas e riscos (o que o guia pergunta) e os limites do método (po_limites).
@@ -7915,7 +7921,7 @@ comment on column public.projetos.partes is 'Partes interessadas: quem usa, quem
 comment on column public.projetos.riscos is 'Riscos e o que ainda não foi verificado, com quem cuida e quando revisar';
 comment on column public.projetos.po_limites is 'Limites do método: {"parado":5,"aceite":3,"grande":13,"semanas":4}. Vazio = padrão';
 
--- ===== 41_editar_lote_todas_colunas.sql =====
+-- >>>>>>>>>> 41_editar_lote_todas_colunas.sql
 -- Parte 41: o Editar em lote muda qualquer coluna da Lista e da janela do item. 01/10/2026.
 -- O histórico de edição (tipo 'edicao') passa a guardar também descrição, horas, início, data alvo, cliente vê e sprint.
 -- A situação continua no histórico próprio (tipo 'situacao', parte 38) e o "onde" (a frente) já estava (frente_id).
@@ -7948,7 +7954,7 @@ begin
 end $$;
 revoke all on function interno.po_historico_edicao() from public, anon;
 
--- ===== 42_banco_trocado_em.sql =====
+-- >>>>>>>>>> 42_banco_trocado_em.sql
 -- Parte 42: a tela mostra quando o endereço do banco foi trocado pela última vez. 01/10/2026.
 -- Sem isso, quem clica em Trocar e continua vendo "a senha não confere" não sabe se a troca foi gravada.
 -- A data vem da área escondida (interno.infra_bancos_conexao.trocado_em); a senha continua só lá.
@@ -7995,7 +8001,7 @@ begin
 exception when unique_violation then raise exception 'Já existe um banco com esse nome aqui' using errcode = '23505';
 end $$;
 
--- ===== 43_analise_seguranca.sql =====
+-- >>>>>>>>>> 43_analise_seguranca.sql
 -- =====================================================================
 -- CicloDev · 43 · Análise de segurança automática do código e do banco
 -- A função diagramas-auto, ao ler o código de um repositório ou a estrutura de um banco (as mesmas leituras dos desenhos e
@@ -8124,7 +8130,7 @@ end $$;
 revoke all on function public.analise_marcar(uuid, text, text, uuid) from public, anon;
 grant execute on function public.analise_marcar(uuid, text, text, uuid) to authenticated;
 
--- ===== 44_analise_completa.sql =====
+-- >>>>>>>>>> 44_analise_completa.sql
 -- =====================================================================
 -- CicloDev · 44 · Análise automática ampliada
 -- 1. Quando a análise deixa de achar um problema que tem item ligado, o item vai sozinho para "Pronto para testar"
@@ -8256,7 +8262,7 @@ end $$;
 revoke all on function public.analise_inventario_ligar(jsonb) from public, anon;
 grant execute on function public.analise_inventario_ligar(jsonb) to authenticated;
 
--- ===== 45_inventario_tipos.sql =====
+-- >>>>>>>>>> 45_inventario_tipos.sql
 -- =====================================================================
 -- CicloDev · 45 · Inventário com integrações, infraestrutura e testes
 -- O robô agora também lê do código os sistemas de fora que ele chama (integracao), os arquivos de montagem e
@@ -8269,7 +8275,7 @@ alter table public.analise_inventario add constraint analise_inventario_tipo_che
   check (tipo in ('tela','api','modulo','tabela','job','integracao','infra','teste')) not valid;
 alter table public.analise_inventario validate constraint analise_inventario_tipo_check;
 
--- ===== 46_inventario_versoes.sql =====
+-- >>>>>>>>>> 46_inventario_versoes.sql
 -- =====================================================================
 -- CicloDev · 46 · Inventário com as publicações (versões)
 -- O robô lê do GitHub/GitLab as publicações (releases) do repositório, com a data de cada uma, e as datas de cada arquivo
@@ -8283,7 +8289,7 @@ alter table public.analise_inventario add constraint analise_inventario_tipo_che
   check (tipo in ('tela','api','modulo','tabela','job','integracao','infra','teste','versao')) not valid;
 alter table public.analise_inventario validate constraint analise_inventario_tipo_check;
 
--- ===== 47_servidores.sql =====
+-- >>>>>>>>>> 47_servidores.sql
 -- =====================================================================
 -- CicloDev · 47 · Cadastro de servidores (VPS, dedicado, nuvem)
 -- servidores            a máquina: provedor, plano, região, sistema, CPU, memória, disco, rede, contrato, backup,
@@ -8443,7 +8449,7 @@ create policy apaga on public.servidores_custos for delete to authenticated usin
 grant select, insert, update, delete on public.servidores, public.servidores_alcance, public.servidores_servicos, public.servidores_custos to authenticated;
 grant all on public.servidores, public.servidores_alcance, public.servidores_servicos, public.servidores_custos to service_role;
 
--- ===== 48_inventario.sql =====
+-- >>>>>>>>>> 48_inventario.sql
 -- =====================================================================
 -- CicloDev · 48 · Inventário de TI por cliente (gestão de ativos de TI)
 -- Cada cliente tem o seu: categorias, modelos, locais, funcionários (só cadastro, sem acesso), equipamentos
@@ -9122,38 +9128,7 @@ create policy apaga on public.inv_termos for delete to authenticated using (inte
 grant delete on public.inv_categorias, public.inv_modelos, public.inv_locais, public.inv_funcionarios, public.inv_funcionarios_apps, public.inv_ativos, public.inv_ligacoes,
   public.inv_itens, public.inv_licencas, public.inv_licencas_uso, public.inv_manutencoes, public.inv_conferencias, public.inv_anexos, public.inv_baixas, public.inv_termos to authenticated;
 
--- ===== 49_inventario_arquivos_SUPABASE.sql (só no Supabase) =====
--- =====================================================================
--- CicloDev · 49 · Inventário: arquivos e aviso diário. SÓ NO SUPABASE (storage e pg_cron não existem no Postgres puro).
--- Bucket privado "inventario": fotos, nota fiscal, termo assinado, certificado de apagamento, CDF.
--- Caminho: <id do cliente>/<uuid>-<nome do arquivo>. Só quem edita o cliente (o time) envia, vê e apaga.
--- =====================================================================
-insert into storage.buckets (id, name, public, file_size_limit)
-values ('inventario', 'inventario', false, 26214400)   -- até 25 MB por arquivo
-on conflict (id) do update set public = false, file_size_limit = excluded.file_size_limit;
-
-create or replace function interno.inv_pasta_ok(p_nome text) returns boolean
-language sql stable security definer set search_path = public, pg_temp as $$
-  select coalesce((storage.foldername(p_nome))[1] ~ '^[0-9a-f-]{36}$' and interno.inv_pode(((storage.foldername(p_nome))[1])::uuid), false) $$;
-revoke all on function interno.inv_pasta_ok(text) from public, anon;
-grant execute on function interno.inv_pasta_ok(text) to authenticated;
-
-drop policy if exists inventario_ver on storage.objects;
-drop policy if exists inventario_enviar on storage.objects;
-drop policy if exists inventario_apagar on storage.objects;
-create policy inventario_ver on storage.objects for select to authenticated using (bucket_id = 'inventario' and interno.inv_pasta_ok(name));
-create policy inventario_enviar on storage.objects for insert to authenticated with check (bucket_id = 'inventario' and interno.inv_pasta_ok(name));
-create policy inventario_apagar on storage.objects for delete to authenticated using (bucket_id = 'inventario' and interno.inv_pasta_ok(name));
-
--- aviso diário (garantia, empréstimo, aluguel, licença, conferência; estoque mínimo às segundas). 08:23 de Brasília.
-do $$ begin
-  if exists (select 1 from pg_extension where extname = 'pg_cron') then
-    perform cron.unschedule(jobid) from cron.job where jobname = 'ciclodev_inventario_avisos';
-    perform cron.schedule('ciclodev_inventario_avisos', '23 11 * * *', 'select interno.inv_avisos()');
-  end if;
-end $$;
-
--- ===== 50_servidores_rateio.sql =====
+-- >>>>>>>>>> 50_servidores_rateio.sql
 -- CicloDev · 50 · Servidores: divisão por percentual ou por valor, mais recorrências e os lançamentos de cada período.
 --   * servidores.rateio: igual, peso, percentual (cada aplicação com o seu %) ou valor (cada aplicação com o seu R$ por mês).
 --   * servidores_alcance.percentual e .valor: a parte de cada ponto (o front grava nas linhas das aplicações).
@@ -9244,7 +9219,7 @@ do $$ begin
   end if;
 end $$;
 
--- ===== 51_servidores_custo_principal.sql =====
+-- >>>>>>>>>> 51_servidores_custo_principal.sql
 -- CicloDev · 51 · Servidores: o custo do plano (o contrato) fica marcado como principal.
 --   O cadastro tem um bloco só de contrato (contratado em, valor do plano, moeda, recorrência, renova até cancelar ou
 --   para numa data); a próxima renovação é calculada pela recorrência. Os outros custos são os extras (backup, IP,
@@ -9254,7 +9229,7 @@ alter table public.servidores_custos add column if not exists principal boolean 
 comment on column public.servidores_custos.principal is 'true: o custo do plano (o contrato do servidor). Um por servidor.';
 create unique index if not exists servidores_custos_um_principal on public.servidores_custos (servidor_id) where principal;
 
--- ===== 52_estado_pessoa_e_permissoes.sql =====
+-- >>>>>>>>>> 52_estado_pessoa_e_permissoes.sql
 -- CicloDev · 52 · O que ficava só no navegador vai para o banco, e permissões que sobravam saem.
 --   * pessoas_preferencias.estado: a frente em foco, as fichas automáticas já vistas, o guia do P.O. (passo de cada
 --     projeto e avisos silenciados) e o Desfazer do último lote. Cada pessoa só lê e grava o seu (política "dono").
@@ -9276,7 +9251,7 @@ end $$;
 -- e as tabelas que forem criadas daqui para frente já nascem sem elas
 alter default privileges in schema public revoke truncate, trigger, references on tables from authenticated, anon;
 
--- ===== 53_po_leva2.sql =====
+-- >>>>>>>>>> 53_po_leva2.sql
 -- CicloDev · 53 · Segunda leva do P.O. (pedido-melhorias-ciclodev-2).
 --   * itens_criterios: a prova de cada critério (quem testou, quando, resultado e a prova em texto, link ou anexo).
 --   * frentes.definicao_pronto: a Definição de Pronto de cada frente, somada à comum do projeto.
@@ -9371,7 +9346,7 @@ begin
   return null;
 end $$;
 
--- ===== 54_supabase_conectar.sql =====
+-- >>>>>>>>>> 54_supabase_conectar.sql
 -- =====================================================================
 -- CicloDev · 54 · Ligar um banco do Supabase com um clique, sem senha (02/10/2026)
 -- Depende das partes 15 (espaços), 16 (dono do sistema), 30, 33, 36 e 42 (bancos ligados).
@@ -9706,7 +9681,7 @@ revoke all on function public.supa_app_ler(), public.supa_conexao_gravar(uuid, u
 grant execute on function public.supa_app_ler(), public.supa_conexao_gravar(uuid, uuid, text, text, text, timestamptz), public.supa_conexao_ler(uuid),
   public.supa_tokens_gravar(uuid, text, text, timestamptz), public.supa_conexao_erro(uuid, text), public.supa_prova_gravar(uuid, uuid, text, text, text[], jsonb) to service_role;
 
--- ===== 55_supabase_app_conferir.sql =====
+-- >>>>>>>>>> 55_supabase_app_conferir.sql
 -- CicloDev · 55 · O cadastro do app do Supabase confere os dois códigos (02/10/2026).
 -- Motivo: o Client Secret (começa com sba_) foi colado também no campo Client ID. O Client ID é público
 -- (a tela e a janelinha mostram), então o segredo ficaria visível. Agora o banco recusa:
@@ -9731,7 +9706,7 @@ begin
   return public.supa_app_status();
 end $$;
 
--- ===== 56_supabase_varias_organizacoes.sql =====
+-- >>>>>>>>>> 56_supabase_varias_organizacoes.sql
 -- CicloDev · 56 · Supabase: uma conexão por organização (02/10/2026).
 -- O Supabase autoriza uma organização por vez (a janelinha pede para escolher). Quem tem bancos em organizações
 -- diferentes conecta cada uma; a tela junta os projetos de todas. Conectar de novo a mesma organização no mesmo
@@ -9763,3 +9738,888 @@ begin
 end $$;
 revoke all on function public.supa_conexao_gravar(uuid, uuid, text, text, text, timestamptz, text) from public, anon, authenticated;
 grant execute on function public.supa_conexao_gravar(uuid, uuid, text, text, text, timestamptz, text) to service_role;
+
+-- >>>>>>>>>> 57_segredos_no_vault.sql
+-- =====================================================================
+-- Parte 57 · Ordem de serviço do banco nº1, item S1: segredos saem do texto puro e vão para o Vault do Supabase.
+-- O quê: chaves de acesso (GitHub/GitLab/Supabase), segredo dos apps, endereço de conexão dos bancos (tem senha),
+--        segredo dos avisos do GitLab e do webhook do portal.
+-- Como: um gatilho ANTES de gravar move qualquer valor que chegue na coluna antiga para o Vault e deixa a coluna
+--       vazia (uma regra garante que ela fica vazia para sempre); interno.segredos_vault diz qual segredo é de qual linha. Assim as funções que GRAVAM não mudam; só as que LEEM passam a ler do Vault.
+--       Ao apagar a linha, o segredo some do Vault junto.
+-- Nada é apagado: o valor muda de lugar. Antes de esvaziar a coluna antiga, a migração confere que o Vault devolve
+--       exatamente o mesmo valor; se não devolver, tudo volta atrás.
+-- Plano de volta: 57_segredos_no_vault_VOLTA.sql (devolve os valores às colunas e recria as funções de antes).
+-- Não usa pgsodium nem Transparent Column Encryption (o Vault usa a chave dele).
+-- Quem lê: só as funções security definer abaixo. interno.segredo_de não é dada a ninguém (anon, authenticated, service_role).
+-- =====================================================================
+
+-- ---------- 1. Onde fica cada segredo ----------
+-- Uma linha por (tabela, chave da linha, coluna) aponta para o segredo no Vault. Fica fora da linha de propósito:
+-- num "insert ... on conflict do update" o Postgres roda o gatilho na linha proposta, então o segredo novo precisa
+-- ficar guardado pela chave, não pela linha (senão o valor novo se perde quando a linha já existe).
+create table if not exists interno.segredos_vault (
+  tabela text not null, chave text not null, coluna text not null,
+  segredo_id uuid not null unique,
+  criado_em timestamptz not null default now(),
+  primary key (tabela, chave, coluna));
+alter table interno.segredos_vault enable row level security;
+revoke all on interno.segredos_vault from public, anon, authenticated, service_role;
+
+create or replace function interno.segredo_de(p_tabela text, p_chave text, p_coluna text) returns text
+language sql stable security definer set search_path = '' as
+$$ select d.decrypted_secret from interno.segredos_vault s join vault.decrypted_secrets d on d.id = s.segredo_id
+    where s.tabela = p_tabela and s.chave = p_chave and s.coluna = p_coluna $$;
+
+-- gatilho: TG_ARGV[0] = coluna da chave da linha; TG_ARGV[1] = 'atualiza' ou 'mantem' (mantem: insert numa linha que já
+-- existe não troca o segredo, para o "on conflict do nothing"); os demais = colunas com segredo.
+-- Valor vazio ou nulo na coluna = "não mudou" (mantém o que já estava no Vault).
+create or replace function interno.segredos_guardar_tg() returns trigger
+language plpgsql security definer set search_path = '' as $$
+declare j jsonb := to_jsonb(new); tab text := tg_table_schema || '.' || tg_table_name; k text := to_jsonb(new)->>tg_argv[0];
+        col text; v text; sid uuid; i int; vazio jsonb;
+begin
+  for i in 2 .. tg_nargs - 1 loop
+    col := tg_argv[i];
+    vazio := case when jsonb_typeof(j->col) = 'object' then '{}'::jsonb else 'null'::jsonb end;
+    v := case when jsonb_typeof(j->col) = 'object' then (j->col)::text else j->>col end;
+    if v is not null and v not in ('', '{}') then
+      select s.segredo_id into sid from interno.segredos_vault s where s.tabela = tab and s.chave = k and s.coluna = col;
+      if sid is not null and tg_op = 'INSERT' and tg_argv[1] = 'mantem' then
+        null;
+      elsif sid is not null and exists (select 1 from vault.secrets x where x.id = sid) then
+        perform vault.update_secret(sid, v);
+      else
+        delete from interno.segredos_vault s where s.tabela = tab and s.chave = k and s.coluna = col;
+        sid := vault.create_secret(v, null, 'ciclodev ' || tab || '.' || col || ' ' || k);
+        insert into interno.segredos_vault (tabela, chave, coluna, segredo_id) values (tab, k, col, sid);
+      end if;
+    end if;
+    if v is not null then j := j || jsonb_build_object(col, vazio); end if;
+  end loop;
+  new := jsonb_populate_record(new, j);
+  return new;
+end $$;
+
+create or replace function interno.segredos_apagar_tg() returns trigger
+language plpgsql security definer set search_path = '' as $$
+declare tab text := tg_table_schema || '.' || tg_table_name; k text := to_jsonb(old)->>tg_argv[0]; i int;
+begin
+  for i in 2 .. tg_nargs - 1 loop
+    with fora as (delete from interno.segredos_vault s where s.tabela = tab and s.chave = k and s.coluna = tg_argv[i] returning s.segredo_id)
+    delete from vault.secrets x using fora where x.id = fora.segredo_id;
+  end loop;
+  return old;
+end $$;
+revoke all on function interno.segredo_de(text, text, text), interno.segredos_guardar_tg(), interno.segredos_apagar_tg() from public, anon, authenticated, service_role;
+
+-- ---------- 2. As colunas antigas deixam de ser obrigatórias (ficam sempre vazias) ----------
+alter table interno.supa_app              alter column client_secret drop not null;
+alter table interno.git_tokens            alter column acesso drop not null;
+alter table interno.supa_tokens           alter column acesso drop not null;
+alter table interno.infra_bancos_conexao  alter column conexao drop not null;
+alter table interno.repositorios_segredos alter column segredo drop not null;
+alter table public.portais_segredos       alter column webhook_segredo drop not null;
+-- git_apps.dados continua não nulo: fica '{}' (o conteúdo vai inteiro para o Vault)
+
+-- ---------- 3. Gatilhos ----------
+do $$
+declare t record; args text;
+begin
+  for t in select * from (values
+      ('interno.supa_app',              'id',             'atualiza', array['client_secret']),
+      ('interno.git_apps',              'provedor',       'atualiza', array['dados']),
+      ('interno.git_tokens',            'conexao_id',     'atualiza', array['acesso','renovacao']),
+      ('interno.supa_tokens',           'conexao_id',     'atualiza', array['acesso','renovacao']),
+      ('interno.infra_bancos_conexao',  'banco_id',       'atualiza', array['conexao']),
+      ('interno.repositorios_segredos', 'repositorio_id', 'mantem',   array['segredo']),
+      ('public.portais_segredos',       'portal_id',      'atualiza', array['webhook_segredo'])) x(tab, chave, modo, cols) loop
+    args := quote_literal(t.chave) || ', ' || quote_literal(t.modo) || ', ' || (select string_agg(quote_literal(c), ', ') from unnest(t.cols) c);
+    execute format('drop trigger if exists segredos_no_vault on %s', t.tab);
+    execute format('drop trigger if exists segredos_no_vault_apagar on %s', t.tab);
+    execute format('create trigger segredos_no_vault before insert or update on %s for each row execute function interno.segredos_guardar_tg(%s)', t.tab, args);
+    execute format('create trigger segredos_no_vault_apagar after delete on %s for each row execute function interno.segredos_apagar_tg(%s)', t.tab, args);
+  end loop;
+end $$;
+
+-- ---------- 4. Mover o que já existe (conferindo antes de esvaziar) ----------
+drop table if exists pg_temp._antes;
+create temp table _antes as
+  select 'interno.supa_app' t, id::text k, 'client_secret' c, client_secret v from interno.supa_app where client_secret is not null
+  union all select 'interno.git_apps', provedor, 'dados', dados::text from interno.git_apps where dados <> '{}'::jsonb
+  union all select 'interno.git_tokens', conexao_id::text, 'acesso', acesso from interno.git_tokens where acesso is not null
+  union all select 'interno.git_tokens', conexao_id::text, 'renovacao', renovacao from interno.git_tokens where renovacao is not null
+  union all select 'interno.supa_tokens', conexao_id::text, 'acesso', acesso from interno.supa_tokens where acesso is not null
+  union all select 'interno.supa_tokens', conexao_id::text, 'renovacao', renovacao from interno.supa_tokens where renovacao is not null
+  union all select 'interno.infra_bancos_conexao', banco_id::text, 'conexao', conexao from interno.infra_bancos_conexao where conexao is not null
+  union all select 'interno.repositorios_segredos', repositorio_id::text, 'segredo', segredo from interno.repositorios_segredos where segredo is not null
+  union all select 'public.portais_segredos', portal_id::text, 'webhook_segredo', webhook_segredo from public.portais_segredos where webhook_segredo is not null;
+
+-- update sem mudar nada: o gatilho leva o valor para o Vault (trocado_em/atualizado_em ficam como estavam)
+update interno.supa_app set client_secret = client_secret where client_secret is not null;
+update interno.git_apps set dados = dados where dados <> '{}'::jsonb;
+update interno.git_tokens set acesso = acesso where acesso is not null or renovacao is not null;
+update interno.supa_tokens set acesso = acesso where acesso is not null or renovacao is not null;
+update interno.infra_bancos_conexao set conexao = conexao where conexao is not null;
+update interno.repositorios_segredos set segredo = segredo where segredo is not null;
+update public.portais_segredos set webhook_segredo = webhook_segredo where webhook_segredo is not null;
+
+do $$
+declare n int; total int;
+begin
+  select count(*) into total from _antes;
+  select count(*) into n from _antes a
+   where a.v is distinct from case when a.t = 'interno.git_apps' then (interno.segredo_de(a.t, a.k, a.c)::jsonb)::text else interno.segredo_de(a.t, a.k, a.c) end;
+  if n > 0 then raise exception 'S1: % de % segredos não voltaram iguais do Vault; nada foi mudado', n, total; end if;
+  raise notice 'S1: % segredos movidos para o Vault e conferidos', total;
+end $$;
+drop table pg_temp._antes;
+
+-- ---------- 5. Regra: a coluna antiga fica sempre vazia ----------
+do $$
+declare r record;
+begin
+  for r in select * from (values
+      ('interno.supa_app', 'client_secret is null'),
+      ('interno.git_apps', 'dados = ''{}''::jsonb'),
+      ('interno.git_tokens', 'acesso is null and renovacao is null'),
+      ('interno.supa_tokens', 'acesso is null and renovacao is null'),
+      ('interno.infra_bancos_conexao', 'conexao is null'),
+      ('interno.repositorios_segredos', 'segredo is null'),
+      ('public.portais_segredos', 'webhook_segredo is null')) x(tab, regra) loop
+    execute format('alter table %s drop constraint if exists segredo_fora_do_vault', r.tab);
+    execute format('alter table %s add constraint segredo_fora_do_vault check (%s)', r.tab, r.regra);
+  end loop;
+end $$;
+
+-- ---------- 6. Funções que LEEM passam a ler do Vault (mesma assinatura, mesma resposta) ----------
+create or replace function public.git_app_ler(p_provedor text) returns jsonb
+language sql stable security definer set search_path to 'public', 'pg_temp' as
+$$ select interno.segredo_de('interno.git_apps', provedor, 'dados')::jsonb from interno.git_apps where provedor = p_provedor $$;
+
+create or replace function public.git_app_gravar(p_provedor text, p_dados jsonb) returns jsonb
+language plpgsql security definer set search_path to 'public', 'pg_temp' as $function$
+declare d jsonb := coalesce(p_dados, '{}'::jsonb); pub jsonb; antigo jsonb;
+begin
+  perform interno.exigir_dono();
+  select interno.segredo_de('interno.git_apps', provedor, 'dados')::jsonb into antigo from interno.git_apps where provedor = p_provedor;
+  if p_provedor = 'github' then
+    if coalesce(d->>'app_id', '') !~ '^[0-9]+$' or coalesce(d->>'slug', '') !~ '^[a-z0-9-]+$' or coalesce(d->>'client_id', '') = ''
+       or coalesce(d->>'client_secret', '') = '' or coalesce(d->>'webhook_secret', '') = '' or coalesce(d->>'pem', '') !~ 'PRIVATE KEY' then
+      raise exception 'Faltam dados do app do GitHub' using errcode = '22023'; end if;
+    pub := jsonb_build_object('slug', d->>'slug', 'client_id', d->>'client_id', 'nome', d->>'nome', 'html_url', d->>'html_url', 'dono', d->>'dono', 'retorno', d->>'retorno');
+  elsif p_provedor = 'gitlab' then
+    if coalesce(btrim(d->>'client_secret'), '') = '' and antigo is not null then d := d || jsonb_build_object('client_secret', antigo->>'client_secret'); end if;
+    d := d || jsonb_build_object('base', rtrim(coalesce(nullif(btrim(d->>'base'), ''), 'https://gitlab.com'), '/'));
+    if coalesce(btrim(d->>'client_id'), '') = '' or coalesce(btrim(d->>'client_secret'), '') = '' then
+      raise exception 'Informe o Application ID e o Secret do GitLab' using errcode = '22023'; end if;
+    if d->>'base' !~ '^https://[A-Za-z0-9.-]+(:[0-9]+)?$' then raise exception 'O endereço do GitLab precisa ser https://servidor' using errcode = '22023'; end if;
+    if coalesce(d->>'retorno', '') !~ '^https://' then raise exception 'Falta o endereço de volta' using errcode = '22023'; end if;
+    pub := jsonb_build_object('client_id', btrim(d->>'client_id'), 'base', d->>'base', 'retorno', d->>'retorno');
+  else raise exception 'Provedor inválido' using errcode = '22023'; end if;
+  insert into interno.git_apps (provedor, dados, publico, atualizado_por) values (p_provedor, d, pub, interno.pessoa_atual())
+  on conflict (provedor) do update set dados = excluded.dados, publico = excluded.publico, atualizado_em = now(), atualizado_por = excluded.atualizado_por;
+  return pub || jsonb_build_object('pronto', true);
+end $function$;
+
+create or replace function public.git_conexao_ler(p_id uuid) returns jsonb
+language sql stable security definer set search_path to 'public', 'pg_temp' as $function$
+  select to_jsonb(c) || jsonb_build_object('tokens', (select jsonb_build_object('acesso', interno.segredo_de('interno.git_tokens', t.conexao_id::text, 'acesso'), 'renovacao', interno.segredo_de('interno.git_tokens', t.conexao_id::text, 'renovacao'), 'expira_em', t.expira_em)
+                                                       from interno.git_tokens t where t.conexao_id = c.id))
+    from public.git_conexoes c where c.id = p_id
+$function$;
+
+create or replace function public.git_repo_segredo(p_repo uuid) returns text
+language sql stable security definer set search_path to 'public', 'pg_temp' as
+$$ select interno.segredo_de('interno.repositorios_segredos', repositorio_id::text, 'segredo') from interno.repositorios_segredos where repositorio_id = p_repo $$;
+
+create or replace function public.supa_app_ler() returns jsonb
+language sql stable security definer set search_path to 'public', 'pg_temp' as
+$$ select jsonb_build_object('client_id', a.client_id, 'client_secret', interno.segredo_de('interno.supa_app', a.id::text, 'client_secret'), 'retorno', a.retorno) from interno.supa_app a $$;
+
+create or replace function public.supa_conexao_ler(p_id uuid) returns jsonb
+language sql stable security definer set search_path to 'public', 'pg_temp' as $function$
+  select to_jsonb(c) || jsonb_build_object('tokens', (select jsonb_build_object('acesso', interno.segredo_de('interno.supa_tokens', t.conexao_id::text, 'acesso'), 'renovacao', interno.segredo_de('interno.supa_tokens', t.conexao_id::text, 'renovacao'), 'expira_em', t.expira_em)
+                                                       from interno.supa_tokens t where t.conexao_id = c.id))
+    from public.supa_conexoes c where c.id = p_id
+$function$;
+
+create or replace function public.supa_app_gravar(p_client_id text, p_client_secret text, p_retorno text) returns jsonb
+language plpgsql security definer set search_path to 'public', 'pg_temp' as $function$
+declare seg text := nullif(btrim(coalesce(p_client_secret, '')), ''); cid text := lower(btrim(coalesce(p_client_id, '')));
+begin
+  perform interno.exigir_dono();
+  if cid = '' then raise exception 'Informe o Client ID do app do Supabase' using errcode = '22023'; end if;
+  if cid like 'sba\_%' then raise exception 'Isso é o Client Secret (começa com sba_), não o Client ID. O Client ID é o código no formato a1b2c3d4-e5f6-... que o Supabase mostra junto.' using errcode = '22023'; end if;
+  if cid !~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' then raise exception 'O Client ID do Supabase tem o formato a1b2c3d4-e5f6-7890-abcd-ef1234567890. Confira se copiou o código certo.' using errcode = '22023'; end if;
+  if coalesce(p_retorno, '') !~ '^https://' then raise exception 'Falta o endereço de volta' using errcode = '22023'; end if;
+  if seg is null then select interno.segredo_de('interno.supa_app', id::text, 'client_secret') into seg from interno.supa_app; end if;
+  if seg is null then raise exception 'Informe o Client Secret do app do Supabase' using errcode = '22023'; end if;
+  if lower(seg) = cid then raise exception 'O Client Secret não pode ser igual ao Client ID' using errcode = '22023'; end if;
+  insert into interno.supa_app (id, client_id, client_secret, retorno, atualizado_por) values (true, cid, seg, p_retorno, interno.pessoa_atual())
+  on conflict (id) do update set client_id = excluded.client_id, client_secret = excluded.client_secret, retorno = excluded.retorno, atualizado_em = now(), atualizado_por = excluded.atualizado_por;
+  return public.supa_app_status();
+end $function$;
+
+create or replace function public.git_receber_gitlab(p_repo uuid, p_evento text, p_token text, p_corpo text) returns jsonb
+language plpgsql security definer set search_path to 'public', 'pg_temp' as $function$
+declare r public.repositorios; s text; j jsonb;
+begin
+  select * into r from public.repositorios where id = p_repo and provedor = 'gitlab';
+  if r.id is null then return jsonb_build_object('ok', false, 'erro', 'repositório não encontrado'); end if;
+  select interno.segredo_de('interno.repositorios_segredos', repositorio_id::text, 'segredo') into s from interno.repositorios_segredos where repositorio_id = r.id;
+  if s is null or coalesce(p_token, '') <> s then
+    update public.repositorios set ultimo_erro = 'Aviso recusado: segredo não confere (' || coalesce(p_evento, '?') || ')', ultimo_evento_em = now() where id = r.id;
+    return jsonb_build_object('ok', false, 'erro', 'assinatura inválida');
+  end if;
+  begin j := p_corpo::jsonb; exception when others then
+    update public.repositorios set ultimo_erro = 'Aviso com conteúdo inválido', ultimo_evento_em = now() where id = r.id;
+    return jsonb_build_object('ok', false, 'erro', 'conteúdo inválido'); end;
+  return jsonb_build_object('ok', true, 'evento', p_evento) || interno.git_processar(r, p_evento, j);
+end $function$;
+
+create or replace function public.infra_auto_bancos_devidos(p_limite integer default 5) returns jsonb
+language sql security definer set search_path to 'public', 'pg_temp' as $function$
+  select coalesce(jsonb_agg(jsonb_build_object('id', b.id, 'no_id', b.no_id, 'nome', b.nome, 'provedor', b.provedor, 'motor', b.motor, 'esquemas', b.esquemas, 'conexao', interno.segredo_de('interno.infra_bancos_conexao', c.banco_id::text, 'conexao'),
+                                               'supa_conexao_id', b.supa_conexao_id, 'supa_projeto', b.supa_projeto, 'ultimo_hash', b.ultimo_hash)), '[]')
+    from (select * from public.infra_bancos b where b.ativo and (b.ultima_leitura_em is null or b.ultima_leitura_em < now() - interval '55 minutes')
+           order by b.ultima_leitura_em nulls first limit greatest(1, least(coalesce(p_limite, 5), 20))) b
+    left join interno.infra_bancos_conexao c on c.banco_id = b.id
+   where c.banco_id is not null or b.supa_conexao_id is not null
+$function$;
+
+create or replace function public.infra_auto_proximos(p_limite integer default 3) returns jsonb
+language plpgsql security definer set search_path to 'public', 'pg_temp' as $function$
+declare ids uuid[]; saida jsonb;
+begin
+  update public.infra_automacoes set status = 'erro', concluido_em = now(), erro = 'Parou no meio três vezes'
+   where status = 'rodando' and iniciado_em < now() - interval '15 minutes' and tentativas >= 3;
+  with fila as (
+    select a.id from public.infra_automacoes a
+     where a.status = 'pendente' or (a.status = 'rodando' and a.iniciado_em < now() - interval '15 minutes')
+     order by a.criado_em limit greatest(1, least(coalesce(p_limite, 3), 10)) for update skip locked),
+  pegos as (
+    update public.infra_automacoes a set status = 'rodando', iniciado_em = now(), tentativas = a.tentativas + 1
+      from fila where a.id = fila.id returning a.id)
+  select array_agg(id) into ids from pegos;
+  select coalesce(jsonb_agg(jsonb_build_object(
+      'id', a.id, 'no_id', a.no_id, 'origem', a.origem, 'referencia', a.referencia,
+      'repositorios', (select coalesce(jsonb_agg(jsonb_build_object('id', r.id, 'nome', r.nome, 'branch', r.branch_principal, 'provedor', r.provedor,
+                                                                    'conexao_id', r.conexao_id, 'externo_id', r.externo_id) order by r.nome), '[]')
+                         from public.repositorios r
+                        where a.origem <> 'banco' and r.ativo and r.conexao_id is not null and (case when a.repositorio_id is not null then r.id = a.repositorio_id
+                                                else r.no_id = a.no_id or interno.infra_no_de(r.no_id) = a.no_id end)),
+      'bancos', (select coalesce(jsonb_agg(jsonb_build_object('id', b.id, 'nome', b.nome, 'provedor', b.provedor, 'motor', b.motor, 'esquemas', b.esquemas, 'conexao', interno.segredo_de('interno.infra_bancos_conexao', c.banco_id::text, 'conexao'),
+                                                              'supa_conexao_id', b.supa_conexao_id, 'supa_projeto', b.supa_projeto) order by b.nome), '[]')
+                   from public.infra_bancos b left join interno.infra_bancos_conexao c on c.banco_id = b.id
+                  where b.no_id = a.no_id and b.ativo and a.repositorio_id is null and (c.banco_id is not null or b.supa_conexao_id is not null)
+                    and (a.origem = 'manual' or (a.origem = 'banco' and (a.banco_id is null or b.id = a.banco_id))))
+    ) order by a.criado_em), '[]') into saida
+    from public.infra_automacoes a where a.id = any(coalesce(ids, '{}'));
+  return saida;
+end $function$;
+
+-- git_receber_github: o segredo do webhook está dentro de dados (agora no Vault)
+do $$
+declare def text;
+begin
+  if to_regprocedure('public.git_receber_github(text,text,text)') is not null then
+    def := pg_get_functiondef('public.git_receber_github(text,text,text)'::regprocedure);
+    if position('dados->>''webhook_secret''' in def) > 0 then
+      def := replace(def, 'select dados->>''webhook_secret'' from interno.git_apps', 'select interno.segredo_de(''interno.git_apps'', provedor, ''dados'')::jsonb->>''webhook_secret'' from interno.git_apps');
+    end if;
+    if position('segredo_de(''interno.git_apps''' in def) = 0 then raise exception 'S1: não achei onde trocar o segredo em git_receber_github'; end if;
+    execute def;
+  end if;
+  -- interno.portal_entregar só existe onde há pg_net (parte 24, só no Supabase)
+  if to_regprocedure('interno.portal_entregar()') is not null then
+    def := pg_get_functiondef('interno.portal_entregar()'::regprocedure);
+    def := replace(def, 'p.webhook_url, s.webhook_segredo', 'p.webhook_url, interno.segredo_de(''public.portais_segredos'', s.portal_id::text, ''webhook_segredo'') as webhook_segredo');
+    if position('segredo_de(''public.portais_segredos''' in def) = 0 then raise exception 'S1: não achei onde trocar o segredo em interno.portal_entregar'; end if;
+    execute def;
+  end if;
+end $$;
+
+-- >>>>>>>>>> 58_funcoes_fora_da_api.sql
+-- =====================================================================
+-- Parte 58 · Ordem de serviço do banco nº1, item S2: as funções security definer saem do esquema exposto pela API.
+-- Antes: 51 funções do public rodavam com o poder do dono e podiam ser chamadas por /rest/v1/rpc/<nome> (aviso 0029).
+-- Agora: o corpo de cada uma vai para o esquema "logica" (não exposto pela API) e no public fica só uma porta fina,
+--        security invoker, com o MESMO nome, os MESMOS parâmetros (nomes e padrões) e a MESMA resposta.
+--        A tela e as Edge Functions continuam chamando rpc('<nome>') sem mudar nada.
+-- A regra de acesso de cada uma (dono do sistema, nos_editaveis, inv_pode, ...) continua dentro do corpo, em logica.
+-- Daqui em diante: mudar uma dessas funções = "create or replace function logica.<nome>" (não public).
+--   Se alguém recriar por engano uma security definer no public, rodar esta parte de novo: ela leva a nova para logica.
+-- Plano de volta: 58_funcoes_fora_da_api_VOLTA.sql.
+-- =====================================================================
+create schema if not exists logica;
+comment on schema logica is 'Corpo das funções da API que rodam com o poder do dono (security definer). Não é exposto pela API; o public só tem a porta fina (security invoker) de cada uma.';
+revoke all on schema logica from public, anon;
+grant usage on schema logica to authenticated, service_role;
+alter default privileges in schema logica revoke execute on functions from public;
+
+do $$
+declare f record; args text; n int; vol text; corpo text;
+begin
+  for f in
+    select p.oid, p.proname, pg_get_function_identity_arguments(p.oid) ident, pg_get_function_arguments(p.oid) argdef,
+           pg_get_function_result(p.oid) res, p.pronargs, p.provolatile, p.proretset,
+           has_function_privilege('service_role', p.oid, 'EXECUTE') sr
+      from pg_proc p join pg_namespace s on s.oid = p.pronamespace
+     where s.nspname = 'public' and p.prosecdef and p.prokind = 'f'
+       and has_function_privilege('authenticated', p.oid, 'EXECUTE')
+     order by p.proname loop
+    -- se já existe uma versão antiga em logica (alguém recriou no public), a nova vence
+    execute format('drop function if exists logica.%I(%s)', f.proname, f.ident);
+    execute format('alter function public.%I(%s) set schema logica', f.proname, f.ident);
+    select string_agg('$' || i, ', ') into args from generate_series(1, f.pronargs) i;
+    vol := case f.provolatile when 'i' then 'immutable' when 's' then 'stable' else 'volatile' end;
+    corpo := format('select * from logica.%I(%s)', f.proname, coalesce(args, ''));
+    execute format('create function public.%I(%s) returns %s language sql %s security invoker set search_path = '''' as %L',
+                   f.proname, f.argdef, f.res, vol, corpo);
+    execute format('comment on function public.%I(%s) is %L', f.proname, f.ident,
+                   'Porta da API (security invoker). O corpo e a regra de acesso estão em logica.' || f.proname || '.');
+    execute format('revoke all on function public.%I(%s) from public, anon', f.proname, f.ident);
+    execute format('revoke all on function logica.%I(%s) from public, anon', f.proname, f.ident);
+    execute format('grant execute on function public.%I(%s) to authenticated', f.proname, f.ident);
+    execute format('grant execute on function logica.%I(%s) to authenticated', f.proname, f.ident);
+    if f.sr then
+      execute format('grant execute on function public.%I(%s) to service_role', f.proname, f.ident);
+      execute format('grant execute on function logica.%I(%s) to service_role', f.proname, f.ident);
+    end if;
+    n := coalesce(n, 0) + 1;
+  end loop;
+  raise notice 'S2: % funções movidas para logica, com porta fina no public', coalesce(n, 0);
+end $$;
+
+-- >>>>>>>>>> 59_historico_so_insercao_e_execucao.sql
+-- =====================================================================
+-- Parte 59 · Ordem de serviço do banco nº1, itens S3, S6 e S7.
+-- S3: auditoria.registros, itens_historico e itens_descricao_versoes passam a ser só de inserção.
+--     Gatilho recusa UPDATE, DELETE e TRUNCATE (erro 42501) e ninguém comum tem permissão para isso.
+--     Três exceções, todas automáticas do próprio banco (nunca de quem usa):
+--       1. apagar de vez um item (lixeira) leva junto o histórico dele (on delete cascade): o item já não existe;
+--       2. apagar uma pessoa deixa a autoria vazia (on delete set null): só a coluna da pessoa muda;
+--       3. a versão da descrição continua "aberta" por 10 minutos para a mesma pessoa (regra da parte 18: quem mexe
+--          seguido fica numa versão só). Só a própria gravação (interno.itens_guardar_descricao) consegue, e só nesse prazo.
+--     A carga de exemplo (parte 08) pode trocar as linhas marcadas "semente" da auditoria, avisando antes.
+-- S6: some a função com nome de pessoa (o arquivo 15 usa um auxiliar temporário, sem nome de pessoa).
+-- S7: search_path fixo em interno.infra_aba_ok e ninguém de fora (anon, public) executa função do public, interno ou logica.
+-- Plano de volta: 59_historico_so_insercao_e_execucao_VOLTA.sql.
+-- =====================================================================
+
+-- ---------- S3 ----------
+create or replace function interno.historico_so_insercao() returns trigger
+language plpgsql set search_path = '' as $$
+declare o jsonb; n jsonb;
+begin
+  if tg_op = 'TRUNCATE' then
+    raise exception '%.% é só de inserção: TRUNCATE recusado', tg_table_schema, tg_table_name using errcode = '42501';
+  end if;
+  o := to_jsonb(old); n := case when tg_op = 'UPDATE' then to_jsonb(new) end;
+  if tg_table_schema = 'public' and tg_table_name in ('itens_historico', 'itens_descricao_versoes') then
+    -- 1. o item foi apagado de vez: o histórico vai junto
+    if tg_op = 'DELETE' and not exists (select 1 from public.itens i where i.id = (o->>'item_id')::uuid) then return old; end if;
+    if tg_op = 'UPDATE' then
+      -- 2. a pessoa foi apagada: só a autoria fica vazia
+      if (tg_table_name = 'itens_historico' and o->>'pessoa_id' is not null and n->>'pessoa_id' is null
+          and not exists (select 1 from public.pessoas p where p.id = (o->>'pessoa_id')::uuid) and (n - 'pessoa_id') = (o - 'pessoa_id'))
+      or (tg_table_name = 'itens_descricao_versoes' and o->>'autor_id' is not null and n->>'autor_id' is null
+          and not exists (select 1 from public.pessoas p where p.id = (o->>'autor_id')::uuid) and (n - 'autor_id') = (o - 'autor_id')) then
+        return new;
+      end if;
+      -- 3. versão ainda aberta (mesma pessoa, até 10 minutos), só pela própria gravação da descrição
+      if tg_table_name = 'itens_descricao_versoes' and current_setting('ciclodev.juntando_versao', true) = 'sim'
+         and n->>'id' = o->>'id' and n->>'item_id' = o->>'item_id' and n->'autor_id' = o->'autor_id'
+         and (o->>'criado_em')::timestamptz > now() - interval '10 minutes' then
+        return new;
+      end if;
+    end if;
+  end if;
+  if tg_table_schema = 'auditoria' and tg_op = 'DELETE' and current_setting('ciclodev.trocando_semente', true) = 'sim' and o->'mudancas' ? 'semente' then
+    return old;
+  end if;
+  raise exception '%.% é só de inserção: % recusado', tg_table_schema, tg_table_name, tg_op using errcode = '42501';
+end $$;
+revoke all on function interno.historico_so_insercao() from public, anon, authenticated, service_role;
+
+do $$
+declare t text;
+begin
+  foreach t in array array['auditoria.registros', 'public.itens_historico', 'public.itens_descricao_versoes'] loop
+    execute format('drop trigger if exists so_insercao on %s', t);
+    execute format('drop trigger if exists so_insercao_truncate on %s', t);
+    execute format('create trigger so_insercao before update or delete on %s for each row execute function interno.historico_so_insercao()', t);
+    execute format('create trigger so_insercao_truncate before truncate on %s for each statement execute function interno.historico_so_insercao()', t);
+    execute format('revoke update, delete, truncate on %s from public, anon, authenticated, service_role', t);
+  end loop;
+end $$;
+
+-- a gravação da descrição avisa quando está juntando na versão aberta (mesmo comportamento da parte 18)
+create or replace function interno.itens_guardar_descricao() returns trigger
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare eu uuid := interno.pessoa_atual(); ult record;
+begin
+  if tg_op = 'INSERT' then
+    if coalesce(new.descricao, '') <> '' then insert into public.itens_descricao_versoes (item_id, texto, autor_id) values (new.id, new.descricao, eu); end if;
+    return null;
+  end if;
+  if new.descricao is not distinct from old.descricao then return null; end if;
+  -- item antigo, sem histórico ainda: guarda primeiro como estava
+  if coalesce(old.descricao, '') <> '' and not exists (select 1 from public.itens_descricao_versoes v where v.item_id = new.id) then
+    insert into public.itens_descricao_versoes (item_id, texto, autor_id, criado_em) values (new.id, old.descricao, null, coalesce(old.atualizado_em, now()) - interval '1 second');
+  end if;
+  select v.id, v.autor_id, v.criado_em into ult from public.itens_descricao_versoes v where v.item_id = new.id order by v.criado_em desc limit 1;
+  if ult.id is not null and ult.autor_id is not distinct from eu and ult.criado_em > now() - interval '10 minutes' then
+    perform set_config('ciclodev.juntando_versao', 'sim', true);
+    update public.itens_descricao_versoes set texto = coalesce(new.descricao, ''), criado_em = now() where id = ult.id;
+    perform set_config('ciclodev.juntando_versao', '', true);
+  else
+    insert into public.itens_descricao_versoes (item_id, texto, autor_id) values (new.id, coalesce(new.descricao, ''), eu);
+  end if;
+  return null;
+end $$;
+
+-- ---------- S6 ----------
+drop function if exists interno.espaco_do_william();
+
+-- ---------- S7 ----------
+alter function interno.infra_aba_ok(text) set search_path = public, pg_temp;
+do $$
+declare f record; n int := 0;
+begin
+  for f in select p.oid, s.nspname, p.proname, pg_get_function_identity_arguments(p.oid) ident,
+                  has_function_privilege('authenticated', p.oid, 'EXECUTE') au, has_function_privilege('service_role', p.oid, 'EXECUTE') sr
+             from pg_proc p join pg_namespace s on s.oid = p.pronamespace
+            where s.nspname in ('public', 'interno', 'logica') and has_function_privilege('anon', p.oid, 'EXECUTE') loop
+    -- quem já podia continua podendo (agora por permissão explícita); só anon e "todo mundo" saem
+    if f.au then execute format('grant execute on function %I.%I(%s) to authenticated', f.nspname, f.proname, f.ident); end if;
+    if f.sr then execute format('grant execute on function %I.%I(%s) to service_role', f.nspname, f.proname, f.ident); end if;
+    execute format('revoke execute on function %I.%I(%s) from public, anon', f.nspname, f.proname, f.ident);
+    n := n + 1;
+  end loop;
+  raise notice 'S7: anon e public perderam execute em % funções', n;
+end $$;
+-- funções novas: o "todo mundo" (e com ele o anon) não ganha execute sozinho; quem está logado e o service_role continuam ganhando
+alter default privileges in schema interno revoke execute on functions from public;
+alter default privileges in schema interno grant execute on functions to authenticated, service_role;
+alter default privileges in schema public revoke execute on functions from public;
+alter default privileges in schema logica revoke execute on functions from public;
+
+-- >>>>>>>>>> 60_onda2_arvore_e_permissoes.sql
+-- =====================================================================
+-- Parte 60 · Ordem de serviço do banco nº1, onda 2: O2, O3, S8 e S10.
+-- O2: regra única: o que está dentro de um nó na lixeira está na lixeira. Ao mandar um nó para a lixeira, os itens de
+--     dentro ganham a MESMA hora de exclusão; ao restaurar o nó, voltam os que têm essa hora (o que já estava na lixeira
+--     antes continua lá). A lixeira mostra só o nó (não cada item de dentro). Os itens que já estavam vivos dentro de nós
+--     excluídos recebem a hora do nó mais alto excluído (voltam se ele for restaurado).
+--     O QUE MUDA NA TELA: esses itens deixam de contar em listas, painéis e progresso (estavam dentro de uma aplicação excluída).
+-- O3: vista public.itens_com_caminho (security_invoker): o item com cliente_id, projeto_id, produto_id e aplicacao_id,
+--     calculados na hora pela árvore (nos_ancestrais). Mover uma frente ou aplicação muda o resultado na mesma hora.
+-- S8: bi.ritmo_semanal é vista MATERIALIZADA (o Postgres não tem security_invoker para elas); ninguém logado lê direto.
+-- S10: (a) tira de quem está logado as permissões que nenhuma política deixa usar (não muda nada do que a pessoa consegue);
+--      (b) a vista etiquetas_sistema não aceita gravação: fica só leitura; (c) tabela nova no public não ganha mais
+--      permissão sozinha (precisa de GRANT explícito); (d) RLS ligada nas tabelas do interno e na auditoria (defesa a mais:
+--      hoje ninguém comum tem permissão nelas). FORCE ROW LEVEL SECURITY não foi ligado: as funções security definer
+--      são do dono das tabelas e deixariam de funcionar.
+-- Plano de volta: 60_onda2_arvore_e_permissoes_VOLTA.sql.
+-- =====================================================================
+
+-- ---------- O2 ----------
+CREATE OR REPLACE FUNCTION logica.lixeira_listar()
+ RETURNS TABLE(tipo text, id uuid, nome text, onde text, excluido_em timestamp with time zone, excluido_por text, dentro integer, apaga_em timestamp with time zone)
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+  select n.tipo, n.id, n.nome,
+         (select string_agg(x.nome, ' › ' order by a.distancia desc) from public.nos_ancestrais a join public.nos x on x.id = a.ancestral_id where a.no_id = n.id and a.distancia > 0),
+         n.excluido_em, p.nome,
+         ((select count(*) from public.nos_ancestrais a where a.ancestral_id = n.id and a.distancia > 0)
+          + (select count(*) from public.itens i where i.frente_id in (select a.no_id from public.nos_ancestrais a where a.ancestral_id = n.id)))::integer,
+         n.excluido_em + interval '30 days'
+    from public.nos n left join public.pessoas p on p.id = n.excluido_por
+   where n.excluido_em is not null and n.id in (select interno.nos_visiveis()) and interno.pode_excluir_no(n.id)
+  union all
+  select 'item', i.id, i.titulo,
+         (select string_agg(x.nome, ' › ' order by a.distancia desc) from public.nos_ancestrais a join public.nos x on x.id = a.ancestral_id where a.no_id = i.frente_id),
+         i.excluido_em, p.nome,
+         (select count(*) from public.itens f where f.excluido_em = i.excluido_em and f.id <> i.id and f.frente_id = i.frente_id)::integer,
+         i.excluido_em + interval '30 days'
+    from public.itens i left join public.pessoas p on p.id = i.excluido_por
+   where i.excluido_em is not null and i.frente_id in (select interno.nos_editaveis())
+     and not exists (select 1 from public.itens pai where pai.id = i.pai_id and pai.excluido_em = i.excluido_em)
+     and not exists (select 1 from public.nos_ancestrais a join public.nos x on x.id = a.ancestral_id where a.no_id = i.frente_id and x.excluido_em = i.excluido_em)
+   order by 5 desc
+$function$;
+
+CREATE OR REPLACE FUNCTION logica.lixeira_mover(p_tipo text, p_id uuid)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare eu uuid := interno.pessoa_atual(); agora timestamptz := now(); fr uuid;
+begin
+  if eu is null then raise exception 'Entre no sistema para excluir.'; end if;
+  if p_tipo = 'item' then
+    select frente_id into fr from public.itens where id = p_id and excluido_em is null;
+    if fr is null then raise exception 'Item não encontrado ou já está na lixeira.'; end if;
+    if fr not in (select interno.nos_editaveis()) then raise exception 'Você não pode excluir este item.'; end if;
+    with recursive sub as (select p_id as id union all select i.id from public.itens i join sub on i.pai_id = sub.id where i.excluido_em is null)
+    update public.itens set excluido_em = agora, excluido_por = eu where id in (select id from sub);
+  elsif p_tipo = 'no' then
+    if not exists (select 1 from public.nos where id = p_id and excluido_em is null) then raise exception 'Não encontrado ou já está na lixeira.'; end if;
+    if not interno.pode_excluir_no(p_id) then raise exception 'Você não pode excluir este ponto da estrutura.'; end if;
+    update public.nos set excluido_em = agora, excluido_por = eu where id = p_id;
+    -- O2: o que está dentro vai junto, com a mesma hora (assim volta junto ao restaurar)
+    update public.itens i set excluido_em = agora, excluido_por = eu
+     where i.excluido_em is null and i.frente_id in (select x.no_id from public.nos_ancestrais x where x.ancestral_id = p_id);
+  else raise exception 'Tipo inválido: %', p_tipo; end if;
+end $function$;
+
+CREATE OR REPLACE FUNCTION logica.lixeira_restaurar(p_tipo text, p_id uuid)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare quando timestamptz; fr uuid; pai uuid; acima text;
+begin
+  if interno.pessoa_atual() is null then raise exception 'Entre no sistema para restaurar.'; end if;
+  if p_tipo = 'item' then
+    select excluido_em, frente_id, pai_id into quando, fr, pai from public.itens where id = p_id;
+    if quando is null then raise exception 'Este item não está na lixeira.'; end if;
+    if fr not in (select interno.nos_editaveis()) then raise exception 'Você não pode restaurar este item.'; end if;
+    acima := interno.no_na_lixeira(fr);
+    if acima is not null then raise exception 'Restaure antes "%", que também está na lixeira.', acima; end if;
+    if pai is not null and exists (select 1 from public.itens where id = pai and excluido_em is not null) then
+      raise exception 'Restaure antes o item de cima, que também está na lixeira.'; end if;
+    with recursive sub as (select p_id as id union all select i.id from public.itens i join sub on i.pai_id = sub.id where i.excluido_em = quando)
+    update public.itens set excluido_em = null, excluido_por = null where id in (select id from sub);
+  elsif p_tipo = 'no' then
+    select excluido_em into quando from public.nos where id = p_id;
+    if quando is null then raise exception 'Este ponto não está na lixeira.'; end if;
+    if not interno.pode_excluir_no(p_id) then raise exception 'Você não pode restaurar este ponto da estrutura.'; end if;
+    select n.nome into acima from public.nos_ancestrais a join public.nos n on n.id = a.ancestral_id
+     where a.no_id = p_id and a.distancia > 0 and n.excluido_em is not null order by a.distancia desc limit 1;
+    if acima is not null then raise exception 'Restaure antes "%", que também está na lixeira.', acima; end if;
+    update public.nos set excluido_em = null, excluido_por = null where id = p_id;
+    -- O2: volta junto o que foi para a lixeira com ele (mesma hora); o que já estava na lixeira antes continua lá
+    update public.itens i set excluido_em = null, excluido_por = null
+     where i.excluido_em = quando and i.frente_id in (select x.no_id from public.nos_ancestrais x where x.ancestral_id = p_id);
+  else raise exception 'Tipo inválido: %', p_tipo; end if;
+end $function$;
+
+
+-- itens vivos dentro de nós já excluídos: vão para a lixeira junto com o nó mais alto excluído
+-- (a lista fica guardada em interno.o2_itens_levados, para o plano de volta desfazer exatamente estes)
+create table if not exists interno.o2_itens_levados (item_id uuid primary key, excluido_em timestamptz not null, levado_em timestamptz not null default now());
+alter table interno.o2_itens_levados enable row level security;
+revoke all on interno.o2_itens_levados from public, anon, authenticated, service_role;
+insert into interno.o2_itens_levados (item_id, excluido_em)
+select distinct on (i.id) i.id, n.excluido_em
+  from public.itens i join public.nos_ancestrais a on a.no_id = i.frente_id join public.nos n on n.id = a.ancestral_id
+ where i.excluido_em is null and n.excluido_em is not null
+ order by i.id, a.distancia desc
+on conflict (item_id) do nothing;
+with alvo as (
+  select distinct on (a.no_id) a.no_id, n.excluido_em, n.excluido_por
+    from public.nos_ancestrais a join public.nos n on n.id = a.ancestral_id
+   where n.excluido_em is not null
+   order by a.no_id, a.distancia desc)
+update public.itens i set excluido_em = alvo.excluido_em, excluido_por = alvo.excluido_por
+  from alvo where i.frente_id = alvo.no_id and i.excluido_em is null;
+
+-- ---------- O3 ----------
+create or replace view public.itens_com_caminho with (security_invoker = true) as
+select i.*,
+       c.cliente_id, c.projeto_id, c.produto_id, c.aplicacao_id
+  from public.itens i
+  left join lateral (
+    select max(a.ancestral_id::text) filter (where n.tipo = 'cliente')::uuid   as cliente_id,
+           max(a.ancestral_id::text) filter (where n.tipo = 'projeto')::uuid   as projeto_id,
+           max(a.ancestral_id::text) filter (where n.tipo = 'produto')::uuid   as produto_id,
+           max(a.ancestral_id::text) filter (where n.tipo = 'aplicacao')::uuid as aplicacao_id
+      from public.nos_ancestrais a join public.nos n on n.id = a.ancestral_id
+     where a.no_id = i.frente_id) c on true;
+comment on view public.itens_com_caminho is 'Item com o caminho na árvore (cliente, projeto, produto, aplicação), calculado na hora por nos_ancestrais. Use esta vista em relatório que junta itens: filtre sempre por projeto_id. A leitura segue as mesmas regras de itens (security_invoker).';
+revoke all on public.itens_com_caminho from public, anon;
+grant select on public.itens_com_caminho to authenticated, service_role;
+
+-- ---------- S8 ----------
+comment on materialized view bi.ritmo_semanal is 'Vista materializada (o Postgres não tem security_invoker para vista materializada). Ninguém logado lê direto: só as funções do bi, que filtram pelo que a pessoa vê. Não dar GRANT para authenticated.';
+revoke all on bi.ritmo_semanal from public, anon, authenticated;
+
+-- ---------- S10 ----------
+do $$
+declare r record; n int := 0;
+begin
+  -- (a) permissão que nenhuma política permissiva deixa usar: sai (o resultado para quem usa é o mesmo: recusado)
+  for r in
+    select c.oid, c.relname, p.priv
+      from pg_class c cross join unnest(array['SELECT','INSERT','UPDATE','DELETE']) p(priv)
+     where c.relnamespace = 'public'::regnamespace and c.relkind in ('r','p') and c.relrowsecurity
+       and has_table_privilege('authenticated', c.oid, p.priv)
+       and not exists (select 1 from pg_policy po where po.polrelid = c.oid and po.polpermissive
+                         and (po.polroles = '{0}' or 'authenticated'::regrole = any(po.polroles))
+                         and po.polcmd in ('*', case p.priv when 'SELECT' then 'r' when 'INSERT' then 'a' when 'UPDATE' then 'w' else 'd' end)) loop
+    execute format('revoke %s on public.%I from authenticated', r.priv, r.relname);
+    n := n + 1;
+  end loop;
+  raise notice 'S10: % permissões sem política retiradas de authenticated', n;
+  -- (d) RLS nas tabelas do interno e da auditoria
+  for r in select c.relnamespace::regnamespace::text s, c.relname from pg_class c
+            where c.relnamespace in ('interno'::regnamespace, 'auditoria'::regnamespace) and c.relkind in ('r','p') and not c.relrowsecurity loop
+    execute format('alter table %I.%I enable row level security', r.s, r.relname);
+  end loop;
+end $$;
+-- (b) vista que não aceita gravação
+revoke insert, update, delete, truncate, references, trigger on public.etiquetas_sistema from authenticated, anon;
+-- (c) tabela nova não ganha permissão sozinha (cada parte dá o GRANT que a tabela precisa)
+alter default privileges in schema public revoke all on tables from authenticated;
+comment on policy ver on public.cambio is 'Exceção documentada (S10): câmbio é tabela de referência, igual para todos; leitura liberada para quem está logado (using true). Ninguém logado grava.';
+
+-- >>>>>>>>>> 61_webhook_repeticao_e_limite.sql
+-- =====================================================================
+-- Parte 61 · Ordem de serviço do banco nº1, item S9 (e um ajuste da parte 60).
+-- Avisos do GitHub e do GitLab (git-webhook, sem login): depois de conferir a assinatura, o banco guarda o resumo
+--   (sha256) do aviso por 30 dias; o mesmo aviso de novo responde "repetido" e não grava nada (proteção contra repetição).
+--   Janela de tempo (±5 min): o GitHub e o GitLab não assinam a hora do aviso, então não dá para conferir a hora com
+--   segurança; a proteção é o resumo do conteúdo assinado.
+-- Portal (portal-api, sem login, com chave cdp_...): no máximo 120 chamadas por minuto por chave. Passou disso, o banco
+--   recusa com o código 53400 e a função responde 429 (espere um minuto).
+-- Ajuste da parte 60: a vista itens_com_caminho é só leitura também nas permissões.
+-- Plano de volta: 61_webhook_repeticao_e_limite_VOLTA.sql.
+-- =====================================================================
+create table if not exists interno.webhook_recebidos (
+  resumo text primary key, origem text not null, recebido_em timestamptz not null default now());
+create index if not exists webhook_recebidos_em_idx on interno.webhook_recebidos (recebido_em);
+alter table interno.webhook_recebidos enable row level security;
+revoke all on interno.webhook_recebidos from public, anon, authenticated, service_role;
+
+create or replace function interno.webhook_novo(p_origem text, p_corpo text) returns boolean
+language plpgsql set search_path = '' as $$
+declare r text := encode(extensions.digest(p_origem || chr(10) || coalesce(p_corpo, ''), 'sha256'), 'hex'); n int;
+begin
+  delete from interno.webhook_recebidos w where w.recebido_em < now() - interval '30 days';
+  insert into interno.webhook_recebidos (resumo, origem) values (r, p_origem) on conflict (resumo) do nothing;
+  get diagnostics n = row_count;
+  return n = 1;
+end $$;
+revoke all on function interno.webhook_novo(text, text) from public, anon, authenticated, service_role;
+
+do $$
+declare def text; antes text;
+begin
+  def := pg_get_functiondef('public.git_receber_github(text,text,text)'::regprocedure);
+  if position('webhook_novo' in def) = 0 then
+    antes := 'begin j := p_corpo::jsonb; exception when others then return jsonb_build_object(''ok'', false, ''erro'', ''conteúdo inválido''); end;';
+    if position(antes in def) = 0 then raise exception 'S9: não achei onde pôr a proteção em git_receber_github'; end if;
+    def := replace(def, antes, antes || E'\n  -- S9 (parte 61): o mesmo aviso (já conferido pela assinatura) não é processado duas vezes\n  if not interno.webhook_novo(''github'', p_corpo) then return jsonb_build_object(''ok'', true, ''repetido'', true); end if;');
+    execute def;
+  end if;
+  def := pg_get_functiondef('public.git_receber_gitlab(uuid,text,text,text)'::regprocedure);
+  if position('webhook_novo' in def) = 0 then
+    antes := '  return jsonb_build_object(''ok'', true, ''evento'', p_evento) || interno.git_processar(r, p_evento, j);';
+    if position(antes in def) = 0 then raise exception 'S9: não achei onde pôr a proteção em git_receber_gitlab'; end if;
+    def := replace(def, antes, E'  -- S9 (parte 61): o mesmo aviso (já conferido pelo segredo) não é processado duas vezes\n  if not interno.webhook_novo(''gitlab:'' || r.id, p_corpo) then return jsonb_build_object(''ok'', true, ''repetido'', true); end if;\n' || antes);
+    execute def;
+  end if;
+end $$;
+
+-- limite de chamadas por chave do portal
+create table if not exists interno.portal_chamadas (
+  resumo text not null, minuto timestamptz not null, n integer not null default 1, primary key (resumo, minuto));
+alter table interno.portal_chamadas enable row level security;
+revoke all on interno.portal_chamadas from public, anon, authenticated, service_role;
+
+create or replace function public.portal_por_chave(p_chave text) returns table (portal_id uuid, no_id uuid, nome text)
+language plpgsql security definer set search_path to 'public', 'extensions', 'pg_temp' as $function$
+declare r text := encode(digest(p_chave, 'sha256'), 'hex'); k int;
+begin
+  -- só conta chave que vale (chave inventada não chega a ocupar espaço)
+  if exists (select 1 from public.portais_chaves c join public.portais p on p.id = c.portal_id where c.resumo = r and c.revogada_em is null and p.ativo) then
+    delete from interno.portal_chamadas x where x.minuto < now() - interval '1 hour';
+    insert into interno.portal_chamadas as x (resumo, minuto) values (r, date_trunc('minute', now()))
+    on conflict (resumo, minuto) do update set n = x.n + 1 returning x.n into k;
+    if k > 120 then raise exception 'Muitas chamadas com esta chave (limite: 120 por minuto). Espere um minuto.' using errcode = '53400'; end if;
+  end if;
+  return query
+  update public.portais_chaves c set usada_em = now()
+    from public.portais p
+   where c.resumo = r and c.revogada_em is null and p.id = c.portal_id and p.ativo
+  returning p.id, p.no_id, p.nome;
+end $function$;
+revoke all on function public.portal_por_chave(text) from public, anon, authenticated;
+grant execute on function public.portal_por_chave(text) to service_role;
+
+-- ajuste da parte 60
+revoke insert, update, delete, truncate, references, trigger on public.itens_com_caminho from authenticated, anon;
+
+-- >>>>>>>>>> 62_onda3_indices_rotinas_politicas_comentarios.sql
+-- =====================================================================
+-- Parte 62 · Ordem de serviço do banco nº1, onda 3: I1, I3, I4 e O5.
+-- I1: índice em toda chave estrangeira que ainda não tinha (public, interno, auditoria). As tabelas são pequenas
+--     (milhares de linhas), então o índice nasce em milissegundos; por isso sem "concurrently" (que não roda dentro
+--     da transação da migração).
+-- I3: rotinas de 10 em 10 e de 5 em 5 minutos deixam de cair no mesmo minuto; nova rotina de hora em hora avisa o dono do
+--     sistema quando uma rotina falha 3 vezes seguidas. A limpeza do histórico do agendador espera o prazo do dono
+--     (PRECISA_CONFIRMACAO_limpar_historico_agendador.sql).
+-- I4: nas 13 tabelas com mais de uma política permissiva para a mesma ação, fica UMA política por ação, com a regra
+--     igual à soma das antigas (A ou B). Quem enxerga o quê não muda (teste compara linha a linha por pessoa).
+-- O5: comentário nas 64 tabelas do public que não tinham.
+-- Plano de volta: 62_onda3_indices_rotinas_politicas_comentarios_VOLTA.sql.
+-- =====================================================================
+
+-- ---------- I1 ----------
+do $$
+declare f record; nome text; n int := 0;
+begin
+  for f in
+    select c.conrelid, c.conrelid::regclass::text tab, rel.relname, rel.relnamespace::regnamespace::text esq,
+           (select string_agg(quote_ident(a.attname), ', ' order by k.ord) from unnest(c.conkey) with ordinality k(attnum, ord) join pg_attribute a on a.attrelid = c.conrelid and a.attnum = k.attnum) cols,
+           (select string_agg(a.attname, '_' order by k.ord) from unnest(c.conkey) with ordinality k(attnum, ord) join pg_attribute a on a.attrelid = c.conrelid and a.attnum = k.attnum) nomes
+      from pg_constraint c join pg_class rel on rel.oid = c.conrelid
+     where c.contype = 'f' and rel.relnamespace in ('public'::regnamespace, 'interno'::regnamespace, 'auditoria'::regnamespace)
+       and not exists (select 1 from pg_index i where i.indrelid = c.conrelid
+                         and (i.indkey::int2[])[0:cardinality(c.conkey) - 1] @> c.conkey and (i.indkey::int2[])[0:cardinality(c.conkey) - 1] <@ c.conkey) loop
+    nome := left(f.relname || '_' || f.nomes, 55) || '_fk_idx';
+    execute format('create index if not exists %I on %s (%s)', nome, f.tab, f.cols);
+    n := n + 1;
+  end loop;
+  raise notice 'I1: % índices de chave estrangeira criados', n;
+end $$;
+
+-- ---------- I3 ----------
+-- (o agendador só existe no Supabase; no banco de teste local esta parte é pulada)
+do $$
+declare j record;
+begin
+  if to_regnamespace('cron') is null then return; end if;
+  for j in select jobid, jobname from cron.job where jobname in ('ciclodev_bi_atualizar', 'ciclodev_diagramas_auto', 'ciclodev_email_imediato') loop
+    perform cron.alter_job(j.jobid, schedule := case j.jobname when 'ciclodev_bi_atualizar' then '2-59/10 * * * *'
+                                                               when 'ciclodev_diagramas_auto' then '6-59/10 * * * *'
+                                                               else '4-59/5 * * * *' end);
+  end loop;
+end $$;
+
+create or replace function interno.rotinas_conferir() returns integer
+language plpgsql security definer set search_path = '' as $$
+declare r record; n int := 0; titulo text;
+begin
+  for r in
+    select j.jobname, x.ultimas
+      from cron.job j
+      cross join lateral (select array_agg(d.status order by d.start_time desc) ultimas
+                            from (select d2.status, d2.start_time from cron.job_run_details d2 where d2.jobid = j.jobid order by d2.start_time desc limit 3) d) x
+     where j.active and cardinality(x.ultimas) = 3 and not ('succeeded' = any(x.ultimas)) and not ('running' = any(x.ultimas)) loop
+    titulo := 'Rotina falhando: ' || r.jobname;
+    insert into public.notificacoes (pessoa_id, titulo, texto, tipo)
+    select d.pessoa_id, titulo, 'A rotina automática ' || r.jobname || ' falhou nas 3 últimas vezes. Veja o detalhe em cron.job_run_details.', 'aviso'
+      from interno.donos_sistema d
+     where not exists (select 1 from public.notificacoes x where x.pessoa_id = d.pessoa_id and x.titulo = titulo and x.criado_em > now() - interval '24 hours');
+    n := n + 1;
+  end loop;
+  return n;
+end $$;
+revoke all on function interno.rotinas_conferir() from public, anon, authenticated, service_role;
+do $$ begin
+  if to_regnamespace('cron') is null then return; end if;
+  perform cron.unschedule(jobid) from cron.job where jobname = 'ciclodev_rotinas_conferir';
+  perform cron.schedule('ciclodev_rotinas_conferir', '41 * * * *', 'select interno.rotinas_conferir()');
+end $$;
+
+-- ---------- I4 ----------
+do $$
+declare t text; cmd record; u text; w text; n int;
+begin
+  foreach t in array array['custos_uso','dominios_registros','equipes','equipes_membros','espaco_membros','etapas_modelo_itens','etiquetas',
+                           'infra_canvas','itens_criterios','servicos','servicos_cobranca','servicos_requisitos','vinculos_externos'] loop
+    create temp table if not exists _pol (tab text, nome text, cmd "char", u text, w text) on commit drop;
+    delete from _pol;
+    insert into _pol select t, p.polname, p.polcmd, pg_get_expr(p.polqual, p.polrelid), pg_get_expr(p.polwithcheck, p.polrelid)
+      from pg_policy p where p.polrelid = ('public.' || quote_ident(t))::regclass and p.polpermissive
+       and p.polroles = array['authenticated'::regrole]::oid[];
+    for cmd in select * from (values ('r', 'ver'), ('a', 'cria'), ('w', 'muda'), ('d', 'apaga')) v(c, nome) loop
+      select string_agg('(' || x.u || ')', ' or ') filter (where x.u is not null),
+             string_agg('(' || coalesce(x.w, x.u) || ')', ' or ') filter (where coalesce(x.w, x.u) is not null), count(*)
+        into u, w, n from _pol x where x.cmd in (cmd.c::"char", '*');
+      if n = 0 then continue; end if;
+      execute format('create policy %I on public.%I for %s to authenticated %s %s', '_nova_' || cmd.nome, t,
+                     case cmd.c when 'r' then 'select' when 'a' then 'insert' when 'w' then 'update' else 'delete' end,
+                     case when cmd.c <> 'a' and u is not null then 'using (' || u || ')' else '' end,
+                     case when cmd.c in ('a', 'w') and w is not null then 'with check (' || w || ')' else '' end);
+    end loop;
+    for cmd in select nome from _pol loop execute format('drop policy %I on public.%I', cmd.nome, t); end loop;
+    for cmd in select polname from pg_policy where polrelid = ('public.' || quote_ident(t))::regclass and polname like '\_nova\_%' loop
+      execute format('alter policy %I on public.%I rename to %I', cmd.polname, t, substr(cmd.polname, 7));
+    end loop;
+  end loop;
+end $$;
+
+-- ---------- O5 ----------
+comment on table public.analise_rodadas is 'Cada rodada da análise automática de um ponto (código ou banco): quantos arquivos, achados abertos, novos e corrigidos.';
+comment on table public.anexos is 'Arquivos e links anexados a item, comentário, pedido, mensagem, prova ou decisão. O arquivo fica no Storage (bucket anexos), aqui só o caminho.';
+comment on table public.aplicacoes is 'Dados de um nó do tipo aplicação: tipo, plataforma, de onde vem o código e o serviço contratado.';
+comment on table public.automacoes is 'Regras automáticas de um ponto: quando acontece o gatilho e a condição bate, executa a ação.';
+comment on table public.automacoes_execucoes is 'Registro de cada vez que uma automação rodou, em qual item e com que resultado. Só o banco grava.';
+comment on table public.blocos_agenda is 'Blocos de tempo reservados na agenda de uma pessoa para trabalhar num item.';
+comment on table public.boards_colunas_status is 'Quais situações do fluxo caem em cada coluna do quadro.';
+comment on table public.cambio is 'Cotação diária de moedas (referência igual para todos). Usada em custos e receitas em moeda estrangeira.';
+comment on table public.campos_personalizados is 'Campos extras que um ponto da estrutura define para os seus itens (nome, tipo e opções).';
+comment on table public.clientes is 'Cadastro do cliente (nó do topo): tipo, documento, dados da empresa, endereço e holding. Tem dado pessoal/empresarial (LGPD).';
+comment on table public.comentarios is 'Comentários em itens ou em pontos da estrutura; visivel_cliente marca o que o stakeholder também vê.';
+comment on table public.comentarios_reacoes is 'Reações (emoji) de cada pessoa em um comentário.';
+comment on table public.custos_operacao is 'Custos fixos da operação do espaço (ferramentas, aluguel...), com recorrência e depreciação.';
+comment on table public.custos_tecnicos is 'Custos técnicos de um ponto (nuvem, licenças, APIs): fornecedor, plano, limites e repasse ao cliente.';
+comment on table public.custos_uso is 'Uso e valor pago por mês de cada custo técnico.';
+comment on table public.decisoes is 'Decisões registradas num ponto: o que foi decidido, por quê, alternativas, quem e quando.';
+comment on table public.equipes_membros is 'Quem faz parte de cada equipe e com qual papel.';
+comment on table public.espaco_membros is 'Pessoas convidadas para um espaço (multiempresa) e o papel de cada uma.';
+comment on table public.etapas_modelo is 'Etapas do modelo de trabalho do espaço (ex.: descoberta, construção), com o que entregar em cada uma.';
+comment on table public.etapas_modelo_itens is 'O que precisa ser cumprido em cada etapa do modelo (checklist, prova exigida, quem cumpre).';
+comment on table public.etiquetas is 'Etiquetas do espaço (nome, cor, categoria) para marcar itens e pontos.';
+comment on table public.etiquetas_itens is 'Quais etiquetas estão em cada item.';
+comment on table public.etiquetas_nos is 'Quais etiquetas estão em cada ponto da estrutura.';
+comment on table public.ficha_campos is 'Ficha técnica de um ponto: cada campo por seção, preenchido à mão ou pelo robô (repositório e banco).';
+comment on table public.frentes is 'Dados de um nó do tipo frente: tipo, limite de trabalho em andamento e definição de pronto.';
+comment on table public.integracoes_log is 'Registro de cada troca com uma integração externa (entrada ou saída, ok ou erro). Só leitura para quem está logado.';
+comment on table public.inv_anexos is 'Inventário: arquivos de ativo, termo ou licença (o arquivo fica no Storage, bucket inventario).';
+comment on table public.inv_baixas is 'Inventário: baixa de um ativo (motivo, como os dados foram apagados, destino e documentos).';
+comment on table public.inv_categorias is 'Inventário: categorias de equipamento e material, com depreciação, vida útil e prazo de conferência.';
+comment on table public.inv_conferencias is 'Inventário: rodadas de conferência física (onde, quando começou e terminou, quem fez).';
+comment on table public.inv_conferencias_itens is 'Inventário: o que foi achado (ou não) em cada conferência, e onde.';
+comment on table public.inv_funcionarios_apps is 'Inventário: em quais aplicações cada funcionário trabalha.';
+comment on table public.inv_itens is 'Inventário: itens de estoque (material de consumo), com unidade, estoque mínimo e valor.';
+comment on table public.inv_licencas is 'Inventário: licenças de software (quantidade, vencimento, renovação). A chave não fica aqui, só onde ela está guardada.';
+comment on table public.inv_licencas_uso is 'Inventário: quem ou qual equipamento usa cada licença.';
+comment on table public.inv_ligacoes is 'Inventário: ligação entre ativos (ex.: monitor ligado a um computador).';
+comment on table public.inv_locais is 'Inventário: locais (prédio, sala, armário), em árvore.';
+comment on table public.inv_manutencoes is 'Inventário: manutenções de um ativo (fornecedor, garantia, custo, item de trabalho ligado).';
+comment on table public.inv_modelos is 'Inventário: modelos de equipamento (fabricante, especificações, fim de vida).';
+comment on table public.inv_saldos is 'Inventário: quantidade de cada item de estoque em cada local (mantido pelo banco nas movimentações).';
+comment on table public.inv_termos is 'Inventário: termos de responsabilidade gerados para funcionários (entrega e devolução), com data de assinatura.';
+comment on table public.itens_campos is 'Valor de cada campo personalizado em cada item.';
+comment on table public.itens_checklist is 'Checklist de um item (texto, feito, prazo e responsável).';
+comment on table public.itens_ligacoes is 'Ligação entre itens (bloqueia, relaciona, duplica).';
+comment on table public.marcos is 'Marcos de um ponto (entregas, metas), com data, entrega e se o cliente vê.';
+comment on table public.metas_resultados_itens is 'Quais itens contribuem para cada resultado-chave de uma meta.';
+comment on table public.notificacoes is 'Avisos para uma pessoa (menção, responsável, lembrete, automação) e o envio por e-mail.';
+comment on table public.pedidos is 'Pedidos do Service Desk (dúvida, problema, melhoria) num ponto, com gravidade e situação.';
+comment on table public.pedidos_mensagens is 'Mensagens da conversa de um pedido do Service Desk.';
+comment on table public.pessoas is 'Pessoas do CicloDev (ligadas ao login do Supabase Auth): nome, e-mail, função, papel e espaço. Tem dado pessoal (LGPD).';
+comment on table public.pessoas_custos is 'Custo de cada pessoa para o espaço (salário, pró-labore, PJ, benefícios). Dado sensível: só o dono do espaço vê.';
+comment on table public.projetos is 'Dados de um nó do tipo projeto: datas, prefixo e sequência da chave dos itens, P.O., visão, riscos.';
+comment on table public.provas is 'Provas enviadas para cumprir um requisito de etapa (arquivo, link ou texto).';
+comment on table public.quadro_elementos is 'Elementos do quadro livre de um ponto (notas, cartões, setas) e suas posições.';
+comment on table public.quadros is 'Quadro livre de um ponto (um por ponto); os elementos ficam em quadro_elementos.';
+comment on table public.receitas is 'Receitas de um ponto (contrato, mensalidade, parcelas), por serviço.';
+comment on table public.regras_calculo is 'Regras de cálculo de preço e custo (impostos, encargos, margens), com data de início de vigência.';
+comment on table public.requisitos is 'Requisitos padrão que os serviços do espaço podem exigir.';
+comment on table public.servicos is 'Catálogo de serviços do espaço (o que se vende, horas, SLA, frentes padrão).';
+comment on table public.servicos_cobranca is 'Formas de cobrança de cada serviço (modelo e parâmetros).';
+comment on table public.servicos_requisitos is 'Quais requisitos cada serviço exige.';
+comment on table public.slas is 'Prazos de resposta e de solução por gravidade, por ponto (Service Desk).';
+comment on table public.status_fluxo is 'Situações do fluxo de trabalho de um ponto (nome, cor, grupo: backlog, todo, doing, review, blocked, done).';
+comment on table public.visoes_salvas is 'Visões salvas de uma lista ou quadro (filtros, agrupamento, ordem), de uma pessoa ou compartilhadas.';

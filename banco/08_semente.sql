@@ -561,7 +561,10 @@ insert into public.anexos (id, nome, tipo, tamanho_bytes, storage_path, url, ite
   ('99a0b436-b169-506c-a7ae-112a95dcedb6', 'audio-duvida.m4a', 'audio', null, 'exemplo/audio-duvida.m4a', null, null, '2246aac4-fcc9-5564-af95-054b9cc42889', '92e61f72-37c7-5606-9391-2850c2c953ef')
 on conflict (id) do nothing;
 
+-- a auditoria é só de inserção (parte 59); a carga de exemplo avisa que está trocando só as linhas "semente"
+select set_config('ciclodev.trocando_semente', 'sim', false);
 delete from auditoria.registros where tabela = 'itens' and mudancas ? 'semente';
+select set_config('ciclodev.trocando_semente', '', false);
 insert into auditoria.registros (tabela, registro_id, acao, mudancas, pessoa_id, em) values
   ('itens', '9e11825c-aed2-5d36-968d-03a62362c33c', 'U', '{"comentario": [null, null], "semente": true}'::jsonb, 'd148fdc5-eef3-5398-bf89-f49b55b5cd28', '2026-09-26T15:22:00+00:00'),
   ('itens', 'bdb0cca2-c9ee-5385-bf36-765defb34811', 'I', '{"titulo": "Integração com a Conexa", "semente": true}'::jsonb, 'b5510531-2c75-59fb-b2c1-006a90d0775f', '2026-09-26T12:41:00+00:00'),

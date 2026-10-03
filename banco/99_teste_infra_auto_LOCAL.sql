@@ -61,7 +61,7 @@ select pg_temp.ok(true, 'mas não lê o endereço guardado (a senha)');
 select pg_temp.ok((select row_to_json(b)::text !~ 'segredo' from infra_bancos b), 'e o endereço não aparece em infra_bancos');
 select pg_temp.ok((select (infra_banco_salvar((select prod from t), (select id from infra_bancos where nome = 'Produção'), 'Produção principal', 'supabase', 'postgres', '{public}', null)).nome) = 'Produção principal', 'trocar o nome sem mandar o endereço mantém o endereço');
 reset role;
-select pg_temp.ok((select conexao from interno.infra_bancos_conexao) = 'postgresql://leitor:segredo@db.exemplo:5432/postgres', 'o endereço continua o mesmo');
+select pg_temp.ok((select interno.segredo_de('interno.infra_bancos_conexao', banco_id::text, 'conexao') from interno.infra_bancos_conexao) = 'postgresql://leitor:segredo@db.exemplo:5432/postgres', 'o endereço continua o mesmo');
 select pg_temp.ok((select servidor from infra_bancos) = 'db.exemplo', 'a tela vê só o servidor (sem usuário nem senha)');
 -- um segundo banco, na AWS (MySQL no RDS), no mesmo produto
 select pg_temp.como('00000000-0000-0000-0000-00000000000a'); set role authenticated;
@@ -198,4 +198,4 @@ select pg_temp.ok(not has_table_privilege('authenticated', 'interno.infra_bancos
    and not has_function_privilege('authenticated', 'public.infra_auto_gravar(uuid, text, text, text, text, text, text, text, jsonb, jsonb)', 'execute')
    and not has_function_privilege('anon', 'public.infra_auto_pedir(uuid)', 'execute')
    and has_function_privilege('service_role', 'public.infra_auto_concluir(uuid, text, text, uuid[], jsonb, text[])', 'execute'), 'permissões: a tela só lê e chama as 3 funções dela; a fila é da função');
-select pg_temp.ok((select count(*) from pg_proc where proname in ('infra_banco_salvar','infra_banco_remover','infra_auto_pedir','infra_auto_proximos','infra_auto_gravar','infra_auto_concluir','infra_auto_banco_lido','infra_auto_quadro','infra_quadro_publicar','infra_quadro_gravar')) = 10 and (select count(*) from pg_proc where proname = 'infra_banco_definir') = 0, 'uma versão só de cada função (e a antiga infra_banco_definir saiu)');
+select pg_temp.ok((select count(*) from pg_proc where pronamespace = 'public'::regnamespace and proname in ('infra_banco_salvar','infra_banco_remover','infra_auto_pedir','infra_auto_proximos','infra_auto_gravar','infra_auto_concluir','infra_auto_banco_lido','infra_auto_quadro','infra_quadro_publicar','infra_quadro_gravar')) = 10 and (select count(*) from pg_proc where proname = 'infra_banco_definir') = 0, 'uma versão só de cada função (e a antiga infra_banco_definir saiu)');

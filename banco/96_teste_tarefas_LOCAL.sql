@@ -42,7 +42,12 @@ update itens set descricao = 'Primeira versão, ajustada' where id = (select ite
 select pg_temp.ok((select count(*) from itens_descricao_versoes where item_id = (select item from alvo) and texto = 'Primeira versão, ajustada') = 1
   and (select count(*) from itens_descricao_versoes where item_id = (select item from alvo) and texto = 'Primeira versão') = 0, 'edições seguidas da mesma pessoa ficam numa versão só');
 reset role;
+-- simula a passagem do tempo (o histórico é só de inserção desde a parte 59: o teste desliga a trava só para isto)
+do $$ begin if exists (select 1 from pg_trigger where tgname = 'so_insercao' and tgrelid = 'public.itens_descricao_versoes'::regclass) then
+  alter table public.itens_descricao_versoes disable trigger so_insercao; end if; end $$;
 update itens_descricao_versoes set criado_em = now() - interval '1 hour' where item_id = (select item from alvo);
+do $$ begin if exists (select 1 from pg_trigger where tgname = 'so_insercao' and tgrelid = 'public.itens_descricao_versoes'::regclass) then
+  alter table public.itens_descricao_versoes enable trigger so_insercao; end if; end $$;
 set role authenticated;
 update itens set descricao = 'Segunda versão' where id = (select item from alvo);
 select pg_temp.ok((select count(*) from itens_descricao_versoes where item_id = (select item from alvo)) >= 2, 'depois de um tempo, vira versão nova');
@@ -137,4 +142,4 @@ end $$;
 reset role;
 select pg_temp.ok((select count(*) from information_schema.role_table_grants where table_name = 'modelos' and grantee = 'authenticated') = 4, 'modelos: permissão (GRANT) para quem está logado');
 select pg_temp.ok((select count(*) from information_schema.role_table_grants where table_name = 'itens_descricao_versoes' and grantee = 'authenticated' and privilege_type = 'SELECT') = 1, 'versões: só leitura para quem está logado');
-select pg_temp.ok((select count(*) from pg_proc where proname in ('lixeira_mover','lixeira_restaurar','lixeira_apagar','lixeira_listar')) = 4, 'uma versão só de cada função da lixeira');
+select pg_temp.ok((select count(*) from pg_proc where pronamespace = 'public'::regnamespace and proname in ('lixeira_mover','lixeira_restaurar','lixeira_apagar','lixeira_listar')) = 4, 'uma versão só de cada função da lixeira');

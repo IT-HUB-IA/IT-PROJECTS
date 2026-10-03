@@ -10,13 +10,16 @@
 //   POST /perguntas/<id>/resposta   {"texto": "..."}, com o cabeçalho X-Portal-Usuario: <e-mail do convidado>
 //   GET  /eventos?depois=<id>       a fila de avisos (a mesma que vai pelo webhook), para buscar o que faltou
 //   GET  /membros                   quem pode responder (e-mail e nome)
+// Limite: 120 chamadas por minuto por chave; passou disso, 429 com Retry-After: 60.
+// Quem responde (X-Portal-Usuario): a chave é do sistema do cliente, que responde pelos usuários dele; o banco só aceita
+// e-mail que é membro ativo DAQUELE portal (portal_responder) e grava quem foi no comentário do item.
 
 export type Rpc = (nome: string, args?: Record<string, unknown>) => Promise<{ data: unknown; error: { message?: string; code?: string } | null }>;
 export type Tabela = (nome: string, portal: string) => Promise<{ data: unknown; error: { message?: string } | null }>;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const cab = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" };
-export const resposta = (corpo: unknown, status = 200) => new Response(JSON.stringify(corpo), { status, headers: cab });
+export const resposta = (corpo: unknown, status = 200, extra: Record<string, string> = {}) => new Response(JSON.stringify(corpo), { status, headers: Object.assign({}, cab, extra) });
 const erro = (status: number, mensagem: string) => resposta({ ok: false, erro: mensagem }, status);
 
 // o caminho depois de /portal-api (o Supabase manda /functions/v1/portal-api/... ou só /portal-api/...)
@@ -39,7 +42,8 @@ export async function tratar(req: Request, rpc: Rpc, membros: Tabela): Promise<R
   const chave = /^Bearer\s+(cdp_[A-Za-z0-9_-]{20,})$/.exec(auth.trim());
   if (!chave) return erro(401, "Falta a chave do portal (Authorization: Bearer cdp_...)");
   const { data: achou, error: eChave } = await rpc("portal_por_chave", { p_chave: chave[1] });
-  if (eChave) return erro(500, "Não deu para conferir a chave");
+  // limite de chamadas por chave (parte 61 do banco): 120 por minuto
+  if (eChave) return eChave.code === "53400" ? resposta({ ok: false, erro: eChave.message || "Muitas chamadas com esta chave. Espere um minuto." }, 429, { "retry-after": "60" }) : erro(500, "Não deu para conferir a chave");
   const portal = Array.isArray(achou) ? achou[0] : null;
   if (!portal || !(portal as { portal_id?: string }).portal_id) return erro(401, "Chave inválida ou revogada");
   const pid = (portal as { portal_id: string }).portal_id;

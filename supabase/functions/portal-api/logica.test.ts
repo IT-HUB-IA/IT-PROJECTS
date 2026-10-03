@@ -13,10 +13,13 @@ const rpc = (respostas: Record<string, { data?: unknown; error?: { message: stri
   if (nome === "portal_por_chave") return { data: args!.p_chave === CHAVE ? [{ portal_id: PORTAL, no_id: "n", nome: "Blanco & Lisboa" }] : [], error: null };
   const r = respostas[nome] || { data: { exemplo: nome } }; return { data: r.data ?? null, error: (r.error as null) || null };
 };
+const limite = async (nome: string) => nome === "portal_por_chave" ? { data: null, error: { message: "Muitas chamadas com esta chave (limite: 120 por minuto). Espere um minuto.", code: "53400" } } : { data: null, error: null };
 const membros = async () => ({ data: [{ email: "lucas@bl.com", nome: "Lucas", ativo: true }], error: null });
 
 ok(JSON.stringify(rota(base + "/itens/abc")) === '["itens","abc"]' && JSON.stringify(rota("https://x/portal-api/painel")) === '["painel"]', "entende o caminho depois de /portal-api");
-let r = await tratar(pedido("/painel", { chave: null }), rpc(), membros);
+let r = await tratar(pedido("/painel"), limite, membros);
+ok(r.status === 429 && r.headers.get("retry-after") === "60" && (await r.json()).erro.includes("120"), "passou do limite de chamadas da chave: 429 com Retry-After");
+r = await tratar(pedido("/painel", { chave: null }), rpc(), membros);
 ok(r.status === 401, "sem chave: 401");
 r = await tratar(pedido("/painel", { chave: "cdp_" + "b".repeat(43) }), rpc(), membros);
 ok(r.status === 401, "chave errada ou revogada: 401");

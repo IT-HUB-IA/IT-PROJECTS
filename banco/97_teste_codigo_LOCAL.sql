@@ -42,7 +42,7 @@ select pg_temp.ok((git_apps_status()#>>'{github,slug}') = 'ciclodev-teste' and g
 select pg_temp.ok((git_apps_status()#>>'{gitlab,base}') = 'https://gitlab.com', 'GitLab sem endereço usa o gitlab.com');
 select git_app_gravar('gitlab', '{"client_id":"gl-id","client_secret":"","retorno":"https://ciclodev.it-ia.tec.br/entrar?git=gitlab"}');
 reset role;
-select pg_temp.ok((select dados->>'client_secret' from interno.git_apps where provedor = 'gitlab') = 'gl-segredo', 'mudar o GitLab sem digitar o segredo mantém o segredo');
+select pg_temp.ok((select interno.segredo_de('interno.git_apps', provedor, 'dados')::jsonb->>'client_secret' from interno.git_apps where provedor = 'gitlab') = 'gl-segredo', 'mudar o GitLab sem digitar o segredo mantém o segredo');
 
 -- ---------- o vai e volta da janelinha ----------
 select pg_temp.como('00000000-0000-0000-0000-00000000000a', 'william@teste.com');
@@ -289,4 +289,4 @@ reset role;
 select pg_temp.ok((select removida_em is not null from git_conexoes where id = (select con_gh from alvo)) and (select not ativo from repositorios where id = (select repo from alvo)), 'app removido no GitHub: a conta sai e os repositórios param');
 select pg_temp.ok((select count(*) from information_schema.role_table_grants where table_name in ('repositorios','publicacoes','codigo_vinculos','git_conexoes') and grantee = 'anon') = 0, 'nada para quem não está logado');
 select pg_temp.ok((select count(*) from pg_proc where proname in ('git_receber','repositorio_segredo')) = 0, 'o jeito antigo (segredo na tela e git_receber) saiu');
-select pg_temp.ok((select max(n) from (select count(*) n from pg_proc where proname like 'git\_%' group by proname) x) = 1, 'uma versão só de cada função git_');
+select pg_temp.ok((select max(n) from (select count(*) n from pg_proc where proname like 'git\_%' group by pronamespace, proname) x) = 1, 'uma versão só de cada função git_');
