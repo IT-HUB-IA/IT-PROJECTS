@@ -66,6 +66,8 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
     if (fn === 'analise_inventario_ligar'){ try { return JSON.stringify({data:+psql(COMO + "select public.analise_inventario_ligar($j$" + JSON.stringify(args.p_pares) + "$j$::jsonb)").trim(), error:null}); } catch (e) { return JSON.stringify({data:null, error:{message:String(e.stderr || e.message).slice(0, 200)}}); } }
     if (fn === 'analise_marcar'){ const v = x => x == null ? 'null' : "'" + String(x).replace(/'/g, "''") + "'"; try { const r = psql(COMO + "select row_to_json(public.analise_marcar(" + v(args.p_id) + "::uuid, " + v(args.p_status) + "::text, " + v(args.p_motivo) + "::text, " + v(args.p_item) + "::uuid))").trim(); return JSON.stringify({data:JSON.parse(r), error:null}); }
       catch (e) { return JSON.stringify({data:null, error:{message:String(e.stderr || e.message).split('\n').find(l => /ERROR/.test(l)) || 'erro'}}); } }
+    if (fn === 'analise_marcar_visto'){ try { return JSON.stringify({data:+psql(COMO + "select public.analise_marcar_visto(array[" + args.p_ids.map(i => "'" + i + "'::uuid").join(',') + "])").trim(), error:null}); }
+      catch (e) { return JSON.stringify({data:null, error:{message:String(e.stderr || e.message).split('\n').find(l => /ERROR/.test(l)) || 'erro'}}); } }
     return JSON.stringify({data:'x', error:null}); });
 
   await p.exposeFunction('__fn', s => JSON.stringify({data:{ok:true}, error:null}));
@@ -106,6 +108,21 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   psql("select public.analise_gravar('" + app + "', 'aaaaaaaa-0000-0000-0000-000000000001', null, 'it-hub/bl-java', 'def5678', 120, $j$" + JSON.stringify(ach.filter(a => a.regra !== 'XSS-01')) + "$j$::jsonb)");
   await ver(); await p.evaluate(() => document.querySelector('[data-sg-filtro="corrigido"]').click()); await p.waitForTimeout(300);
   ok(await p.evaluate(() => document.querySelectorAll('.sg-ach').length === 1 && /Corrigido/.test(document.querySelector('.sg-ach').textContent)), 'o achado que sumiu do código aparece em Corrigidos, sozinho');
+  // alerta de biblioteca com falha (parte 63): acende, avisa no sininho, nada é travado; a pessoa marca como visto
+  if (conta("select to_regprocedure('public.analise_marcar_visto(uuid[])') is not null") === 't'){
+    const dep = {regra:'DEP-01', gravidade:'critica', titulo:'lodash 4.17.15: 6 falhas conhecidas', onde:'web/package-lock.json · npm', trecho:'Corrige na versão 4.17.21. CVE-2020-8203 (GHSA-p6mc-m468-83gw). Detalhes em osv.dev', impressao:'0000000e'};
+    psql("select public.analise_gravar('" + app + "', 'aaaaaaaa-0000-0000-0000-000000000001', null, 'it-hub/bl-java', 'ghi9012', 120, $j$" + JSON.stringify(ach.filter(a => a.regra !== 'XSS-01').concat([dep])) + "$j$::jsonb)");
+    await ver(); await p.evaluate(() => document.querySelector('[data-sg-filtro="aberto"]').click()); await p.waitForTimeout(300);
+    const al = await p.evaluate(() => ({ banner:(document.querySelector('.sg-alerta') || {}).textContent || '', tag:[...document.querySelectorAll('.sg-ach')].some(x => /lodash/.test(x.textContent) && x.querySelector('.sg-selo.alerta') && x.querySelector('[data-sg-visto]')) }));
+    ok(/\d+ alertas? novos?/.test(al.banner) && /1 é de biblioteca com falha/.test(al.banner) && /Nada foi travado/.test(al.banner) && al.tag, 'biblioteca com falha acende o alerta no topo e no achado, com Marcar como visto (' + al.banner.slice(0, 60) + ')');
+    ok(conta("select count(*) from notificacoes where titulo = 'Biblioteca com falha conhecida em it-hub/bl-java' and texto like 'Pior gravidade: crítica%'") !== '0', 'e avisa no sininho de quem participa');
+    if (F) await p.screenshot({path: F + 'seguranca_alerta.png', fullPage:true});
+    await p.evaluate(() => [...document.querySelectorAll('.sg-ach')].find(x => /lodash/.test(x.textContent)).querySelector('[data-sg-visto]').click()); await p.waitForTimeout(1500);
+    ok(conta("select (visto_em is not null)::text || '|' || status from analise_achados where impressao = '0000000e'") === 'true|aberto', 'Marcar como visto grava no banco e o achado continua aberto');
+    ok(await p.evaluate(() => !/de biblioteca/.test((document.querySelector('.sg-alerta') || {}).textContent || '') && /Visto por William/.test([...document.querySelectorAll('.sg-ach')].find(x => /lodash/.test(x.textContent)).textContent)), 'o alerta da biblioteca apaga e o achado mostra quem viu');
+    await p.evaluate(() => document.querySelector('[data-sg-visto-todos]').click()); await p.waitForTimeout(1500);
+    ok(conta("select count(*) from analise_achados where status = 'aberto' and visto_em is null") === '0' && await p.evaluate(() => !document.querySelector('.sg-alerta')), 'Marcar todos como vistos apaga o alerta de vez');
+  }
   // o inventário: importar o que já existe como épicos e itens
   psql("select public.analise_inventario_gravar('" + app + "', 'aaaaaaaa-0000-0000-0000-000000000001', null, 'it-hub/bl-java', $j$" + JSON.stringify([
     {tipo:'api', chave:'api:GET /clientes', grupo:'Cliente', nome:'GET /clientes', onde:'ClienteController.java:4', sinais:{teste:true, criado:'2025-03-10', publicado:'2025-06-02', commits:7}},

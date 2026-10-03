@@ -480,3 +480,9 @@ Regras que valem daqui em diante:
 - **Nó na lixeira leva os itens de dentro** com a mesma hora; restaurar traz os mesmos (parte 60).
 - Preparados e **não aplicados** (esperam o dono): `PRECISA_CONFIRMACAO_*.sql`.
 - Plano de volta de cada parte: `<parte>_VOLTA.sql`.
+
+## Parte 63: biblioteca com falha conhecida acende um alerta, sem travar nada (aplicada no Supabase em 03/10/2026)
+- O robô (diagramas-auto, `dependencias.ts`) lê as versões exatas dos arquivos de travas de 8 linguagens e consulta a base pública OSV.dev; a gravidade vem do próprio aviso (nota CVSS ou classificação do GitHub).
+- Cada achado tem `visto_em`/`visto_por`. O alerta fica aceso (nulo) quando o achado é novo, volta depois de corrigido, piora ou a biblioteca ganha falha nova.
+- Biblioteca com falha que acende o alerta manda um aviso no sininho para quem participa do ponto (`interno.pessoas_do_no`; nunca stakeholder), um por rodada.
+- A pessoa marca como visto na aba Análise (`analise_marcar_visto`, um, vários ou todos). Visto não é corrigido nem ignorado: o achado segue aberto até sumir do código. Nada trava a entrega.

@@ -113,6 +113,8 @@ select pg_temp.ok((select excluido_em is not null from itens where id = (select 
 select pg_temp.ok((select count(*) from r) = 51, 'as 51 funções testadas (' || (select count(*) from r) || ' linhas)');
 -- regra geral: nenhuma security definer do public chamável por quem está logado; a porta é security invoker
 select pg_temp.ok(not exists (select 1 from pg_proc p where p.pronamespace = 'public'::regnamespace and p.prosecdef and has_function_privilege('authenticated', p.oid, 'EXECUTE')), 'nenhuma security definer do public pode ser chamada por quem está logado (aviso 0029)');
-select pg_temp.ok((select count(*) from pg_proc p where p.pronamespace = 'logica'::regnamespace) = 51 and not has_schema_privilege('anon', 'logica', 'USAGE'), '51 corpos em logica; anon não entra em logica');
+select pg_temp.ok((select count(*) from pg_proc p where p.pronamespace = 'logica'::regnamespace) >= 51
+  and not exists (select 1 from pg_proc p where p.pronamespace = 'logica'::regnamespace and not exists (select 1 from pg_proc q where q.pronamespace = 'public'::regnamespace and q.proname = p.proname and not q.prosecdef))
+  and not has_schema_privilege('anon', 'logica', 'USAGE'), 'cada corpo em logica tem a porta fina no public; anon não entra em logica');
 select pg_temp.ok(not exists (select 1 from pg_proc p where p.pronamespace = 'logica'::regnamespace and has_function_privilege('anon', p.oid, 'EXECUTE')), 'anon não executa nada de logica');
 rollback;

@@ -27,7 +27,7 @@ async function sgCarregar(){
   if (!sb){ SG.achados = []; SG.rodadas = []; SG.carregando = false; return; }
   try {
     const [a, r, v] = await Promise.all([
-      sb.from('analise_achados').select('id, no_id, origem, rotulo, regra, gravidade, titulo, onde, trecho, status, motivo, item_id, referencia, vezes, primeiro_em, ultimo_em, corrigido_em').in('no_id', nos).order('ultimo_em', {ascending:false}).limit(2000),
+      sb.from('analise_achados').select('id, no_id, origem, rotulo, regra, gravidade, titulo, onde, trecho, status, motivo, item_id, referencia, vezes, primeiro_em, ultimo_em, corrigido_em, visto_em, visto_por').in('no_id', nos).order('ultimo_em', {ascending:false}).limit(2000),
       sb.from('analise_rodadas').select('no_id, origem, rotulo, referencia, arquivos, abertos, novos, corrigidos, avisos, rodou_em').in('no_id', nos),
       sb.from('analise_inventario').select('id, no_id, origem, rotulo, tipo, chave, grupo, nome, onde, sinais, item_id').in('no_id', nos).limit(5000)]);
     if (a.error) throw a.error; if (r.error) throw r.error;
@@ -42,7 +42,7 @@ async function sgCarregar(){
 function sgNota(lista){ const p = {critica:25, alta:10, media:4, baixa:1}; return Math.max(0, 100 - lista.reduce((s, a) => s + (p[a.gravidade] || 0), 0)); }
 const sgQuando = ts => { if (!ts) return ''; const m = Math.round((Date.now() - new Date(ts).getTime()) / 60000); if (m < 1) return 'agora'; if (m < 60) return 'há ' + m + ' min'; const h = Math.round(m / 60); if (h < 24) return 'há ' + h + ' h'; const d = Math.round(h / 24); return d === 1 ? 'ontem' : 'há ' + d + ' dias'; };
 function sgTelaHTML(){
-  const pode = podeEditar(), sb = sgBanco();
+  const pode = podeEditar(), sb = sgBanco(), podeVer = podeEditar();   // quem só acompanha (stakeholder) não marca alerta
   if (!sb) return '<div class="sg-tela"><p class="sg-vazio">A análise de segurança precisa do banco do CicloDev ligado.</p></div>';
   if (SG.carregando && !SG.achados.length) return '<div class="sg-tela"><p class="sg-vazio">Carregando a análise…</p></div>';
   if (SG.erro) return '<div class="sg-tela"><p class="entrada-erro">Não deu para ler a análise: ' + esc(SG.erro) + '</p></div>';
@@ -56,7 +56,13 @@ function sgTelaHTML(){
   const n2 = st => SG.achados.filter(a => a.status === st && (!SG.tipo || sgTipo(a.regra) === SG.tipo)).length;
   const semItem = abertos.filter(a => !a.item_id && (a.gravidade === 'critica' || a.gravidade === 'alta'));
   const inv = SG.inventario, invNovo = inv.filter(sgPendente);
-  let h = '<div class="sg-tela"><section class="sg-topo"><div class="sg-nota sg-' + cor + '"><b>' + (fontes.length ? n : '–') + '</b><span>nota de segurança</span></div>' +
+  // alerta: o que apareceu e ninguém marcou como visto (não trava nada; a pessoa só confirma que viu)
+  const alertas = abertos.filter(a => !a.visto_em).sort((a, b) => SG_ORDEM[a.gravidade] - SG_ORDEM[b.gravidade]);
+  const alertaHTML = alertas.length ? '<section class="sg-alerta" role="status"><div><b>' + (alertas.length === 1 ? '1 alerta novo' : alertas.length + ' alertas novos') + '</b><span>' +
+      (alertas.some(a => a.regra === 'DEP-01') ? (nd => nd === 1 ? '1 é de biblioteca com falha de segurança conhecida. ' : nd + ' são de bibliotecas com falha de segurança conhecida. ')(alertas.filter(a => a.regra === 'DEP-01').length) : '') +
+      'Nada foi travado: veja abaixo (marcados com "alerta") e marque como visto. O achado continua aberto até ser corrigido.</span></div>' +
+      (podeVer ? '<button type="button" class="btn peq" data-sg-visto-todos>Marcar todos como vistos</button>' : '') + '</section>' : '';
+  let h = '<div class="sg-tela">' + alertaHTML + '<section class="sg-topo"><div class="sg-nota sg-' + cor + '"><b>' + (fontes.length ? n : '–') + '</b><span>nota de segurança</span></div>' +
     '<div class="sg-resumo"><h3>Análise do código e do banco</h3><p>O CicloDev lê o código e o banco ligados a este ' + (UI.sel.startsWith('project:') ? 'projeto (e aos produtos e aplicações dele)' : UI.sel.startsWith('product:') ? 'produto (e às aplicações dele)' : 'ponto') + ' a cada publicação e confere as regras de segurança (guias da OWASP), de qualidade do código e de arquitetura do banco. Nada é mudado no seu sistema: ele só lê.</p>' +
     '<div class="sg-contas">' + ['critica','alta','media','baixa'].map(g => '<span class="sg-conta sg-g-' + g + '"><b>' + cont(g) + '</b>' + SG_GRAV[g][0] + '</span>').join('') + '</div>' +
     '<p class="sg-outros">Além da segurança: <b>' + contTipo('qualidade') + '</b> de qualidade do código e <b>' + contTipo('arquitetura') + '</b> de arquitetura do banco (não entram na nota).</p>' +
@@ -72,11 +78,12 @@ function sgTelaHTML(){
     if (a.gravidade !== grav){ grav = a.gravidade; h += '<h4 class="sg-sec sg-g-' + grav + '">' + SG_GRAV[grav][0] + ' <small>' + SG_GRAV[grav][1] + '</small></h4>'; }
     const r = sgRegra(a.regra), it = a.item_id && byId('issues', a.item_id);
     h += '<article class="sg-ach sg-g-' + a.gravidade + '" data-sg-id="' + esc(a.id) + '"><header><span class="sg-reg">' + esc(a.regra) + '</span>' + (sgTipo(a.regra) !== 'seguranca' ? '<span class="sg-selo">' + SG_TIPOS[sgTipo(a.regra)] + '</span>' : '') + '<b>' + esc(a.titulo) + '</b>' +
-      (a.status === 'corrigido' ? '<span class="sg-selo ok">Corrigido ' + esc(sgQuando(a.corrigido_em)) + '</span>' : a.status === 'ignorado' ? '<span class="sg-selo">Ignorado</span>' : a.vezes > 1 ? '<span class="sg-selo">visto ' + a.vezes + ' vezes</span>' : '<span class="sg-selo novo">novo</span>') + '</header>' +
+      (a.status === 'corrigido' ? '<span class="sg-selo ok">Corrigido ' + esc(sgQuando(a.corrigido_em)) + '</span>' : a.status === 'ignorado' ? '<span class="sg-selo">Ignorado</span>' : !a.visto_em ? '<span class="sg-selo alerta">alerta</span>' : a.vezes > 1 ? '<span class="sg-selo">visto ' + a.vezes + ' vezes</span>' : '<span class="sg-selo novo">novo</span>') + '</header>' +
       '<p class="sg-onde"><span>' + esc(a.rotulo) + '</span> · <code>' + esc(a.onde) + '</code></p>' + (a.trecho ? '<pre class="sg-trecho">' + esc(a.trecho) + '</pre>' : '') +
       '<details class="sg-det"' + (a.gravidade === 'critica' && a.status === 'aberto' ? ' open' : '') + '><summary>Por que importa e como corrigir</summary><p><b>Por que importa.</b> ' + esc(r.porque) + '</p><p><b>Como corrigir.</b> ' + esc(r.correcao) + '</p><p class="sg-fontetxt">Fonte: ' + esc(r.fonte) + '</p></details>' +
       (a.motivo ? '<p class="sg-motivo">Ignorado: ' + esc(a.motivo) + '</p>' : '') +
-      '<div class="sg-bts">' + (it ? '<button type="button" class="btn sec peq" data-abrir-item="' + esc(it.id) + '">Abrir ' + esc((typeof chaveDe === 'function' && chaveDe(it)) || 'o item') + '</button>' : (pode && a.status === 'aberto' ? '<button type="button" class="btn peq" data-sg-item="' + esc(a.id) + '">Criar item para corrigir</button>' : '')) +
+      '<div class="sg-bts">' + (a.status === 'aberto' && !a.visto_em && podeVer ? '<button type="button" class="btn peq" data-sg-visto="' + esc(a.id) + '">Marcar como visto</button>' : '') +
+        (a.status === 'aberto' && a.visto_em ? '<span class="sg-visto">Visto' + (a.visto_por && byId('people', a.visto_por) ? ' por ' + esc(byId('people', a.visto_por).nome.split(' ')[0]) : '') + ' ' + esc(sgQuando(a.visto_em)) + '</span>' : '') + (it ? '<button type="button" class="btn sec peq" data-abrir-item="' + esc(it.id) + '">Abrir ' + esc((typeof chaveDe === 'function' && chaveDe(it)) || 'o item') + '</button>' : (pode && a.status === 'aberto' ? '<button type="button" class="btn peq" data-sg-item="' + esc(a.id) + '">Criar item para corrigir</button>' : '')) +
         (pode && a.status === 'aberto' ? '<button type="button" class="btn fant peq" data-sg-ignorar="' + esc(a.id) + '">Ignorar com motivo</button>' : '') + (pode && a.status === 'ignorado' ? '<button type="button" class="btn fant peq" data-sg-reabrir="' + esc(a.id) + '">Voltar a considerar</button>' : '') + '</div></article>';
   });
   if (lista.length > 300) h += '<p class="sg-vazio">E mais ' + (lista.length - 300) + ' achados.</p>';
@@ -281,6 +288,18 @@ document.addEventListener('click', async e => {
     modal('Criar itens de segurança', '<p>Cria ' + lista.length + (lista.length === 1 ? ' item' : ' itens') + ' do tipo Bug, um para cada achado crítico ou alto ainda sem item, no topo da fila, com prioridade Deve. Cada um leva o que achou, por que importa, como corrigir e a fonte.</p>',
       [{txt:'Cancelar', cls:'sec'}, {txt:'Criar', acao:() => { sgCriarItens(lista).then(n => { rView(); toast(n + (n === 1 ? ' item criado.' : ' itens criados.')); }); }}]);
     return;
+  }
+  const vi = e.target.closest('[data-sg-visto],[data-sg-visto-todos]');
+  if (vi){
+    const ids = vi.dataset.sgVisto ? [vi.dataset.sgVisto] : SG.achados.filter(a => a.status === 'aberto' && !a.visto_em).map(a => a.id);
+    if (!ids.length) return;
+    vi.disabled = true;
+    const {data, error} = await sgBanco().rpc('analise_marcar_visto', {p_ids:ids});
+    if (error){ vi.disabled = false; toast('Não deu: ' + (error.message || error)); return; }
+    const eu = idEu(UI.verComo || 'master'), agora = new Date().toISOString();
+    SG.achados.forEach(a => { if (ids.includes(a.id) && !a.visto_em){ a.visto_em = agora; a.visto_por = eu || null; } });
+    toast(ids.length === 1 ? 'Marcado como visto.' : (data ?? ids.length) + ' alertas marcados como vistos.');
+    rView(); return;
   }
   const ig = e.target.closest('[data-sg-ignorar]');
   if (ig){ const id = ig.dataset.sgIgnorar;
