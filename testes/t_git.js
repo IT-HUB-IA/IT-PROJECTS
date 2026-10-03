@@ -68,6 +68,8 @@ window.supabase = { createClient(){ const sess = {user:{id:'u1', email:'admin@it
   await ctx.route(/^https:\/\/github\.com\//, r => { idas.push(r.request().method() + ' ' + r.request().url() + (r.request().postData() ? ' ' + r.request().postData() : '')); r.fulfill({ contentType: 'text/html', body: '<p>GitHub de mentira</p>' }); });
   const URL0 = 'file://' + process.cwd() + '/vercel/index.html';
   const p = await ctx.newPage(); p.on('pageerror', e => { erros.push(e.message); console.log('PAGEERROR', e.message); });
+  // a janela de confirmação antes de ligar (integrar.js): marca Conferi e confirma
+  const confirmarLigar = async () => { await p.waitForTimeout(600); return p.evaluate(() => { const c = document.querySelector('dialog.modal[open] #ig-conferi'); if (!c) return false; c.click(); [...document.querySelectorAll('dialog.modal[open] .modal-rod .btn')].pop().click(); return true; }); };
   await p.goto(URL0); await p.waitForTimeout(2500);
   // uma janelinha que "volta" do GitHub para o CicloDev com os parâmetros dados
   const voltar = async (janela, busca) => { await janela.goto(URL0 + busca).catch(() => null); await p.waitForTimeout(1500); };
@@ -112,7 +114,8 @@ window.supabase = { createClient(){ const sess = {user:{id:'u1', email:'admin@it
   await p.click('.gc-modal [data-gc-ver]'); await p.waitForTimeout(1000);
   if (process.env.FOTOS) await p.locator('.gc-modal').screenshot({ path: process.env.FOTOS + '/git_ligar.png' });
   ok(await p.locator('.gc-modal [data-gc-ligar]').count() === 2, 'lista os repositórios que a conta deixou ver');
-  await p.click('.gc-modal [data-gc-ligar$="|555"]'); await p.waitForTimeout(1500);
+  await p.click('.gc-modal [data-gc-ligar$="|555"]');
+  ok(await confirmarLigar(), 'antes de ligar o repositório, aparece a janela de confirmação'); await p.waitForTimeout(1500);
   ok(+psql("select count(*) from public.repositorios where nome = 'it-hub-ia/portal' and conexao_id is not null and externo_id = '555'").trim() === 1, 'Ligar grava o repositório pela conta conectada');
   ok((await p.textContent('.gc-modal [data-gc-ligar$="|555"]')).trim() === 'Ligado', 'e o botão vira Ligado');
   await p.click('.gc-modal [data-fechar]'); await p.waitForTimeout(800);

@@ -90,6 +90,9 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   await p.evaluate(a => { window.__tf.IFR.no = a; window.__tf.IFR_AUTO.bancos = []; window.__tf.IFR_AUTO.repos = []; window.__tf.IFR_AUTO.pedidos = []; }, app);
   const FOTOS = process.env.FOTOS || '';
   const caixa = () => p.evaluate(() => { const d = [...document.querySelectorAll('dialog.modal[open]')].pop(); return d ? d.textContent : ''; });
+  // a janela de confirmação antes de ligar (integrar.js): marca Conferi e confirma
+  const confirmarLigar = async () => { await p.waitForTimeout(600); return p.evaluate(() => { const c = document.querySelector('dialog.modal[open] #ig-conferi'); if (!c) return false; c.click(); [...document.querySelectorAll('dialog.modal[open] .modal-rod .btn')].pop().click(); return true; }); };
+
 
   // 1. Ligar banco (Supabase) abre o jeito sem senha
   await p.evaluate(() => window.__tf.ifrBancoModal(null)); await p.waitForTimeout(500);
@@ -123,7 +126,9 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   if (FOTOS) await p.locator('dialog.modal[open]').screenshot({path: FOTOS + '/sc_falhou.png'});
   // 4. conferência completa: liga de verdade, com a prova
   modo = 'ok';
-  await p.click('dialog.modal[open] .modal-rod .btn:not(.sec)'); await p.waitForTimeout(1500);
+  await p.click('dialog.modal[open] .modal-rod .btn:not(.sec)');
+  const viu = await confirmarLigar(); await p.waitForTimeout(1500);
+  ok(viu, 'antes de ligar, aparece a janela de confirmação (onde, o que vai acontecer, o que montar)');
   ok(conta("select count(*) || '/' || max(supa_projeto) || '/' || max((validacao->>'tabelas')) from public.infra_bancos where supa_conexao_id = '" + CON + "'") === '1/abcdefghijklmnopqrst/12', 'conferência completa: liga pelo Supabase, com o resultado da conferência guardado');
   ok(conta("select count(*) from interno.infra_bancos_conexao c join public.infra_bancos b on b.id = c.banco_id where b.supa_conexao_id = '" + CON + "'") === '0', 'sem endereço nem senha guardados');
   ok(!(await p.evaluate(() => [...document.querySelectorAll('dialog.modal[open]')].length)), 'a janela fecha depois de ligar');
@@ -137,7 +142,7 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   t = await caixa();
   ok(/Não salvou: o teste não passou/.test(t) && /A senha do usuário do CicloDev não confere/.test(t) && !fns.slice(-1).includes('x'), 'endereço com senha errada: o teste mostra o motivo e não salva');
   modo = 'ok';
-  await p.click('dialog.modal[open] .modal-rod .btn:not(.sec)'); await p.waitForTimeout(1200);
+  await p.click('dialog.modal[open] .modal-rod .btn:not(.sec)'); await confirmarLigar(); await p.waitForTimeout(1200);
   ok(!(await p.evaluate(() => [...document.querySelectorAll('dialog.modal[open]')].length)) && fns.filter(x => x === 'testar_endereco').length === 2, 'endereço que passa no teste: salva e fecha');
   // 6. Admin: o passo a passo do app no Supabase
   const adm = await p.evaluate(() => { window.__tf.SC.status = {pronto:false}; return window.__tf.scAdminHTML(); });

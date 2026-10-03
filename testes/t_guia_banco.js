@@ -104,8 +104,10 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   await p.locator('dialog.modal [data-ifr-guia-abrir]').click(); await p.waitForTimeout(200);
   ok(await p.evaluate(() => document.querySelectorAll('dialog[open]').length === 2 && document.querySelector('dialog.ifr-gp-dlg [data-ifr-gp="supabase"].sel')), 'dentro da janela de ligar, o link abre o guia por cima, na aba do provedor escolhido');
   await p.locator('dialog.ifr-gp-dlg .modal-rod button', {hasText: 'Fechar'}).click(); await p.waitForTimeout(200);
+  // a janela de confirmação antes de ligar (integrar.js): marca Conferi e confirma
+  const confirmarLigar = async () => { await p.waitForTimeout(600); return p.evaluate(() => { const c = document.querySelector('dialog.modal[open] #ig-conferi'); if (!c) return false; c.click(); [...document.querySelectorAll('dialog.modal[open] .modal-rod .btn')].pop().click(); return true; }); };
   const salvar = async url => { await p.evaluate(u => { document.querySelector('#ifr-b-url').value = u; document.querySelectorAll('.toast').forEach(t => t.remove()); }, url);
-    await p.locator('dialog.modal .modal-rod button', {hasText: 'Salvar'}).click(); await p.waitForTimeout(250);
+    await p.locator('dialog.modal .modal-rod button', {hasText: 'Salvar'}).click(); await p.waitForTimeout(250); await confirmarLigar(); await p.waitForTimeout(300);
     return p.evaluate(() => ({toast:[...document.querySelectorAll('.toast, [class*="toast"]')].map(t => t.textContent).join(' | '), aberta:!!document.querySelector('#ifr-b-url')})); };
   const ruins = [
     ['postgresql://postgres.abcdefghijklmnop:[YOUR-PASSWORD]@aws-0-sa-east-1.pooler.supabase.com:5432/postgres', /YOUR-PASSWORD/],

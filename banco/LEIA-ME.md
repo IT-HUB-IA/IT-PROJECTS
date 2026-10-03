@@ -490,3 +490,9 @@ Regras que valem daqui em diante:
 ## Parte 64: repositório ou banco que sai de um ponto leva junto o que o robô fez com ele ali (aplicada no Supabase em 03/10/2026)
 - Ao mudar o ponto de um repositório ou banco, ao apagá-lo, e no fim de toda atualização do robô (`interno.infra_limpar_no`): desenho automático cuja fonte não é mais do ponto vai para o arquivo; o quadro dele vai para `arquivo/` (não é apagado) e o card sai do quadro principal; a ficha técnica feita por essa fonte no ponto sai.
 - Desenho feito à mão não é mexido. No produto ou projeto, o desenho fica enquanto o repositório estiver em alguma aplicação dele.
+
+## Parte 65: cada fonte com duas chaves, Desenhos e Épicos e histórias (aplicada no Supabase em 03/10/2026)
+- `repositorios` e `infra_bancos` ganham `gera_desenhos` e `gera_itens` (padrão: ligadas). Dá para ter as duas, uma ou nenhuma, sem desligar a fonte. Ficha técnica e Análise vêm sempre.
+- Mudar: `fonte_opcoes(tipo, id, desenhos, itens, lixeira)`. Desligar desenhos arquiva os desenhos da fonte (parte 64); ligar traz de volta e pede atualização. Desligar épicos e histórias para o robô de montar e, se pedido, manda para a lixeira só os que ninguém mexeu (`interno.itens_da_fonte_intactos`); ligar traz de volta os que foram por isso.
+- O robô recebe as chaves em `infra_auto_proximos`/`infra_auto_bancos_devidos`; `analise_inventario_gravar` não grava com a chave desligada.
+- Na tela: janela de confirmação antes de ligar qualquer repositório ou banco (`fonte/integrar.js`: onde, o que vai acontecer, o que já existe, o que montar) e as duas chaves em cada fonte do painel Automático.

@@ -230,5 +230,20 @@ ok(limparErro(new Error('falhou em postgres://u:p@h/db agora')) === 'falhou em [
     ok(c.p_status === 'erro' && /só leitura/.test(c.p_erro) && sqls.length === 1, 'se não estiver em só leitura: não lê nada e fecha com erro'); }
 }
 
+// ---------- parte 65: as duas chaves de cada fonte (desenhos / épicos e histórias) ----------
+{
+  const t = montar({ fila: [[{ id: 'k1', no_id: 'app', origem: 'manual', referencia: null,
+    repositorios: [{ ...GH('it-hub/loja', 'main'), id: 'r1', gera_desenhos: false, gera_itens: true }],
+    bancos: [{ ...BANCO, gera_desenhos: true, gera_itens: false }] }]] });
+  await rodar(t.d);
+  const ch = t.de('infra_auto_gravar').map(x => x.args.p_chave);
+  ok(!ch.some(c => c.startsWith('github:')) && ch.some(c => c.startsWith('banco:b1:')), 'repositório com desenhos desligados não grava desenho; o banco com desenhos ligados grava');
+  const inv = t.de('analise_inventario_gravar');
+  ok(inv.some(x => x.args.p_repositorio === 'r1') && !inv.some(x => x.args.p_banco === 'b1'), 'épicos e histórias: o repositório (ligado) manda o inventário; o banco (desligado) não manda');
+  ok(t.de('analise_gravar').length === 2, 'a Análise roda nas duas fontes mesmo com as chaves desligadas');
+  const c = t.de('infra_auto_concluir')[0].args;
+  ok(c.p_prefixos.join() === 'banco:b1:' && c.p_resumo[0].desenhos.length === 0, 'só a família do banco entra para arquivar o que sumiu; o resumo do repositório diz zero desenhos');
+}
+
 console.log(falhas ? falhas + ' FALHAS' : 'TUDO OK');
 if (falhas) process.exit(1);

@@ -22,8 +22,8 @@ async function ifrAutoCarregar(){
   if (!sb){ IFR_AUTO.repos = []; IFR_AUTO.bancos = []; IFR_AUTO.pedidos = []; IFR_AUTO.carregado = true; return; }
   const nos = ifrNosDoCodigo(UI.sel);
   const [rp, bc, pd] = await Promise.all([
-    sb.from('repositorios').select('id, no_id, provedor, nome, branch_principal, ativo').in('no_id', nos),
-    sb.from('infra_bancos').select('id, no_id, nome, provedor, motor, esquemas, servidor, ativo, ultima_leitura_em, ultima_mudanca_em, ultimo_erro, conexao_trocada_em, supa_conexao_id, supa_projeto, validado_em, validacao').eq('no_id', no),
+    sb.from('repositorios').select('id, no_id, provedor, nome, branch_principal, ativo, gera_desenhos, gera_itens').in('no_id', nos),
+    sb.from('infra_bancos').select('id, no_id, nome, provedor, motor, esquemas, servidor, ativo, gera_desenhos, gera_itens, ultima_leitura_em, ultima_mudanca_em, ultimo_erro, conexao_trocada_em, supa_conexao_id, supa_projeto, validado_em, validacao').eq('no_id', no),
     sb.from('infra_automacoes').select('id, origem, status, referencia, criado_em, concluido_em, erro, resumo, diagramas').eq('no_id', no).order('criado_em', {ascending:false}).limit(5)
   ]);
   if (IFR_AUTO.no !== no) return;
@@ -49,6 +49,40 @@ function ifrErroAmigavel(m){
   return 'Não deu para ler o banco.';
 }
 const ifrSelo = (tipo, txt) => '<span class="ifr-selo ifr-selo-' + tipo + '">' + esc(txt) + '</span>';
+// as duas chaves de cada fonte (parte 65): desenhos / épicos e histórias; mudam sem desligar o repositório ou o banco
+function ifrChavesHTML(tipo, x, pode){
+  const ch = (k, rot, dica) => '<label class="ifr-chave" title="' + esc(dica) + '"><input type="checkbox" data-ifr-chave="' + k + '" data-ifr-tipo="' + tipo + '" data-ifr-id="' + esc(x.id) + '"' +
+    (x['gera_' + k] !== false ? ' checked' : '') + (pode ? '' : ' disabled') + '> ' + rot + '</label>';
+  return '<div class="ifr-chaves">' + ch('desenhos', 'Desenhos', 'O robô monta os desenhos e os quadros desta fonte') +
+    ch('itens', 'Épicos e histórias', 'O robô monta épicos e histórias com o que leu desta fonte') + '</div>';
+}
+async function ifrMudarChave(inp){
+  const tipo = inp.dataset.ifrTipo, id = inp.dataset.ifrId, k = inp.dataset.ifrChave, liga = inp.checked;
+  const lista = tipo === 'repo' ? IFR_AUTO.repos : IFR_AUTO.bancos, x = lista.find(y => y.id === id); if (!x) return;
+  const nome = esc(x.nome), voltar = () => { inp.checked = !liga; };
+  let decidiu = false; const d = f => () => { decidiu = true; f(); };   // fechar no X = cancelar
+  const mandar = async (lixeira) => {
+    const args = {p_tipo:tipo, p_id:id, p_desenhos:k === 'desenhos' ? liga : x.gera_desenhos !== false, p_itens:k === 'itens' ? liga : x.gera_itens !== false, p_lixeira:!!lixeira};
+    const {data, error} = await ifrBanco().rpc('fonte_opcoes', args);
+    if (error){ voltar(); toast('Não deu: ' + tfErro(error)); return; }
+    x.gera_desenhos = data.desenhos; x.gera_itens = data.itens;
+    const extra = data.para_lixeira ? ' ' + data.para_lixeira + (data.para_lixeira === 1 ? ' item foi' : ' itens foram') + ' para a lixeira.' : data.voltaram ? ' ' + data.voltaram + (data.voltaram === 1 ? ' item voltou' : ' itens voltaram') + ' da lixeira.' : '';
+    toast((k === 'desenhos' ? 'Desenhos ' : 'Épicos e histórias ') + (liga ? 'ligados' : 'desligados') + ' para ' + x.nome + '.' + extra + (liga ? ' O robô já foi chamado para atualizar.' : ''));
+    if (typeof ifrCarregar === 'function'){ try { await ifrCarregar(); } catch(e){} }
+    await ifrAutoCarregar(); ifrLado();
+  };
+  if (liga){ mandar(false); return; }
+  if (k === 'desenhos'){
+    modal('Desligar os desenhos de ' + nome + '?', '<p>Os desenhos que o robô montou com <b>' + nome + '</b> vão para o <b>arquivo</b> (as versões ficam guardadas) e os quadros deles saem do canvas e do Desenho completo. ' +
+      (tipo === 'repo' ? 'O repositório' : 'O banco') + ' continua ligado: Ficha técnica, Análise e, se estiver ligado, Épicos e histórias continuam.</p><p class="sec">Ligar de novo traz os desenhos de volta.</p>',
+      [{txt:'Cancelar', cls:'sec', acao:d(voltar)}, {txt:'Desligar desenhos', acao:d(() => mandar(false))}]).addEventListener('close', () => { if (!decidiu) voltar(); });
+    return;
+  }
+  modal('Desligar épicos e histórias de ' + nome + '?', '<p>O robô para de montar épicos e histórias com <b>' + nome + '</b>. ' + (tipo === 'repo' ? 'O repositório' : 'O banco') + ' continua ligado (desenhos, Ficha técnica e Análise seguem como estão).</p>' +
+    '<p>E os épicos e histórias que ele <b>já criou</b>?</p><ul class="ig-lista"><li><b>Deixar como estão</b>: nada muda no backlog.</li>' +
+    '<li><b>Mandar para a lixeira</b>: só os que <b>ninguém mexeu</b> (sem comentário, anexo, subitem ou edição). O que alguém já trabalhou fica. Ligar de novo traz de volta os que foram para a lixeira.</li></ul>',
+    [{txt:'Cancelar', cls:'sec', acao:d(voltar)}, {txt:'Deixar como estão', cls:'sec', acao:d(() => mandar(false))}, {txt:'Mandar para a lixeira', acao:d(() => mandar(true))}]).addEventListener('close', () => { if (!decidiu) voltar(); });
+}
 function ifrAutoHTML(){
   const pode = podeEditar(), fonte = IFR_AUTO_FONTE[IFR.aba], repos = IFR_AUTO.repos, bs = IFR_AUTO.bancos, ult = IFR_AUTO.pedidos[0];
   const eProd = /^product:/.test(UI.sel || '');
@@ -65,6 +99,7 @@ function ifrAutoHTML(){
         return '<div class="ifr-fonte' + (er ? ' com-erro' : '') + '"><div class="ifr-fonte-cab"><b>' + esc(r.nome) + '</b>' + (er ? ifrSelo('erro', 'Com problema') : ifrSelo('ok', 'Ligado')) + '</div>' +
           '<p class="ifr-fonte-meta">' + esc((r.provedor === 'gitlab' ? 'GitLab' : 'GitHub') + ' · branch ' + (r.branch_principal || 'main')) + '</p>' +
           (er ? '<p class="ifr-fonte-erro">' + esc(er) + '</p>' : '') +
+          ifrChavesHTML('repo', r, pode) +
           (pode ? '<div class="ifr-fonte-acoes"><button type="button" class="ifr-lnk" data-ifr-repo-trocar="' + r.id + '">Trocar</button><button type="button" class="ifr-lnk" data-ifr-repo-tirar="' + r.id + '">Desligar</button></div>' : '') + '</div>'; }).join('')
     : '<p class="ifr-vazio">Nenhum repositório ligado ' + (/^app:/.test(UI.sel || '') ? 'a esta aplicação' : eProd ? 'a este produto' : 'direto neste projeto') + '.</p>') +
     (pode ? '<div class="ifr-auto-add"><button type="button" class="btn sec peq" data-ifr-repo>+ ' + (repos.length ? 'Ligar outro repositório' : 'Ligar repositório') + '</button></div>' : '') + '</div>';
@@ -81,6 +116,7 @@ function ifrAutoHTML(){
             (/password authentication/.test(x.ultimo_erro) && x.conexao_trocada_em && !x.supa_conexao_id ? '<p class="ifr-fonte-dica">O CicloDev ainda usa a senha do endereço salvo em ' + esc(fmtData(x.conexao_trocada_em.slice(0, 10))) + '. Se você criou ou trocou a senha no banco depois disso, clique em <b>Trocar</b> e cole o endereço com a senha nova. Se a data não mudar depois de salvar, a troca não foi gravada.</p>' : '') +
             '<button type="button" class="btn peq" data-ifr-guia>Resolver com o DevIT</button></div>'
             : x.ultima_mudanca_em ? '<p class="ifr-fonte-meta">Estrutura mudou ' + esc(ifrQuando(x.ultima_mudanca_em)) + '</p>' : '') +
+          ifrChavesHTML('banco', x, pode) +
           (pode ? '<div class="ifr-fonte-acoes"><button type="button" class="ifr-lnk" data-ifr-banco="' + x.id + '">Trocar</button><button type="button" class="ifr-lnk" data-ifr-banco-tirar="' + x.id + '">Desligar</button></div>' : '') + '</div>'; }).join('')
     : '<p class="ifr-vazio">' + (pode ? 'Nenhum banco ligado.' : 'Só quem pode editar vê os bancos ligados.') + '</p>') +
     '<div class="ifr-auto-add">' + (pode ? '<button type="button" class="btn sec peq" data-ifr-banco="">+ ' + (bs.length ? 'Ligar outro banco' : 'Ligar banco') + '</button>' : '') + '<button type="button" class="ifr-lnk" data-ifr-guia>Guia passo a passo</button></div></div>';
@@ -218,12 +254,19 @@ function ifrBancoModal(id, provInicial, soEndereco){
     const esq = $('#ifr-b-esq', dl).value.split(',').map(s => s.trim()).filter(Boolean);
     if (!esq.length){ toast(motor === 'mysql' ? 'Diga qual banco (database) ler.' : 'Diga quais esquemas ler.'); return false; }
     const args = {p_no:IFR.no, p_id:b ? b.id : null, p_nome:$('#ifr-b-nome', dl).value.trim(), p_provedor:prov, p_motor:motor, p_esquemas:esq, p_conexao:url || null, p_ativo:true};
-    const salvar = (teste) => sb.rpc('infra_banco_salvar', args).then(async ({error}) => {
+    const salvar = async (teste) => {
+      const esc0 = typeof integrarConfirmar === 'function' && (!b || url) ? await integrarConfirmar({tipo:'banco', nome:args.p_nome || (b && b.nome) || 'Banco de produção', noId:IFR.no, trocar:b ? b.id : null}) : {desenhos:b ? b.gera_desenhos !== false : true, itens:b ? b.gera_itens !== false : true};
+      if (!esc0) return;
+      return sb.rpc('infra_banco_salvar', args).then(async ({data, error}) => {
       if (error){ toast('Não deu para salvar o banco: ' + (error.message || error)); return; }
+      if (data && data.id && (!esc0.desenhos || !esc0.itens || data.gera_desenhos === false || data.gera_itens === false)){
+        const {error:eo} = await sb.rpc('fonte_opcoes', {p_tipo:'banco', p_id:data.id, p_desenhos:esc0.desenhos, p_itens:esc0.itens, p_lixeira:false});
+        if (eo) toast('Salvo, mas não deu para guardar o que montar: ' + tfErro(eo) + '. Ajuste no painel Automático.');
+      }
       if (document.body.contains(dl)){ dl.close(); dl.remove(); }
       await ifrAutoCarregar(); ifrLado();
       toast('Banco salvo' + (teste ? ' e testado (' + teste.tabelas + ' tabelas, ' + teste.regras + ' regras de acesso)' : '') + '. Em alguns minutos o DER' + (motor === 'postgres' ? ' e o mapa de acesso aparecem nas sub-abas DER e Segurança.' : ' aparece na sub-aba DER.'));
-    });
+    }); };
     // endereço novo: testa de verdade antes de salvar (só leitura); se não passar, não salva e diz por quê
     if (!url || typeof scTestarEndereco !== 'function'){ salvar(null); return; }
     const bt = $$('.modal-rod .btn', dl).pop(); if (bt){ bt.disabled = true; bt.textContent = 'Testando…'; }
@@ -285,7 +328,10 @@ document.addEventListener('click', e => {
   { const bt = e.target.closest('[data-ifr-banco-tirar]'); if (bt) return ifrBancoTirar(bt.dataset.ifrBancoTirar); }
   if (e.target.closest('[data-ifr-repo]')){ if (typeof gcLigarRepo === 'function') gcLigarRepo(); return; }
   let rb = e.target.closest('[data-ifr-repo-tirar]'); if (rb){ gcDesligarRepo(rb.dataset.ifrRepoTirar); return; }
+  if (e.target.matches && e.target.matches('[data-ifr-chave]')) return;   // as chaves mudam pelo change
   rb = e.target.closest('[data-ifr-repo-trocar]'); if (rb){ gcDesligarRepo(rb.dataset.ifrRepoTrocar, true); return; }
   const q = e.target.closest('[data-ifr-quadro]'); if (q){ const dl = q.closest('dialog'); if (dl){ dl.close(); dl.remove(); } ifrAbrirQuadro(q.dataset.ifrQuadro); }
 });
 if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {IFR_AUTO, ifrAutoCarregar, ifrAutoAtualizar, ifrAbrirQuadro, ifrLado, ifrAutoHTML, ifrGuiaAbrir, ifrBancoModal, ifrGuiar, ifrGuiaHTML});
+
+document.addEventListener('change', e => { if (e.target.matches && e.target.matches('[data-ifr-chave]')) ifrMudarChave(e.target); });

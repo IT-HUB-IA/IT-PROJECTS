@@ -29,9 +29,10 @@ export interface DepsAuto {
   agora?: () => number;
   orcamentoMs?: number;                       // depois disso não começa pedido novo (o resto fica para a próxima chamada)
 }
-type Repo = { id: string; nome: string; branch: string; provedor: 'github' | 'gitlab'; conexao_id: string; externo_id: string | null };
+// gera_desenhos / gera_itens (parte 65): as duas chaves de cada fonte; sem a chave (pedidos antigos), vale ligado
+type Repo = { id: string; nome: string; branch: string; provedor: 'github' | 'gitlab'; conexao_id: string; externo_id: string | null; gera_desenhos?: boolean; gera_itens?: boolean };
 // supa_conexao_id e supa_projeto: ligado pelo Supabase sem senha (parte 54); aí não há conexao
-export type Banco = { id: string; no_id?: string; nome: string; provedor: string; motor: 'postgres' | 'mysql'; esquemas: string[]; conexao: string | null;
+export type Banco = { id: string; no_id?: string; gera_desenhos?: boolean; gera_itens?: boolean; nome: string; provedor: string; motor: 'postgres' | 'mysql'; esquemas: string[]; conexao: string | null;
   supa_conexao_id?: string | null; supa_projeto?: string | null };
 type Pedido = { id: string; no_id: string; origem: 'github' | 'gitlab' | 'banco' | 'manual'; referencia: string | null; repositorios: Repo[]; bancos: Banco[] };
 
@@ -128,16 +129,15 @@ export async function processar(d: DepsAuto, p: Pedido): Promise<void> {
         const { desenhos, avisos } = gerarDoCodigo(pac, repo.nome, d.yaml);
         const commit = commitDe(pac, doCommit);
         const prefixo = repo.provedor + ':' + repo.nome + ':';
-        ids.push(...await gravarTodos(d, p.no_id, desenhos, prefixo, repo.provedor, commit));
-        prefixos.push(prefixo);
+        if (repo.gera_desenhos !== false) { ids.push(...await gravarTodos(d, p.no_id, desenhos, prefixo, repo.provedor, commit)); prefixos.push(prefixo); }
         const ficha = await gravarFicha(d, p.no_id, { repositorio: repo.id }, repo.nome, commit, () => fichaDoCodigo(pac, { nome: repo.nome, branch: repo.branch }, desenhos));
         const seguranca = await gravarAnalise(d, p.no_id, { repositorio: repo.id }, repo.nome, commit, pac.caminhos.length, async () => {
           const dep = await analisarDependencias(dependenciasDe(pac.arquivos, pac.travas), d.buscar);
           return { achados: analisarCodigo(pac.arquivos, pac.caminhos).concat(dep.achados, analisarQualidade(pac.arquivos, pac.caminhos)), avisos: [dep.erro, pac.cortado ? 'o repositório é grande e parte dos arquivos não foi lida' : ''].filter(Boolean).join('; ') };
         });
-        const inventario = await gravarInventario(d, p.no_id, { repositorio: repo.id }, repo.nome, () => inventarioComDatas(d, repo, doCommit || repo.branch || 'main', pac));
+        const inventario = repo.gera_itens === false ? 'desligado (épicos e histórias)' : await gravarInventario(d, p.no_id, { repositorio: repo.id }, repo.nome, () => inventarioComDatas(d, repo, doCommit || repo.branch || 'main', pac));
         try { const ps = palavrasDoCodigo(pac.arquivos); palavras = palavras ? new Set([...palavras, ...ps]) : ps; } catch { /* sem palavras: a tabela fica sem saber se é usada */ }
-        resumo.push({ repositorio: repo.nome, commit, arquivos: pac.caminhos.length, desenhos: desenhos.map(x => x.nome), ficha, seguranca, inventario, avisos, cortado: pac.cortado || undefined });
+        resumo.push({ repositorio: repo.nome, commit, arquivos: pac.caminhos.length, desenhos: repo.gera_desenhos === false ? [] : desenhos.map(x => x.nome), ficha, seguranca, inventario, avisos, cortado: pac.cortado || undefined });
         feitos++;
       } catch (e) { erros++; resumo.push({ repositorio: repo.nome, erro: limparErro(e) }); }
     }
@@ -145,8 +145,8 @@ export async function processar(d: DepsAuto, p: Pedido): Promise<void> {
     for (const b of bancos) {
       try {
         const { ids: novos, e, ds, ficha: fi, seguranca: sg } = await lerEDesenhar(d, p.no_id, b, false, palavras);
-        ids.push(...novos); prefixos.push(prefixoBanco(b, bancos.length));
-        resumo.push({ banco: b.nome, motor: b.motor, esquemas: b.esquemas.join(', '), tabelas: e.tabelas.length, desenhos: ds.map(x => x.nome), ficha: fi, seguranca: sg });
+        ids.push(...novos); if (b.gera_desenhos !== false) prefixos.push(prefixoBanco(b, bancos.length));
+        resumo.push({ banco: b.nome, motor: b.motor, esquemas: b.esquemas.join(', '), tabelas: e.tabelas.length, desenhos: b.gera_desenhos === false ? [] : ds.map(x => x.nome), ficha: fi, seguranca: sg });
         feitos++;
       } catch (e) {
         erros++; const m = limparErro(e, b.conexao || undefined);
@@ -181,10 +181,10 @@ async function lerEDesenhar(d: DepsAuto, no: string, b: Banco, abrir: boolean, p
   if (abrir && !pedido) return { ids: [] as string[], e, ds: [], pedido: null, ficha: null, seguranca: null };
   const info = { nome: b.nome, motor: b.motor, provedor: b.provedor };
   const ds = gerarDoBanco(e, b.esquemas, info);
-  const ids = await gravarTodos(d, no, ds, prefixoBanco(b), 'banco', hash.slice(0, 16));
+  const ids = b.gera_desenhos === false ? [] as string[] : await gravarTodos(d, no, ds, prefixoBanco(b), 'banco', hash.slice(0, 16));
   const ficha = await gravarFicha(d, no, { banco: b.id }, b.nome, hash.slice(0, 16), () => fichaDoBanco(e, b.esquemas, info));
   const seguranca = await gravarAnalise(d, no, { banco: b.id }, b.nome, hash.slice(0, 16), e.tabelas.length, async () => ({ achados: analisarBanco(e, { mysql: b.motor === 'mysql' }) }));
-  await gravarInventario(d, no, { banco: b.id }, b.nome, () => inventarioDoBanco(e, palavras));
+  if (b.gera_itens !== false) await gravarInventario(d, no, { banco: b.id }, b.nome, () => inventarioDoBanco(e, palavras));
   return { ids, e, ds, pedido, ficha, seguranca };
 }
 // o banco de hora em hora: só redesenha quando a estrutura mudou
@@ -193,7 +193,7 @@ export async function lerBancoDevido(d: DepsAuto, b: Banco & { no_id: string }):
   try { r = await lerEDesenhar(d, b.no_id, b, true); }
   catch (x) { await chamar(d, 'infra_auto_banco_lido', { p_banco: b.id, p_hash: null, p_erro: limparErro(x, b.conexao || undefined), p_abrir: true }).catch(() => null); return; }
   if (!r.pedido) return;
-  await chamar(d, 'infra_auto_concluir', { p_id: r.pedido, p_status: 'pronto', p_erro: null, p_diagramas: r.ids, p_resumo: [{ banco: b.nome, motor: b.motor, tabelas: r.e.tabelas.length, desenhos: r.ds.map(x => x.nome) }], p_prefixos: [prefixoBanco(b)] })
+  await chamar(d, 'infra_auto_concluir', { p_id: r.pedido, p_status: 'pronto', p_erro: null, p_diagramas: r.ids, p_resumo: [{ banco: b.nome, motor: b.motor, tabelas: r.e.tabelas.length, desenhos: b.gera_desenhos === false ? [] : r.ds.map(x => x.nome) }], p_prefixos: b.gera_desenhos === false ? [] : [prefixoBanco(b)] })
     .catch(() => null);
 }
 
