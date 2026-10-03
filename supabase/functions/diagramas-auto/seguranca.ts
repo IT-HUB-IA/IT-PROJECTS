@@ -258,43 +258,9 @@ export function analisarQualidade(arq: Arquivos, caminhos: string[], limite = 30
   return out;
 }
 
-// ---------- dependências (base pública OSV.dev, a mesma do GitHub e do Google) ----------
-export type Dependencia = { ecossistema: 'npm' | 'Maven' | 'PyPI' | 'Go'; nome: string; versao: string; arquivo: string };
-const versaoLimpa = (v: string) => (String(v || '').match(/\d+(?:\.\d+){0,3}(?:[-.][0-9A-Za-z.]+)?/) || [''])[0];
-export function dependenciasDe(arq: Arquivos): Dependencia[] {
-  const out: Dependencia[] = [], ja = new Set<string>();
-  const add = (d: Dependencia) => { const k = d.ecossistema + d.nome + d.versao; if (d.versao && !ja.has(k)) { ja.add(k); out.push(d); } };
-  for (const [c, t] of arq) {
-    if (/(^|\/)package\.json$/.test(c)) { try { const j = JSON.parse(t); for (const s of ['dependencies', 'devDependencies']) for (const [n, v] of Object.entries(j[s] || {})) if (typeof v === 'string' && !/^(file:|link:|workspace:|git|http|npm:)/.test(v)) add({ ecossistema: 'npm', nome: n, versao: versaoLimpa(v), arquivo: c }); } catch { /* json inválido: segue */ } }
-    else if (/(^|\/)pom\.xml$/.test(c)) {
-      const props: Record<string, string> = {}; for (const m of t.matchAll(/<([\w.-]+)>([^<${}]+)<\/\1>/g)) props[m[1]] = m[2].trim();
-      for (const m of t.matchAll(/<dependency>([\s\S]*?)<\/dependency>/g)) {
-        const g = (m[1].match(/<groupId>([^<]+)</) || [])[1], a = (m[1].match(/<artifactId>([^<]+)</) || [])[1]; let v = (m[1].match(/<version>([^<]+)</) || [])[1] || '';
-        const pv = v.match(/^\$\{([^}]+)\}$/); if (pv) v = props[pv[1]] || '';
-        if (g && a && /^\d/.test(v)) add({ ecossistema: 'Maven', nome: g.trim() + ':' + a.trim(), versao: v.trim(), arquivo: c });
-      }
-    }
-    else if (/(^|\/)requirements[^/]*\.txt$/.test(c)) for (const m of t.matchAll(/^\s*([A-Za-z0-9_.-]+)\s*==\s*([\w.]+)/gm)) add({ ecossistema: 'PyPI', nome: m[1], versao: m[2], arquivo: c });
-    else if (/(^|\/)go\.mod$/.test(c)) for (const m of t.matchAll(/^\s*(?:require\s+)?([\w.-]+\.[\w.-]+\/[\w./-]+)\s+v([\w.-]+)/gm)) add({ ecossistema: 'Go', nome: m[1], versao: m[2], arquivo: c });
-  }
-  return out.slice(0, 900);
-}
-export async function analisarDependencias(deps: Dependencia[], buscar: typeof fetch): Promise<{ achados: Achado[]; erro?: string }> {
-  if (!deps.length) return { achados: [] };
-  try {
-    const r = await buscar('https://api.osv.dev/v1/querybatch', { method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ queries: deps.map(d => ({ package: { ecosystem: d.ecossistema, name: d.nome }, version: d.versao })) }), signal: AbortSignal.timeout(20000) });
-    if (!r.ok) return { achados: [], erro: 'a base de falhas conhecidas (OSV) respondeu ' + r.status };
-    const j = await r.json(); const out: Achado[] = [];
-    (j.results || []).forEach((res: any, k: number) => {
-      const vs = (res && res.vulns) || []; if (!vs.length) return; const d = deps[k];
-      const ids = vs.map((v: any) => v.id).slice(0, 6).join(', ');
-      out.push({ regra: 'DEP-01', gravidade: vs.length >= 3 ? 'critica' : 'alta', titulo: d.nome + ' ' + d.versao + ': ' + vs.length + (vs.length === 1 ? ' falha conhecida' : ' falhas conhecidas'),
-        onde: d.arquivo, trecho: ids + (vs.length > 6 ? ' e mais ' + (vs.length - 6) : '') + ' · veja em osv.dev', impressao: impressao('DEP-01', d.arquivo, d.ecossistema + d.nome + d.versao) });
-    });
-    return { achados: out };
-  } catch (e) { return { achados: [], erro: 'não deu para consultar a base de falhas conhecidas: ' + String((e as Error)?.message || e).slice(0, 120) }; }
-}
+// ---------- dependências: ficam em dependencias.ts (arquivos de travas, 8 linguagens, gravidade do próprio aviso) ----------
+export { dependenciasDe, analisarDependencias } from './dependencias.ts';
+export type { Dependencia } from './dependencias.ts';
 
 // ---------- banco ----------
 const SENSIVEL = /(^|_)(cpf|cnpj|rg|senha|password|passwd|pass_hash|token|secret|segredo|cartao|card_number|cvv|iban|pis|nis|ssn|telefone|celular|phone|email|e_mail|nascimento|birth|salario|salary)(_|$)/i;

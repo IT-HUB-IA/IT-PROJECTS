@@ -15,6 +15,7 @@
 export type Arquivos = Map<string, string>;
 export type Evidencia = { fonte: string; trecho: string };
 import type { Modelo, CardQ, LigQ, Linha } from '../_shared/quadro.ts';
+import { ehTrava } from './dependencias.ts';
 // cada desenho sai de dois jeitos: o texto (a fonte de verdade, no formato padrão da ferramenta: PlantUML, Graphviz, Mermaid, DBML)
 // e o modelo do quadro (cards, grupos e ligações), que é como ele aparece no canvas do CicloDev
 export type Desenho = { tipo: string; aba: string; nome: string; formato: string; fonte: string; evidencias: Evidencia[]; lacunas: string[]; modelo: Modelo };
@@ -35,7 +36,8 @@ export function interessa(caminho: string, tamanho: number): boolean {
   return CODIGO.test(caminho) || CONFIG.test(caminho) || YAML_K8S.test(caminho) || WORKFLOW.test(caminho) || SEGURANCA.test(caminho);
 }
 
-export type Pacote = { arquivos: Arquivos; caminhos: string[]; raiz: string; bytes: number; cortado: boolean };
+// travas: package-lock.json, pnpm-lock.yaml, poetry.lock... (só para a conferência de bibliotecas; não entram nos desenhos nem na análise do código)
+export type Pacote = { arquivos: Arquivos; caminhos: string[]; raiz: string; bytes: number; cortado: boolean; travas?: Arquivos };
 
 // lê o tar.gz aos pedaços (sem pôr o pacote inteiro na memória) e guarda só o texto dos arquivos que interessam
 export async function lerTarGz(corpo: ReadableStream<Uint8Array>, opcoes: { maxBytes?: number; maxArquivos?: number; maxTexto?: number } = {}): Promise<Pacote> {
@@ -57,6 +59,7 @@ export async function lerTarGz(corpo: ReadableStream<Uint8Array>, opcoes: { maxB
   const dec = new TextDecoder('utf-8', { fatal: true });
   const arquivos: Arquivos = new Map(), caminhos: string[] = [];
   let nomeLongo: string | null = null, raiz = '', texto = 0, cortado = false;
+  const travas: Arquivos = new Map();
   while (true) {
     const h = await ler(512); if (!h) break;
     if (h.every(x => x === 0)) break;
@@ -76,7 +79,10 @@ export async function lerTarGz(corpo: ReadableStream<Uint8Array>, opcoes: { maxB
     nome = barra >= 0 ? nome.slice(barra + 1) : nome;   // o GitHub põe tudo dentro de dono-repo-commit/
     if ((tipo === '0' || tipo === '\0') && nome) {
       if (caminhos.length < 60000) caminhos.push(nome);
-      if (!cortado && interessa(nome, tamanho) && arquivos.size < maxArquivos && texto + tamanho <= maxTexto) {
+      if (!cortado && ehTrava(nome, tamanho) && travas.size < 200 && texto + tamanho <= maxTexto) {
+        const b = await ler(conteudo); if (!b) break;
+        try { const s = dec.decode(b.subarray(0, tamanho)); travas.set(nome, s); texto += s.length; } catch { /* não é texto */ }
+      } else if (!cortado && interessa(nome, tamanho) && arquivos.size < maxArquivos && texto + tamanho <= maxTexto) {
         const b = await ler(conteudo); if (!b) break;
         try { const s = dec.decode(b.subarray(0, tamanho)); if (!s.includes('\0')) { arquivos.set(nome, s); texto += s.length; } } catch { /* não é texto */ }
       } else await pular(conteudo);
@@ -85,7 +91,7 @@ export async function lerTarGz(corpo: ReadableStream<Uint8Array>, opcoes: { maxB
   }
   try { await leitor.cancel(); } catch { /* já acabou */ }
   caminhos.sort();
-  return { arquivos, caminhos, raiz, bytes, cortado };
+  return { arquivos, caminhos, raiz, bytes, cortado, travas };
 }
 
 /* ================= ajudas ================= */

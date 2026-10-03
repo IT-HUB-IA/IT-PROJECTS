@@ -45,7 +45,9 @@ ok(interessa('src/main/resources/application.properties', 100) && interessa('.en
 const deps = dependenciasDe(arq);
 ok(deps.some(d => d.nome === 'lodash' && d.versao === '4.17.15') && deps.some(d => d.nome === 'com.fasterxml.jackson.core:jackson-databind' && d.versao === '2.9.8') && !deps.some(d => d.nome === 'local'), 'dependências do package.json e do pom.xml (com ${versão}) são lidas');
 // OSV de mentira (a rede pode não estar disponível no teste)
-const falso = (async (_u: string, o: any) => { const q = JSON.parse(o.body).queries; return { ok: true, json: async () => ({ results: q.map((x: any) => x.package.name === 'lodash' ? { vulns: [{ id: 'GHSA-p6mc-m468-83gw' }, { id: 'CVE-2020-8203' }] } : {}) }) }; }) as unknown as typeof fetch;
+const falso = (async (u: string, o: any) => {
+  if (/\/vulns\//.test(u)) return { ok: true, json: async () => ({ id: u.split('/').pop(), aliases: ['CVE-2020-8203'], database_specific: { severity: 'HIGH' }, affected: [{ package: { name: 'lodash' }, ranges: [{ type: 'SEMVER', events: [{ introduced: '0' }, { fixed: '4.17.19' }] }] }] }) };
+  const q = JSON.parse(o.body).queries; return { ok: true, json: async () => ({ results: q.map((x: any) => x.package.name === 'lodash' ? { vulns: [{ id: 'GHSA-p6mc-m468-83gw' }, { id: 'GHSA-29mw-wpgm-hmr9' }] } : {}) }) }; }) as unknown as typeof fetch;
 const od = await analisarDependencias(deps, falso);
 ok(od.achados.length === 1 && od.achados[0].regra === 'DEP-01' && /lodash 4\.17\.15: 2 falhas/.test(od.achados[0].titulo) && /CVE-2020-8203/.test(od.achados[0].trecho), 'biblioteca com falha conhecida vira achado, com os códigos CVE/GHSA');
 if (process.env.OSV){ const real = await analisarDependencias(deps, fetch); ok(real.achados.some(a => /lodash/.test(a.titulo)) || !!real.erro, 'OSV de verdade: ' + (real.erro || real.achados.map(a => a.titulo).join(' | '))); }

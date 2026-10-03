@@ -132,7 +132,7 @@ export async function processar(d: DepsAuto, p: Pedido): Promise<void> {
         prefixos.push(prefixo);
         const ficha = await gravarFicha(d, p.no_id, { repositorio: repo.id }, repo.nome, commit, () => fichaDoCodigo(pac, { nome: repo.nome, branch: repo.branch }, desenhos));
         const seguranca = await gravarAnalise(d, p.no_id, { repositorio: repo.id }, repo.nome, commit, pac.caminhos.length, async () => {
-          const dep = await analisarDependencias(dependenciasDe(pac.arquivos), d.buscar);
+          const dep = await analisarDependencias(dependenciasDe(pac.arquivos, pac.travas), d.buscar);
           return { achados: analisarCodigo(pac.arquivos, pac.caminhos).concat(dep.achados, analisarQualidade(pac.arquivos, pac.caminhos)), avisos: [dep.erro, pac.cortado ? 'o repositório é grande e parte dos arquivos não foi lida' : ''].filter(Boolean).join('; ') };
         });
         const inventario = await gravarInventario(d, p.no_id, { repositorio: repo.id }, repo.nome, () => inventarioComDatas(d, repo, doCommit || repo.branch || 'main', pac));
