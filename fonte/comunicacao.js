@@ -189,7 +189,7 @@ async function cmBuscarNovos(){
   });
   if (novos){ atualizarSino(); cmRepintar(); }
 }
-setInterval(() => { cmBuscarNovos().catch(() => {}); }, 60000);
+setInterval(() => { if (!avLigado()) cmBuscarNovos().catch(() => {}); }, 60000);   // reserva: com o ao vivo ligado, ele avisa
 // o tipo de cada aviso vem do banco (parte 20); sem a parte 20, continua como antes
 const _montarDadosCm = montarDados;
 montarDados = function(T, e){

@@ -120,7 +120,7 @@ async function iaNovidades(){
   if (n !== IA.novas){ IA.novas = n; iaImagemBalao(); }
 }
 async function iaMarcarVisto(){ const sb = iaBanco(); IA.novas = 0; iaImagemBalao(); if (sb) await sb.rpc('ia_marcar_visto'); }
-setInterval(() => { if (document.visibilityState === 'visible') iaNovidades(); }, 30000);
+setInterval(() => { if (document.visibilityState === 'visible' && !avLigado()) iaNovidades(); }, 30000);   // reserva: com o ao vivo ligado, ele avisa
 document.addEventListener('mouseover', e => { if (e.target.closest && e.target.closest('#ia-raiz [data-ia-balao]') && !IA.mouse){ IA.mouse = true; iaImagemBalao(); } });
 document.addEventListener('mouseout', e => { const b = e.target.closest && e.target.closest('#ia-raiz [data-ia-balao]'); if (b && !b.contains(e.relatedTarget) && IA.mouse){ IA.mouse = false; iaImagemBalao(); } });
 const iaHora = v => { const d = new Date(v), h = new Date(); return d.toDateString() === h.toDateString() ? d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}) : d.toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}); };

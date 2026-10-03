@@ -1230,10 +1230,13 @@ function montarDados(T, eu){
   return d;
 }
 
-async function carregarDoBanco(eu){
+// Tpronto: as tabelas já lidas (o ao vivo relê só as linhas que mudaram e monta a tela de novo sem ler tudo)
+async function carregarDoBanco(eu, Tpronto){
   const sb = window.ciclodevBanco; if (!sb) return;
-  const T = {}; BANCO.erros = [];
-  await Promise.all(TABELAS_BANCO.map(async t => { try { T[t] = await lerTabela(sb, t); } catch(e){ T[t] = []; BANCO.erros.push(e.message); } }));
+  let T = Tpronto;
+  if (!T){ T = {}; BANCO.erros = [];
+    await Promise.all(TABELAS_BANCO.map(async t => { try { T[t] = await lerTabela(sb, t); } catch(e){ T[t] = []; BANCO.erros.push(e.message); } }));
+    BANCO.T = structuredClone(T); BANCO.meus = new Map(); }   // cópia intocada do banco, que o ao vivo vai atualizando
   clearTimeout(SYNC.timer);
   D = montarDados(T, eu);
   const ok = id => D.projects.some(p => 'project:' + p.id === id) || D.products.some(p => 'product:' + p.id === id) || D.apps.some(p => 'app:' + p.id === id) || D.ws.some(p => 'ws:' + p.id === id) || D.clients.some(p => 'client:' + p.id === id);
@@ -1486,6 +1489,16 @@ function linhasDaTela(d){
 }
 
 const SYNC = {base:null, rodando:false, deNovo:false, timer:0, erros:[], pendente:false};
+// o que esta tela gravou entra na cópia do banco (BANCO.T) e fica anotado por uns segundos:
+// assim o ao vivo reconhece o eco da própria gravação e não trata como mudança de outra pessoa
+function tAnotar(t, pk, row, apagar){
+  const T = BANCO.T; if (!T) return;
+  const k = chaveLinha(row, pk), lista = T[t] || (T[t] = []), i = lista.findIndex(r => chaveLinha(r, pk) === k);
+  if (apagar){ if (i >= 0) lista.splice(i, 1); }
+  else if (i >= 0) lista[i] = Object.assign({}, lista[i], row); else lista.push(Object.assign({}, row));
+  (BANCO.meus || (BANCO.meus = new Map())).set(t + '|' + k, Date.now());
+  BANCO.gravou = (BANCO.gravou || 0) + 1;
+}
 const chaveLinha = (row, pk) => pk.map(k => row[k]).join('|');
 const indexar = L => Object.fromEntries(GRAVAR.map(([t, pk]) => [t, new Map((L[t] || []).map(r => [chaveLinha(r, pk), r]))]));
 const igual = (a, b) => JSON.stringify(a === undefined ? null : a) === JSON.stringify(b === undefined ? null : b);
@@ -1505,7 +1518,7 @@ async function gravarNoBanco(){
     for (const [k, row] of [...SYNC.base[t]].reverse()) if (!agora[t].has(k)){
       const filtro = Object.fromEntries(pk.map(c => [c, row[c]]));
       const {error} = await sb.from(t).delete().match(filtro);
-      if (error) falha(t, 'apagar', error.message); else { SYNC.base[t].delete(k); if (t === 'itens') mexeuItens = true; }
+      if (error) falha(t, 'apagar', error.message); else { SYNC.base[t].delete(k); tAnotar(t, pk, row, true); if (t === 'itens') mexeuItens = true; }
     }
   }
   // 2) incluir e alterar (pais primeiro)
@@ -1522,7 +1535,7 @@ async function gravarNoBanco(){
         const rows = bloco.map(x => x[1]);
         const {data:inc, error} = natural ? await sb.from(t).upsert(rows, {onConflict:pk.join(',')}) : t === 'itens' ? await sb.from(t).insert(rows).select('id,chave') : await sb.from(t).insert(rows);
         if (error){ novas.unshift(...bloco); break; }   // a gravação de uma por uma, logo abaixo, mostra qual deu erro
-        bloco.forEach(([k, row]) => SYNC.base[t].set(k, row));
+        bloco.forEach(([k, row]) => { SYNC.base[t].set(k, row); tAnotar(t, pk, row); });
         if (t === 'itens'){ mexeuItens = true; (inc || []).forEach(r0 => { const it = D.issues.find(x => x.id === r0.id); if (it && r0.chave){ it.chave = r0.chave; SYNC.chavesNovas = true; } }); }
         feitas += bloco.length; if (totalNovas > 20) selo('Salvando... ' + feitas + ' de ' + totalNovas);
       }
@@ -1533,7 +1546,7 @@ async function gravarNoBanco(){
         if (t === 'notificacoes') continue;
         const {data:inc, error} = natural ? await sb.from(t).upsert(row, {onConflict:pk.join(',')}) : t === 'itens' ? await sb.from(t).insert(row).select('id,chave') : await sb.from(t).insert(row);
         if (error) falha(t, 'incluir', error.message);
-        else { SYNC.base[t].set(k, row); if (t === 'itens'){ mexeuItens = true; const r0 = inc && inc[0]; const it = r0 && D.issues.find(x => x.id === r0.id); if (it && r0.chave){ it.chave = r0.chave; SYNC.chavesNovas = true; } } }
+        else { SYNC.base[t].set(k, row); tAnotar(t, pk, row); if (t === 'itens'){ mexeuItens = true; const r0 = inc && inc[0]; const it = r0 && D.issues.find(x => x.id === r0.id); if (it && r0.chave){ it.chave = r0.chave; SYNC.chavesNovas = true; } } }
         continue;
       }
       const mud = {}; Object.keys(row).forEach(c => { if (!pk.includes(c) && !igual(row[c], antes[c])) mud[c] = row[c]; });
@@ -1542,7 +1555,7 @@ async function gravarNoBanco(){
       const {data, error} = await sb.from(t).update(mud).match(filtro).select(pk[0]);
       if (error) falha(t, 'alterar', error.message);
       else if (!data || !data.length) falha(t, 'alterar', 'o banco não deixou alterar (permissão)');
-      else { SYNC.base[t].set(k, row); if (t === 'itens') mexeuItens = true; }
+      else { SYNC.base[t].set(k, row); tAnotar(t, pk, Object.assign(Object.fromEntries(pk.map(c => [c, row[c]])), mud)); if (t === 'itens') mexeuItens = true; }
     }
   }
   SYNC.rodando = false;
@@ -1552,7 +1565,8 @@ async function gravarNoBanco(){
   if (SYNC.chavesNovas){ SYNC.chavesNovas = false; if (!document.querySelector('dialog[open]')) rView(); }
   if (SYNC.deNovo){ SYNC.deNovo = false; return gravarNoBanco(); }
   // as automações rodam no banco: se mexeu em itens e há automação ligada, relê para mostrar o resultado
-  if (mexeuItens && D.automacoes.some(a => a.ativa !== false)) setTimeout(() => { if (!document.querySelector('dialog[open]') && !SYNC.rodando && !SYNC.pendente) carregarDoBanco(null).then(render); }, 600);   // com mudança nova esperando, não relê (perderia a mudança): a próxima gravação relê
+  if (mexeuItens && D.automacoes.some(a => a.ativa !== false) && !(typeof avLigado === 'function' && avLigado())) setTimeout(() => {   // com o ao vivo ligado, o resultado da automação chega sozinho
+    if (!document.querySelector('dialog[open]') && !SYNC.rodando && !SYNC.pendente) carregarDoBanco(null).then(render); }, 600);   // com mudança nova esperando, não relê (perderia a mudança): a próxima gravação relê
 }
 if (COM_BANCO){
   salvar = function(){ if (!BANCO.carregado) return; SYNC.pendente = true; clearTimeout(SYNC.timer); SYNC.timer = setTimeout(gravarNoBanco, 350); };

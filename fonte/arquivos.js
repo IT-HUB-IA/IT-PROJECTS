@@ -94,7 +94,13 @@ montarDados = function(T, eu){
 };
 
 // links temporários para mostrar e abrir os arquivos
-const AQ = {links:null, pedindo:false};
+const AQ = {links:null, pedindo:false, espera:0};
+// os links chegaram: redesenha a janela do item, mas nunca debaixo de quem está digitando nela (espera parar)
+function aqReabrir(){
+  clearTimeout(AQ.espera); if (!itemAberto) return;
+  if (typeof avOcupado === 'function' && avOcupado()){ AQ.espera = setTimeout(aqReabrir, 1000); return; }
+  abrirItem(itemAberto);
+}
 async function aqPedirLinks(){
   const sb = window.ciclodevBanco; if (!sb || !sb.storage || AQ.pedindo) return;
   const L = aqTodos(D).filter(a => a.x.storage && !String(a.x.url || '').startsWith('data:') && !(a.x._urlAte > Date.now())); if (!L.length) return;
@@ -105,7 +111,7 @@ async function aqPedirLinks(){
     if (error || !data) return;
     const url = new Map(data.filter(r => r && r.signedUrl).map(r => [r.path, r.signedUrl]));
     let mudou = false; L.forEach(a => { const u = url.get(a.x.storage); if (u){ a.x.url = u; a.x._urlAte = Date.now() + 3300000; mudou = true; } });
-    if (mudou){ if (itemAberto) abrirItem(itemAberto); else if (UI.modulo === 'operacoes' && UI.view === 'sheet') rView(); else if (UI.modulo === 'servicedesk' && typeof rServiceDesk === 'function') rServiceDesk(); }
+    if (mudou){ if (itemAberto) aqReabrir(); else if (UI.modulo === 'operacoes' && UI.view === 'sheet') rView(); else if (UI.modulo === 'servicedesk' && typeof rServiceDesk === 'function') rServiceDesk(); }
   } catch(e){ console.warn('Arquivos: links', e); }
   finally { AQ.pedindo = false; }
 }

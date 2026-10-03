@@ -31,3 +31,16 @@ create or replace function vault.update_secret(secret_id uuid, new_secret text d
 language sql security definer set search_path = '' as $$
   update vault.secrets set secret = coalesce(new_secret, secret), name = coalesce(new_name, name), description = coalesce(new_description, description), updated_at = now() where id = secret_id $$;
 revoke all on schema vault from public;
+
+-- Simula o Realtime do Supabase (parte 67): realtime.messages, realtime.topic() e realtime.send().
+-- No Supabase, send() grava em realtime.messages e o servidor do Realtime entrega pelo WebSocket; aqui só grava, para o teste ler.
+create schema if not exists realtime;
+create table if not exists realtime.messages (topic text not null, extension text not null default 'broadcast', payload jsonb, event text, private boolean default false,
+  updated_at timestamp default now(), inserted_at timestamp default now(), id uuid default gen_random_uuid());
+alter table realtime.messages enable row level security;
+create or replace function realtime.topic() returns text language sql stable as $$ select nullif(current_setting('realtime.topic', true), '')::text $$;
+create or replace function realtime.send(payload jsonb, event text, topic text, private boolean default true) returns void language plpgsql as $$
+begin insert into realtime.messages (topic, extension, payload, event, private) values (topic, 'broadcast', payload, event, private); end $$;
+grant usage on schema realtime to authenticated, anon;
+grant select, insert, update on realtime.messages to authenticated;
+grant execute on function realtime.topic() to authenticated, anon;

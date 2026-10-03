@@ -85,5 +85,5 @@ async function faConferir(){
     if (novos.length) toast(novos.length === 1 ? 'A ficha técnica mudou sozinha: ' + novos[0].campo + ' (' + faDe(novos[0]) + ').' : 'A ficha técnica mudou sozinha: ' + novos.length + ' campos (' + [...new Set(novos.map(faDe))].join(', ') + ').');
   } finally { FA.carregando = false; }
 }
-setInterval(faConferir, 30000);
+setInterval(() => { if (!avLigado()) faConferir(); }, 30000);   // reserva: com o ao vivo ligado, ele avisa
 if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {FA, faCarregar, faDecorar, faConferir});

@@ -33,7 +33,8 @@ async function ptResumo(){
     const q = novas[0], i = byId('issues', q.item_id);
     tfAviso((q.respondida_por_nome || 'O stakeholder') + ' respondeu' + (i ? ' em ' + i.titulo : '') + '.', i ? [{txt:'Abrir', acao:() => abrirItem(i.id)}] : [], 12000);
     // o item voltou de status no banco: relê em silêncio, se ninguém estiver no meio de algo
-    if (!document.querySelector('dialog[open]') && !(window.ciclodevSync && (window.ciclodevSync.rodando || window.ciclodevSync.pendente))) {
+    // com o ao vivo ligado o item já chega sozinho; sem ele, só relê se a pessoa não estiver no meio de algo (nem digitando)
+    if (!avLigado() && !avOcupado()) {
       const aberto = itemAberto; await window.ciclodevCarregarBanco(null); render(); if (aberto && byId('issues', aberto)) abrirItem(aberto);
     }
   }
@@ -198,6 +199,6 @@ if (COM_BANCO){
   const _carregarPt = carregarDoBanco;
   carregarDoBanco = async function(){ const r = await _carregarPt.apply(this, arguments); if (!PT.carregando){ PT.carregando = true; ptCarregarClientes().finally(() => { PT.carregando = false; }); } return r; };
   window.ciclodevCarregarBanco = carregarDoBanco;
-  setInterval(() => { if (document.visibilityState === 'visible') ptResumo(); }, 60000);
+  setInterval(() => { if (document.visibilityState === 'visible' && !avLigado()) ptResumo(); }, 60000);   // reserva: com o ao vivo ligado, ele avisa
 }
 if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {PT, ptResumo, ptCarregarClientes, ptPerguntar});

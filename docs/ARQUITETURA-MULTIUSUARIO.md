@@ -110,3 +110,13 @@ O modelo silo (banco separado) fica reservado para um cliente grande que exija i
 - **Planos e limites por espaço** (quantidade de projetos, pessoas, arquivos) entram depois, lendo o `espaco_id`.
 - **Espaço de empresa com vários donos** (como uma organização no Trello) já está previsto em `espaco_membros`.
 - **Isolamento físico** para um cliente grande pode vir depois, sem mudar a tela.
+
+## 5. Ao vivo: cada um vê na hora o que o outro mudou (parte 67)
+
+Antes, a tela lia o banco só ao abrir (e algumas partes conferiam de 15 em 15 ou de 60 em 60 segundos, cada uma do seu jeito). Agora:
+
+- **O banco avisa.** Um gatilho por instrução manda um aviso pelo Realtime do Supabase, num canal **privado por espaço** (`ciclodev:<espaço>`), mais um canal pessoal (`ciclodev:p:<pessoa>`) para notificações e conversa com a IA. É o jeito que o Supabase recomenda para escala e segurança (Broadcast from Database), em vez de Postgres Changes.
+- **O aviso não carrega dado**, só tabela, coluna e ids. A tela relê essas linhas pela API normal, então as regras de acesso de sempre valem (o cliente continua sem ver o que não é visível para ele). Um canal compartilhado não separa empresas sozinho (OWASP); por isso o canal é por espaço, com política de entrada, e o conteúdo vem sempre pela leitura protegida.
+- **A tela não fica se redesenhando.** Avisos que chegam juntos viram uma releitura só; o eco da própria gravação não redesenha nada; com janela aberta, campo em edição, texto selecionado, arrasto ou gravação em andamento, a novidade espera; no máximo uma troca a cada 3 segundos; a troca acontece no mesmo quadro de tela, com a rolagem e o que estava aberto devolvidos ao lugar. Quem está escrevendo na janela de um item que outra pessoa mudou vê um aviso discreto, e nada muda debaixo do cursor.
+- **Volta sozinho.** Caiu a internet ou o canal: o selo mostra "Reconectando", tenta de novo (2 s, 5 s, 15 s, 30 s, 1 min) e, ao voltar, busca o que perdeu. Voltou para a aba depois de mais de 2 minutos: confere tudo. Ao sair do sistema, os canais fecham.
+- **As conferências periódicas antigas viraram reserva**: só rodam quando o canal ao vivo está fora do ar.

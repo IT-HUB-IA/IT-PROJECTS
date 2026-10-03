@@ -3626,6 +3626,12 @@ dialog.inv-modal{width:min(980px,96vw)}
 .inv-kpis{display:flex;flex-wrap:wrap}
 .inv-kpis > .inv-kpi{flex:1 1 auto}
 .inv-kpi span{white-space:nowrap}
+/* ===== Ao vivo: selo discreto no rodapé do menu e aviso na janela do item ===== */
+.av-selo{display:inline-flex;align-items:center;gap:5px;font-family:var(--font-mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--nevoa);white-space:nowrap;margin-left:6px}
+.av-selo::before{content:"";width:6px;height:6px;border-radius:50%;background:#2f9e5b;flex:none}
+.av-selo[data-av="religando"]::before{background:transparent;border:1px solid var(--vermelho)}
+.av-selo[data-av="off"]{display:none}
+.av-aviso{margin:0 0 10px;padding:8px 10px;border-left:3px solid var(--vermelho);background:var(--preto-04);font-size:12.5px;line-height:1.4;color:var(--text-primary)}
 
   .conteudo.sem-pad{padding:0;display:flex;flex-direction:column;flex:1}
   .conteudo.sem-pad > div{flex:1;display:flex;flex-direction:column}
@@ -7173,10 +7179,13 @@ function montarDados(T, eu){
   return d;
 }
 
-async function carregarDoBanco(eu){
+// Tpronto: as tabelas já lidas (o ao vivo relê só as linhas que mudaram e monta a tela de novo sem ler tudo)
+async function carregarDoBanco(eu, Tpronto){
   const sb = window.ciclodevBanco; if (!sb) return;
-  const T = {}; BANCO.erros = [];
-  await Promise.all(TABELAS_BANCO.map(async t => { try { T[t] = await lerTabela(sb, t); } catch(e){ T[t] = []; BANCO.erros.push(e.message); } }));
+  let T = Tpronto;
+  if (!T){ T = {}; BANCO.erros = [];
+    await Promise.all(TABELAS_BANCO.map(async t => { try { T[t] = await lerTabela(sb, t); } catch(e){ T[t] = []; BANCO.erros.push(e.message); } }));
+    BANCO.T = structuredClone(T); BANCO.meus = new Map(); }   // cópia intocada do banco, que o ao vivo vai atualizando
   clearTimeout(SYNC.timer);
   D = montarDados(T, eu);
   const ok = id => D.projects.some(p => 'project:' + p.id === id) || D.products.some(p => 'product:' + p.id === id) || D.apps.some(p => 'app:' + p.id === id) || D.ws.some(p => 'ws:' + p.id === id) || D.clients.some(p => 'client:' + p.id === id);
@@ -7429,6 +7438,16 @@ function linhasDaTela(d){
 }
 
 const SYNC = {base:null, rodando:false, deNovo:false, timer:0, erros:[], pendente:false};
+// o que esta tela gravou entra na cópia do banco (BANCO.T) e fica anotado por uns segundos:
+// assim o ao vivo reconhece o eco da própria gravação e não trata como mudança de outra pessoa
+function tAnotar(t, pk, row, apagar){
+  const T = BANCO.T; if (!T) return;
+  const k = chaveLinha(row, pk), lista = T[t] || (T[t] = []), i = lista.findIndex(r => chaveLinha(r, pk) === k);
+  if (apagar){ if (i >= 0) lista.splice(i, 1); }
+  else if (i >= 0) lista[i] = Object.assign({}, lista[i], row); else lista.push(Object.assign({}, row));
+  (BANCO.meus || (BANCO.meus = new Map())).set(t + '|' + k, Date.now());
+  BANCO.gravou = (BANCO.gravou || 0) + 1;
+}
 const chaveLinha = (row, pk) => pk.map(k => row[k]).join('|');
 const indexar = L => Object.fromEntries(GRAVAR.map(([t, pk]) => [t, new Map((L[t] || []).map(r => [chaveLinha(r, pk), r]))]));
 const igual = (a, b) => JSON.stringify(a === undefined ? null : a) === JSON.stringify(b === undefined ? null : b);
@@ -7448,7 +7467,7 @@ async function gravarNoBanco(){
     for (const [k, row] of [...SYNC.base[t]].reverse()) if (!agora[t].has(k)){
       const filtro = Object.fromEntries(pk.map(c => [c, row[c]]));
       const {error} = await sb.from(t).delete().match(filtro);
-      if (error) falha(t, 'apagar', error.message); else { SYNC.base[t].delete(k); if (t === 'itens') mexeuItens = true; }
+      if (error) falha(t, 'apagar', error.message); else { SYNC.base[t].delete(k); tAnotar(t, pk, row, true); if (t === 'itens') mexeuItens = true; }
     }
   }
   // 2) incluir e alterar (pais primeiro)
@@ -7465,7 +7484,7 @@ async function gravarNoBanco(){
         const rows = bloco.map(x => x[1]);
         const {data:inc, error} = natural ? await sb.from(t).upsert(rows, {onConflict:pk.join(',')}) : t === 'itens' ? await sb.from(t).insert(rows).select('id,chave') : await sb.from(t).insert(rows);
         if (error){ novas.unshift(...bloco); break; }   // a gravação de uma por uma, logo abaixo, mostra qual deu erro
-        bloco.forEach(([k, row]) => SYNC.base[t].set(k, row));
+        bloco.forEach(([k, row]) => { SYNC.base[t].set(k, row); tAnotar(t, pk, row); });
         if (t === 'itens'){ mexeuItens = true; (inc || []).forEach(r0 => { const it = D.issues.find(x => x.id === r0.id); if (it && r0.chave){ it.chave = r0.chave; SYNC.chavesNovas = true; } }); }
         feitas += bloco.length; if (totalNovas > 20) selo('Salvando... ' + feitas + ' de ' + totalNovas);
       }
@@ -7476,7 +7495,7 @@ async function gravarNoBanco(){
         if (t === 'notificacoes') continue;
         const {data:inc, error} = natural ? await sb.from(t).upsert(row, {onConflict:pk.join(',')}) : t === 'itens' ? await sb.from(t).insert(row).select('id,chave') : await sb.from(t).insert(row);
         if (error) falha(t, 'incluir', error.message);
-        else { SYNC.base[t].set(k, row); if (t === 'itens'){ mexeuItens = true; const r0 = inc && inc[0]; const it = r0 && D.issues.find(x => x.id === r0.id); if (it && r0.chave){ it.chave = r0.chave; SYNC.chavesNovas = true; } } }
+        else { SYNC.base[t].set(k, row); tAnotar(t, pk, row); if (t === 'itens'){ mexeuItens = true; const r0 = inc && inc[0]; const it = r0 && D.issues.find(x => x.id === r0.id); if (it && r0.chave){ it.chave = r0.chave; SYNC.chavesNovas = true; } } }
         continue;
       }
       const mud = {}; Object.keys(row).forEach(c => { if (!pk.includes(c) && !igual(row[c], antes[c])) mud[c] = row[c]; });
@@ -7485,7 +7504,7 @@ async function gravarNoBanco(){
       const {data, error} = await sb.from(t).update(mud).match(filtro).select(pk[0]);
       if (error) falha(t, 'alterar', error.message);
       else if (!data || !data.length) falha(t, 'alterar', 'o banco não deixou alterar (permissão)');
-      else { SYNC.base[t].set(k, row); if (t === 'itens') mexeuItens = true; }
+      else { SYNC.base[t].set(k, row); tAnotar(t, pk, Object.assign(Object.fromEntries(pk.map(c => [c, row[c]])), mud)); if (t === 'itens') mexeuItens = true; }
     }
   }
   SYNC.rodando = false;
@@ -7495,7 +7514,8 @@ async function gravarNoBanco(){
   if (SYNC.chavesNovas){ SYNC.chavesNovas = false; if (!document.querySelector('dialog[open]')) rView(); }
   if (SYNC.deNovo){ SYNC.deNovo = false; return gravarNoBanco(); }
   // as automações rodam no banco: se mexeu em itens e há automação ligada, relê para mostrar o resultado
-  if (mexeuItens && D.automacoes.some(a => a.ativa !== false)) setTimeout(() => { if (!document.querySelector('dialog[open]') && !SYNC.rodando && !SYNC.pendente) carregarDoBanco(null).then(render); }, 600);   // com mudança nova esperando, não relê (perderia a mudança): a próxima gravação relê
+  if (mexeuItens && D.automacoes.some(a => a.ativa !== false) && !(typeof avLigado === 'function' && avLigado())) setTimeout(() => {   // com o ao vivo ligado, o resultado da automação chega sozinho
+    if (!document.querySelector('dialog[open]') && !SYNC.rodando && !SYNC.pendente) carregarDoBanco(null).then(render); }, 600);   // com mudança nova esperando, não relê (perderia a mudança): a próxima gravação relê
 }
 if (COM_BANCO){
   salvar = function(){ if (!BANCO.carregado) return; SYNC.pendente = true; clearTimeout(SYNC.timer); SYNC.timer = setTimeout(gravarNoBanco, 350); };
@@ -10452,6 +10472,7 @@ const smOcupado = () => !!document.querySelector('dialog[open]') || (window.cicl
   !!document.querySelector('.arrastando, [aria-grabbed="true"]') || (document.activeElement && document.activeElement.matches && document.activeElement.matches('#ops-corpo input, #ops-corpo textarea, #ops-corpo select, #ops-corpo [contenteditable="true"]'));
 async function smAoVivo(){
   if (!COM_BANCO || typeof BANCO === 'undefined' || !BANCO.carregado || SMV.rodando || typeof window.ciclodevCarregarBanco !== 'function') return;
+  if (avLigado()){ SMV.assin = null; SMV.pendente = false; return; }   // com o ao vivo ligado, quem atualiza é ele (isto fica só de reserva)
   if (document.visibilityState !== 'visible' || UI.modulo !== 'operacoes' || !SM_AO_VIVO.includes(UI.view)){ SMV.assin = null; SMV.pendente = false; return; }
   SMV.rodando = true;
   try {
@@ -10868,7 +10889,7 @@ async function cmBuscarNovos(){
   });
   if (novos){ atualizarSino(); cmRepintar(); }
 }
-setInterval(() => { cmBuscarNovos().catch(() => {}); }, 60000);
+setInterval(() => { if (!avLigado()) cmBuscarNovos().catch(() => {}); }, 60000);   // reserva: com o ao vivo ligado, ele avisa
 // o tipo de cada aviso vem do banco (parte 20); sem a parte 20, continua como antes
 const _montarDadosCm = montarDados;
 montarDados = function(T, e){
@@ -12556,7 +12577,13 @@ montarDados = function(T, eu){
 };
 
 // links temporários para mostrar e abrir os arquivos
-const AQ = {links:null, pedindo:false};
+const AQ = {links:null, pedindo:false, espera:0};
+// os links chegaram: redesenha a janela do item, mas nunca debaixo de quem está digitando nela (espera parar)
+function aqReabrir(){
+  clearTimeout(AQ.espera); if (!itemAberto) return;
+  if (typeof avOcupado === 'function' && avOcupado()){ AQ.espera = setTimeout(aqReabrir, 1000); return; }
+  abrirItem(itemAberto);
+}
 async function aqPedirLinks(){
   const sb = window.ciclodevBanco; if (!sb || !sb.storage || AQ.pedindo) return;
   const L = aqTodos(D).filter(a => a.x.storage && !String(a.x.url || '').startsWith('data:') && !(a.x._urlAte > Date.now())); if (!L.length) return;
@@ -12567,7 +12594,7 @@ async function aqPedirLinks(){
     if (error || !data) return;
     const url = new Map(data.filter(r => r && r.signedUrl).map(r => [r.path, r.signedUrl]));
     let mudou = false; L.forEach(a => { const u = url.get(a.x.storage); if (u){ a.x.url = u; a.x._urlAte = Date.now() + 3300000; mudou = true; } });
-    if (mudou){ if (itemAberto) abrirItem(itemAberto); else if (UI.modulo === 'operacoes' && UI.view === 'sheet') rView(); else if (UI.modulo === 'servicedesk' && typeof rServiceDesk === 'function') rServiceDesk(); }
+    if (mudou){ if (itemAberto) aqReabrir(); else if (UI.modulo === 'operacoes' && UI.view === 'sheet') rView(); else if (UI.modulo === 'servicedesk' && typeof rServiceDesk === 'function') rServiceDesk(); }
   } catch(e){ console.warn('Arquivos: links', e); }
   finally { AQ.pedindo = false; }
 }
@@ -12689,7 +12716,8 @@ async function ptResumo(){
     const q = novas[0], i = byId('issues', q.item_id);
     tfAviso((q.respondida_por_nome || 'O stakeholder') + ' respondeu' + (i ? ' em ' + i.titulo : '') + '.', i ? [{txt:'Abrir', acao:() => abrirItem(i.id)}] : [], 12000);
     // o item voltou de status no banco: relê em silêncio, se ninguém estiver no meio de algo
-    if (!document.querySelector('dialog[open]') && !(window.ciclodevSync && (window.ciclodevSync.rodando || window.ciclodevSync.pendente))) {
+    // com o ao vivo ligado o item já chega sozinho; sem ele, só relê se a pessoa não estiver no meio de algo (nem digitando)
+    if (!avLigado() && !avOcupado()) {
       const aberto = itemAberto; await window.ciclodevCarregarBanco(null); render(); if (aberto && byId('issues', aberto)) abrirItem(aberto);
     }
   }
@@ -12854,7 +12882,7 @@ if (COM_BANCO){
   const _carregarPt = carregarDoBanco;
   carregarDoBanco = async function(){ const r = await _carregarPt.apply(this, arguments); if (!PT.carregando){ PT.carregando = true; ptCarregarClientes().finally(() => { PT.carregando = false; }); } return r; };
   window.ciclodevCarregarBanco = carregarDoBanco;
-  setInterval(() => { if (document.visibilityState === 'visible') ptResumo(); }, 60000);
+  setInterval(() => { if (document.visibilityState === 'visible' && !avLigado()) ptResumo(); }, 60000);   // reserva: com o ao vivo ligado, ele avisa
 }
 if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {PT, ptResumo, ptCarregarClientes, ptPerguntar});
 
@@ -12980,7 +13008,7 @@ async function iaNovidades(){
   if (n !== IA.novas){ IA.novas = n; iaImagemBalao(); }
 }
 async function iaMarcarVisto(){ const sb = iaBanco(); IA.novas = 0; iaImagemBalao(); if (sb) await sb.rpc('ia_marcar_visto'); }
-setInterval(() => { if (document.visibilityState === 'visible') iaNovidades(); }, 30000);
+setInterval(() => { if (document.visibilityState === 'visible' && !avLigado()) iaNovidades(); }, 30000);   // reserva: com o ao vivo ligado, ele avisa
 document.addEventListener('mouseover', e => { if (e.target.closest && e.target.closest('#ia-raiz [data-ia-balao]') && !IA.mouse){ IA.mouse = true; iaImagemBalao(); } });
 document.addEventListener('mouseout', e => { const b = e.target.closest && e.target.closest('#ia-raiz [data-ia-balao]'); if (b && !b.contains(e.relatedTarget) && IA.mouse){ IA.mouse = false; iaImagemBalao(); } });
 const iaHora = v => { const d = new Date(v), h = new Date(); return d.toDateString() === h.toDateString() ? d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}) : d.toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}); };
@@ -14016,7 +14044,7 @@ window.addEventListener('message', async e => {
   else if (m.tipo === 'gerar' && podeEditar()) ifrGerar();
 });
 // o que outra pessoa (ou o robô) mudou no canvas chega sozinho (a cada 30 segundos, com a aba aberta)
-setInterval(() => { if (UI.view === 'infra' && document.visibilityState === 'visible') ifrAtualizarRemoto(); }, 30000);
+setInterval(() => { if (UI.view === 'infra' && document.visibilityState === 'visible' && !avLigado()) ifrAtualizarRemoto(); }, 30000);   // reserva: com o ao vivo ligado, ele avisa
 async function ifrAtualizarRemoto(){
   const sb = ifrBanco();
   if (!sb || UI.view !== 'infra' || !IFR.no || !ifrFrame()) return;
@@ -14680,7 +14708,7 @@ async function faConferir(){
     if (novos.length) toast(novos.length === 1 ? 'A ficha técnica mudou sozinha: ' + novos[0].campo + ' (' + faDe(novos[0]) + ').' : 'A ficha técnica mudou sozinha: ' + novos.length + ' campos (' + [...new Set(novos.map(faDe))].join(', ') + ').');
   } finally { FA.carregando = false; }
 }
-setInterval(faConferir, 30000);
+setInterval(() => { if (!avLigado()) faConferir(); }, 30000);   // reserva: com o ao vivo ligado, ele avisa
 if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {FA, faCarregar, faDecorar, faConferir});
 
 /* ===== Barra Criar: no topo de todas as abas que mostram itens =====
@@ -16602,7 +16630,7 @@ document.addEventListener('click', async e => {
     if (error){ toast('Não deu para pedir a análise: ' + (error.message || error)); return; }
     toast('O robô está lendo o código e o banco. Em alguns minutos a análise aparece aqui.');
     const chave = UI.sel; let k = 0;
-    const t = setInterval(async () => { k++; if (UI.sel !== chave || k > 40){ clearInterval(t); return; } const antes = JSON.stringify(SG.rodadas.map(r => r.rodou_em)); await sgCarregar(); if (UI.view === 'seguranca') rView(); if (JSON.stringify(SG.rodadas.map(r => r.rodou_em)) !== antes){ clearInterval(t); toast('Análise de segurança atualizada.'); } }, 15000);
+    const t = setInterval(async () => { k++; if (UI.sel !== chave || k > 40){ clearInterval(t); return; } if (avLigado()) return;   /* reserva: com o ao vivo ligado, ele avisa */ const antes = JSON.stringify(SG.rodadas.map(r => r.rodou_em)); await sgCarregar(); if (UI.view === 'seguranca') rView(); if (JSON.stringify(SG.rodadas.map(r => r.rodou_em)) !== antes){ clearInterval(t); toast('Análise de segurança atualizada.'); } }, 15000);
     return;
   }
   const ci = e.target.closest('[data-sg-item]');
@@ -21440,6 +21468,387 @@ function integrarConfirmar(o){
   });
 }
 if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {integrarConfirmar, igSituacao, igChave});
+
+/* =====================================================================
+   Ao vivo (parte 67 do banco): o que outra pessoa (ou o robô) muda aparece aqui sem recarregar a página.
+   Como funciona:
+   1. O banco manda, por canal privado (um por espaço, um pessoal e o "geral"), um aviso com SÓ a tabela, a coluna
+      e os ids que mudaram. Nunca o conteúdo: a tela relê essas linhas pela API normal, com as regras de acesso de sempre.
+   2. Os avisos que chegam juntos viram uma releitura só (espera AV_ESPERA ms). Importação grande = "relê a tabela".
+   3. O que voltou igual ao que a tela já tem (o eco da própria gravação) não mexe em nada.
+   4. Não atrapalha: com janela aberta, campo em edição, texto selecionado, arrastando ou salvando, a novidade espera
+      e entra quando a pessoa para. A tela não fica se redesenhando: no máximo uma vez por leva, e só se mudou algo.
+   5. Ao voltar para a aba, voltar a internet ou o canal cair e voltar, relê o que pode ter perdido.
+   Os módulos com dados próprios (Infraestrutura, Análise, Automático, Ficha, IA, Portal...) ouvem com avOuvir().
+   ===================================================================== */
+const AV = {canais:[], topicos:[], estado:{}, ligado:false, caiu:false, fila:new Map(), timer:0, tentativa:0, religar:0,
+  sujo:false, itensTocados:new Set(), ouvintes:[], escondidoDesde:0, rodando:false, deNovo:false, aplicando:false,
+  apertado:false, iniciado:false, parando:false, aplicou:0, registro:[]};
+const AV_ESPERA = 400;          // junta os avisos que chegam juntos
+const AV_INTERVALO = 3000;      // no máximo uma troca de tela a cada 3 s, mesmo com o robô mudando muita coisa seguida
+
+// os módulos com dados próprios pedem para ser avisados: fn(lote) com lote = Map(tabela -> {c, ids:Set|null}); '*' = releia tudo
+function avOuvir(tabelas, fn){ AV.ouvintes.push({tabelas:new Set(tabelas), fn}); }
+// o canal ao vivo está ligado? (as conferências periódicas antigas só rodam quando não está)
+function avLigado(){ try { return AV.ligado; } catch(e){ return false; } }
+
+// a pessoa está no meio de alguma coisa: a novidade espera
+function avOcupado(){
+  if (document.querySelector('dialog[open]')) return true;
+  if (typeof SYNC !== 'undefined' && (SYNC.rodando || SYNC.pendente)) return true;
+  if (AV.apertado || document.querySelector('.arrastando, [aria-grabbed="true"]')) return true;
+  const a = document.activeElement;
+  if (a && a !== document.body && a.matches && (a.matches('textarea, select, [contenteditable="true"], [contenteditable=""]') ||
+      (a.matches('input') && !/^(checkbox|radio|button|submit|reset|range|color|file|image)$/i.test(a.type || '')))) return true;
+  const s = window.getSelection && window.getSelection(); if (s && !s.isCollapsed && String(s).trim()) return true;
+  return false;
+}
+
+/* ---------- canal ---------- */
+async function avIniciar(){
+  const sb = window.ciclodevBanco; if (!sb || typeof sb.channel !== 'function' || AV.iniciando) return;
+  AV.iniciando = true; AV.iniciado = true;
+  try {
+    avParar();
+    const {data, error} = await sb.rpc('ao_vivo_topicos');
+    if (error || !Array.isArray(data) || !data.length) throw new Error(error ? error.message : 'nenhum canal');
+    try { const s = (await sb.auth.getSession()).data.session; if (s && sb.realtime && sb.realtime.setAuth) sb.realtime.setAuth(s.access_token); } catch(e){ /* segue com o login que o cliente já tem */ }
+    // ao sair do sistema, fecha os canais (a conexão não pode durar mais que o login); login renovado vale também para o canal
+    if (!AV.ouvindoLogin){ AV.ouvindoLogin = true;
+      try { sb.auth.onAuthStateChange((ev, sess) => {
+        if (ev === 'SIGNED_OUT'){ avParar(); AV.iniciado = false; clearTimeout(AV.religar); AV.religar = 0; avSelo(); }
+        else if (ev === 'TOKEN_REFRESHED' && sess && sb.realtime && sb.realtime.setAuth) sb.realtime.setAuth(sess.access_token);
+      }); } catch(e){ /* sem login */ } }
+    AV.topicos = data.filter(t => typeof t === 'string' && /^ciclodev:[a-z0-9:-]+$/i.test(t));
+    AV.topicos.forEach(t => {
+      const ch = sb.channel(t, {config:{private:true}});
+      ch.on('broadcast', {event:'mudou'}, m => avReceber(m && m.payload));
+      AV.estado[t] = 'conectando';
+      ch.subscribe(st => avEstado(t, st));
+      AV.canais.push(ch);
+    });
+  } catch(e){ console.warn('Ao vivo:', e.message || e); AV.caiu = true; avAgendarReligar(); }
+  finally { AV.iniciando = false; avSelo(); }
+}
+function avParar(){
+  const sb = window.ciclodevBanco; AV.parando = true;
+  AV.canais.forEach(ch => { try { sb.removeChannel(ch); } catch(e){ /* já fechado */ } });
+  AV.canais = []; AV.estado = {}; AV.ligado = false; AV.parando = false;
+}
+function avEstado(t, st){
+  if (AV.parando || !AV.topicos.includes(t)) return;
+  AV.estado[t] = st;
+  const antes = AV.ligado;
+  AV.ligado = AV.topicos.length > 0 && AV.topicos.every(x => AV.estado[x] === 'SUBSCRIBED');
+  if (AV.ligado){
+    AV.tentativa = 0; clearTimeout(AV.religar); AV.religar = 0;
+    if (AV.caiu){ AV.caiu = false; avRessincronizar(); }   // pode ter perdido avisos enquanto estava fora
+  } else if (/CHANNEL_ERROR|TIMED_OUT|CLOSED/.test(st)){
+    if (antes) AV.caiu = true;
+    avAgendarReligar();
+  }
+  avSelo();
+}
+// uma tentativa por vez (os canais caem juntos): 2 s, 5 s, 15 s, 30 s, depois de minuto em minuto
+function avAgendarReligar(){
+  if (AV.religar) return;
+  const espera = [2000, 5000, 15000, 30000, 60000][Math.min(AV.tentativa++, 4)];
+  AV.religar = setTimeout(() => { AV.religar = 0; if (navigator.onLine !== false) avIniciar(); else avAgendarReligar(); }, espera);
+}
+// releitura completa (voltou de muito tempo fora): tudo o que a tela mostra, e os módulos releem o deles
+function avRessincronizar(){
+  if (!BANCO.T) return;
+  (typeof TABELAS_BANCO !== 'undefined' ? TABELAS_BANCO : []).forEach(t => AV.fila.set(t, {c:'id', ids:null}));
+  AV.fila.set('*', {c:'id', ids:null});
+  clearTimeout(AV.timer); AV.timer = setTimeout(avProcessar, 50);
+}
+
+/* ---------- avisos ---------- */
+// o aviso é dado, nunca ordem: só se aceita tabela, coluna e ids com formato conhecido
+function avReceber(p){
+  if (!p || typeof p.t !== 'string' || !/^[a-z_][a-z0-9_]*$/.test(p.t)) return;
+  const c = typeof p.c === 'string' && /^[a-z_][a-z0-9_]*$/.test(p.c) ? p.c : 'id';
+  const ids = Array.isArray(p.ids) ? p.ids.filter(x => typeof x === 'string' || typeof x === 'number').map(String) : null;
+  const atual = AV.fila.get(p.t);
+  if (!atual) AV.fila.set(p.t, {c, ids:ids ? new Set(ids) : null});
+  else if (!ids || !atual.ids) atual.ids = null;
+  else ids.forEach(x => atual.ids.add(x));
+  clearTimeout(AV.timer); AV.timer = setTimeout(avProcessar, AV_ESPERA);
+}
+const avJson = r => JSON.stringify(Object.keys(r || {}).sort().reduce((o, k) => (o[k] = r[k], o), {}));
+const avPk = t => { const g = (typeof GRAVAR !== 'undefined' ? GRAVAR : []).find(x => x[0] === t); return g ? g[1] : null; };
+
+async function avReler(t, c, ids){
+  const sb = window.ciclodevBanco;
+  try {
+    if (!ids) return await lerTabela(sb, t);
+    const lista = [...ids], todas = [];
+    for (let i = 0; i < lista.length; i += 100){
+      const {data, error} = await sb.from(t).select('*').in(c, lista.slice(i, i + 100));
+      if (error) throw new Error(error.message);
+      todas.push(...(data || []));
+    }
+    return todas;
+  } catch(e){ console.warn('Ao vivo: não deu para reler', t, e.message || e); return null; }
+}
+// compara valor a valor: data em formato diferente (o que a tela mandou x o que o banco devolve) não é mudança
+const AV_IGNORAR = new Set(['atualizado_em']);   // o banco carimba sozinho; não aparece na tela
+const AV_DATA = /^\d{4}-\d\d-\d\d[T ]\d\d:\d\d/;
+function avIgual(a, b){
+  if (a === b) return true;
+  if (a == null || b == null) return a == null && b == null;
+  if (typeof a === 'object' || typeof b === 'object') return JSON.stringify(a) === JSON.stringify(b);
+  if (typeof a === 'string' && typeof b === 'string' && AV_DATA.test(a) && AV_DATA.test(b)) return Date.parse(a) === Date.parse(b);
+  return String(a) === String(b);
+}
+// a linha mudou de verdade? (minha = esta tela acabou de incluir: as colunas que o banco completou sozinho não contam)
+function avLinhaMudou(velha, nova, minha){
+  if (!velha || !nova) return true;
+  for (const k of Object.keys(nova)){
+    if (AV_IGNORAR.has(k)) continue;
+    if (!(k in velha)){ if (minha) continue; return true; }
+    if (!avIgual(velha[k], nova[k])) return true;
+  }
+  return false;
+}
+// troca as linhas na cópia do banco e diz se algo visível mudou. O eco da própria gravação não conta:
+// o que esta tela gravou já está na cópia (tAnotar), então a linha relida volta igual
+function avTrocarLinhas(t, c, ids, novas){
+  const T = BANCO.T, velhas = T[t] || [];
+  const dentro = r => !ids || ids.has(String(r[c]));
+  const antes = velhas.filter(dentro);
+  const pk = avPk(t), chave = r => pk ? chaveLinha(r, pk) : avJson(r), meus = BANCO.meus || new Map();
+  const ma = new Map(antes.map(r => [chave(r), r])), mn = new Map(novas.map(r => [chave(r), r]));
+  const mudadas = [...new Set([...ma.keys(), ...mn.keys()])].filter(k => avLinhaMudou(ma.get(k), mn.get(k), meus.has(t + '|' + k)));
+  const algo = mudadas.length || antes.length !== novas.length || antes.some(r => !mn.has(chave(r)) || avJson(r) !== avJson(mn.get(chave(r))));
+  if (algo) T[t] = velhas.filter(r => !dentro(r)).concat(novas);   // a cópia fica igual ao banco, mesmo quando nada visível mudou
+  // quais itens isso toca (para a janela do item aberto)
+  mudadas.forEach(k => [ma.get(k), mn.get(k)].forEach(r => { if (!r) return;
+    [t === 'itens' ? r.id : null, r.item_id, r.origem_id, r.destino_id].forEach(x => { if (x) AV.itensTocados.add(String(x)); }); }));
+  return mudadas.length > 0;
+}
+
+async function avProcessar(){
+  if (AV.rodando){ AV.deNovo = true; return; }
+  if (typeof BANCO === 'undefined' || !BANCO.carregado || !BANCO.T) return;
+  if (typeof SYNC !== 'undefined' && (SYNC.rodando || SYNC.pendente)){ clearTimeout(AV.timer); AV.timer = setTimeout(avProcessar, 800); return; }   // a gravação desta tela vem primeiro
+  const lote = AV.fila; AV.fila = new Map(); if (!lote.size) return;
+  AV.rodando = true;
+  const gravou = BANCO.gravou || 0;
+  try {
+    // 1. módulos com dados próprios
+    AV.ouvintes.forEach(o => {
+      const meu = new Map([...lote].filter(([t]) => t === '*' || o.tabelas.has(t) || o.tabelas.has('*')));
+      if (meu.size) try { o.fn(meu); } catch(e){ console.warn('Ao vivo (módulo):', e); }
+    });
+    // 2. os dados gerais da tela
+    const daTela = new Set(typeof TABELAS_BANCO !== 'undefined' ? TABELAS_BANCO : []);
+    const relidas = [];
+    for (const [t, {c, ids}] of lote){
+      if (!daTela.has(t)) continue;
+      const linhas = await avReler(t, c, ids);
+      if (linhas === null){ avDevolver(t, c, ids); continue; }
+      relidas.push([t, c, ids, linhas]);
+    }
+    // esta tela gravou algo enquanto relia: o que foi relido pode estar velho; relê de novo daqui a pouco
+    if ((BANCO.gravou || 0) !== gravou){ relidas.forEach(([t, c, ids]) => avDevolver(t, c, ids)); clearTimeout(AV.timer); AV.timer = setTimeout(avProcessar, 600); return; }
+    relidas.forEach(([t, c, ids, linhas]) => { const m = avTrocarLinhas(t, c, ids, linhas); if (m) AV.sujo = true;
+      AV.registro.push({em:Date.now(), t, ids:ids ? ids.size : 'tudo', linhas:linhas.length, mudou:m}); });
+    if (AV.registro.length > 30) AV.registro.splice(0, AV.registro.length - 30);   // as últimas levas, para conferir no console (AV.registro)
+    avTalvezAplicar();
+  } finally {
+    AV.rodando = false;
+    if (AV.deNovo){ AV.deNovo = false; avProcessar(); }
+  }
+}
+function avDevolver(t, c, ids){
+  const atual = AV.fila.get(t);
+  if (!atual) AV.fila.set(t, {c, ids:ids ? new Set(ids) : null});
+  else if (!ids || !atual.ids) atual.ids = null; else ids.forEach(x => atual.ids.add(x));
+}
+
+/* ---------- aplicar na tela, sem atrapalhar ---------- */
+function avTalvezAplicar(){
+  if (!AV.sujo || AV.aplicando) return;
+  if (Date.now() - (AV.ultimaTroca || 0) < AV_INTERVALO) return;   // o relógio abaixo aplica quando der o intervalo
+  if (avOcupado()){ avAvisarItem(); return; }   // espera; o relógio abaixo tenta de novo
+  avAplicar();
+}
+// a pessoa está mexendo na janela do item e outra pessoa mudou esse mesmo item: avisa, sem trocar nada debaixo do cursor
+function avAvisarItem(){
+  const aberto = typeof itemAberto !== 'undefined' ? itemAberto : null, g = document.querySelector('#gaveta-wrap .gaveta');
+  if (!aberto || !g || !AV.itensTocados.has(String(aberto)) || g.querySelector('.av-aviso')) return;
+  const d = document.createElement('div'); d.className = 'av-aviso'; d.setAttribute('role', 'status');
+  d.textContent = 'Outra pessoa mudou este item agora. O que você está escrevendo continua aqui; a janela se atualiza quando você sair do campo.';
+  g.prepend(d);
+}
+// guarda e devolve a rolagem de cada área e o que estava aberto (details), para a troca não mexer na posição
+function avChaveEl(el){
+  if (el === document.scrollingElement || el === document.documentElement) return 'janela';
+  const partes = []; let x = el;
+  while (x && x !== document.body && partes.length < 8){
+    if (x.id){ partes.unshift('#' + x.id); break; }
+    const dd = Object.keys(x.dataset || {}).filter(k => k !== 'tooltip').sort().map(k => '[data-' + k.replace(/[A-Z]/g, m => '-' + m.toLowerCase()) + '="' + String(x.dataset[k]).slice(0, 60) + '"]').join('');
+    const cl = (x.className && typeof x.className === 'string') ? '.' + x.className.trim().split(/\s+/).filter(c => !/^(sobre|arrastando|ativo|aberto|hover|foco)$/.test(c)).slice(0, 3).join('.') : '';
+    const irmaos = x.parentElement ? [...x.parentElement.children].filter(y => y.tagName === x.tagName && y.className === x.className) : [];
+    partes.unshift(x.tagName.toLowerCase() + cl + dd + (irmaos.length > 1 && !dd ? ':' + irmaos.indexOf(x) : ''));
+    x = x.parentElement;
+  }
+  return partes.join('>');
+}
+// caminho do elemento a partir do body (índices dos filhos): achar de volta é direto, sem medir a página inteira
+function avCaminho(el){ const p = []; while (el && el !== document.body && el.parentElement){ p.unshift([...el.parentElement.children].indexOf(el)); el = el.parentElement; } return p; }
+function avPorCaminho(p){ let el = document.body; for (const i of p){ el = el && el.children[i]; if (!el) return null; } return el; }
+function avGuardarTela(){
+  const rolagem = [], abertos = [];
+  document.querySelectorAll('body *').forEach(el => {
+    if (el.scrollTop > 0 || el.scrollLeft > 0) rolagem.push([avCaminho(el), avChaveEl(el), el.scrollTop, el.scrollLeft, el.tagName, el.className]);
+    else if (el.tagName === 'DETAILS' && el.open) abertos.push([avCaminho(el), avChaveEl(el), true, 'DETAILS', el.className]);
+  });
+  return {rolagem, abertos, x:window.scrollX, y:window.scrollY};
+}
+// devolve no mesmo lugar: pelo caminho, conferindo que é o mesmo elemento (mesma chave); se a estrutura mudou, procura pela chave
+function avAchar(caminho, chave, tag, classe){
+  const el = avPorCaminho(caminho); if (el && avChaveEl(el) === chave) return el;
+  return [...document.getElementsByTagName(tag)].find(x => x.className === classe && avChaveEl(x) === chave) || null;
+}
+function avDevolverTela(s){
+  s.abertos.forEach(([c, k, aberto, tag, cl]) => { const el = avAchar(c, k, tag, cl); if (el && el.open !== aberto) el.open = aberto; });
+  s.rolagem.forEach(([c, k, top, left, tag, cl]) => { const el = avAchar(c, k, tag, cl); if (el){ el.scrollTop = top; el.scrollLeft = left; } });
+  if (window.scrollX !== s.x || window.scrollY !== s.y) window.scrollTo(s.x, s.y);
+}
+// os links temporários dos anexos passam para os objetos novos (sem pedir tudo de novo nem redesenhar outra vez)
+function avGuardarLinks(){
+  const m = new Map();
+  try { if (typeof aqTodos === 'function') aqTodos(D).forEach(a => { if (a.x && a.x.storage && a.x.url && a.x._urlAte > Date.now()) m.set(a.x.storage, [a.x.url, a.x._urlAte]); }); } catch(e){ /* sem anexos */ }
+  return m;
+}
+function avDevolverLinks(m){
+  if (!m.size) return;
+  try { aqTodos(D).forEach(a => { const v = a.x && a.x.storage && m.get(a.x.storage); if (v && !a.x.url){ a.x.url = v[0]; a.x._urlAte = v[1]; } }); } catch(e){ /* sem anexos */ }
+}
+async function avAplicar(){
+  if (!AV.sujo || AV.aplicando || typeof window.ciclodevCarregarBanco !== 'function') return;
+  AV.aplicando = true; AV.sujo = false; AV.ultimaTroca = Date.now();
+  try {
+    const ini = performance.now(), tm = {}, marca = k => { tm[k] = Math.round(performance.now() - ini); };
+    const links = avGuardarLinks(), tela = avGuardarTela(); marca('guardar');
+    const aberto = typeof itemAberto !== 'undefined' ? itemAberto : null;
+    const tocouAberto = aberto && AV.itensTocados.has(String(aberto));
+    AV.itensTocados = new Set();
+    const copia = structuredClone(BANCO.T); marca('copia');
+    await window.ciclodevCarregarBanco(null, copia); marca('montar');
+    avDevolverLinks(links);
+    // a troca acontece toda no mesmo quadro: o navegador só pinta depois, já com a rolagem devolvida
+    render(); marca('desenhar');
+    if (aberto){
+      if (byId('issues', aberto)){ if (tocouAberto || document.querySelector('#gaveta-wrap .av-aviso')) abrirItem(aberto); }
+      else { fecharItem(); toast('O item que estava aberto foi apagado ou arquivado por outra pessoa.'); }
+    }
+    if (typeof atualizarSino === 'function') atualizarSino();
+    avDevolverTela(tela); marca('devolver');
+    AV.aplicou++; AV.registro.push({em:Date.now(), aplicou:true, ms:Math.round(performance.now() - ini), tm, foco:(document.activeElement && (document.activeElement.id || document.activeElement.tagName)) || '', item:!!tocouAberto});
+  } catch(e){ console.warn('Ao vivo: não aplicou', e); AV.sujo = true; }
+  finally { AV.aplicando = false; }
+}
+
+/* ---------- módulos: relê o deles quando a pessoa não estiver no meio de algo ---------- */
+// uma vez por chave (a mais nova vale); a rolagem e o que estava aberto voltam ao lugar depois
+const AV_LIVRE = new Map();
+function avQuandoLivre(chave, fn){ AV_LIVRE.set(chave, fn); avRodarLivres(); }
+function avRodarLivres(){
+  if (!AV_LIVRE.size || avOcupado()) return;
+  const fs = [...AV_LIVRE.values()]; AV_LIVRE.clear();
+  fs.forEach(f => { const tela = avGuardarTela();
+    Promise.resolve().then(f).then(() => avDevolverTela(tela)).catch(e => console.warn('Ao vivo (módulo):', e)); });
+}
+
+/* ---------- selo "ao vivo" ---------- */
+function avSelo(){
+  const chip = document.querySelector('.chip-exemplo'); if (!chip) return;
+  let s = document.querySelector('.av-selo');
+  if (!s){ s = document.createElement('span'); s.className = 'av-selo'; s.setAttribute('role', 'status'); chip.after(s); }
+  const on = AV.ligado, tentando = !on && AV.iniciado;
+  s.dataset.av = on ? 'on' : (tentando ? 'religando' : 'off');
+  s.textContent = on ? 'Ao vivo' : (tentando ? 'Reconectando' : '');
+  s.title = on ? 'As mudanças de outras pessoas aparecem sozinhas, sem recarregar.' : (tentando ? 'Sem conexão ao vivo agora. Tentando de novo; ao voltar, a tela busca o que mudou.' : '');
+  s.hidden = !AV.iniciado;
+}
+
+/* ---------- ligações ---------- */
+if (typeof COM_BANCO !== 'undefined' && COM_BANCO){
+  // liga depois da primeira leitura do banco (aí já se sabe quem entrou)
+  const _carregarAv = carregarDoBanco;
+  carregarDoBanco = async function(){ const r = await _carregarAv.apply(this, arguments); if (!AV.iniciado && BANCO.carregado) avIniciar(); return r; };
+  window.ciclodevCarregarBanco = carregarDoBanco;
+  // a cada segundo: se tem novidade esperando e a pessoa parou, aplica
+  setInterval(() => { avRodarLivres(); if (AV.sujo && !AV.aplicando && !AV.rodando) { if (avOcupado()) avAvisarItem(); else avTalvezAplicar(); } }, 1000);
+  document.addEventListener('pointerdown', () => { AV.apertado = true; }, true);
+  ['pointerup', 'pointercancel', 'dragend'].forEach(ev => document.addEventListener(ev, () => { AV.apertado = false; }, true));
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden'){ AV.escondidoDesde = Date.now(); return; }
+    const longe = AV.escondidoDesde && Date.now() - AV.escondidoDesde > 120000; AV.escondidoDesde = 0;
+    if (!AV.iniciado) return;
+    if (!AV.ligado){ AV.caiu = true; avIniciar(); } else if (longe) avRessincronizar();
+  });
+  window.addEventListener('online', () => { if (AV.iniciado){ AV.caiu = true; avIniciar(); } });
+  window.addEventListener('offline', () => { if (AV.iniciado){ AV.ligado = false; AV.caiu = true; avSelo(); } });
+}
+if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {AV, avQuandoLivre, avReceber, avProcessar, avOcupado, avIniciar, avParar, avAplicar, avRessincronizar, avOuvir, avChaveEl, avEstado});
+
+/* =====================================================================
+   Ao vivo nos módulos que têm dados próprios (fora da leitura geral da tela).
+   Cada um relê o seu quando o banco avisa, só se a tela dele estiver aberta, e nunca debaixo de quem está digitando.
+   As conferências periódicas antigas de cada módulo continuam, mas só como reserva: rodam quando o canal ao vivo
+   está fora do ar (avLigado() falso). Com o canal ligado, não há mais conferência de tempos em tempos.
+   '*' no lote = voltou de muito tempo fora: relê tudo.
+   ===================================================================== */
+const avNoLote = (lote, ...ts) => lote.has('*') || ts.some(t => lote.has(t));
+if (typeof avOuvir === 'function'){
+  // Infraestrutura: lista de desenhos, painel Automático (código, bancos, pedidos ao robô) e os quadros do canvas
+  avOuvir(['infra_diagramas', 'infra_diagramas_versoes', 'infra_canvas', 'infra_automacoes', 'infra_geracoes', 'repositorios', 'infra_bancos', 'publicacoes', 'git_conexoes', 'supa_conexoes'], () => {
+    if (UI.view !== 'infra' || !IFR.no) return;
+    avQuandoLivre('infra', async () => {
+      const no = IFR.no; if (UI.view !== 'infra' || !no || IFR_AUTO.atualizando) return;   // "Atualizar agora" em andamento já relê no fim
+      await Promise.all([ifrAutoCarregar(), ifrCarregar()]);
+      if (IFR.no !== no || UI.view !== 'infra') return;
+      await ifrAtualizarRemoto(); ifrLado(); if (typeof ifrAvisarCanvas === 'function') ifrAvisarCanvas();
+    });
+  });
+  // Ficha técnica preenchida pelo robô
+  avOuvir(['ficha_auto', 'repositorios', 'infra_bancos'], () => { if (UI.view === 'sheet') avQuandoLivre('ficha', faConferir); });
+  // Análise de segurança
+  avOuvir(['analise_rodadas', 'analise_achados', 'analise_inventario'], () => {
+    if (UI.view !== 'seguranca') return;
+    avQuandoLivre('seguranca', async () => {
+      const antes = JSON.stringify((SG.rodadas || []).map(r => r.rodou_em));
+      await sgCarregar(); if (UI.view !== 'seguranca') return; rView();
+      if (antes !== '[]' && JSON.stringify((SG.rodadas || []).map(r => r.rodou_em)) !== antes) toast('Análise de segurança atualizada.');
+    });
+  });
+  // Servidores
+  avOuvir(['servidores', 'servidores_alcance', 'servidores_servicos', 'servidores_custos', 'servidores_lancamentos'], () => {
+    if (!SRV.lido) return;
+    avQuandoLivre('servidores', async () => { await svCarregar(true); if (UI.view === 'servidores' || UI.view === 'custos') rView(); });
+  });
+  // Inventário (do cliente aberto)
+  avOuvir(['inv_ativos', 'inv_baixas', 'inv_anexos', 'inv_categorias', 'inv_conferencias', 'inv_conferencias_itens', 'inv_funcionarios', 'inv_funcionarios_apps',
+    'inv_itens', 'inv_licencas', 'inv_licencas_uso', 'inv_ligacoes', 'inv_locais', 'inv_manutencoes', 'inv_modelos', 'inv_movimentos', 'inv_saldos', 'inv_termos'], () => {
+    if (UI.view !== 'inventario') return;
+    avQuandoLivre('inventario', async () => { await invCarregar(true); if (UI.view === 'inventario') rView(); });
+  });
+  // Agent Studio (só o dono do sistema vê)
+  avOuvir(['studio_agentes', 'studio_conhecimento', 'studio_funcoes', 'studio_instrucoes_versoes'], () => {
+    if (!ST.lido || !document.getElementById('m-agentes') || !document.getElementById('m-agentes').offsetParent) return;
+    avQuandoLivre('studio', async () => { await stCarregar(); rStudio(); });
+  });
+  // conversa com a IA: resposta nova chega na hora
+  avOuvir(['ia_mensagens'], () => { iaNovidades(); });
+  // notificações: o aviso do navegador e o sino na hora
+  avOuvir(['notificacoes'], () => { cmBuscarNovos().catch(() => {}); });
+  // portal do cliente: resposta do stakeholder chega na hora (o item em si vem pela leitura geral)
+  avOuvir(['perguntas_stakeholder', 'portais', 'portais_membros'], lote => { if (avNoLote(lote, 'portais', 'portais_membros')) ptCarregarClientes(); else ptResumo(); });
+}
 
 abrirModulo(UI.modulo);
 })();

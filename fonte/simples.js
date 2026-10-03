@@ -266,6 +266,7 @@ const smOcupado = () => !!document.querySelector('dialog[open]') || (window.cicl
   !!document.querySelector('.arrastando, [aria-grabbed="true"]') || (document.activeElement && document.activeElement.matches && document.activeElement.matches('#ops-corpo input, #ops-corpo textarea, #ops-corpo select, #ops-corpo [contenteditable="true"]'));
 async function smAoVivo(){
   if (!COM_BANCO || typeof BANCO === 'undefined' || !BANCO.carregado || SMV.rodando || typeof window.ciclodevCarregarBanco !== 'function') return;
+  if (avLigado()){ SMV.assin = null; SMV.pendente = false; return; }   // com o ao vivo ligado, quem atualiza é ele (isto fica só de reserva)
   if (document.visibilityState !== 'visible' || UI.modulo !== 'operacoes' || !SM_AO_VIVO.includes(UI.view)){ SMV.assin = null; SMV.pendente = false; return; }
   SMV.rodando = true;
   try {

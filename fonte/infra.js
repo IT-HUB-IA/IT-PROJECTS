@@ -682,7 +682,7 @@ window.addEventListener('message', async e => {
   else if (m.tipo === 'gerar' && podeEditar()) ifrGerar();
 });
 // o que outra pessoa (ou o robô) mudou no canvas chega sozinho (a cada 30 segundos, com a aba aberta)
-setInterval(() => { if (UI.view === 'infra' && document.visibilityState === 'visible') ifrAtualizarRemoto(); }, 30000);
+setInterval(() => { if (UI.view === 'infra' && document.visibilityState === 'visible' && !avLigado()) ifrAtualizarRemoto(); }, 30000);   // reserva: com o ao vivo ligado, ele avisa
 async function ifrAtualizarRemoto(){
   const sb = ifrBanco();
   if (!sb || UI.view !== 'infra' || !IFR.no || !ifrFrame()) return;

@@ -277,7 +277,7 @@ document.addEventListener('click', async e => {
     if (error){ toast('Não deu para pedir a análise: ' + (error.message || error)); return; }
     toast('O robô está lendo o código e o banco. Em alguns minutos a análise aparece aqui.');
     const chave = UI.sel; let k = 0;
-    const t = setInterval(async () => { k++; if (UI.sel !== chave || k > 40){ clearInterval(t); return; } const antes = JSON.stringify(SG.rodadas.map(r => r.rodou_em)); await sgCarregar(); if (UI.view === 'seguranca') rView(); if (JSON.stringify(SG.rodadas.map(r => r.rodou_em)) !== antes){ clearInterval(t); toast('Análise de segurança atualizada.'); } }, 15000);
+    const t = setInterval(async () => { k++; if (UI.sel !== chave || k > 40){ clearInterval(t); return; } if (avLigado()) return;   /* reserva: com o ao vivo ligado, ele avisa */ const antes = JSON.stringify(SG.rodadas.map(r => r.rodou_em)); await sgCarregar(); if (UI.view === 'seguranca') rView(); if (JSON.stringify(SG.rodadas.map(r => r.rodou_em)) !== antes){ clearInterval(t); toast('Análise de segurança atualizada.'); } }, 15000);
     return;
   }
   const ci = e.target.closest('[data-sg-item]');
