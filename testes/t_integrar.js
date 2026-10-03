@@ -117,6 +117,19 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   await p.evaluate(() => document.querySelector('#teste-auto [data-ifr-chave="itens"]').click()); await p.waitForTimeout(1500);
   ok(conta("select gera_itens::text from repositorios where id = '" + REPO + "'") === 'true', 'ligar de novo é na hora, sem pergunta');
   conta("delete from public.repositorios where id = '" + REPO + "'");
+  // 3. um banco ligado no PROJETO aparece no painel da aplicação ("Ligados acima deste ponto"), com as mesmas chaves
+  const proj = conta("select x.ancestral_id from nos_ancestrais x join nos n on n.id = x.ancestral_id where x.no_id = '" + app + "' and n.tipo = 'projeto'");
+  const BHER = conta("insert into public.infra_bancos (no_id, nome, provedor) values ('" + proj + "', 'Banco do projeto', 'supabase') returning id");
+  await p.evaluate(async a => { const T = window.__tf; T.UI.sel = 'app:' + a; T.IFR.no = a; await T.ifrAutoCarregar(); document.querySelector('#teste-auto').innerHTML = T.ifrAutoHTML(); }, app);
+  t = await p.evaluate(() => document.querySelector('#teste-auto').textContent);
+  ok(/Ligados acima deste ponto/.test(t) && /Banco do projeto/.test(t) && /\(projeto\)/.test(t) && await p.evaluate(b => document.querySelectorAll('#teste-auto [data-ifr-id="' + b + '"][data-ifr-chave]').length === 2, BHER),
+    'o banco ligado no projeto aparece na aplicação, dizendo onde está ligado, com as chaves Desenhos e Épicos e histórias');
+  await p.evaluate(b => document.querySelector('#teste-auto [data-ifr-id="' + b + '"][data-ifr-chave="itens"]').click(), BHER); await p.waitForTimeout(400);
+  t = await caixa();
+  ok(/vale para tudo o que está dentro dele/.test(t), 'desligar uma fonte do projeto avisa que vale para o projeto inteiro');
+  await p.evaluate(() => [...document.querySelectorAll('dialog.modal[open] .modal-rod .btn')].find(x => /Deixar como estão/.test(x.textContent)).click()); await p.waitForTimeout(1500);
+  ok(conta("select gera_itens::text from infra_bancos where id = '" + BHER + "'") === 'false', 'e grava na fonte do projeto');
+  conta("delete from public.infra_bancos where id = '" + BHER + "'");
   ok(!erros.length, 'sem erro na página' + (erros.length ? ': ' + erros.join(' | ') : ''));
   await b.close(); console.log(falhas ? falhas + ' FALHA(S)' : 'TUDO OK'); process.exit(falhas ? 1 : 0);
 })();

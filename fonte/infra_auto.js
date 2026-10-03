@@ -8,7 +8,8 @@
    Todo desenho (do robô e do DevIT) aparece como um quadro do canvas, montado com os cards, grupos e ligações dele.
    Aqui ficam a seção "Automático" do lado, ligar o banco, "Atualizar agora" e abrir o quadro de um desenho. */
 const IFR_AUTO_FONTE = {software:'codigo', infra:'codigo', ux:'codigo', der:'banco', seguranca:'banco'};
-const IFR_AUTO = {no:null, repos:[], bancos:[], pedidos:[], carregado:false, atualizando:null};
+// herdados: repositórios e bancos ligados ACIMA deste ponto (produto/projeto), que também montam coisas aqui
+const IFR_AUTO = {no:null, repos:[], bancos:[], herdados:[], pedidos:[], carregado:false, atualizando:null};
 
 // os nós cujos repositórios alimentam este ponto: a aplicação, só ela; o produto e as aplicações dele; o projeto e as aplicações soltas nele
 function ifrNosDoCodigo(sel){
@@ -19,17 +20,21 @@ function ifrNosDoCodigo(sel){
 async function ifrAutoCarregar(){
   const sb = ifrBanco(), no = IFR.no;
   IFR_AUTO.no = no;
-  if (!sb){ IFR_AUTO.repos = []; IFR_AUTO.bancos = []; IFR_AUTO.pedidos = []; IFR_AUTO.carregado = true; return; }
+  if (!sb){ IFR_AUTO.repos = []; IFR_AUTO.bancos = []; IFR_AUTO.herdados = []; IFR_AUTO.pedidos = []; IFR_AUTO.carregado = true; return; }
   const nos = ifrNosDoCodigo(UI.sel);
-  const [rp, bc, pd] = await Promise.all([
+  const cd = cadeia(UI.sel || ''), acima = [cd.product, cd.project].filter(x => x && x.id !== no).map(x => x.id);
+  const [rp, bc, pd, hr, hb] = await Promise.all([
     sb.from('repositorios').select('id, no_id, provedor, nome, branch_principal, ativo, gera_desenhos, gera_itens').in('no_id', nos),
     sb.from('infra_bancos').select('id, no_id, nome, provedor, motor, esquemas, servidor, ativo, gera_desenhos, gera_itens, ultima_leitura_em, ultima_mudanca_em, ultimo_erro, conexao_trocada_em, supa_conexao_id, supa_projeto, validado_em, validacao').eq('no_id', no),
-    sb.from('infra_automacoes').select('id, origem, status, referencia, criado_em, concluido_em, erro, resumo, diagramas').eq('no_id', no).order('criado_em', {ascending:false}).limit(5)
+    sb.from('infra_automacoes').select('id, origem, status, referencia, criado_em, concluido_em, erro, resumo, diagramas').eq('no_id', no).order('criado_em', {ascending:false}).limit(5),
+    acima.length ? sb.from('repositorios').select('id, no_id, provedor, nome, ativo, gera_desenhos, gera_itens').in('no_id', acima) : Promise.resolve({data:[]}),
+    acima.length ? sb.from('infra_bancos').select('id, no_id, nome, provedor, servidor, supa_projeto, ativo, gera_desenhos, gera_itens').in('no_id', acima) : Promise.resolve({data:[]})
   ]);
   if (IFR_AUTO.no !== no) return;
   IFR_AUTO.repos = (rp.data || []).filter(r => nos.includes(r.no_id) && r.ativo !== false);
   IFR_AUTO.bancos = (bc.data || []).filter(b => b.no_id === no).sort((a, b) => String(a.nome).localeCompare(String(b.nome)));
   IFR_AUTO.pedidos = (pd.data || []).filter(p => !p.no_id || p.no_id === no).sort((a, b) => String(b.criado_em).localeCompare(String(a.criado_em)));
+  IFR_AUTO.herdados = [...(hr.data || []).filter(r => acima.includes(r.no_id) && r.ativo !== false).map(x => ({tipo:'repo', x})), ...(hb.data || []).filter(b => acima.includes(b.no_id)).map(x => ({tipo:'banco', x}))];
   IFR_AUTO.carregado = true;
 }
 const ifrQuando = ts => { if (!ts) return ''; const m = Math.round((Date.now() - new Date(ts).getTime()) / 60000); if (m < 1) return 'agora'; if (m < 60) return 'há ' + m + ' min'; const h = Math.round(m / 60); if (h < 24) return 'há ' + h + ' h'; const d = Math.round(h / 24); return d === 1 ? 'ontem' : 'há ' + d + ' dias'; };
@@ -58,7 +63,10 @@ function ifrChavesHTML(tipo, x, pode){
 }
 async function ifrMudarChave(inp){
   const tipo = inp.dataset.ifrTipo, id = inp.dataset.ifrId, k = inp.dataset.ifrChave, liga = inp.checked;
-  const lista = tipo === 'repo' ? IFR_AUTO.repos : IFR_AUTO.bancos, x = lista.find(y => y.id === id); if (!x) return;
+  const lista = (tipo === 'repo' ? IFR_AUTO.repos : IFR_AUTO.bancos).concat((IFR_AUTO.herdados || []).filter(h => h.tipo === tipo).map(h => h.x)), x = lista.find(y => y.id === id); if (!x) return;
+  // ligado acima (projeto/produto): a chave vale para tudo o que está dentro dele
+  const acimaDe = (IFR_AUTO.herdados || []).some(h => h.x.id === id) ? nomeDe(igChave(x.no_id) || '') : '';
+  const aviso = acimaDe ? '<p class="ig-ok" style="display:block">Esta fonte está ligada em <b>' + esc(acimaDe) + '</b>: a mudança vale para tudo o que está dentro dele, não só para este ponto.</p>' : '';
   const nome = esc(x.nome), voltar = () => { inp.checked = !liga; };
   let decidiu = false; const d = f => () => { decidiu = true; f(); };   // fechar no X = cancelar
   const mandar = async (lixeira) => {
@@ -73,12 +81,12 @@ async function ifrMudarChave(inp){
   };
   if (liga){ mandar(false); return; }
   if (k === 'desenhos'){
-    modal('Desligar os desenhos de ' + nome + '?', '<p>Os desenhos que o robô montou com <b>' + nome + '</b> vão para o <b>arquivo</b> (as versões ficam guardadas) e os quadros deles saem do canvas e do Desenho completo. ' +
+    modal('Desligar os desenhos de ' + nome + '?', aviso + '<p>Os desenhos que o robô montou com <b>' + nome + '</b> vão para o <b>arquivo</b> (as versões ficam guardadas) e os quadros deles saem do canvas e do Desenho completo. ' +
       (tipo === 'repo' ? 'O repositório' : 'O banco') + ' continua ligado: Ficha técnica, Análise e, se estiver ligado, Épicos e histórias continuam.</p><p class="sec">Ligar de novo traz os desenhos de volta.</p>',
       [{txt:'Cancelar', cls:'sec', acao:d(voltar)}, {txt:'Desligar desenhos', acao:d(() => mandar(false))}]).addEventListener('close', () => { if (!decidiu) voltar(); });
     return;
   }
-  modal('Desligar épicos e histórias de ' + nome + '?', '<p>O robô para de montar épicos e histórias com <b>' + nome + '</b>. ' + (tipo === 'repo' ? 'O repositório' : 'O banco') + ' continua ligado (desenhos, Ficha técnica e Análise seguem como estão).</p>' +
+  modal('Desligar épicos e histórias de ' + nome + '?', aviso + '<p>O robô para de montar épicos e histórias com <b>' + nome + '</b>. ' + (tipo === 'repo' ? 'O repositório' : 'O banco') + ' continua ligado (desenhos, Ficha técnica e Análise seguem como estão).</p>' +
     '<p>E os épicos e histórias que ele <b>já criou</b>?</p><ul class="ig-lista"><li><b>Deixar como estão</b>: nada muda no backlog.</li>' +
     '<li><b>Mandar para a lixeira</b>: só os que <b>ninguém mexeu</b> (sem comentário, anexo, subitem ou edição). O que alguém já trabalhou fica. Ligar de novo traz de volta os que foram para a lixeira.</li></ul>',
     [{txt:'Cancelar', cls:'sec', acao:d(voltar)}, {txt:'Deixar como estão', cls:'sec', acao:d(() => mandar(false))}, {txt:'Mandar para a lixeira', acao:d(() => mandar(true))}]).addEventListener('close', () => { if (!decidiu) voltar(); });
@@ -120,6 +128,12 @@ function ifrAutoHTML(){
           (pode ? '<div class="ifr-fonte-acoes"><button type="button" class="ifr-lnk" data-ifr-banco="' + x.id + '">Trocar</button><button type="button" class="ifr-lnk" data-ifr-banco-tirar="' + x.id + '">Desligar</button></div>' : '') + '</div>'; }).join('')
     : '<p class="ifr-vazio">' + (pode ? 'Nenhum banco ligado.' : 'Só quem pode editar vê os bancos ligados.') + '</p>') +
     '<div class="ifr-auto-add">' + (pode ? '<button type="button" class="btn sec peq" data-ifr-banco="">+ ' + (bs.length ? 'Ligar outro banco' : 'Ligar banco') + '</button>' : '') + '<button type="button" class="ifr-lnk" data-ifr-guia>Guia passo a passo</button></div></div>';
+  // ligados acima deste ponto (no produto ou no projeto): também montam desenhos e itens aqui
+  const hd = IFR_AUTO.herdados || [];
+  if (hd.length) h += '<div class="ifr-auto-bloco"><h4 class="ifr-auto-tit">Ligados acima deste ponto</h4><p class="ifr-fonte-meta" style="margin:0 0 6px">Também montam coisas aqui. As chaves valem para todo o ' + (UI.sel.startsWith('app:') ? 'produto ou projeto' : 'projeto') + ' onde estão ligados; trocar ou desligar é lá.</p>' +
+    hd.map(({tipo, x}) => { const ch = igChave(x.no_id); return '<div class="ifr-fonte"><div class="ifr-fonte-cab"><b>' + esc(x.nome) + '</b>' + ifrSelo('cinza', tipo === 'repo' ? 'Código' : 'Banco') + '</div>' +
+      '<p class="ifr-fonte-meta">Ligado em <b>' + esc(ch ? nomeDe(ch) : '?') + '</b> (' + esc(ch ? ({product:'produto', project:'projeto'}[ch.split(':')[0]] || '') : '') + ')' + (x.supa_projeto ? ' · ' + esc(x.supa_projeto) : x.servidor ? ' · ' + esc(x.servidor) : '') + '</p>' +
+      ifrChavesHTML(tipo, x, pode) + '</div>'; }).join('') + '</div>';
   // última atualização: uma linha; os erros já aparecem na fonte de cada um
   if (ult){
     let ST = {pendente:['cinza', 'Na fila'], rodando:['cinza', 'Montando agora'], pronto:['ok', 'Concluída'], erro:['erro', 'Falhou']}[ult.status] || ['cinza', ult.status];

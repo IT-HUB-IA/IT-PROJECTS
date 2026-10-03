@@ -496,3 +496,9 @@ Regras que valem daqui em diante:
 - Mudar: `fonte_opcoes(tipo, id, desenhos, itens, lixeira)`. Desligar desenhos arquiva os desenhos da fonte (parte 64); ligar traz de volta e pede atualização. Desligar épicos e histórias para o robô de montar e, se pedido, manda para a lixeira só os que ninguém mexeu (`interno.itens_da_fonte_intactos`); ligar traz de volta os que foram por isso.
 - O robô recebe as chaves em `infra_auto_proximos`/`infra_auto_bancos_devidos`; `analise_inventario_gravar` não grava com a chave desligada.
 - Na tela: janela de confirmação antes de ligar qualquer repositório ou banco (`fonte/integrar.js`: onde, o que vai acontecer, o que já existe, o que montar) e as duas chaves em cada fonte do painel Automático.
+
+## Parte 66: épico do robô cuja situação mudou sozinha conta como "ninguém mexeu" (aplicada no Supabase em 03/10/2026)
+- Problema: ao desligar Épicos e histórias com "Mandar para a lixeira", os épicos do robô ficavam. A situação do épico acompanha a das histórias (`status_id`, `iniciado_em`, `concluido_em`) e isso fica na auditoria com o nome de quem mexeu na história.
+- Agora `interno.itens_da_fonte_intactos` ignora, só no épico, mudança que toque apenas nesses campos (e `atualizado_em`). Título, descrição, prazo etc. continuam contando; comentário, anexo e filho de fora continuam segurando o épico.
+- Teste: `99_teste_epico_intacto_LOCAL.sql` (3 OK). Volta: `66_epico_intacto_com_situacao_automatica_VOLTA.sql`.
+- Na tela, junto: o painel Automático de uma aplicação mostra também "Ligados acima deste ponto" (repositórios e bancos ligados no produto ou no projeto, que também montam coisas ali), com as mesmas chaves e o aviso de que a mudança vale para tudo o que está dentro.
