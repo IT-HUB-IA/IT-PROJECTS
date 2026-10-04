@@ -197,7 +197,7 @@ textarea[data-ficha].fa-escondido{display:none}
 .sc-corpo .ifr-ed-linha{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%}.sc-corpo .ifr-ed-linha .lb{width:100%}
 .sc-orgs{margin:0;padding-left:18px;display:grid;gap:3px;font-size:13px}
 /* janela de confirmação antes de ligar (integrar.js) e as chaves de cada fonte no painel Automático */
-.ig{display:grid;gap:12px;max-width:640px}
+dialog.modal .ig{display:grid;gap:12px;max-width:640px}
 .ig h4{margin:6px 0 0;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-secondary)}
 .ig-onde{margin:0;padding:10px 12px;background:#F4F4F6;border-left:4px solid var(--vermelho);line-height:1.5}
 .ig-tipo{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-secondary);margin-left:4px}
@@ -225,7 +225,7 @@ textarea[data-ficha].fa-escondido{display:none}
 .ifr-lig-cab h2{margin:0;font-size:18px;line-height:1.25;text-wrap:balance}
 .ifr-lig-onde{font-weight:500;color:var(--tinta-3);font-size:14px}
 .ifr-lig-onde:not(:empty)::before{content:"· "}
-.ifr-lig-cab p{margin:4px 0 0;font-size:13px;line-height:1.5;color:var(--tinta-2);max-width:62ch}
+.ifr-lig-cab p{margin:4px 0 0;font-size:13px;line-height:1.5;color:var(--tinta-2)}
 .ifr-lig-x{flex:none;width:34px;height:34px;display:grid;place-items:center;border:1px solid var(--linha);background:var(--branco);color:var(--tinta-2);cursor:pointer}
 .ifr-lig-x:hover,.ifr-lig-x:focus-visible{border-color:var(--preto);color:var(--preto)}
 .ifr-lig-rolo{overflow-y:auto;padding:16px 20px 20px;min-height:0}

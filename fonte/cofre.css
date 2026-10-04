@@ -15,7 +15,7 @@
 .cf-tags span{font-family:var(--font-mono);font-size:10.5px;padding:1px 6px;border:1px solid var(--border-default);color:var(--text-secondary)}
 .cf-venc{color:var(--vermelho);font-weight:600}
 .cf-td-acoes{text-align:right;white-space:nowrap}
-.cf-dlg{max-width:min(720px,96vw)}
+dialog.modal.cf-dlg{max-width:min(720px,96vw)}
 .cf-meta{margin:0 0 6px;font-size:13px;color:var(--text-secondary)}
 .cf-desc{margin:0 0 12px;font-size:13.5px}
 .cf-segredo{display:grid;gap:8px;border:1px solid var(--border-default);padding:10px}
