@@ -451,7 +451,7 @@ const lerArquivo = f => new Promise(res => {
 /* ================= navegação entre módulos ================= */
 const itens = $$('.item');
 function abrirModulo(id){
-  if (UI.verComo === 'stakeholder' && !['overview','servicedesk'].includes(id)) id = 'overview';
+  if (UI.verComo === 'stakeholder' && !['overview','servicedesk','cofre'].includes(id)) id = 'overview';
   const el = itens.find(i => i.dataset.tela === id) || itens[0];
   UI.modulo = el.dataset.tela;
   itens.forEach(i => { if (i === el) i.setAttribute('aria-current','page'); else i.removeAttribute('aria-current'); });
@@ -466,7 +466,7 @@ function render(){
 function aplicarVerComo(){
   document.body.classList.toggle('modo-stakeholder', UI.verComo === 'stakeholder');
   document.body.classList.toggle('modo-dev', UI.verComo === 'dev');
-  itens.forEach(i => { i.parentElement.hidden = UI.verComo === 'stakeholder' && !['overview','servicedesk'].includes(i.dataset.tela); });
+  itens.forEach(i => { i.parentElement.hidden = UI.verComo === 'stakeholder' && !['overview','servicedesk','cofre'].includes(i.dataset.tela); });
 }
 $('#ver-como').value = UI.verComo;
 $('#ver-como').addEventListener('change', e => { UI.verComo = e.target.value; aplicarVerComo(); abrirModulo(UI.modulo); toast(UI.verComo === 'stakeholder' ? 'Vendo como o CEO da B&L: só o painel e os pedidos dele' : UI.verComo === 'dev' ? 'Vendo como Dev: sem as configurações do Master' : 'Vendo como Master'); });
