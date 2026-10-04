@@ -1511,7 +1511,7 @@ async function gravarNoBanco(){
   SYNC.rodando = true; SYNC.pendente = false; SYNC.erros = []; selo('Salvando...');
   const agora = indexar(JSON.parse(JSON.stringify(linhasDaTela(D))));
   const falha = (t, op, msg) => { SYNC.erros.push(t + ' (' + op + '): ' + msg); console.warn('Banco', t, op, msg); };
-  let mexeuItens = false;
+  let mexeuItens = false, adiados = null;
   // 1) apagar o que sumiu (filhos primeiro)
   for (const [t, pk] of GRAVAR.slice().reverse()){
     if (t === 'notificacoes') continue;
@@ -1553,10 +1553,19 @@ async function gravarNoBanco(){
       if (!Object.keys(mud).length) continue;
       const filtro = Object.fromEntries(pk.map(c => [c, row[c]]));
       const {data, error} = await sb.from(t).update(mud).match(filtro).select(pk[0]);
+      // item que muda de situação e é recusado (ex.: Aceito com os critérios marcados na mesma gravação, que vão depois):
+      // tenta de novo no fim, quando o resto já foi gravado
+      if (error && t === 'itens' && 'status_id' in mud){ (adiados = adiados || []).push({t, k, row, mud, filtro, pk}); continue; }
       if (error) falha(t, 'alterar', error.message);
       else if (!data || !data.length) falha(t, 'alterar', 'o banco não deixou alterar (permissão)');
       else { SYNC.base[t].set(k, row); tAnotar(t, pk, Object.assign(Object.fromEntries(pk.map(c => [c, row[c]])), mud)); if (t === 'itens') mexeuItens = true; }
     }
+  }
+  for (const a of adiados || []){
+    const {data, error} = await sb.from(a.t).update(a.mud).match(a.filtro).select(a.pk[0]);
+    if (error) falha(a.t, 'alterar', error.message);
+    else if (!data || !data.length) falha(a.t, 'alterar', 'o banco não deixou alterar (permissão)');
+    else { SYNC.base[a.t].set(a.k, a.row); tAnotar(a.t, a.pk, Object.assign(Object.fromEntries(a.pk.map(c => [c, a.row[c]])), a.mud)); mexeuItens = true; }
   }
   SYNC.rodando = false;
   if (SYNC.erros.length){ selo('Erro ao salvar', true); const c = $('.chip-exemplo'); if (c) c.title = 'Não gravou: ' + SYNC.erros.join(' · ');

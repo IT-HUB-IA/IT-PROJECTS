@@ -11,10 +11,25 @@ const LE_CAMPOS = {'titulo':'titulo', 'novo titulo':'titulo', 'renomear':'titulo
   'responsavel':'responsavel', 'prazo':'prazo', 'epico':'epico', 'versao':'versao', 'frente':'frente', 'posicao':'posicao',
   'aceite':'aceite', 'tirar aceite':'tiraraceite', 'trocar aceites':'trocaraceites', 'depende':'depende', 'tirar depende':'tirardepende', 'trocar depende':'trocardepende',
   'arquivar':'arquivar', 'cancelar':'cancelar', 'reabrir':'reabrir', 'mudar aceito':'mudaraceito', 'meta':'meta',
+  'marcar aceite':'marcaraceite', 'marcar todos os aceites':'marcartodos', 'desmarcar aceite':'desmarcaraceite', 'prova':'prova',
   'situacao':'situacao', 'status':'situacao', 'motivo':'motivo', 'inicio':'inicio', 'data de inicio':'inicio', 'onde':'onde', 'descricao':'descricao',
   'horas':'horas', 'estimativa em horas':'horas', 'data alvo':'alvo', 'data prevista':'alvo', 'cliente ve':'clienteve', 'visibilidade':'clienteve', 'sprint':'sprint'};
 const LE_DET = ['quem', 'quero', 'para', 'historia', 'prioridade', 'classe', 'nivel', 'valor', 'pontos', 'tipo', 'responsavel', 'prazo'];
-const LE_PROTEGE = ['quem', 'quero', 'para', 'historia', 'aceite', 'tiraraceite', 'trocaraceites'];
+const LE_PROTEGE = ['quem', 'quero', 'para', 'historia', 'aceite', 'tiraraceite', 'trocaraceites', 'marcaraceite', 'marcartodos', 'desmarcaraceite'];
+// a prova não pode levar segredo: devolve o nome da regra que barrou (nunca o valor)
+const LE_SEGREDO = [
+  ['endereço de banco com senha', /\b(?:postgres(?:ql)?|mysql|mongodb(?:\+srv)?|redis):\/\/[^:\s@\/]+:[^@\s]{3,}@/i],
+  ['token JWT', /\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}/],
+  ['cabeçalho de autorização', /\b(?:authorization\s*:\s*)?(?:bearer|basic)\s+[A-Za-z0-9._~+\/=-]{16,}/i],
+  ['chave da AWS', /\b(?:AKIA|ASIA)[0-9A-Z]{16}\b/],
+  ['token do GitHub', /\b(?:ghp|gho|ghs|ghu|ghr)_[A-Za-z0-9]{20,}|\bgithub_pat_[A-Za-z0-9_]{20,}/],
+  ['chave de API (sk-)', /\bsk-(?:ant-)?[A-Za-z0-9_-]{20,}/],
+  ['token do Slack', /\bxox[abprs]-[A-Za-z0-9-]{10,}/],
+  ['chave do Google', /\bAIza[0-9A-Za-z_-]{30,}/],
+  ['chave do Stripe', /\b(?:sk|rk)_live_[A-Za-z0-9]{16,}/],
+  ['chave privada', /-----BEGIN [A-Z ]*PRIVATE KEY-----/],
+  ['senha ou token escrito com valor', /\b(?:senha|password|passwd|pwd|secret|segredo|token|api[_-]?key|chave)\s*[:=]\s*["']?[^\s"']{6,}/i]];
+const leSegredo = t => { const r = LE_SEGREDO.find(([, re]) => re.test(String(t || ''))); return r ? r[0] : null; };
 const LE_EXEMPLO = 'editar: BL-12\n  titulo: Cadastro do pagador com CPF\n  prioridade: Deve 2\n  pontos: 5\n  aceite: Mostra a data do cadastro\n  tirar aceite: Funciona no celular\n  situação: Pronto para testar\n  início: 05/10/2026\n  prazo: 15/10/2026\n\neditar: Tela da lista da carteira\n  no épico: Carteira de clientes\n  versão: v1.1\n  posição: topo\n  depende: BL-12\n\neditar todos: épico Carteira de clientes\n  versão: v1.2\n\neditar: BL-20\n  cancelar: virou parte do BL-12';
 const leNorm = s => ltNorm(s);
 const leCh = x => (typeof chaveDe === 'function' && chaveDe(x)) || '';
@@ -106,6 +121,22 @@ function leLer(texto){
       if (r.erro){ erro(b.linha, r.erro, b); return; }
       b.alvos = [r.x];
     }
+    // marcar critério: a prova vem na linha logo abaixo e vale para aquela marcação
+    b.ops.forEach((o, k) => {
+      if (o.op !== 'prova') return;
+      const ant = b.ops[k - 1];
+      if (!ant || !['marcaraceite','marcartodos'].includes(ant.op)){ erro(o.linha, 'prova: vale logo abaixo de "marcar aceite:" ou de "marcar todos os aceites: sim"', b); return; }
+      if (o.val.length > 500){ erro(o.linha, 'a prova passa de 500 letras', b); return; }
+      const sg = leSegredo(o.val); if (sg){ erro(o.linha, 'a prova parece ter um segredo (' + sg + '): tire antes de gravar. Escreva só onde está guardado, nunca o valor', b); return; }
+      ant.prova = o.val;
+    });
+    b.ops.forEach(o => {
+      if (o.op === 'marcaraceite' || o.op === 'marcartodos'){
+        if (o.op === 'marcartodos' && leNorm(o.val) !== 'sim'){ erro(o.linha, 'marcar todos os aceites: escreva "sim"', b); return; }
+        if (!b.ops.some((p, k) => p.op === 'prova' && b.ops[k - 1] === o)) erro(o.linha, 'falta a prova: escreva logo abaixo "prova: o que foi conferido e quando"', b);
+      }
+      if ((o.op === 'marcaraceite' || o.op === 'desmarcaraceite') && o.val.length > 500) erro(o.linha, 'o critério passa de 500 letras', b);
+    });
     // os valores
     b.det = {};
     b.ops.forEach(o => {
@@ -118,6 +149,7 @@ function leLer(texto){
         const mm = /^(depois de|antes de)\s+(.+)$/.exec(n); if (!mm){ erro(o.linha, 'posição: use topo, fim, "depois de BL-12" ou "antes de BL-12"', b); return; }
         const r = leAchar(o.val.replace(/^\s*(depois|antes)\s+de\s+/i, ''), null, proj); if (r.erro){ erro(o.linha, 'posição: ' + r.erro, b); return; } o.onde = mm[1] === 'depois de' ? 'depois' : 'antes'; o.alvo = r.x; return; }
       if (o.op === 'aceite' || o.op === 'tiraraceite'){ if (o.val.length > 500) erro(o.linha, 'o critério passa de 500 letras', b); return; }
+      if (['marcaraceite','marcartodos','desmarcaraceite','prova'].includes(o.op)) return;   // conferidos acima
       if (['trocaraceites','trocardepende','reabrir','mudaraceito'].includes(o.op)){ if (leNorm(o.val) !== 'sim') erro(o.linha, 'escreva "sim" para confirmar', b); return; }
       if (o.op === 'depende' || o.op === 'tirardepende'){ const r = leAchar(o.val, null, proj); if (r.erro) erro(o.linha, 'depende: ' + r.erro, b); else o.alvo = r.x; return; }
       if (o.op === 'arquivar' || o.op === 'cancelar'){ if (o.val.length > 500) erro(o.linha, 'o motivo passa de 500 letras', b); return; }
@@ -164,6 +196,10 @@ function leAplicar(x, b, real, avisos, erros){
         x.ordem = viz ? (a + (+viz.ordem || 0)) / 2 : a + (o.onde === 'depois' ? 1 : -1); } }
     else if (o.op === 'aceite'){ x.crit = x.crit || []; if (!x.crit.some(c => leNorm(c.t) === leNorm(o.val))) x.crit.push({t:o.val, f:false}); }
     else if (o.op === 'tiraraceite'){ const c = (x.crit || []).find(c => leNorm(c.t) === leNorm(o.val)); if (!c){ erros.push('não tem o critério "' + o.val + '"'); return; } if (c.f) avisos.push('o critério "' + c.t + '" estava marcado como cumprido e sai'); x.crit = x.crit.filter(y => y !== c); }
+    else if (o.op === 'marcaraceite' || o.op === 'desmarcaraceite'){ const cs = (x.crit || []).filter(c => leNorm(c.t) === leNorm(o.val));
+      if (!cs.length){ erros.push('não tem o critério "' + o.val + '"'); return; } if (cs.length > 1){ erros.push('o critério "' + o.val + '" aparece ' + cs.length + ' vezes no item: deixe só um antes'); return; }
+      leMarcarCrit(x, cs[0], o.op === 'marcaraceite', o.prova, real); }
+    else if (o.op === 'marcartodos'){ if (!(x.crit || []).length){ erros.push('não tem nenhum critério para marcar'); return; } x.crit.forEach(c => leMarcarCrit(x, c, true, o.prova, real)); }
     else if (o.op === 'depende'){ if (o.alvo.id === x.id){ erros.push('não depende de si mesmo'); return; } ltDepender(x, o.alvo.id); }
     else if (o.op === 'tirardepende'){ const antes = poDeps(x).some(d => d.id === o.alvo.id) || (x.links || []).some(l => l.tipo === 'Is blocked by' && l.alvo === o.alvo.id); if (!antes){ erros.push('não depende de "' + o.alvo.titulo + '"'); return; }
       x.links = (x.links || []).filter(l => !(l.tipo === 'Is blocked by' && l.alvo === o.alvo.id)); (x._depFora = x._depFora || []).push(o.alvo.id);
@@ -192,6 +228,13 @@ function leAplicar(x, b, real, avisos, erros){
   });
   if (x.ini && x.fim && x.ini > x.fim && b.ops.some(o => ['inicio','prazo'].includes(o.op))) erros.push('o início (' + fmtData(x.ini) + ') fica depois do prazo (' + fmtData(x.fim) + ')');
   const so = b.ops.find(o => o.op === 'situacao'); if (so && so.alvo) leMudarSituacao(x, so.alvo, (b.ops.find(o => o.op === 'motivo') || {}).val, tem('mudaraceito'), real, avisos, erros);
+}
+// marca ou desmarca um critério como na tela (quem e quando), com a prova; já no estado pedido: ignora, sem erro
+function leMarcarCrit(x, c, marcar, prova, real){
+  if (!!c.f === marcar) return;
+  c.f = marcar; c.por = marcar ? eu() : null; c.em = new Date().toISOString();
+  if (marcar){ c.prova = prova; c.provaQuem = eu(); c.provaEm = iso(HOJE); c.provaRes = 'passou'; } else c.provaRes = null;
+  if (real && typeof poHistLocal === 'function') poHistLocal(x, {tipo:'criterio', para:c.t, texto:(marcar ? 'marcou' : 'desmarcou') + ' pelo Editar em lote' + (marcar ? '. Prova: ' + prova : '')});
 }
 // a situação pelas mesmas regras da tela: Aceitar e Devolver só o P.O. (sem P.O., qualquer um do time), Aceito só com todos os critérios marcados
 function leMudarSituacao(x, alvo, motivo, mudarAceito, real, avisos, erros){
@@ -224,7 +267,8 @@ function leDiff(a, c){
     ['Tipo', (PO_TIPOS.find(t => t[0] === poTipo(a)) || [, '', ''])[1], (PO_TIPOS.find(t => t[0] === poTipo(c)) || [, '', ''])[1]], ['Responsável', pes(a.resp), pes(c.resp)], ['Início', a.ini ? fmtData(a.ini) : '', c.ini ? fmtData(c.ini) : ''], ['Prazo', a.fim ? fmtData(a.fim) : '', c.fim ? fmtData(c.fim) : ''], ['Data alvo', a.alvo ? fmtData(a.alvo) : '', c.alvo ? fmtData(c.alvo) : ''],
     ['Descrição', String(a.desc || '').slice(0, 160), String(c.desc || '').slice(0, 160)], ['Horas', a.est || '', c.est || ''], ['Cliente vê', a.vis === 'cliente' ? 'sim' : 'não', c.vis === 'cliente' ? 'sim' : 'não'], ['Sprint', spn(a.sprint), spn(c.sprint)],
     ['Épico', it(a.pai), it(c.pai)], ['Versão', mc(a.marco), mc(c.marco)], ['Onde', caminhoTexto(a), caminhoTexto(c)], ['Posição na fila', a.ordem, c.ordem],
-    ['Critérios', (a.crit || []).map(x => (x.f ? '✓ ' : '') + x.t).join(' | '), (c.crit || []).map(x => (x.f ? '✓ ' : '') + x.t).join(' | ')],
+    ['Critérios', (a.crit || []).map(x => x.t).join(' | '), (c.crit || []).map(x => x.t).join(' | ')],
+    ...(c.crit || []).map(y => { const z = (a.crit || []).find(w => leNorm(w.t) === leNorm(y.t)); return z && !!z.f !== !!y.f ? ['Critério: ' + y.t, z.f ? 'marcado' : 'desmarcado', y.f ? 'marcado · prova: ' + (y.prova || '') : 'desmarcado'] : null; }).filter(Boolean),
     ['Depende de', deps(a), deps(c, c._depFora)], ['Situação', leSitNome(a), leSitNome(c)],
     ['Arquivado', a.arquivado ? (a.resolucao === 'nao_sera_feito' ? 'cancelado' : 'sim') : 'não', c.arquivado ? (c.resolucao === 'nao_sera_feito' ? 'cancelado' : 'sim') : 'não'], ['Meta', a.meta || '', c.meta || '']];
   return L.filter(([, x, y]) => String(x == null ? '' : x) !== String(y == null ? '' : y)).map(([r, x, y]) => r === 'Posição na fila' ? [r, 'mudou de lugar', y > x ? 'mais para baixo' : 'mais para cima'] : [r, x, y]);
@@ -303,6 +347,9 @@ function leAbrir(){
       linhaG('  descrição: / horas: 6 / cliente vê: sim / sprint: Sprint 3', 'Troca <b>descrição</b>, <b>horas</b>, se o <b>cliente vê</b> e o <b>sprint</b>') +
       linhaG('  aceite: texto  /  tirar aceite: texto', '<b>Acrescenta</b> ou <b>tira</b> um critério (tirar um marcado avisa)') +
       linhaG('  trocar aceites: sim', 'Tira todos os critérios antes dos <code>aceite:</code> do bloco (substitui)') +
+      linhaG('  marcar aceite: texto  /  prova: o que foi conferido', '<b>Marca</b> um critério como cumprido. A <code>prova:</code> logo abaixo é obrigatória (até 500 letras, sem segredo)') +
+      linhaG('  marcar todos os aceites: sim  /  prova: ...', 'Marca <b>todos</b> os critérios do item, com a mesma prova') +
+      linhaG('  desmarcar aceite: texto', '<b>Desmarca</b> um critério (fica no histórico)') +
       linhaG('  épico: Nome / versão: v1.2 / frente: Backend', '<b>Move</b> para outro épico, versão ou frente (<code>nenhum</code> / <code>nenhuma</code> tira)') +
       linhaG('  posição: topo / fim / depois de BL-12', 'Muda o <b>lugar na fila</b>') +
       linhaG('  depende: BL-3  /  tirar depende: BL-3', 'Acrescenta ou tira uma <b>dependência</b>. <code>trocar depende: sim</code> tira todas antes') +

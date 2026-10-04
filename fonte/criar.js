@@ -140,6 +140,10 @@ function ciLoteMd(ctx){
     '| `aceite` | Acrescenta um critério (igual a um que já existe é ignorado) | texto |\n' +
     '| `tirar aceite` | Tira um critério, pelo texto | o texto do critério |\n' +
     '| `trocar aceites` | Tira todos os critérios antes de pôr os `aceite:` do bloco (substitui) | `sim` |\n' +
+    '| `marcar aceite` | Marca como cumprido um critério, achado pelo texto. Já marcado: ignorado, sem erro | o texto do critério |\n' +
+    '| `prova` | **Obrigatória logo abaixo** de `marcar aceite` ou `marcar todos os aceites`: o que foi conferido e quando. Fica gravada no critério, com quem e quando. Sem segredo (senha, token, chave): é recusada | texto, até 500 letras |\n' +
+    '| `marcar todos os aceites` | Marca todos os critérios do item, com a mesma `prova:` logo abaixo | `sim` |\n' +
+    '| `desmarcar aceite` | Desmarca um critério, pelo texto (fica no histórico) | o texto do critério |\n' +
     '| `épico`, `versão`, `frente` | Move para outro épico, versão ou frente | o nome (ou a chave do épico); `nenhum` / `nenhuma` tira |\n' +
     '| `posição` | Muda o lugar na fila | `topo`, `fim`, `depois de BL-12`, `antes de BL-12` |\n' +
     '| `depende`, `tirar depende` | Acrescenta ou tira uma dependência | a chave ou o título |\n' +
@@ -156,6 +160,8 @@ function ciLoteMd(ctx){
     '2. **Com qualquer erro, nada é gravado**: item que não existe, título ambíguo (dois itens com o mesmo título sem `no épico:`), versão ou frente que não existe, valor inválido, campo desconhecido, critério a tirar que não existe, **situação que não existe**, **`onde` que não existe ou ambíguo**, **Voltou sem `motivo:`**, Aceito com critério desmarcado ou por quem não é o P.O., data fora do formato dia/mês/ano e início depois do prazo.\n' +
     '3. **Item aceito é protegido**: mudar a história ou os critérios dele é erro, a não ser com `mudar aceito: sim` (a prévia avisa e o item volta para Priorizado). O mesmo `mudar aceito: sim` é preciso para **tirar um item de Aceito** com `situação:`. O caminho normal é criar uma Melhoria.\n' +
     '4. Tirar um critério **marcado como cumprido** (com `tirar aceite:` ou `trocar aceites:`) mostra um aviso na prévia.\n' +
+    '4b. **Marcar e aceitar num bloco só:** as marcações são feitas antes da `situação:`. Exemplo:\n\n```\neditar: BL-285\n  marcar aceite: Cada componente tem sua própria conta no banco\n  prova: Conferido no banco em 04/10/2026: 5 contas, sem superusuário\n  marcar aceite: A conta do app não cria tabela\n  prova: Conferido no banco em 04/10/2026: sem permissão de criar\n  situação: Aceito\n```\n\n' +
+    '   Sem `prova:` logo abaixo, critério que não existe ou que aparece duas vezes no item, ou item já aceito sem `mudar aceito: sim`: o lote inteiro é recusado, com a linha do erro. A prévia mostra cada critério antes (desmarcado) e depois (marcado), com a prova. **Desfazer o último lote** volta as marcações.\n' +
     '5. **Nada é apagado**: arquivar e cancelar só escondem o item, com o motivo nos comentários; `reabrir: sim` traz de volta.\n' +
     '6. **Tudo vai para o histórico** de cada item: o banco grava quem mudou, quando e o que mudou (antes e depois).\n' +
     '7. **Desfazer o último lote**: o botão aparece no topo do Criar em lote e do Editar em lote e volta os itens a como estavam antes do último lote (criar ou editar).\n' +

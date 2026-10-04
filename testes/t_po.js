@@ -179,6 +179,42 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
     ok(conta("select (arquivado_em is not null and resolucao = 'nao_sera_feito')::text from itens where chave = '" + tres + "'") === 'true', 'cancela com motivo, sem apagar');
     ok(conta("select count(*) from itens i join itens e on e.id = i.pai_id join pessoas p on p.id = i.responsavel_id where e.titulo = 'Ed épico A' and p.nome = 'William'") >= '4', 'editar todos: épico muda todos os itens dele');
     ok(Number(conta("select count(*) from itens_historico h join itens i on i.id = h.item_id where h.tipo = 'edicao' and i.chave = '" + um + "' and h.texto like '%título:%' and h.pessoa_id is not null")) >= 1, 'o histórico guarda quem e o que mudou (título antes e depois)');
+    // ---- pedido 2: marcar critério pelo Editar em lote, com prova ----
+    const crit = () => conta("select string_agg(c.texto || '=' || c.feito || '/' || coalesce(c.prova, '') || '/' || (c.marcado_por is not null) || '/' || (c.prova_quem is not null) || '/' || coalesce(c.prova_resultado, ''), ' ; ' order by c.ordem) from itens_criterios c join itens i on i.id = c.item_id where i.chave = '" + um + "'");
+    const sit = () => conta("select s.chave from itens i join status_fluxo s on s.id = i.status_id where i.chave = '" + um + "'");
+    let pvM = await abrir('editar: ' + um + '\n  marcar aceite: Critério 2\n  situação: Aceito');
+    ok(/falta a prova/.test(pvM) && /nada é gravado/.test(pvM), 'marcar aceite sem prova: o lote é recusado, com a linha do erro');
+    pvM = await abrir('editar: ' + um + '\n  marcar aceite: Critério 2\n  prova: senha=Abc123456789');
+    ok(/parece ter um segredo/.test(pvM) && !/Abc123456789/.test(pvM), 'prova com segredo é recusada, e a mensagem não repete o valor');
+    pvM = await abrir('editar: ' + um + '\n  marcar aceite: Critério que não existe\n  prova: x');
+    ok(/não tem o critério/.test(pvM) && /nada é gravado/.test(pvM), 'critério que não existe é erro e nada grava');
+    pvM = await abrir('editar: ' + um + '\n  marcar aceite: Critério 2\n  prova: Conferido no banco em 04/10/2026\n  marcar aceite: Critério 3\n  prova: Conferido na tela em 04/10/2026\n  situação: Aceito');
+    ok(/Critério: Critério 2\s*desmarcado\s*marcado · prova: Conferido no banco em 04\/10\/2026/.test(pvM) && !/nada é gravado/.test(pvM), 'a prévia mostra cada critério antes (desmarcado) e depois (marcado), com a prova');
+    await gravar();
+    ok(crit() === 'Critério 2=true/Conferido no banco em 04/10/2026/true/true/passou ; Critério 3=true/Conferido na tela em 04/10/2026/true/true/passou' && sit() === 'done', 'um bloco marca os critérios (com prova, quem e quando) e aceita o item: ' + crit() + ' · ' + sit());
+    ok(Number(conta("select count(*) from itens_historico h join itens i on i.id = h.item_id where i.chave = '" + um + "' and h.tipo = 'criterio'")) >= 2, 'cada marcação entra no histórico do item');
+    // desfazer o último lote volta as marcações
+    await fechar(); await p.evaluate(() => window.__tf.leDesfazer()); await p.waitForTimeout(300);
+    await p.click('dialog.modal[open] .modal-rod .btn:not(.sec)'); await espera();
+    ok(/^Critério 2=false.*Critério 3=false/.test(crit()) && sit() !== 'done', 'Desfazer o último lote volta as marcações e a situação: ' + crit() + ' · ' + sit());
+    // marcar todos exige prova; marcado de novo é ignorado; desmarcar pelo texto
+    pvM = await abrir('editar: ' + um + '\n  marcar todos os aceites: sim');
+    ok(/falta a prova/.test(pvM), 'marcar todos os aceites exige prova');
+    await abrir('editar: ' + um + '\n  marcar todos os aceites: sim\n  prova: Rodada de testes de 04/10/2026'); await gravar();
+    ok(/Critério 2=true\/Rodada de testes.*Critério 3=true\/Rodada de testes/.test(crit()), 'marcar todos os aceites marca todos, com a mesma prova');
+    pvM = await abrir('editar: ' + um + '\n  marcar aceite: Critério 2\n  prova: de novo\n  desmarcar aceite: Critério 3');
+    ok(!/Critério: Critério 2/.test(pvM) && /Critério: Critério 3\s*marcado\s*desmarcado/.test(pvM) && !/nada é gravado/.test(pvM), 'critério já marcado é ignorado sem erro; desmarcar aparece na prévia');
+    await gravar();
+    ok(/Critério 2=true\/Rodada.*Critério 3=false/.test(crit()), 'desmarcar aceite desmarca pelo texto: ' + crit());
+    // item aceito: marcar sem "mudar aceito: sim" é erro
+    psql("update itens_criterios set feito = true where item_id = (select id from itens where chave = '" + um + "')"); psql("update itens set status_id = (select id from status_fluxo where no_id is null and chave = 'done') where chave = '" + um + "'");
+    await p.evaluate(() => window.ciclodevCarregarBanco(null)); await p.waitForTimeout(800);
+    pvM = await abrir('editar: ' + um + '\n  desmarcar aceite: Critério 3');
+    ok(/já foi aceito/.test(pvM) && /nada é gravado/.test(pvM), 'item aceito: marcar ou desmarcar sem "mudar aceito: sim" é erro');
+    // devolve o item como estava, para as conferências seguintes
+    psql("update itens set status_id = (select id from status_fluxo where no_id is null and chave = 'backlog') where chave = '" + um + "'");
+    psql("update itens_criterios set feito = false, marcado_por = null, prova = null, prova_quem = null, prova_em = null, prova_resultado = null where item_id = (select id from itens where chave = '" + um + "')");
+    await p.evaluate(() => window.ciclodevCarregarBanco(null)); await p.waitForTimeout(800);
     // item aceito protegido
     psql("update itens set status_id = (select id from status_fluxo where no_id is null and chave = 'done') where chave = '" + dois + "'");
     await p.evaluate(() => window.ciclodevCarregarBanco(null)); await p.waitForTimeout(800);
