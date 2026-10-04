@@ -67,7 +67,7 @@
   .alternar svg{transition:transform var(--dur) var(--ease-out)}
   .app.recolhido .alternar svg{transform:scaleX(-1)}
 
-  .secao{padding:24px 0 8px}
+  .secao{padding:8px 0}
   .rotulo{display:flex;align-items:center;gap:14px;height:20px;padding-left:20px;font-size:11px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--nevoa);white-space:nowrap;transition:opacity var(--dur) var(--ease-out)}
   .app.recolhido .rotulo{opacity:0}
 

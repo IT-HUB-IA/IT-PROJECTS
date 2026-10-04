@@ -107,7 +107,7 @@
   .alternar svg{transition:transform var(--dur) var(--ease-out)}
   .app.recolhido .alternar svg{transform:scaleX(-1)}
 
-  .secao{padding:24px 0 8px}
+  .secao{padding:8px 0}
   .rotulo{display:flex;align-items:center;gap:14px;height:20px;padding-left:20px;font-size:11px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--nevoa);white-space:nowrap;transition:opacity var(--dur) var(--ease-out)}
   .app.recolhido .rotulo{opacity:0}
 
@@ -3834,13 +3834,12 @@ body.com-login.logado #entrada{display:none}
       </button>
     </div>
     <div class="secao">
-      <div class="rotulo">Módulos</div>
       <ul class="itens">
         <li><button class="item" type="button" data-nome="Overview" data-tela="overview"><span class="item-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg></span><span class="item-nome">Overview</span></button></li>
         <li><button class="item" type="button" data-nome="Meu painel" data-tela="painel"><span class="item-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true"><path d="M3 12l9-8 9 8"></path><path d="M5 10v10h14V10"></path><path d="M10 20v-6h4v6"></path></svg></span><span class="item-nome">Meu painel</span></button></li>
-        <li><button class="item" type="button" data-nome="Cofre" data-tela="cofre"><span class="item-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true"><rect x="4" y="10" width="16" height="11"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path><path d="M12 14v3"></path></svg></span><span class="item-nome">Cofre</span></button></li>
         <li><button class="item" type="button" data-nome="Operações" data-tela="operacoes"><span class="item-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true"><path d="M12 3l9 4.5-9 4.5-9-4.5z"></path><path d="M3 12l9 4.5 9-4.5"></path><path d="M3 16.5l9 4.5 9-4.5"></path></svg></span><span class="item-nome">Operações</span></button></li>
         <li><button class="item" type="button" data-nome="Clients" data-tela="clientes"><span class="item-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true"><rect x="3" y="7" width="18" height="14"></rect><path d="M8 7V3h8v4"></path><path d="M3 13h18"></path></svg></span><span class="item-nome">Clients</span></button></li>
+        <li><button class="item" type="button" data-nome="Cofre" data-tela="cofre"><span class="item-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true"><rect x="4" y="10" width="16" height="11"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path><path d="M12 14v3"></path></svg></span><span class="item-nome">Cofre</span></button></li>
         <li><button class="item" type="button" data-nome="Catalog" data-tela="catalog"><span class="item-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4z"></path><path d="M16.5 13v7M13 16.5h7"></path></svg></span><span class="item-nome">Catalog</span></button></li>
         <li><button class="item" type="button" data-nome="Costs" data-tela="custos"><span class="item-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M14.5 9.5c-.5-1-1.5-1.5-2.5-1.5-1.4 0-2.5.8-2.5 2s1.1 1.7 2.5 2 2.5.8 2.5 2-1.1 2-2.5 2c-1 0-2-.5-2.5-1.5M12 6.5V8M12 16v1.5"></path></svg></span><span class="item-nome">Costs</span></button></li>
         <li><button class="item" type="button" data-nome="Service Desk" data-tela="servicedesk"><span class="item-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true"><path d="M4 4h16v12H8l-4 4z"></path><path d="M8 9h8M8 12h5"></path></svg></span><span class="item-nome">Service Desk</span></button></li>
@@ -3862,9 +3861,9 @@ body.com-login.logado #entrada{display:none}
   <main class="principal">
     <section class="conteudo cheio" id="tela-overview" hidden><div id="m-overview"></div></section>
     <section class="conteudo cheio" id="tela-painel" hidden><div id="m-painel"></div></section>
-    <section class="conteudo cheio" id="tela-cofre" hidden><div id="m-cofre"></div></section>
     <section class="conteudo sem-pad" id="tela-operacoes" hidden><div id="m-operacoes"></div></section>
     <section class="conteudo cheio" id="tela-clientes" hidden><div id="m-clientes"></div></section>
+    <section class="conteudo cheio" id="tela-cofre" hidden><div id="m-cofre"></div></section>
     <section class="conteudo cheio" id="tela-catalog" hidden><div id="m-catalog"></div></section>
     <section class="conteudo cheio" id="tela-custos" hidden><div id="m-custos"></div></section>
     <section class="conteudo cheio" id="tela-servicedesk" hidden><div id="m-servicedesk"></div></section>

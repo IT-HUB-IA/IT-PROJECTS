@@ -24,9 +24,9 @@ P='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentCo
 MODS=[
  ('overview','Overview',P+'<rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg>'),
  ('painel','Meu painel',P+'<path d="M3 12l9-8 9 8"></path><path d="M5 10v10h14V10"></path><path d="M10 20v-6h4v6"></path></svg>'),
- ('cofre','Cofre',P+'<rect x="4" y="10" width="16" height="11"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path><path d="M12 14v3"></path></svg>'),
  ('operacoes','Operações',P+'<path d="M12 3l9 4.5-9 4.5-9-4.5z"></path><path d="M3 12l9 4.5 9-4.5"></path><path d="M3 16.5l9 4.5 9-4.5"></path></svg>'),
  ('clientes','Clients',P+'<rect x="3" y="7" width="18" height="14"></rect><path d="M8 7V3h8v4"></path><path d="M3 13h18"></path></svg>'),
+ ('cofre','Cofre',P+'<rect x="4" y="10" width="16" height="11"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path><path d="M12 14v3"></path></svg>'),
  ('catalog','Catalog',P+'<path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4z"></path><path d="M16.5 13v7M13 16.5h7"></path></svg>'),
  ('custos','Costs',P+'<circle cx="12" cy="12" r="9"></circle><path d="M14.5 9.5c-.5-1-1.5-1.5-2.5-1.5-1.4 0-2.5.8-2.5 2s1.1 1.7 2.5 2 2.5.8 2.5 2-1.1 2-2.5 2c-1 0-2-.5-2.5-1.5M12 6.5V8M12 16v1.5"></path></svg>'),
  ('servicedesk','Service Desk',P+'<path d="M4 4h16v12H8l-4 4z"></path><path d="M8 9h8M8 12h5"></path></svg>'),
@@ -137,7 +137,6 @@ html=head+'<style>'+css+'''
       </button>
     </div>
     <div class="secao">
-      <div class="rotulo">Módulos</div>
       <ul class="itens">
 '''+menu+'''
       </ul>
