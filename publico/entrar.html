@@ -3102,7 +3102,7 @@ dialog.modal .ig{display:grid;gap:12px;max-width:640px}
 .ifr-lig-b[aria-expanded="true"]{border-color:var(--preto);color:var(--preto)}
 .ifr-lig-b.com-erro{border-color:var(--vermelho)}
 .ifr-lig-ponto{position:absolute;top:-4px;right:-4px;width:9px;height:9px;border-radius:50%;background:var(--vermelho);border:2px solid var(--branco)}
-.ifr-lig{position:fixed;top:76px;right:108px;z-index:22;width:min(860px,calc(100vw - 140px));max-height:calc(100vh - 104px);display:flex;flex-direction:column;
+.ifr-lig{position:fixed;inset:0;margin:auto;height:fit-content;z-index:22;width:min(900px,calc(100vw - 48px));max-height:calc(100vh - 64px);display:flex;flex-direction:column;
   background:var(--branco);border:1px solid var(--linha);border-top:3px solid var(--preto);box-shadow:0 20px 50px rgba(15,15,20,.18)}
 .ifr-lig-cab{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:16px 20px 14px;border-bottom:1px solid var(--linha)}
 .ifr-lig-cab h2{margin:0;font-size:18px;line-height:1.25;text-wrap:balance}
@@ -3140,7 +3140,29 @@ dialog.modal .ig{display:grid;gap:12px;max-width:640px}
 .ifr-lig-herd > p{margin:0 14px 8px}
 .ifr-lig-herd-lista{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;padding:0 14px 14px}
 @media (max-width:900px){ .ifr-lig-cols{grid-template-columns:minmax(0,1fr)} }
-@media (max-width:720px){ .ifr-lig{top:64px;left:12px;right:12px;width:auto;max-height:calc(100vh - 160px)} .ifr-lig-cab{padding:12px 14px} .ifr-lig-rolo{padding:12px 14px 16px} }
+@media (max-width:720px){ .ifr-lig{inset:0;margin:auto 12px;width:auto;max-height:calc(100vh - 140px)} .ifr-lig-cab{padding:12px 14px} .ifr-lig-rolo{padding:12px 14px 16px} }
+
+/* ===== cartão ao lado do canvas: as visões e o que a visão escolhida analisa ===== */
+.ifr-vis-cab{display:grid;gap:2px}
+.ifr-vis-cab h3{margin:0;font-size:15px}
+.ifr-vis-cab small{font-size:12px;color:var(--tinta-3)}
+.ifr-vis{display:grid;gap:2px}
+.ifr-vis-b{display:grid;grid-template-columns:24px minmax(0,1fr) auto;align-items:center;gap:8px;width:100%;padding:6px 10px;border:1px solid transparent;border-left:3px solid transparent;background:none;font:inherit;font-size:13px;font-weight:600;color:var(--tinta-2);text-align:left;cursor:pointer}
+.ifr-vis-b:hover{background:var(--preto-04);color:var(--preto)}
+.ifr-vis-b[aria-selected="true"]{background:var(--preto-04);color:var(--preto);border-left-color:var(--vermelho)}
+.ifr-vis-b[aria-selected="true"] .ifr-n{color:var(--vermelho)}
+.ifr-vis-b:focus-visible{outline:2px solid var(--vermelho);outline-offset:-2px}
+.ifr-vis-nome{min-width:0;overflow-wrap:anywhere}
+.ifr-vis-b small{font-family:var(--font-mono);font-size:10.5px;font-weight:500;color:var(--tinta-3);border:1px solid var(--linha);padding:0 5px}
+.ifr-foco{display:grid;gap:8px;border-top:1px solid var(--linha);padding-top:12px}
+.ifr-foco h4{margin:0;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--tinta-2)}
+.ifr-foco p{margin:0;font-size:13.5px;line-height:1.55;color:var(--preto)}
+.ifr-foco .ifr-foco-onde{font-size:12.5px;color:var(--tinta-2)}
+.ifr-foco .ifr-foco-tec{font-size:12px;color:var(--tinta-3)}
+.ifr-cab h2 .ifr-n{margin-right:10px;font-size:13px;color:var(--vermelho)}
+/* desenhos da visão, dentro da janela Ligações */
+.ifr-lig-des{display:grid;gap:10px;margin-top:14px;border:1px solid var(--linha);border-top:2px solid var(--preto);padding:14px}
+.ifr-lig-des .ifr-lado-cab{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 /* ===== Item completo pelo método do P.O. (po.js) ===== */
 .po-cartao .po-campo{display:grid;gap:4px;padding:8px 0;border-bottom:1px solid var(--border-default)}
 .po-cartao .po-campo:last-child{border-bottom:0}
@@ -13534,6 +13556,19 @@ const IFR_ABAS = [
   {id:'ux', nome:'Fluxos de Usuário', formato:'mermaid', ferramenta:'Mermaid', pasta:'ux', entrada:'Telas, rotas, jornadas, permissões e casos de uso.'},
   {id:'prototipos', nome:'Protótipos de Interface', formato:'markdown', ferramenta:'Figma', pasta:'ux', entrada:'Especificação das telas (componentes, ações, estados de erro e vazio) e os links do Figma.'}
 ];
+// o que cada visão analisa, em linguagem simples (aparece no cartão "Visões" ao lado do canvas)
+const IFR_SIMPLES = {
+  solucao:'Mostra o sistema visto de cima: quem usa, quais sistemas conversam entre si e por onde os dados passam (telas, servidores, bancos e serviços de fora). Serve para entender o todo antes de entrar nos detalhes.',
+  software:'Mostra como o código está dividido em partes (módulos e componentes) e quem depende de quem. Ajuda a ver o que pode quebrar quando uma parte muda.',
+  dominio:'Mostra as coisas do negócio (por exemplo cliente, pedido, cobrança), o que cada uma guarda e como uma se liga à outra, sem falar de tecnologia.',
+  der:'Mostra as tabelas do banco de dados, o que cada uma guarda e como se ligam entre si. Sai sozinho da estrutura do banco ligado.',
+  processos:'Mostra o passo a passo de cada processo do negócio e a regra de cada decisão ("se acontecer isso, faz aquilo").',
+  sequencias:'Mostra, em ordem, a conversa entre as partes numa ação: a pessoa clica, a tela chama o servidor, o servidor consulta o banco ou outro sistema e a resposta volta.',
+  infra:'Mostra onde o sistema roda: nuvem, servidores, banco, arquivos, filas e o que depende do quê. Ajuda a enxergar custos e pontos que podem parar tudo.',
+  seguranca:'Mostra quem pode entrar e o que cada um pode ver e fazer: login, papéis, regras de acesso, dados sensíveis e a fronteira entre o que é confiável e o que vem de fora.',
+  ux:'Mostra o caminho da pessoa dentro do sistema: por quais telas passa para fazer cada tarefa e o que cada tipo de usuário pode acessar.',
+  prototipos:'Mostra como cada tela deve ser: o que aparece, os botões e o que acontece em caso de erro ou de lista vazia, com os links do Figma.'
+};
 const IFR_FORMATOS = [
   ['structurizr', 'Structurizr DSL', 'dsl'], ['plantuml', 'PlantUML', 'puml'], ['c4plantuml', 'C4 PlantUML', 'puml'],
   ['dbml', 'DBML', 'dbml'], ['mermaid', 'Mermaid', 'mmd'], ['graphviz', 'Graphviz (DOT)', 'dot'], ['markdown', 'Especificação (Markdown)', 'md']
@@ -13672,9 +13707,8 @@ rOperacoes = function(){
 function ifrTelaHTML(){
   const a = ifrAba(IFR.aba), macro = UI.sel.startsWith('project:');
   return '<div class="ifr-tela" data-chave="' + esc(UI.sel + '|' + IFR.aba) + '">' +
-    '<nav class="ifr-abas" role="tablist" aria-label="Partes da Infraestrutura">' + IFR_ABAS.map((x, i) => '<button type="button" role="tab" class="ifr-aba" data-ifr-aba="' + x.id + '" aria-selected="' + (x.id === IFR.aba) + '"><span class="ifr-n">' + String(i + 1).padStart(2, '0') + '</span>' + esc(x.nome) + '</button>').join('') + '</nav>' +
-    '<div class="ifr-cab"><button type="button" class="btn sec peq ifr-cheia-b" data-ifr-cheia title="Canvas em tela cheia (Esc volta)">Tela cheia</button><div><h2>' + esc(a.nome) + '</h2><p class="lead">' + esc(a.entrada) + ' Ferramenta: <b>' + esc(a.ferramenta) + '</b>.' + (macro ? ' Aqui é o <b>macro</b>: o desenho do projeto inteiro, com os desenhos de cada produto ao lado.' : ' Aqui é o <b>micro</b>: o desenho só deste produto.') + '</p></div></div>' +
-    '<div class="ifr-corpo"><div class="ifr-canvas" data-ifr-canvas><p class="ifr-carregando">Abrindo o canvas…</p></div><aside class="ifr-lado" data-ifr-lado aria-label="Desenhos desta parte"></aside></div></div>';
+    '<div class="ifr-cab"><button type="button" class="btn sec peq ifr-cheia-b" data-ifr-cheia title="Canvas em tela cheia (Esc volta)">Tela cheia</button><div><h2><span class="ifr-n">' + String(IFR_ABAS.indexOf(a) + 1).padStart(2, '0') + '</span>' + esc(a.nome) + '</h2></div></div>' +
+    '<div class="ifr-corpo"><div class="ifr-canvas" data-ifr-canvas><p class="ifr-carregando">Abrindo o canvas…</p></div><aside class="ifr-lado" data-ifr-lado aria-label="Visões da infraestrutura"></aside></div></div>';
 }
 function ifrMontarCanvas(){
   const casa = $('#ops-corpo [data-ifr-canvas]'); if (!casa) return;
@@ -13746,14 +13780,13 @@ function ifrServicosHTML(cf){
   return '<details class="ifr-serv"><summary><span>Serviços</span><span class="ifr-serv-n">' + n + ' de ' + l.length + ' ligados</span></summary><ul>' +
     l.map(([ok, nome, onde]) => '<li class="' + (ok ? 'ok' : 'falta') + '"><span>' + esc(nome) + '</span><small>' + (ok ? 'ligado' : 'falta configurar: ' + esc(onde)) + '</small></li>').join('') + '</ul></details>';
 }
-function ifrLado(){
-  const el = $('#ops-corpo [data-ifr-lado]'); if (!el) return;
+// os desenhos desta visão (lista, novo, gerar com o DevIT, baixar tudo e as chaves): mostrados na janela Ligações
+function ifrDesenhosHTML(){
   const pode = podeEditar(), meus = IFR.diagramas.filter(d => d.no_id === IFR.no && d.aba === IFR.aba);
   const cf = IFR.config || {};
-  const chave = (ok, nome) => '<li class="' + (ok ? 'ok' : 'falta') + '">' + (ok ? 'Pronto' : 'Falta a chave') + ': ' + esc(nome) + '</li>';
-  let h = '<div class="ifr-lado-cab"><h3>Desenhos</h3>' + (pode ? '<div class="ifr-lado-acoes"><button type="button" class="btn peq" data-ifr-novo>' + ICO.mais + 'Novo desenho</button><button type="button" class="btn sec peq" data-ifr-gerar' + (IFR.gerando ? ' disabled' : '') + '>' + (IFR.gerando ? 'O DevIT está gerando…' : 'Gerar com o DevIT') + '</button></div>' : '') + '</div>';
+  let h = '<div class="ifr-lado-cab"><h3>Desenhos de ' + esc(ifrAba(IFR.aba).nome) + '</h3>' + (pode ? '<div class="ifr-lado-acoes"><button type="button" class="btn peq" data-ifr-novo>' + ICO.mais + 'Novo desenho</button><button type="button" class="btn sec peq" data-ifr-gerar' + (IFR.gerando ? ' disabled' : '') + '>' + (IFR.gerando ? 'O DevIT está gerando…' : 'Gerar com o DevIT') + '</button></div>' : '') + '</div>';
   if (IFR.carregando) h += '<p class="vazio-linha">Lendo…</p>';
-  h += meus.length ? '<ul class="ifr-lista">' + meus.map(d => ifrItemHTML(d, false)).join('') + '</ul>' : '<p class="ifr-vazio">Nenhum desenho aqui ainda.' + (pode ? ' Crie um ou peça ao DevIT para gerar a partir das fontes reais do sistema.' : '') + '</p>';
+  h += meus.length ? '<ul class="ifr-lista">' + meus.map(d => ifrItemHTML(d, false)).join('') + '</ul>' : '<p class="ifr-vazio">Nenhum desenho nesta visão ainda.' + (pode ? ' Crie um ou peça ao DevIT para gerar a partir das fontes reais do sistema.' : '') + '</p>';
   const prods = ifrProdutos(UI.sel);
   if (prods.length){
     h += '<h4 class="ifr-sub">Dos produtos deste projeto</h4>';
@@ -13762,7 +13795,19 @@ function ifrLado(){
   }
   h += '<div class="ifr-rodape"><button type="button" class="btn sec peq" data-ifr-zip>Baixar tudo (docs/diagrams)</button>' +
     (cf.erro ? '<p class="ifr-cfg">' + esc(cf.erro) + '</p>' : IFR.config ? ifrServicosHTML(cf) : '') + '</div>';
-  el.innerHTML = h;
+  return '<section class="ifr-lig-des" aria-label="Desenhos desta visão">' + h + '</section>';
+}
+// o cartão ao lado do canvas: as 10 visões para escolher e, embaixo, o que a visão escolhida analisa
+function ifrLado(){
+  const el = $('#ops-corpo [data-ifr-lado]'); if (!el) return;
+  const a = ifrAba(IFR.aba), macro = UI.sel.startsWith('project:');
+  const qt = id => IFR.diagramas.filter(d => d.no_id === IFR.no && d.aba === id).length;
+  el.innerHTML = '<div class="ifr-vis-cab"><h3>Visões</h3><small>Escolha o que ver no canvas</small></div>' +
+    '<div class="ifr-vis" role="tablist" aria-label="Visões da infraestrutura">' + IFR_ABAS.map((x, i) => { const n = qt(x.id);
+      return '<button type="button" role="tab" class="ifr-vis-b" data-ifr-aba="' + x.id + '" aria-selected="' + (x.id === IFR.aba) + '"><span class="ifr-n">' + String(i + 1).padStart(2, '0') + '</span><span class="ifr-vis-nome">' + esc(x.nome) + '</span>' + (n ? '<small title="' + n + (n === 1 ? ' desenho' : ' desenhos') + '">' + n + '</small>' : '') + '</button>'; }).join('') + '</div>' +
+    '<section class="ifr-foco" aria-live="polite"><h4>O que esta visão analisa</h4><p>' + esc(IFR_SIMPLES[a.id] || a.entrada) + '</p>' +
+      '<p class="ifr-foco-onde">' + (macro ? 'Aqui você vê o <b>projeto inteiro</b>, com os desenhos de cada produto dentro.' : 'Aqui você vê <b>só este produto</b>.') + '</p>' +
+      '<p class="ifr-foco-tec">Olhado a partir de: ' + esc(a.entrada.replace(/\.$/, '')) + '. Feito com ' + esc(a.ferramenta) + '.</p></section>';
 }
 
 /* ---------- editor de um desenho: código, imagem, evidências e versões ---------- */
@@ -14211,7 +14256,7 @@ async function ifrAtualizarRemoto(){
 }
 
 document.addEventListener('click', e => {
-  if (!e.target.closest('#ops-corpo .ifr-tela')) return;
+  if (!e.target.closest('#ops-corpo .ifr-tela') && !e.target.closest('#ifr-lig')) return;
   const a = e.target.closest('[data-ifr-aba]'); if (a){ if (a.dataset.ifrAba !== IFR.aba){ UI.infraAba = a.dataset.ifrAba; salvarUI(); rView(); } return; }
   const ab = e.target.closest('[data-ifr-abrir]'); if (ab) return ifrAbrir(ab.dataset.ifrAbrir);
   const por = e.target.closest('[data-ifr-por]'); if (por){ ifrFalar({tipo:'inserir-diagrama', dados:{diagramaId:por.dataset.ifrPor}}); toast('Desenho posto no quadro.'); return; }
@@ -14222,7 +14267,7 @@ document.addEventListener('click', e => {
   if (e.target.closest('[data-ifr-cheia]')) return ifrTelaCheia();
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('#ops-corpo .ifr-canvas.ifr-cheia')) ifrTelaCheia(false); });
-if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {IFR, ifrZip, ifrConverter, ifrPaginaNavegavel, ifrDadosNavegaveis, ifrBaixarNavegavel, ifrTelaCheia, ifrAbrir, ifrNovo, ifrBaixarTudo, IFR_ABAS, rOperacoes, rView});
+if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {IFR, IFR_SIMPLES, ifrDesenhosHTML, ifrZip, ifrConverter, ifrPaginaNavegavel, ifrDadosNavegaveis, ifrBaixarNavegavel, ifrTelaCheia, ifrAbrir, ifrNovo, ifrBaixarTudo, IFR_ABAS, rOperacoes, rView});
 
 /* ===== Infraestrutura automática (parte 30 do banco, função diagramas-auto) =====
    Os desenhos que saem sozinhos, sem IA:
@@ -14398,14 +14443,14 @@ function ifrLigRender(){
   const w = document.getElementById('ifr-lig'); if (!w) return;
   const corpo = w.querySelector('.ifr-lig-rolo'), topo = corpo ? corpo.scrollTop : 0;
   w.querySelector('.ifr-lig-onde').textContent = UI.sel ? nomeDe(UI.sel) : '';
-  corpo.innerHTML = IFR_AUTO.carregado ? ifrAutoHTML() : '<p class="vazio-linha">Lendo as ligações…</p>';
+  corpo.innerHTML = (IFR_AUTO.carregado ? ifrAutoHTML() : '<p class="vazio-linha">Lendo as ligações…</p>') + (typeof ifrDesenhosHTML === 'function' ? ifrDesenhosHTML() : '');
   corpo.scrollTop = topo;
 }
 function ifrLigAbrir(){
   let w = document.getElementById('ifr-lig');
   if (!w){
     w = document.createElement('div'); w.id = 'ifr-lig'; w.className = 'ifr-lig'; w.setAttribute('role', 'dialog'); w.setAttribute('aria-modal', 'false'); w.setAttribute('aria-labelledby', 'ifr-lig-t');
-    w.innerHTML = '<header class="ifr-lig-cab"><div><h2 id="ifr-lig-t">Ligações <span class="ifr-lig-onde"></span></h2><p>O código e os bancos de onde o CicloDev monta, sozinho, os desenhos e os épicos e histórias desta parte.</p></div>' +
+    w.innerHTML = '<header class="ifr-lig-cab"><div><h2 id="ifr-lig-t">Ligações <span class="ifr-lig-onde"></span></h2><p>O código e os bancos de onde o CicloDev monta, sozinho, os desenhos e os épicos e histórias desta parte, e os desenhos da visão aberta.</p></div>' +
       '<button type="button" class="ifr-lig-x" data-ifr-lig-fechar aria-label="Fechar" title="Fechar (Esc)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></header><div class="ifr-lig-rolo"></div>';
     document.body.appendChild(w);
   }

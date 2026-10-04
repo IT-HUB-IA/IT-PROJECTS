@@ -20,6 +20,19 @@ const IFR_ABAS = [
   {id:'ux', nome:'Fluxos de Usuário', formato:'mermaid', ferramenta:'Mermaid', pasta:'ux', entrada:'Telas, rotas, jornadas, permissões e casos de uso.'},
   {id:'prototipos', nome:'Protótipos de Interface', formato:'markdown', ferramenta:'Figma', pasta:'ux', entrada:'Especificação das telas (componentes, ações, estados de erro e vazio) e os links do Figma.'}
 ];
+// o que cada visão analisa, em linguagem simples (aparece no cartão "Visões" ao lado do canvas)
+const IFR_SIMPLES = {
+  solucao:'Mostra o sistema visto de cima: quem usa, quais sistemas conversam entre si e por onde os dados passam (telas, servidores, bancos e serviços de fora). Serve para entender o todo antes de entrar nos detalhes.',
+  software:'Mostra como o código está dividido em partes (módulos e componentes) e quem depende de quem. Ajuda a ver o que pode quebrar quando uma parte muda.',
+  dominio:'Mostra as coisas do negócio (por exemplo cliente, pedido, cobrança), o que cada uma guarda e como uma se liga à outra, sem falar de tecnologia.',
+  der:'Mostra as tabelas do banco de dados, o que cada uma guarda e como se ligam entre si. Sai sozinho da estrutura do banco ligado.',
+  processos:'Mostra o passo a passo de cada processo do negócio e a regra de cada decisão ("se acontecer isso, faz aquilo").',
+  sequencias:'Mostra, em ordem, a conversa entre as partes numa ação: a pessoa clica, a tela chama o servidor, o servidor consulta o banco ou outro sistema e a resposta volta.',
+  infra:'Mostra onde o sistema roda: nuvem, servidores, banco, arquivos, filas e o que depende do quê. Ajuda a enxergar custos e pontos que podem parar tudo.',
+  seguranca:'Mostra quem pode entrar e o que cada um pode ver e fazer: login, papéis, regras de acesso, dados sensíveis e a fronteira entre o que é confiável e o que vem de fora.',
+  ux:'Mostra o caminho da pessoa dentro do sistema: por quais telas passa para fazer cada tarefa e o que cada tipo de usuário pode acessar.',
+  prototipos:'Mostra como cada tela deve ser: o que aparece, os botões e o que acontece em caso de erro ou de lista vazia, com os links do Figma.'
+};
 const IFR_FORMATOS = [
   ['structurizr', 'Structurizr DSL', 'dsl'], ['plantuml', 'PlantUML', 'puml'], ['c4plantuml', 'C4 PlantUML', 'puml'],
   ['dbml', 'DBML', 'dbml'], ['mermaid', 'Mermaid', 'mmd'], ['graphviz', 'Graphviz (DOT)', 'dot'], ['markdown', 'Especificação (Markdown)', 'md']
@@ -158,9 +171,8 @@ rOperacoes = function(){
 function ifrTelaHTML(){
   const a = ifrAba(IFR.aba), macro = UI.sel.startsWith('project:');
   return '<div class="ifr-tela" data-chave="' + esc(UI.sel + '|' + IFR.aba) + '">' +
-    '<nav class="ifr-abas" role="tablist" aria-label="Partes da Infraestrutura">' + IFR_ABAS.map((x, i) => '<button type="button" role="tab" class="ifr-aba" data-ifr-aba="' + x.id + '" aria-selected="' + (x.id === IFR.aba) + '"><span class="ifr-n">' + String(i + 1).padStart(2, '0') + '</span>' + esc(x.nome) + '</button>').join('') + '</nav>' +
-    '<div class="ifr-cab"><button type="button" class="btn sec peq ifr-cheia-b" data-ifr-cheia title="Canvas em tela cheia (Esc volta)">Tela cheia</button><div><h2>' + esc(a.nome) + '</h2><p class="lead">' + esc(a.entrada) + ' Ferramenta: <b>' + esc(a.ferramenta) + '</b>.' + (macro ? ' Aqui é o <b>macro</b>: o desenho do projeto inteiro, com os desenhos de cada produto ao lado.' : ' Aqui é o <b>micro</b>: o desenho só deste produto.') + '</p></div></div>' +
-    '<div class="ifr-corpo"><div class="ifr-canvas" data-ifr-canvas><p class="ifr-carregando">Abrindo o canvas…</p></div><aside class="ifr-lado" data-ifr-lado aria-label="Desenhos desta parte"></aside></div></div>';
+    '<div class="ifr-cab"><button type="button" class="btn sec peq ifr-cheia-b" data-ifr-cheia title="Canvas em tela cheia (Esc volta)">Tela cheia</button><div><h2><span class="ifr-n">' + String(IFR_ABAS.indexOf(a) + 1).padStart(2, '0') + '</span>' + esc(a.nome) + '</h2></div></div>' +
+    '<div class="ifr-corpo"><div class="ifr-canvas" data-ifr-canvas><p class="ifr-carregando">Abrindo o canvas…</p></div><aside class="ifr-lado" data-ifr-lado aria-label="Visões da infraestrutura"></aside></div></div>';
 }
 function ifrMontarCanvas(){
   const casa = $('#ops-corpo [data-ifr-canvas]'); if (!casa) return;
@@ -232,14 +244,13 @@ function ifrServicosHTML(cf){
   return '<details class="ifr-serv"><summary><span>Serviços</span><span class="ifr-serv-n">' + n + ' de ' + l.length + ' ligados</span></summary><ul>' +
     l.map(([ok, nome, onde]) => '<li class="' + (ok ? 'ok' : 'falta') + '"><span>' + esc(nome) + '</span><small>' + (ok ? 'ligado' : 'falta configurar: ' + esc(onde)) + '</small></li>').join('') + '</ul></details>';
 }
-function ifrLado(){
-  const el = $('#ops-corpo [data-ifr-lado]'); if (!el) return;
+// os desenhos desta visão (lista, novo, gerar com o DevIT, baixar tudo e as chaves): mostrados na janela Ligações
+function ifrDesenhosHTML(){
   const pode = podeEditar(), meus = IFR.diagramas.filter(d => d.no_id === IFR.no && d.aba === IFR.aba);
   const cf = IFR.config || {};
-  const chave = (ok, nome) => '<li class="' + (ok ? 'ok' : 'falta') + '">' + (ok ? 'Pronto' : 'Falta a chave') + ': ' + esc(nome) + '</li>';
-  let h = '<div class="ifr-lado-cab"><h3>Desenhos</h3>' + (pode ? '<div class="ifr-lado-acoes"><button type="button" class="btn peq" data-ifr-novo>' + ICO.mais + 'Novo desenho</button><button type="button" class="btn sec peq" data-ifr-gerar' + (IFR.gerando ? ' disabled' : '') + '>' + (IFR.gerando ? 'O DevIT está gerando…' : 'Gerar com o DevIT') + '</button></div>' : '') + '</div>';
+  let h = '<div class="ifr-lado-cab"><h3>Desenhos de ' + esc(ifrAba(IFR.aba).nome) + '</h3>' + (pode ? '<div class="ifr-lado-acoes"><button type="button" class="btn peq" data-ifr-novo>' + ICO.mais + 'Novo desenho</button><button type="button" class="btn sec peq" data-ifr-gerar' + (IFR.gerando ? ' disabled' : '') + '>' + (IFR.gerando ? 'O DevIT está gerando…' : 'Gerar com o DevIT') + '</button></div>' : '') + '</div>';
   if (IFR.carregando) h += '<p class="vazio-linha">Lendo…</p>';
-  h += meus.length ? '<ul class="ifr-lista">' + meus.map(d => ifrItemHTML(d, false)).join('') + '</ul>' : '<p class="ifr-vazio">Nenhum desenho aqui ainda.' + (pode ? ' Crie um ou peça ao DevIT para gerar a partir das fontes reais do sistema.' : '') + '</p>';
+  h += meus.length ? '<ul class="ifr-lista">' + meus.map(d => ifrItemHTML(d, false)).join('') + '</ul>' : '<p class="ifr-vazio">Nenhum desenho nesta visão ainda.' + (pode ? ' Crie um ou peça ao DevIT para gerar a partir das fontes reais do sistema.' : '') + '</p>';
   const prods = ifrProdutos(UI.sel);
   if (prods.length){
     h += '<h4 class="ifr-sub">Dos produtos deste projeto</h4>';
@@ -248,7 +259,19 @@ function ifrLado(){
   }
   h += '<div class="ifr-rodape"><button type="button" class="btn sec peq" data-ifr-zip>Baixar tudo (docs/diagrams)</button>' +
     (cf.erro ? '<p class="ifr-cfg">' + esc(cf.erro) + '</p>' : IFR.config ? ifrServicosHTML(cf) : '') + '</div>';
-  el.innerHTML = h;
+  return '<section class="ifr-lig-des" aria-label="Desenhos desta visão">' + h + '</section>';
+}
+// o cartão ao lado do canvas: as 10 visões para escolher e, embaixo, o que a visão escolhida analisa
+function ifrLado(){
+  const el = $('#ops-corpo [data-ifr-lado]'); if (!el) return;
+  const a = ifrAba(IFR.aba), macro = UI.sel.startsWith('project:');
+  const qt = id => IFR.diagramas.filter(d => d.no_id === IFR.no && d.aba === id).length;
+  el.innerHTML = '<div class="ifr-vis-cab"><h3>Visões</h3><small>Escolha o que ver no canvas</small></div>' +
+    '<div class="ifr-vis" role="tablist" aria-label="Visões da infraestrutura">' + IFR_ABAS.map((x, i) => { const n = qt(x.id);
+      return '<button type="button" role="tab" class="ifr-vis-b" data-ifr-aba="' + x.id + '" aria-selected="' + (x.id === IFR.aba) + '"><span class="ifr-n">' + String(i + 1).padStart(2, '0') + '</span><span class="ifr-vis-nome">' + esc(x.nome) + '</span>' + (n ? '<small title="' + n + (n === 1 ? ' desenho' : ' desenhos') + '">' + n + '</small>' : '') + '</button>'; }).join('') + '</div>' +
+    '<section class="ifr-foco" aria-live="polite"><h4>O que esta visão analisa</h4><p>' + esc(IFR_SIMPLES[a.id] || a.entrada) + '</p>' +
+      '<p class="ifr-foco-onde">' + (macro ? 'Aqui você vê o <b>projeto inteiro</b>, com os desenhos de cada produto dentro.' : 'Aqui você vê <b>só este produto</b>.') + '</p>' +
+      '<p class="ifr-foco-tec">Olhado a partir de: ' + esc(a.entrada.replace(/\.$/, '')) + '. Feito com ' + esc(a.ferramenta) + '.</p></section>';
 }
 
 /* ---------- editor de um desenho: código, imagem, evidências e versões ---------- */
@@ -697,7 +720,7 @@ async function ifrAtualizarRemoto(){
 }
 
 document.addEventListener('click', e => {
-  if (!e.target.closest('#ops-corpo .ifr-tela')) return;
+  if (!e.target.closest('#ops-corpo .ifr-tela') && !e.target.closest('#ifr-lig')) return;
   const a = e.target.closest('[data-ifr-aba]'); if (a){ if (a.dataset.ifrAba !== IFR.aba){ UI.infraAba = a.dataset.ifrAba; salvarUI(); rView(); } return; }
   const ab = e.target.closest('[data-ifr-abrir]'); if (ab) return ifrAbrir(ab.dataset.ifrAbrir);
   const por = e.target.closest('[data-ifr-por]'); if (por){ ifrFalar({tipo:'inserir-diagrama', dados:{diagramaId:por.dataset.ifrPor}}); toast('Desenho posto no quadro.'); return; }
@@ -708,4 +731,4 @@ document.addEventListener('click', e => {
   if (e.target.closest('[data-ifr-cheia]')) return ifrTelaCheia();
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('#ops-corpo .ifr-canvas.ifr-cheia')) ifrTelaCheia(false); });
-if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {IFR, ifrZip, ifrConverter, ifrPaginaNavegavel, ifrDadosNavegaveis, ifrBaixarNavegavel, ifrTelaCheia, ifrAbrir, ifrNovo, ifrBaixarTudo, IFR_ABAS, rOperacoes, rView});
+if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {IFR, IFR_SIMPLES, ifrDesenhosHTML, ifrZip, ifrConverter, ifrPaginaNavegavel, ifrDadosNavegaveis, ifrBaixarNavegavel, ifrTelaCheia, ifrAbrir, ifrNovo, ifrBaixarTudo, IFR_ABAS, rOperacoes, rView});

@@ -86,6 +86,14 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   ok(bt && /Ligações/.test(bt.t) && /1 código · 1 banco/.test(bt.t) && bt.erro, 'o botão Ligações fica na barra de cima, com o resumo (1 código · 1 banco) e o aviso de problema (' + (bt && bt.t) + ')');
   // o DevIT (robozinho do canto) aparece para quem pode usar; aqui ele é ligado à mão
   await p.evaluate(() => { const T = window.__tf; T.IA.posso = true; T.iaMontar(); }); await p.waitForTimeout(300);
+  // visões: saíram de cima e ficaram no cartão ao lado, com o que cada uma analisa em linguagem simples
+  const vis = await p.evaluate(() => { const l = document.querySelector('[data-ifr-lado]'); return {abasEmCima:!!document.querySelector('#ops-corpo .ifr-abas'), n:l.querySelectorAll('.ifr-vis-b').length,
+    sel:(l.querySelector('.ifr-vis-b[aria-selected="true"]') || {}).textContent || '', foco:(l.querySelector('.ifr-foco') || {}).textContent || '', desenhosNoLado:!!l.querySelector('[data-ifr-novo], [data-ifr-zip]')}; });
+  ok(!vis.abasEmCima && vis.n === 10 && /Arquitetura de Solução/.test(vis.sel), 'as 10 visões saíram de cima e viraram opções no cartão ao lado (' + vis.n + ')');
+  ok(/O que esta visão analisa/.test(vis.foco) && /visto de cima/.test(vis.foco) && !vis.desenhosNoLado, 'embaixo das opções, o que a visão analisa em linguagem simples; os botões de desenho saíram do cartão');
+  await p.click('[data-ifr-lado] .ifr-vis-b[data-ifr-aba="der"]'); await p.waitForTimeout(1500);
+  ok(await p.evaluate(() => /DER/.test(document.querySelector('.ifr-cab h2').textContent) && /tabelas do banco/.test(document.querySelector('[data-ifr-lado] .ifr-foco').textContent)), 'escolher outra visão troca o canvas, o título e a explicação');
+  await p.click('[data-ifr-lado] .ifr-vis-b[data-ifr-aba="solucao"]'); await p.waitForTimeout(1500);
   // 2. abre a janela flutuante, sem travar a tela, e o DevIT fica por cima
   const anim = await p.evaluate(() => { document.querySelector('#ops-corpo [data-ifr-lig]').click(); const w = document.getElementById('ifr-lig'); return w ? w.getAnimations().map(a => a.animationName).join(',') : ''; });
   ok(/jf-entrar/.test(anim), 'a janela entra com transição, não aparece do nada (' + anim + ')');
@@ -96,6 +104,8 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
     return {fixa:getComputedStyle(w).position === 'fixed', modal:!!document.querySelector('dialog[open]'), z:+getComputedStyle(w).zIndex, ziA:ia ? +getComputedStyle(ia).zIndex : null, iaClicavel,
       cols:w.querySelectorAll('.ifr-lig-col').length, t:w.textContent, dentro:r.left >= 0 && r.right <= innerWidth && r.bottom <= innerHeight, expandido:document.querySelector('[data-ifr-lig]').getAttribute('aria-expanded')}; });
   ok(j && j.fixa && !j.modal && j.dentro, 'Ligações abre uma janela flutuante, dentro da tela, sem travar o resto');
+  ok(await p.evaluate(() => { const r = document.getElementById('ifr-lig').getBoundingClientRect(); return Math.abs(r.left - (innerWidth - r.right)) < 4 && Math.abs(r.top - (innerHeight - r.bottom)) < 4; }), 'a janela fica centralizada na tela');
+  ok(await p.evaluate(() => { const w = document.getElementById('ifr-lig'); return /Desenhos de Arquitetura de Solução/.test(w.textContent) && !!w.querySelector('[data-ifr-novo]') && !!w.querySelector('[data-ifr-zip]'); }), 'os desenhos da visão (novo, gerar com o DevIT, baixar tudo) ficam dentro da janela Ligações');
   ok(j && j.cols === 2 && /Código[\s\S]*it-hub\/teste-ligacoes[\s\S]*Bancos de dados[\s\S]*Banco de produção/.test(j.t) && /Usar para/.test(j.t) && /Última atualização/.test(j.t), 'a janela mostra Código e Bancos lado a lado, cada ligação com "Usar para" e a última atualização no topo');
   ok(j && /A senha do usuário do CicloDev não confere/.test(j.t) && /Resolver com o DevIT/.test(j.t), 'o banco com problema aparece explicado, com o botão para resolver com o DevIT');
   ok(j && j.ziA !== null && j.ziA > j.z && j.iaClicavel !== false, 'o DevIT fica por cima da janela e continua clicável (z ' + (j && j.ziA) + ' > ' + (j && j.z) + ')');

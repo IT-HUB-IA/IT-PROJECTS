@@ -172,14 +172,14 @@ function ifrLigRender(){
   const w = document.getElementById('ifr-lig'); if (!w) return;
   const corpo = w.querySelector('.ifr-lig-rolo'), topo = corpo ? corpo.scrollTop : 0;
   w.querySelector('.ifr-lig-onde').textContent = UI.sel ? nomeDe(UI.sel) : '';
-  corpo.innerHTML = IFR_AUTO.carregado ? ifrAutoHTML() : '<p class="vazio-linha">Lendo as ligações…</p>';
+  corpo.innerHTML = (IFR_AUTO.carregado ? ifrAutoHTML() : '<p class="vazio-linha">Lendo as ligações…</p>') + (typeof ifrDesenhosHTML === 'function' ? ifrDesenhosHTML() : '');
   corpo.scrollTop = topo;
 }
 function ifrLigAbrir(){
   let w = document.getElementById('ifr-lig');
   if (!w){
     w = document.createElement('div'); w.id = 'ifr-lig'; w.className = 'ifr-lig'; w.setAttribute('role', 'dialog'); w.setAttribute('aria-modal', 'false'); w.setAttribute('aria-labelledby', 'ifr-lig-t');
-    w.innerHTML = '<header class="ifr-lig-cab"><div><h2 id="ifr-lig-t">Ligações <span class="ifr-lig-onde"></span></h2><p>O código e os bancos de onde o CicloDev monta, sozinho, os desenhos e os épicos e histórias desta parte.</p></div>' +
+    w.innerHTML = '<header class="ifr-lig-cab"><div><h2 id="ifr-lig-t">Ligações <span class="ifr-lig-onde"></span></h2><p>O código e os bancos de onde o CicloDev monta, sozinho, os desenhos e os épicos e histórias desta parte, e os desenhos da visão aberta.</p></div>' +
       '<button type="button" class="ifr-lig-x" data-ifr-lig-fechar aria-label="Fechar" title="Fechar (Esc)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></header><div class="ifr-lig-rolo"></div>';
     document.body.appendChild(w);
   }
