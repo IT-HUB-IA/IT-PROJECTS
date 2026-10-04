@@ -1,0 +1,24 @@
+/* ===== Toda janela flutuante entra com transição (nunca aparece "do nada")
+   Vale para qualquer <dialog> do sistema (e o fundo escuro atrás), a janela de Ligações, a gaveta lateral e os menus
+   que abrem por cima. A animação roda sempre que o elemento passa a aparecer (abrir de novo também anima).
+   Quem pediu para o sistema reduzir movimento vê só um esmaecer curto. ===== */
+@keyframes jf-entrar{from{opacity:0;transform:translateY(12px) scale(.975)}to{opacity:1;transform:none}}
+@keyframes jf-menu{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+@keyframes jf-menu-cima{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes jf-gaveta{from{opacity:.4;transform:translateX(32px)}to{opacity:1;transform:none}}
+@keyframes jf-veu{from{opacity:0}to{opacity:1}}
+@keyframes jf-sair{from{opacity:1;transform:none}to{opacity:0;transform:translateY(8px) scale(.985)}}
+
+dialog[open]{animation:jf-entrar .24s cubic-bezier(.2,.8,.2,1) both}
+dialog[open]::backdrop{animation:jf-veu .22s ease-out both}
+.ifr-lig{animation:jf-entrar .24s cubic-bezier(.2,.8,.2,1) both}
+.ifr-lig.saindo{animation:jf-sair .16s ease-in both;pointer-events:none}
+.veu{animation:jf-veu .22s ease-out both}
+.gaveta{animation:jf-gaveta .28s cubic-bezier(.2,.8,.2,1) both}
+.tf-menu,.sm-abas-menu{animation:jf-menu .18s cubic-bezier(.2,.8,.2,1) both}
+.cm-lista{animation:jf-menu-cima .18s cubic-bezier(.2,.8,.2,1) both}
+
+@media (prefers-reduced-motion:reduce){
+  dialog[open],.ifr-lig,.gaveta,.tf-menu,.sm-abas-menu,.cm-lista{animation:jf-veu .12s linear both}
+  .ifr-lig.saindo{animation:none}
+}

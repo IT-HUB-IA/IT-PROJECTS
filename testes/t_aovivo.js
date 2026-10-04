@@ -216,10 +216,12 @@ window.supabase = { createClient(){ let sess = {access_token:'x', user:{id:'u1',
 
   // 15. Infraestrutura: alguém liga um repositório no ponto; o painel Automático do William mostra sem recarregar
   await A.evaluate(a => { window.__tf.UI.sel = 'app:' + a; window.__tf.UI.view = 'infra'; window.__tf.rOperacoes(); }, app); await A.waitForTimeout(1500);
+  await A.evaluate(() => { const b = document.querySelector('#ops-corpo [data-ifr-lig]'); if (b && !document.getElementById('ifr-lig')) b.click(); }); await A.waitForTimeout(300);
   const rid = conta("insert into public.repositorios (no_id, provedor, nome) values ('" + app + "', 'github', 'dono/repo-ao-vivo') returning id");
   await entregar(); await A.waitForTimeout(3500);
-  ok(await A.evaluate(() => window.__tf.IFR_AUTO.repos.some(r => r.nome === 'dono/repo-ao-vivo') && /dono\/repo-ao-vivo/.test(document.querySelector('#ops-corpo').textContent)),
-    'Infraestrutura: o repositório ligado por outra pessoa aparece no painel Automático sem recarregar');
+  ok(await A.evaluate(() => window.__tf.IFR_AUTO.repos.some(r => r.nome === 'dono/repo-ao-vivo') && /dono\/repo-ao-vivo/.test((document.getElementById('ifr-lig') || {}).textContent || '') && /1 código/.test(document.querySelector('#ops-corpo [data-ifr-lig]').textContent)),
+    'Infraestrutura: o repositório ligado por outra pessoa aparece na janela Ligações (e no resumo do botão) sem recarregar');
+  await A.evaluate(() => { const T = window.__tf; if (T.ifrLigFechar) T.ifrLigFechar(); });
   psql("delete from public.repositorios where id = '" + rid + "'"); await entregar(); await A.waitForTimeout(3500);
   ok(await A.evaluate(() => !window.__tf.IFR_AUTO.repos.some(r => r.nome === 'dono/repo-ao-vivo')), 'e some quando é desligado');
 

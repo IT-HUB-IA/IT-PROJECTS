@@ -132,7 +132,9 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   psql("set role service_role; select public.infra_auto_gravar('" + pj + "', 'software', 'github:it-hub/bl:software', 'Software · it-hub/bl', 'plantuml', '@startuml\n[app] --> [lib] : 5\n@enduml', 'github', 'abc1234def')");
   psql("set role service_role; select public.infra_auto_quadro('" + pj + "', 'software', 'github:it-hub/bl:software', 'Software · it-hub/bl', $j$" + JSON.stringify(DOC) + "$j$, (select id from public.infra_diagramas where chave_auto = 'github:it-hub/bl:software'))");
   await p.click('[data-ifr-aba="software"]'); await p.waitForTimeout(3000);
-  const lado = () => p.evaluate(() => document.querySelector('[data-ifr-lado]').textContent);
+  // as ligações (código e bancos) ficam na janela do botão Ligações; o lado tem só os desenhos
+  const abrirLig = () => p.evaluate(() => { if (!document.getElementById('ifr-lig')) document.querySelector('#ops-corpo [data-ifr-lig]').click(); });
+  const lado = async () => { await abrirLig(); return p.evaluate(() => document.querySelector('[data-ifr-lado]').textContent + ' ' + document.getElementById('ifr-lig').textContent); };
   ok(/Automático/.test(await lado()) && /sai sozinha do código/.test(await lado()) && /Nenhum repositório ligado direto neste projeto/.test(await lado()), 'a sub-aba mostra de onde o desenho sai sozinho e que falta ligar um repositório a este projeto');
   ok(await p.evaluate(() => { const li = [...document.querySelectorAll('.ifr-item')].find(x => /Software · it-hub\/bl/.test(x.textContent)); return !!li && /automático do código/.test(li.textContent) && !!li.querySelector('[data-ifr-quadro]'); }), 'o desenho automático aparece na lista, dizendo de onde veio, com o botão de abrir o quadro');
   ok(await fr().evaluate(() => [...document.querySelectorAll('.t-quadro')].some(x => /Software · it-hub\/bl/.test(x.textContent))), 'o quadro principal da sub-aba tem o card que abre o quadro do desenho');
@@ -200,13 +202,18 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   ok(conta("select count(*) || '/' || max(origem) || '/' || count(chave_auto) from public.infra_diagramas where no_id = '" + pj + "' and aba = 'software' and nome like '%(cópia)'") === '1/manual/0', 'Copiar para editar à mão cria um desenho feito à mão (o automático segue sendo refeito)');
   await p.evaluate(() => { const d = document.querySelector('dialog.modal[open]'); if (d){ d.close(); d.remove(); } });
   // Atualizar agora
-  await p.click('[data-ifr-atualizar]'); await p.waitForTimeout(1500);
+  ok(await p.evaluate(() => !document.querySelector('[data-ifr-lado] .ifr-auto') && !!document.querySelector('#ops-corpo .ifv-modo [data-ifr-lig]')), 'a lateral não tem mais o painel de ligações: ele virou o botão Ligações na barra de cima');
+  await abrirLig(); await p.waitForTimeout(200);
+  ok(await p.evaluate(() => { const w = document.getElementById('ifr-lig'), r = w.getBoundingClientRect(), ia = document.getElementById('ia-raiz');
+    return !!w.querySelector('.ifr-lig-cols') && getComputedStyle(w).position === 'fixed' && (!ia || +getComputedStyle(ia).zIndex > +getComputedStyle(w).zIndex) && !document.querySelector('dialog[open]'); }),
+    'Ligações abre uma janela flutuante (sem travar a tela) com Código e Bancos lado a lado, e o DevIT fica por cima dela');
+  await p.click('#ifr-lig [data-ifr-atualizar]'); await p.waitForTimeout(1500);
   ok(conta("select count(*) from public.infra_automacoes where no_id = '" + pj + "' and origem = 'manual' and status = 'pendente'") === '1', 'Atualizar agora põe o pedido na fila do robô');
   psql("update public.infra_automacoes set status = 'pronto', concluido_em = now(), diagramas = array[(select id from public.infra_diagramas where chave_auto = 'github:it-hub/bl:software')] where origem = 'manual'");
   await p.waitForTimeout(7000);
   ok(/Pronto: 1 desenho atualizado/.test(await p.evaluate(() => (document.querySelector('#toast') || {}).textContent || '')) && /Última atualização[\s\S]*Concluída[\s\S]*Pedida pelo botão Atualizar agora/.test(await lado()), 'quando o robô termina, a tela avisa e mostra a última atualização');
   // ligar o banco do sistema
-  await p.click('[data-ifr-banco]'); await p.waitForTimeout(600);
+  await abrirLig(); await p.click('#ifr-lig [data-ifr-banco]'); await p.waitForTimeout(600);
   await p.fill('#ifr-b-url', 'mysql://errado'); await p.click('dialog.modal[open] .modal-rod .btn:not(.sec)'); await p.waitForTimeout(400);
   ok(await p.evaluate(() => !!document.querySelector('dialog.modal[open] #ifr-b-url')), 'endereço que não é postgresql:// não fecha a janela');
   await p.fill('#ifr-b-url', 'postgresql://leitura_ciclodev:senha-de-teste@db.exemplo:5432/postgres'); await p.fill('#ifr-b-esq', 'public, app');
@@ -214,7 +221,7 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   ok(conta("select count(*) || '/' || max(array_to_string(esquemas, ',')) from public.infra_bancos where no_id = '" + pj + "'") === '1/app,public' && conta("select count(*) from interno.infra_bancos_conexao where conexao like 'postgresql://leitura_ciclodev:%'") === '1', 'ligar o banco guarda o endereço na área protegida do banco');
   ok(/Banco de produção[\s\S]*Supabase · PostgreSQL · esquemas app, public[\s\S]*db\.exemplo/.test(await lado()) && !/senha-de-teste/.test(await p.evaluate(() => document.body.innerHTML)), 'a tela mostra o banco ligado (Supabase, esquemas e servidor) e nunca mostra a senha');
   // um segundo banco: MySQL na AWS, pelos campos (endpoint, banco, usuário e senha)
-  await p.click('[data-ifr-banco=""]'); await p.waitForTimeout(600);
+  await abrirLig(); await p.click('#ifr-lig [data-ifr-banco=""]'); await p.waitForTimeout(600);
   await p.click('dialog.modal[open] input[name="ifr-b-prov"][value="aws"]'); await p.waitForTimeout(200);
   await p.selectOption('#ifr-b-motor', 'mysql'); await p.waitForTimeout(200);
   ok(await p.evaluate(() => { const d = document.querySelector('dialog.modal[open]'); const l = d.querySelector('[data-ifr-guia-abrir]'); return /security group/.test(d.textContent) && l && /\(AWS\)/.test(l.textContent); }), 'escolher AWS mostra o resumo e o link para o guia passo a passo da AWS');
@@ -224,7 +231,7 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   ok(conta("select count(*) from public.infra_bancos where no_id = '" + pj + "'") === '2' && conta("select provedor || '/' || motor || '/' || servidor from public.infra_bancos where nome = 'Relatórios'") === 'aws/mysql/rel.abc123.us-east-1.rds.amazonaws.com', 'o segundo banco (MySQL na AWS) fica ligado junto com o primeiro');
   ok(conta("select c.conexao from interno.infra_bancos_conexao c join public.infra_bancos b on b.id = c.banco_id where b.nome = 'Relatórios'") === 'mysql://leitura_ciclodev:s3nh%40%20de%20teste@rel.abc123.us-east-1.rds.amazonaws.com:3306/relatorios', 'o endereço é montado dos campos, com a senha protegida (caracteres especiais escapados)');
   ok(/Relatórios[\s\S]*AWS · MySQL · banco relatorios/.test(await lado()), 'a lista mostra os dois bancos');
-  await p.click('[data-ifr-banco-tirar]'); await p.waitForTimeout(400); await p.click('dialog.modal[open] .modal-rod .btn.perigo'); await p.waitForTimeout(1500);
+  await abrirLig(); await p.click('#ifr-lig [data-ifr-banco-tirar]'); await p.waitForTimeout(400); await p.click('dialog.modal[open] .modal-rod .btn.perigo'); await p.waitForTimeout(1500);
   ok(conta("select count(*) from public.infra_bancos where no_id = '" + pj + "'") === '1', 'Desligar tira só aquele banco');
   // no cliente não há aba Infraestrutura
   await p.evaluate(() => { const U = window.__tf.UI; const c = window.__tf.D.clients[0]; U.sel = 'client:' + c.id; window.__tf.rOperacoes(); }); await p.waitForTimeout(800);

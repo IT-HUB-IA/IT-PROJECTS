@@ -169,6 +169,7 @@ ifrTelaHTML = function(){
   const ed = ifvEditar(), pode = podeEditar();
   const barra = '<div class="ifv-modo" role="group" aria-label="Como ver"><button type="button" class="ifv-b' + (ed ? '' : ' sel') + '" data-ifv-modo="ver" aria-pressed="' + !ed + '">Desenho completo</button>' +
     (pode ? '<button type="button" class="ifv-b' + (ed ? ' sel' : '') + '" data-ifv-modo="editar" aria-pressed="' + ed + '">Editar o quadro</button>' : '') +
+    (typeof ifrLigBotaoHTML === 'function' ? ifrLigBotaoHTML() : '') +
     '<span class="ifv-dica">' + (ed ? 'Você está mexendo no quadro deste lugar. Os desenhos automáticos continuam se refazendo sozinhos.' : 'Tudo o que existe nesta parte, já aberto. Se atualiza sozinho a cada publicação.') + '</span></div>';
   return _ifrTelaHTMLV.apply(this, arguments).replace('<div class="ifr-corpo">', barra + '<div class="ifr-corpo">');
 };

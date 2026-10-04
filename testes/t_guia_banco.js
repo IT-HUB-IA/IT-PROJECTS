@@ -78,7 +78,7 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   ok(alt < 40, 'na lateral estreita o nome do banco fica numa linha só (' + Math.round(alt) + ' px de altura)');
   const painel = await p.evaluate(() => { const d = document.querySelector('.ifr-lado-teste'); return {t:d.textContent, erros:(d.textContent.match(/password authentication failed/g) || []).length}; });
   ok(/A senha do usuário do CicloDev não confere/.test(painel.t) && /Não conectou/.test(painel.t) && !/Lido há/.test(painel.t) && /Resolver com o DevIT/.test(painel.t), 'banco com erro: selo Não conectou, explicação em português e botão para resolver com o DevIT (sem dizer Lido)');
-  ok(painel.erros === 1 && /1 fonte com problema: veja acima/.test(painel.t) && /Concluída com problema/.test(painel.t) && /Pedida pelo botão Atualizar agora/.test(painel.t), 'o erro aparece uma vez só; a última atualização diz o porquê e aponta para a fonte com problema');
+  ok(painel.erros === 1 && /1 fonte com problema: veja abaixo/.test(painel.t) && /Concluída com problema/.test(painel.t) && /Pedida pelo botão Atualizar agora/.test(painel.t), 'o erro aparece uma vez só; a última atualização diz o porquê e aponta para a fonte com problema');
   await p.evaluate(() => { document.querySelector('.ifr-lado-teste').remove(); window.__tf.IFR_AUTO.bancos = []; window.__tf.IFR_AUTO.repos = []; window.__tf.IFR_AUTO.pedidos = []; });
   // abre o guia do Supabase
   await p.evaluate(() => window.__tf.ifrGuiaAbrir('supabase')); await p.waitForTimeout(300);

@@ -14,6 +14,9 @@ Gestão de projetos, entregas e custos da IT.IA, feita no CicloDev. Cliente atua
 
 Texto, telas e cards ocupam toda a largura da janela. Não se limita a largura de nada (nada de `max-width` em px, ch ou `min(...)` em texto, tela ou card) e nada quebra linha enquanto houver espaço. As exceções são poucas: janela (modal), menu suspenso, aviso flutuante, balão de conversa, nome de arquivo cortado com "..." e barra de gráfico. `node testes/t_largura.js` barra qualquer CSS novo que desobedeça.
 
+## Regra de tela: janela flutuante sempre com transição
+Toda janela que abre por cima da tela (qualquer `<dialog>`, a janela de Ligações, a gaveta lateral, os menus suspensos) entra com transição, nunca aparece do nada. Está em `fonte/transicoes.css` e vale sozinho para todo `<dialog>`. Janela nova que não seja `<dialog>` entra na lista desse arquivo. Teste: `testes/t_ligacoes.js` confere a animação.
+
 ## Gerar a página
 
 ```

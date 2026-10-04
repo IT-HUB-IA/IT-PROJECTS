@@ -91,70 +91,122 @@ async function ifrMudarChave(inp){
     '<li><b>Mandar para a lixeira</b>: só os que <b>ninguém mexeu</b> (sem comentário, anexo, subitem ou edição). O que alguém já trabalhou fica. Ligar de novo traz de volta os que foram para a lixeira.</li></ul>',
     [{txt:'Cancelar', cls:'sec', acao:d(voltar)}, {txt:'Deixar como estão', cls:'sec', acao:d(() => mandar(false))}, {txt:'Mandar para a lixeira', acao:d(() => mandar(true))}]).addEventListener('close', () => { if (!decidiu) voltar(); });
 }
+/* ---------- Ligações: o que alimenta os desenhos e itens automáticos desta parte ----------
+   Antes ficava todo aberto na lateral da Infraestrutura e ocupava muito espaço. Agora a lateral só tem os desenhos;
+   o botão "Ligações" (na barra de cima, com um resumo) abre uma janela flutuante. A janela não bloqueia a tela e
+   fica abaixo do DevIT (o robozinho continua por cima e clicável). */
+function ifrRepoCartao(r, pode, erroRepo){
+  const er = erroRepo(r.nome);
+  return '<div class="ifr-fonte' + (er ? ' com-erro' : '') + '"><div class="ifr-fonte-cab"><b>' + esc(r.nome) + '</b>' + (er ? ifrSelo('erro', 'Com problema') : ifrSelo('ok', 'Ligado')) + '</div>' +
+    '<p class="ifr-fonte-meta">' + esc((r.provedor === 'gitlab' ? 'GitLab' : 'GitHub') + ' · branch ' + (r.branch_principal || 'main')) + '</p>' +
+    (er ? '<p class="ifr-fonte-erro">' + esc(er) + '</p>' : '') +
+    '<div class="ifr-lig-usa"><span>Usar para</span>' + ifrChavesHTML('repo', r, pode) + '</div>' +
+    (pode ? '<div class="ifr-fonte-acoes"><button type="button" class="ifr-lnk" data-ifr-repo-trocar="' + r.id + '">Trocar</button><button type="button" class="ifr-lnk" data-ifr-repo-tirar="' + r.id + '">Desligar</button></div>' : '') + '</div>';
+}
+function ifrBancoCartao(x, pode){
+  const qual = (IFR_PROV[x.provedor] || 'Outro') + (x.supa_conexao_id ? ' · sem senha' : '') + ' · ' + (x.motor === 'mysql' ? 'MySQL' : 'PostgreSQL') + ' · ' + (x.motor === 'mysql' ? 'banco ' : 'esquema' + ((x.esquemas || []).length > 1 ? 's ' : ' ')) + (x.esquemas || []).join(', ');
+  const selo = !x.ativo ? ifrSelo('cinza', 'Desligado') : x.ultimo_erro ? ifrSelo('erro', 'Não conectou') : x.ultima_leitura_em ? ifrSelo('ok', 'Lido ' + ifrQuando(x.ultima_leitura_em)) : ifrSelo('cinza', 'Aguardando leitura');
+  return '<div class="ifr-fonte' + (x.ultimo_erro ? ' com-erro' : '') + '"><div class="ifr-fonte-cab"><b>' + esc(x.nome) + '</b>' + selo + '</div>' +
+    '<p class="ifr-fonte-meta">' + esc(qual) + '</p>' + (x.servidor ? '<p class="ifr-fonte-host" title="Servidor">' + esc(x.servidor) + '</p>' : '') +
+    (x.supa_conexao_id && x.validado_em ? '<p class="ifr-fonte-meta" data-ifr-conferido>Ligado pelo Supabase, sem senha. Conferido em ' + esc(fmtData(x.validado_em.slice(0, 10))) + ' às ' + esc(new Date(x.validado_em).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})) + (x.validacao ? ': ' + esc((x.validacao.tabelas || 0) + ' tabelas, ' + (x.validacao.regras || 0) + ' regras de acesso') : '') + '</p>' : '') +
+    (!x.supa_conexao_id && x.conexao_trocada_em ? '<p class="ifr-fonte-meta" data-ifr-trocado>Endereço salvo em ' + esc(fmtData(x.conexao_trocada_em.slice(0, 10))) + ' às ' + esc(new Date(x.conexao_trocada_em).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})) + '</p>' : '') +
+    (x.ultimo_erro ? '<div class="ifr-fonte-erro"><b>' + esc(ifrErroAmigavel(x.ultimo_erro)) + '</b><small>' + esc(x.ultimo_erro) + (x.ultima_leitura_em ? ' · tentativa ' + esc(ifrQuando(x.ultima_leitura_em)) : '') + '</small>' +
+      (/password authentication/.test(x.ultimo_erro) && x.conexao_trocada_em && !x.supa_conexao_id ? '<p class="ifr-fonte-dica">O CicloDev ainda usa a senha do endereço salvo em ' + esc(fmtData(x.conexao_trocada_em.slice(0, 10))) + '. Se você criou ou trocou a senha no banco depois disso, clique em <b>Trocar</b> e cole o endereço com a senha nova. Se a data não mudar depois de salvar, a troca não foi gravada.</p>' : '') +
+      '<button type="button" class="btn peq" data-ifr-guia>Resolver com o DevIT</button></div>'
+      : x.ultima_mudanca_em ? '<p class="ifr-fonte-meta">Estrutura mudou ' + esc(ifrQuando(x.ultima_mudanca_em)) + '</p>' : '') +
+    '<div class="ifr-lig-usa"><span>Usar para</span>' + ifrChavesHTML('banco', x, pode) + '</div>' +
+    (pode ? '<div class="ifr-fonte-acoes"><button type="button" class="ifr-lnk" data-ifr-banco="' + x.id + '">Trocar</button><button type="button" class="ifr-lnk" data-ifr-banco-tirar="' + x.id + '">Desligar</button></div>' : '') + '</div>';
+}
+// a situação da última atualização, numa faixa no topo da janela
+function ifrUltimaHTML(pode){
+  const ult = IFR_AUTO.pedidos[0], resumo = (ult && ult.resumo) || [];
+  const botao = pode ? '<button type="button" class="btn sec peq" data-ifr-atualizar' + (IFR_AUTO.atualizando ? ' disabled' : '') + '>' + (IFR_AUTO.atualizando ? 'Atualizando…' : 'Atualizar agora') + '</button>' : '';
+  if (!ult) return '<div class="ifr-lig-estado"><div><b>Última atualização</b><span>Ainda não houve nenhuma. Ligue o código ou o banco abaixo.</span></div>' + botao + '</div>';
+  const ST = ({pendente:['cinza', 'Na fila'], rodando:['cinza', 'Montando agora'], pronto:['ok', 'Concluída'], erro:['erro', 'Falhou']})[ult.status] || ['cinza', ult.status];
+  const porque = ult.origem === 'manual' ? 'pedida pelo botão Atualizar agora' : ult.origem === 'banco' ? 'porque a estrutura do banco mudou' : (ult.origem === 'github' || ult.origem === 'gitlab') ? 'depois da publicação' + (ult.referencia ? ' do commit ' + String(ult.referencia).slice(0, 7) : '') : '';
+  const nd = (ult.diagramas || []).length, nErros = resumo.filter(x => x.erro).length;
+  if (ult.status === 'pronto' && nErros){ ST[0] = 'aviso'; ST[1] = 'Concluída com problema'; }
+  const avisos = resumo.filter(x => x.aviso && !x.erro).map(x => (x.repositorio ? x.repositorio + ': ' : '') + x.aviso);
+  return '<div class="ifr-lig-estado"><div><b>Última atualização</b><span class="ifr-ult">' + ifrSelo(ST[0], ST[1]) + esc(ifrQuando(ult.concluido_em || ult.criado_em)) + (nd ? ' · ' + nd + (nd === 1 ? ' desenho' : ' desenhos') : '') + '</span>' +
+    (porque ? '<small>' + esc(porque.charAt(0).toUpperCase() + porque.slice(1)) + '</small>' : '') +
+    (nErros ? '<small class="ifr-ult-erro">' + (nErros === 1 ? '1 fonte com problema' : nErros + ' fontes com problema') + ': veja abaixo.</small>' : ult.erro ? '<small class="ifr-fonte-erro">' + esc(ult.erro) + '</small>' : '') +
+    (avisos.length ? '<ul class="ifr-auto-avisos">' + avisos.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>' : '') + '</div>' + botao + '</div>';
+}
 function ifrAutoHTML(){
-  const pode = podeEditar(), fonte = IFR_AUTO_FONTE[IFR.aba], repos = IFR_AUTO.repos, bs = IFR_AUTO.bancos, ult = IFR_AUTO.pedidos[0];
-  const eProd = /^product:/.test(UI.sel || '');
-  const resumo = (ult && ult.resumo) || [];
+  const pode = podeEditar(), fonte = IFR_AUTO_FONTE[IFR.aba], repos = IFR_AUTO.repos, bs = IFR_AUTO.bancos;
+  const eProd = /^product:/.test(UI.sel || ''), ult = IFR_AUTO.pedidos[0], resumo = (ult && ult.resumo) || [];
   const erroRepo = nome => (resumo.find(x => x.repositorio === nome && x.erro) || {}).erro;
-  let h = '<section class="ifr-auto" aria-label="Desenhos automáticos"><div class="ifr-auto-cab"><h3>Automático</h3>' +
-    (pode ? '<button type="button" class="btn sec peq" data-ifr-atualizar' + (IFR_AUTO.atualizando ? ' disabled' : '') + '>' + (IFR_AUTO.atualizando ? 'Atualizando…' : 'Atualizar agora') + '</button>' : '') + '</div>';
-  h += '<p class="ifr-auto-como">' + (fonte === 'codigo' ? 'Esta parte sai <b>sozinha do código</b> a cada publicação em produção.'
-    : fonte === 'banco' ? 'Esta parte sai <b>sozinha do banco de dados</b> ligado: quando a estrutura muda, o desenho é refeito.'
-    : 'Esta parte é feita pelo <b>DevIT</b>, usando os desenhos automáticos como base.') + '</p>';
+  const onde = /^app:/.test(UI.sel || '') ? 'a esta aplicação' : eProd ? 'a este produto' : 'direto neste projeto';
+  let h = '<div class="ifr-auto ifr-lig-corpo" aria-label="Ligações de código e banco">' + ifrUltimaHTML(pode) +
+    '<p class="ifr-auto-como">' + (fonte === 'codigo' ? 'Esta parte sai <b>sozinha do código</b> a cada publicação em produção.'
+      : fonte === 'banco' ? 'Esta parte sai <b>sozinha do banco de dados</b> ligado: quando a estrutura muda, o desenho é refeito.'
+      : 'Esta parte é feita pelo <b>DevIT</b>, usando os desenhos automáticos como base.') + ' Em cada ligação, marque para que ela serve: <b>Desenhos</b> e/ou <b>Épicos e histórias</b>.</p>' +
+    '<div class="ifr-lig-cols">';
   // código
-  h += '<div class="ifr-auto-bloco"><h4 class="ifr-auto-tit">Código</h4>' + (repos.length
-    ? repos.map(r => { const er = erroRepo(r.nome);
-        return '<div class="ifr-fonte' + (er ? ' com-erro' : '') + '"><div class="ifr-fonte-cab"><b>' + esc(r.nome) + '</b>' + (er ? ifrSelo('erro', 'Com problema') : ifrSelo('ok', 'Ligado')) + '</div>' +
-          '<p class="ifr-fonte-meta">' + esc((r.provedor === 'gitlab' ? 'GitLab' : 'GitHub') + ' · branch ' + (r.branch_principal || 'main')) + '</p>' +
-          (er ? '<p class="ifr-fonte-erro">' + esc(er) + '</p>' : '') +
-          ifrChavesHTML('repo', r, pode) +
-          (pode ? '<div class="ifr-fonte-acoes"><button type="button" class="ifr-lnk" data-ifr-repo-trocar="' + r.id + '">Trocar</button><button type="button" class="ifr-lnk" data-ifr-repo-tirar="' + r.id + '">Desligar</button></div>' : '') + '</div>'; }).join('')
-    : '<p class="ifr-vazio">Nenhum repositório ligado ' + (/^app:/.test(UI.sel || '') ? 'a esta aplicação' : eProd ? 'a este produto' : 'direto neste projeto') + '.</p>') +
-    (pode ? '<div class="ifr-auto-add"><button type="button" class="btn sec peq" data-ifr-repo>+ ' + (repos.length ? 'Ligar outro repositório' : 'Ligar repositório') + '</button></div>' : '') + '</div>';
+  h += '<section class="ifr-lig-col ifr-auto-bloco"><div class="ifr-lig-col-cab"><h3 class="ifr-auto-tit">Código</h3><small>Repositórios do GitHub ou GitLab. A cada publicação o CicloDev lê de novo.</small></div>' +
+    (repos.length ? repos.map(r => ifrRepoCartao(r, pode, erroRepo)).join('') : '<p class="ifr-vazio">Nenhum repositório ligado ' + onde + '.</p>') +
+    (pode ? '<div class="ifr-auto-add"><button type="button" class="btn ' + (repos.length ? 'sec ' : '') + 'peq" data-ifr-repo>+ ' + (repos.length ? 'Ligar outro repositório' : 'Ligar repositório') + '</button></div>' : '') + '</section>';
   // bancos
-  const qual = x => (IFR_PROV[x.provedor] || 'Outro') + (x.supa_conexao_id ? ' · sem senha' : '') + ' · ' + (x.motor === 'mysql' ? 'MySQL' : 'PostgreSQL') + ' · ' + (x.motor === 'mysql' ? 'banco ' : 'esquema' + ((x.esquemas || []).length > 1 ? 's ' : ' ')) + (x.esquemas || []).join(', ');
-  h += '<div class="ifr-auto-bloco"><h4 class="ifr-auto-tit">Bancos de dados</h4>' + (bs.length
-    ? bs.map(x => {
-        const selo = !x.ativo ? ifrSelo('cinza', 'Desligado') : x.ultimo_erro ? ifrSelo('erro', 'Não conectou') : x.ultima_leitura_em ? ifrSelo('ok', 'Lido ' + ifrQuando(x.ultima_leitura_em)) : ifrSelo('cinza', 'Aguardando leitura');
-        return '<div class="ifr-fonte' + (x.ultimo_erro ? ' com-erro' : '') + '"><div class="ifr-fonte-cab"><b>' + esc(x.nome) + '</b>' + selo + '</div>' +
-          '<p class="ifr-fonte-meta">' + esc(qual(x)) + '</p>' + (x.servidor ? '<p class="ifr-fonte-host" title="Servidor">' + esc(x.servidor) + '</p>' : '') +
-          (x.supa_conexao_id && x.validado_em ? '<p class="ifr-fonte-meta" data-ifr-conferido>Ligado pelo Supabase, sem senha. Conferido em ' + esc(fmtData(x.validado_em.slice(0, 10))) + ' às ' + esc(new Date(x.validado_em).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})) + (x.validacao ? ': ' + esc((x.validacao.tabelas || 0) + ' tabelas, ' + (x.validacao.regras || 0) + ' regras de acesso') : '') + '</p>' : '') +
-          (!x.supa_conexao_id && x.conexao_trocada_em ? '<p class="ifr-fonte-meta" data-ifr-trocado>Endereço salvo em ' + esc(fmtData(x.conexao_trocada_em.slice(0, 10))) + ' às ' + esc(new Date(x.conexao_trocada_em).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})) + '</p>' : '') +
-          (x.ultimo_erro ? '<div class="ifr-fonte-erro"><b>' + esc(ifrErroAmigavel(x.ultimo_erro)) + '</b><small>' + esc(x.ultimo_erro) + (x.ultima_leitura_em ? ' · tentativa ' + esc(ifrQuando(x.ultima_leitura_em)) : '') + '</small>' +
-            (/password authentication/.test(x.ultimo_erro) && x.conexao_trocada_em && !x.supa_conexao_id ? '<p class="ifr-fonte-dica">O CicloDev ainda usa a senha do endereço salvo em ' + esc(fmtData(x.conexao_trocada_em.slice(0, 10))) + '. Se você criou ou trocou a senha no banco depois disso, clique em <b>Trocar</b> e cole o endereço com a senha nova. Se a data não mudar depois de salvar, a troca não foi gravada.</p>' : '') +
-            '<button type="button" class="btn peq" data-ifr-guia>Resolver com o DevIT</button></div>'
-            : x.ultima_mudanca_em ? '<p class="ifr-fonte-meta">Estrutura mudou ' + esc(ifrQuando(x.ultima_mudanca_em)) + '</p>' : '') +
-          ifrChavesHTML('banco', x, pode) +
-          (pode ? '<div class="ifr-fonte-acoes"><button type="button" class="ifr-lnk" data-ifr-banco="' + x.id + '">Trocar</button><button type="button" class="ifr-lnk" data-ifr-banco-tirar="' + x.id + '">Desligar</button></div>' : '') + '</div>'; }).join('')
-    : '<p class="ifr-vazio">' + (pode ? 'Nenhum banco ligado.' : 'Só quem pode editar vê os bancos ligados.') + '</p>') +
-    '<div class="ifr-auto-add">' + (pode ? '<button type="button" class="btn sec peq" data-ifr-banco="">+ ' + (bs.length ? 'Ligar outro banco' : 'Ligar banco') + '</button>' : '') + '<button type="button" class="ifr-lnk" data-ifr-guia>Guia passo a passo</button></div></div>';
+  h += '<section class="ifr-lig-col ifr-auto-bloco"><div class="ifr-lig-col-cab"><h3 class="ifr-auto-tit">Bancos de dados</h3><small>Supabase, AWS ou outro PostgreSQL/MySQL. Só leitura da estrutura, nunca dos dados.</small></div>' +
+    (bs.length ? bs.map(x => ifrBancoCartao(x, pode)).join('') : '<p class="ifr-vazio">' + (pode ? 'Nenhum banco ligado.' : 'Só quem pode editar vê os bancos ligados.') + '</p>') +
+    '<div class="ifr-auto-add">' + (pode ? '<button type="button" class="btn ' + (bs.length ? 'sec ' : '') + 'peq" data-ifr-banco="">+ ' + (bs.length ? 'Ligar outro banco' : 'Ligar banco') + '</button>' : '') + '<button type="button" class="ifr-lnk" data-ifr-guia>Guia passo a passo</button></div></section>';
+  h += '</div>';
   // ligados acima deste ponto (no produto ou no projeto): também montam desenhos e itens aqui
   const hd = IFR_AUTO.herdados || [];
-  if (hd.length) h += '<div class="ifr-auto-bloco"><h4 class="ifr-auto-tit">Ligados acima deste ponto</h4><p class="ifr-fonte-meta" style="margin:0 0 6px">Também montam coisas aqui. As chaves valem para todo o ' + (UI.sel.startsWith('app:') ? 'produto ou projeto' : 'projeto') + ' onde estão ligados; trocar ou desligar é lá.</p>' +
+  if (hd.length) h += '<details class="ifr-lig-herd ifr-auto-bloco"><summary><b class="ifr-auto-tit">Ligados acima deste ponto</b><span>' + hd.length + '</span></summary><p class="ifr-fonte-meta">Também montam coisas aqui. As chaves valem para todo o ' + (UI.sel.startsWith('app:') ? 'produto ou projeto' : 'projeto') + ' onde estão ligados; trocar ou desligar é lá.</p><div class="ifr-lig-herd-lista">' +
     hd.map(({tipo, x}) => { const ch = igChave(x.no_id); return '<div class="ifr-fonte"><div class="ifr-fonte-cab"><b>' + esc(x.nome) + '</b>' + ifrSelo('cinza', tipo === 'repo' ? 'Código' : 'Banco') + '</div>' +
       '<p class="ifr-fonte-meta">Ligado em <b>' + esc(ch ? nomeDe(ch) : '?') + '</b> (' + esc(ch ? ({product:'produto', project:'projeto'}[ch.split(':')[0]] || '') : '') + ')' + (x.supa_projeto ? ' · ' + esc(x.supa_projeto) : x.servidor ? ' · ' + esc(x.servidor) : '') + '</p>' +
-      ifrChavesHTML(tipo, x, pode) + '</div>'; }).join('') + '</div>';
-  // última atualização: uma linha; os erros já aparecem na fonte de cada um
-  if (ult){
-    let ST = {pendente:['cinza', 'Na fila'], rodando:['cinza', 'Montando agora'], pronto:['ok', 'Concluída'], erro:['erro', 'Falhou']}[ult.status] || ['cinza', ult.status];
-    const porque = ult.origem === 'manual' ? 'pedida pelo botão Atualizar agora' : ult.origem === 'banco' ? 'porque a estrutura do banco mudou' : (ult.origem === 'github' || ult.origem === 'gitlab') ? 'depois da publicação' + (ult.referencia ? ' do commit ' + String(ult.referencia).slice(0, 7) : '') : '';
-    const nd = (ult.diagramas || []).length, nErros = resumo.filter(x => x.erro).length;
-    if (ult.status === 'pronto' && nErros) ST[0] = 'aviso', ST[1] = 'Concluída com problema';
-    const avisos = resumo.filter(x => x.aviso && !x.erro).map(x => (x.repositorio ? x.repositorio + ': ' : '') + x.aviso);
-    h += '<div class="ifr-auto-bloco"><h4 class="ifr-auto-tit">Última atualização</h4><div class="ifr-ult">' + ifrSelo(ST[0], ST[1]) + '<span>' + esc(ifrQuando(ult.concluido_em || ult.criado_em)) + (nd ? ' · ' + nd + (nd === 1 ? ' desenho' : ' desenhos') : '') + '</span></div>' +
-      (porque ? '<p class="ifr-fonte-meta">' + esc(porque.charAt(0).toUpperCase() + porque.slice(1)) + '</p>' : '') +
-      (nErros ? '<p class="ifr-fonte-meta ifr-ult-erro">' + (nErros === 1 ? '1 fonte com problema' : nErros + ' fontes com problema') + ': veja acima.</p>' : ult.erro ? '<p class="ifr-fonte-erro">' + esc(ult.erro) + '</p>' : '') +
-      (avisos.length ? '<ul class="ifr-auto-avisos">' + avisos.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>' : '') + '</div>';
+      '<div class="ifr-lig-usa"><span>Usar para</span>' + ifrChavesHTML(tipo, x, pode) + '</div></div>'; }).join('') + '</div></details>';
+  return h + '</div>';
+}
+// o botão da barra de cima: "Ligações" com o resumo (quantos códigos e bancos, e se algum tem problema)
+function ifrLigBotaoHTML(){
+  const nR = IFR_AUTO.carregado ? IFR_AUTO.repos.length : null, nB = IFR_AUTO.carregado ? IFR_AUTO.bancos.length : null;
+  const ult = IFR_AUTO.pedidos && IFR_AUTO.pedidos[0], erro = IFR_AUTO.carregado && (IFR_AUTO.bancos.some(x => x.ativo && x.ultimo_erro) || ((ult && ult.resumo) || []).some(x => x.erro) || (ult && ult.status === 'erro'));
+  const res = nR === null ? 'lendo…' : (nR + (nR === 1 ? ' código' : ' códigos') + ' · ' + nB + (nB === 1 ? ' banco' : ' bancos'));
+  return '<button type="button" class="ifv-b ifr-lig-b' + (erro ? ' com-erro' : '') + '" data-ifr-lig aria-haspopup="dialog" aria-expanded="' + !!document.getElementById('ifr-lig') + '" title="Código e bancos que montam os desenhos e itens desta parte">' +
+    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1"/><path d="M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1"/></svg>' +
+    'Ligações<small>' + esc(res) + '</small>' + (erro ? '<i class="ifr-lig-ponto" aria-label="com problema"></i>' : '') + '</button>';
+}
+function ifrLigRender(){
+  const w = document.getElementById('ifr-lig'); if (!w) return;
+  const corpo = w.querySelector('.ifr-lig-rolo'), topo = corpo ? corpo.scrollTop : 0;
+  w.querySelector('.ifr-lig-onde').textContent = UI.sel ? nomeDe(UI.sel) : '';
+  corpo.innerHTML = IFR_AUTO.carregado ? ifrAutoHTML() : '<p class="vazio-linha">Lendo as ligações…</p>';
+  corpo.scrollTop = topo;
+}
+function ifrLigAbrir(){
+  let w = document.getElementById('ifr-lig');
+  if (!w){
+    w = document.createElement('div'); w.id = 'ifr-lig'; w.className = 'ifr-lig'; w.setAttribute('role', 'dialog'); w.setAttribute('aria-modal', 'false'); w.setAttribute('aria-labelledby', 'ifr-lig-t');
+    w.innerHTML = '<header class="ifr-lig-cab"><div><h2 id="ifr-lig-t">Ligações <span class="ifr-lig-onde"></span></h2><p>O código e os bancos de onde o CicloDev monta, sozinho, os desenhos e os épicos e histórias desta parte.</p></div>' +
+      '<button type="button" class="ifr-lig-x" data-ifr-lig-fechar aria-label="Fechar" title="Fechar (Esc)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></header><div class="ifr-lig-rolo"></div>';
+    document.body.appendChild(w);
   }
-  return h + '</section>';
+  ifrLigRender();
+  document.querySelectorAll('[data-ifr-lig]').forEach(b => b.setAttribute('aria-expanded', 'true'));
+  const x = w.querySelector('[data-ifr-lig-fechar]'); if (x) x.focus();
+}
+function ifrLigFechar(){
+  const w = document.getElementById('ifr-lig'); if (!w) return;
+  // sai com transição (transicoes.css): o id sai na hora, para "aberta?" já responder que não
+  w.removeAttribute('id'); w.classList.add('saindo'); setTimeout(() => w.remove(), 150);
+  document.querySelectorAll('[data-ifr-lig]').forEach(b => { b.setAttribute('aria-expanded', 'false'); });
 }
 const _ifrLadoBase = ifrLado;
 ifrLado = function(){
   _ifrLadoBase();
-  const el = $('#ops-corpo [data-ifr-lado]'); if (!el) return;
   if (IFR_AUTO.no !== IFR.no){ IFR_AUTO.carregado = false; ifrAutoCarregar().then(() => { if (UI.view === 'infra') ifrLado(); }); }
-  el.insertAdjacentHTML('afterbegin', IFR_AUTO.carregado ? ifrAutoHTML() : '<section class="ifr-auto"><p class="vazio-linha">Lendo os desenhos automáticos…</p></section>');
+  document.querySelectorAll('#ops-corpo [data-ifr-lig]').forEach(b => { b.outerHTML = ifrLigBotaoHTML(); });
+  ifrLigRender();
 };
+document.addEventListener('click', e => {
+  if (e.target.closest('[data-ifr-lig-fechar]')) return ifrLigFechar();
+  if (e.target.closest('[data-ifr-lig]')) return document.getElementById('ifr-lig') ? ifrLigFechar() : ifrLigAbrir();
+  // saiu da Infraestrutura (outra aba, outro módulo): a janela fecha junto
+  if (document.getElementById('ifr-lig')) setTimeout(() => { if (!document.querySelector('#ops-corpo .ifr-tela')) ifrLigFechar(); }, 0);
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.getElementById('ifr-lig') && !document.querySelector('dialog[open]')) ifrLigFechar(); });
 
 /* ---------- "Atualizar agora" ---------- */
 async function ifrAutoAtualizar(){
@@ -335,7 +387,7 @@ function ifrAbrirQuadro(caminho){
 }
 
 document.addEventListener('click', e => {
-  if (!e.target.closest('#ops-corpo .ifr-tela') && !e.target.closest('dialog.ifr-modal')) return;
+  if (!e.target.closest('#ops-corpo .ifr-tela') && !e.target.closest('#ifr-lig') && !e.target.closest('dialog.ifr-modal')) return;
   if (e.target.closest('[data-ifr-atualizar]')) return ifrAutoAtualizar();
   { const bb = e.target.closest('[data-ifr-banco]'); if (bb) return ifrBancoModal(bb.dataset.ifrBanco || null); }
   { if (e.target.closest('[data-ifr-guia]')) return ifrGuiar(null); }
@@ -346,6 +398,6 @@ document.addEventListener('click', e => {
   rb = e.target.closest('[data-ifr-repo-trocar]'); if (rb){ gcDesligarRepo(rb.dataset.ifrRepoTrocar, true); return; }
   const q = e.target.closest('[data-ifr-quadro]'); if (q){ const dl = q.closest('dialog'); if (dl){ dl.close(); dl.remove(); } ifrAbrirQuadro(q.dataset.ifrQuadro); }
 });
-if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {IFR_AUTO, ifrAutoCarregar, ifrAutoAtualizar, ifrAbrirQuadro, ifrLado, ifrAutoHTML, ifrGuiaAbrir, ifrBancoModal, ifrGuiar, ifrGuiaHTML});
+if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {IFR_AUTO, ifrAutoCarregar, ifrAutoAtualizar, ifrAbrirQuadro, ifrLado, ifrAutoHTML, ifrLigAbrir, ifrLigFechar, ifrLigBotaoHTML, ifrGuiaAbrir, ifrBancoModal, ifrGuiar, ifrGuiaHTML});
 
 document.addEventListener('change', e => { if (e.target.matches && e.target.matches('[data-ifr-chave]')) ifrMudarChave(e.target); });

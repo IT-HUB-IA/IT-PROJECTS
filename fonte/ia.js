@@ -382,4 +382,4 @@ if (COM_BANCO){
     return r;
   };
 }
-if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {iaAdminHTML, iaConferir, iaAlternar, iaAnexar, iaAbrir, iaNovidades, iaGuiar, iaFormatar, IA});
+if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {iaAdminHTML, iaConferir, iaMontar, iaAlternar, iaAnexar, iaAbrir, iaNovidades, iaGuiar, iaFormatar, IA});
