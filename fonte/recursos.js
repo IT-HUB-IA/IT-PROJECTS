@@ -281,7 +281,7 @@ abrirItem = function(id){
   const filhos = D.issues.filter(x => x.pai === i.id && !x.arquivado);
   const feitos = filhos.filter(x => x.status === 'done').length;
   const secFilhos = FILHO_DE[i.tipo] ? '<section class="g-sec"><h4>Child issues' + I('Child issues (itens filhos): as partes menores deste item. O progresso aqui soma quantos filhos já foram concluídos.') + (filhos.length ? '<span class="g-cont">' + feitos + ' de ' + filhos.length + '</span>' : '') + '</h4>' +
-    (filhos.length ? '<div class="progresso" style="margin-bottom:6px"><i style="width:' + (feitos / filhos.length * 100) + '%"></i></div><ul class="g-lista">' + filhos.map(x => '<li class="g-link">' + tipoHTML(x.tipo) + '<button class="g-lk-nome" type="button" data-abrir-item="' + x.id + '">' + esc(x.titulo) + '</button>' + statusItemHTML(x) + '</li>').join('') + '</ul>' : '<p class="sec" style="margin:0 0 6px;font-size:13px">Nenhum item dentro deste ainda.</p>') +
+    (filhos.length ? '<div class="progresso" style="margin-bottom:6px" title="' + progressoPct(filhos) + '% de progresso"><i style="width:' + progressoPct(filhos) + '%"></i></div><ul class="g-lista">' + filhos.map(x => '<li class="g-link">' + tipoHTML(x.tipo) + '<button class="g-lk-nome" type="button" data-abrir-item="' + x.id + '">' + esc(x.titulo) + '</button>' + statusItemHTML(x) + '</li>').join('') + '</ul>' : '<p class="sec" style="margin:0 0 6px;font-size:13px">Nenhum item dentro deste ainda.</p>') +
     (pode ? '<form class="g-add" data-rc-form="filho"><input class="campo" name="t" placeholder="Novo ' + esc(tipoNome(FILHO_DE[i.tipo])) + ' dentro deste"><button class="btn sec peq" type="submit">Criar</button></form>' : '') + '</section>' : '';
   // campos personalizados
   const campos = camposDoEscopo(chaveWs);
@@ -427,7 +427,7 @@ vTimeline = function(){
     '<div class="tabela-rolo"><table class="tabela"><thead><tr><th>Nome</th><th>Tipo</th><th>Data</th><th>Onde</th><th>Progresso</th><th>Cliente vê</th><th></th></tr></thead><tbody>' +
     (ms.length ? ms.map(m => { const its = itensDo(m), f = its.filter(i => i.status === 'done').length; const atr = !m.entregue && parse(m.data) < HOJE;
       return '<tr><th scope="row">' + esc(m.nome) + (m.desc ? '<div class="sec" style="font-family:var(--font-body);font-size:12px;font-weight:400">' + esc(m.desc) + '</div>' : '') + '</th><td>' + (m.tipo === 'release' ? 'Release' : 'Milestone') + '</td><td' + (atr ? ' class="atraso"' : '') + '>' + fmt(m.data) + (m.entregue ? '<div class="sec" style="font-size:11px">entregue em ' + fmt(m.entregue) + '</div>' : '') + '</td><td>' + esc(nomeDe(m.no)) + '</td>' +
-        '<td>' + (its.length ? '<div class="progresso"><i style="width:' + (f / its.length * 100) + '%"></i></div><span class="sec" style="font-size:12px">' + f + ' de ' + its.length + ' itens</span>' : '<span class="sec" style="font-size:12px">Nenhum item ligado</span>') + '</td><td>' + (m.vis ? 'Sim' : 'Não') + '</td>' +
+        '<td>' + (its.length ? '<div class="progresso"><i style="width:' + progressoPct(its) + '%"></i></div><span class="sec" style="font-size:12px">' + progressoPct(its) + '% · ' + f + ' de ' + its.length + ' aceitos</span>' : '<span class="sec" style="font-size:12px">Nenhum item ligado</span>') + '</td><td>' + (m.vis ? 'Sim' : 'Não') + '</td>' +
         '<td>' + (pode ? '<div class="acoes">' + (m.entregue ? '' : '<button class="btn sec peq" type="button" data-rc-marco-ok="' + m.id + '">Entregue</button>') + '<button class="btn fant peq" type="button" data-rc-marco-ed="' + m.id + '">Editar</button></div>' : '') + '</td></tr>'; }).join('') : '<tr><td colspan="7" class="sec">Nenhum marco ainda.</td></tr>') + '</tbody></table></div>';
   return _vTimeline() + tabela;
 };
@@ -482,10 +482,10 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-rc-s
 function quadroDe(chave){ return D.quadros[chave] || (D.quadros[chave] = {els:[]}); }
 function infoRegistro(ref){
   const [t, id] = ref.split(':');
-  if (t === 'issue'){ const i = byId('issues', id); return i ? {nome:i.titulo, sub:tipoNome(i.tipo) + ' · ' + stNome(i.status), pct: i.status === 'done' ? 100 : null, abrir:'data-abrir-item="' + i.id + '"', st:i.status} : null; }
+  if (t === 'issue'){ const i = byId('issues', id); return i ? {nome:i.titulo, sub:tipoNome(i.tipo) + ' · ' + stNome(i.status), pct: pg2Avanco(i) ? Math.round(pg2Avanco(i) * 100) : null, abrir:'data-abrir-item="' + i.id + '"', st:i.status} : null; }
   const nome = nomeDe(ref); if (!nome) return null;
   const its = issuesEm(ref), f = its.filter(i => i.status === 'done').length;
-  return {nome, sub:({app:'Application', product:'Product', project:'Project', ws:'Workstream', client:'Client'}[t] || '') + ' · ' + f + ' de ' + its.length + ' itens', pct: its.length ? Math.round(f / its.length * 100) : 0, abrir:'data-no-ir="' + ref + '"'};
+  return {nome, sub:({app:'Application', product:'Product', project:'Project', ws:'Workstream', client:'Client'}[t] || '') + ' · ' + f + ' de ' + its.length + ' itens', pct: progressoPct(its), abrir:'data-no-ir="' + ref + '"'};
 }
 vWhiteboard = function(){
   const q = quadroDe(UI.sel), pode = podeEditar();
@@ -1299,7 +1299,7 @@ function fcCardProjeto(p){
   const st = {active:'Ativo', on_hold:'Pausado', done:'Concluído', archived:'Arquivado'}[p.status] || p.status;
   return '<button type="button" class="fc-card" data-fc-ir="' + chave + '"><span class="fc-card-top"><b>' + esc(p.nome) + '</b><span class="fc-st fc-st-' + esc(p.status) + '">' + st + '</span></span>' +
     '<span class="fc-card-num"><span><b>' + prods + '</b> produto' + (prods === 1 ? '' : 's') + '</span><span><b>' + apps + '</b> aplicaç' + (apps === 1 ? 'ão' : 'ões') + '</span><span><b>' + m.n + '</b> ite' + (m.n === 1 ? 'm' : 'ns') + '</span></span>' +
-    '<span class="fc-barra"><i style="width:' + m.prog + '%"></i></span><span class="fc-card-rod"><span>' + m.prog + '% concluído</span>' + (m.atr ? '<span class="fc-atr">' + m.atr + ' atrasado' + (m.atr === 1 ? '' : 's') + '</span>' : '') + '</span>' +
+    '<span class="fc-barra"><i style="width:' + m.prog + '%"></i></span><span class="fc-card-rod"><span>' + m.prog + '% de progresso</span>' + (m.atr ? '<span class="fc-atr">' + m.atr + ' atrasado' + (m.atr === 1 ? '' : 's') + '</span>' : '') + '</span>' +
     '<span class="fc-card-datas">' + (p.inicio ? 'Início ' + fmtData(p.inicio) : 'Sem data de início') + (p.alvo ? ' · Meta ' + fmtData(p.alvo) : '') + '</span></button>';
 }
 function fcCorpoProjetos(c){

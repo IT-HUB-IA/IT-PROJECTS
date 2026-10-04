@@ -906,6 +906,28 @@
   .pc-leg span{display:inline-flex;align-items:center;gap:6px}
   .pc-leg i{width:10px;height:10px;display:inline-block}
   .pc-rosca{display:flex;justify-content:center}
+  /* barras do cartão Itens por status: ocupam só a sobra (altura própria zero), o cartão não muda de tamanho */
+  .pc-st-c{display:flex;flex-direction:column}
+  /* a caixa das barras não tem altura própria (base 0) e devolve o espaço entre linhas: o cartão fica da mesma altura e ela ocupa só a sobra */
+  .pc-st-c > .pc-bv{flex:1 1 0;min-height:0;margin-top:-14px;position:relative}
+  .pc-st-c > .pc-bv > .pc-bv-in{top:14px}
+  /* a sobra decide o que cabe: título só com espaço, gráfico some se a sobra for pequena demais */
+  .pc-st-c > .pc-bv{container-type:size}
+  @container (max-height:170px){ .pc-bv-in .pch-tit{display:none} .pch-in{grid-template-rows:minmax(0,1fr)} }
+  @container (max-height:80px){ .pc-bv-in{display:none} }
+  .pc-bv-in{position:absolute;inset:0;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;align-items:stretch;border-top:1px solid #EEEEF1;padding-top:10px;overflow:hidden}
+  .pc-bv-col{display:grid;grid-template-rows:auto minmax(0,1fr) auto auto;justify-items:center;gap:4px;min-width:0}
+  .pc-bv-n{font-family:var(--font-display);font-weight:600;font-size:13px;font-variant-numeric:tabular-nums;color:#1F1F24}
+  .pc-bv-trilho{position:relative;width:min(28px,100%);height:100%;min-height:0;background:#F4F4F6}
+  .pc-bv-trilho i{position:absolute;left:0;right:0;bottom:0;min-height:2px}
+  .pc-bv-nome{font-size:10.5px;line-height:1.15;color:#4B4B52;text-align:center;max-width:100%;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow-wrap:normal;min-height:1.2em}
+  .pch-in{grid-template-columns:repeat(5,minmax(0,1fr));grid-template-rows:auto minmax(0,1fr)}
+  .pc-bv-st{grid-template-columns:repeat(6,minmax(0,1fr))}
+  .pc-bv-st .pc-bv-nome{font-size:10px;letter-spacing:-.01em}
+  .pch-tit{grid-column:1/-1;display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap;font-size:12px;color:#1F1F24}
+  .pch-tit small{font-size:11px;color:#6B6B72}
+  .pch-tit em{font-style:normal;color:#B00000;font-weight:600}
+  .pc-bv-vale{font-family:var(--font-mono);font-size:10px;color:#6B6B72;white-space:nowrap}
   .rosca{width:180px;height:180px}
   .rosca .r-num{font-family:var(--font-display);font-size:30px;font-weight:600;fill:var(--preto)}
   .rosca .r-rot{font-family:var(--font-mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;fill:#6B6B72}
@@ -4701,6 +4723,20 @@ const pct = (a, b) => (b ? Math.round(a / b * 100) : 0) + '%';
 function kpiTile(cls, rot, valor, frac, legenda, info){
   return '<div class="pc-k ' + cls + '"><div class="pc-k-top"><i></i><span>' + esc(rot) + (info ? I(info) : '') + '</span></div><b>' + valor + '</b>' + (frac === null ? '<div class="pc-k-bar nulo"></div>' : '<div class="pc-k-bar"><i style="width:' + Math.min(100, frac * 100) + '%"></i></div>') + '<small>' + esc(legenda) + '</small></div>';
 }
+/* barras em pé no espaço que sobra do cartão "Itens por status": quantos itens há em cada situação e quanto cada um vale
+   na conta do progresso. A caixa não tem altura própria (as barras ocupam só a sobra), então o cartão não cresce. */
+function pcBarrasStatus(lista, CORES){
+  if (!lista.length) return '';
+  const lin = STATUS.map(s => { const its = lista.filter(i => i.status === s.id);
+    const vale = its.length && typeof pg2Avanco === 'function' ? Math.round(its.reduce((t, i) => t + pg2Avanco(i), 0) / its.length * 100) : (s.id === 'done' ? 100 : 0);
+    return {s, n:its.length, vale}; });
+  const max = Math.max(1, ...lin.map(x => x.n));
+  return '<div class="pc-bv" aria-label="Itens por status e quanto cada um vale no progresso"><div class="pc-bv-in pch-in pc-bv-st">' +
+    '<div class="pch-tit"><b>Quanto cada situação vale no progresso</b><small>o número de baixo</small></div>' + lin.map(x =>
+    '<div class="pc-bv-col" title="' + esc(x.s.nome + ': ' + x.n + (x.n === 1 ? ' item' : ' itens') + ' · cada um vale ' + x.vale + '% no progresso') + '">' +
+      '<span class="pc-bv-n">' + x.n + '</span><span class="pc-bv-trilho"><i style="height:' + (x.n / max * 100).toFixed(1) + '%;background:' + CORES[x.s.id] + '"></i></span>' +
+      '<span class="pc-bv-nome">' + esc(({backlog:'Criado', todo:'Prioriz.', doing:'Andando', review:'P/ testar', blocked:'Travado', done:'Aceito'})[x.s.id] || x.s.nome) + '</span><span class="pc-bv-vale">' + x.vale + '%</span></div>').join('') + '</div></div>';
+}
 function painelCards(chave, lista, filhos, opts){
   const qt = s => lista.filter(i => (Array.isArray(s) ? s.includes(i.status) : i.status === s)).length;
   const total = lista.length, afazer = qt(['backlog','todo']), andamento = qt(['doing','review']), bloq = qt('blocked'), feitos = qt('done');
@@ -4755,8 +4791,8 @@ function painelCards(chave, lista, filhos, opts){
     '<div class="pc-l3">' +
       (typeof progressoPartesHTML === 'function' ? progressoPartesHTML(chave, nos, filhos.length ? rotNos.replace(/s$/, '').replace(/õe$/, 'ão').replace(/ões$/, 'ão') : 'parte', opts) :
       '<section class="pc-c"><h3>Progresso por ' + (filhos.length ? rotNos.replace(/s$/, '').replace(/õe$/, 'ão').replace(/ões$/, 'ão') : 'parte') + '<span>' + nos.length + '</span></h3><div class="pp">' + barrasParte + '</div><div class="pc-leg"><span><i style="background:#1E8E3E"></i>Concluído</span><span><i style="background:#C26A00"></i>Em andamento</span><span><i style="background:#E00000"></i>Bloqueado</span><span><i style="background:#EEEEF1"></i>A fazer</span></div></section>') +
-      '<section class="pc-c"><h3>Itens por status</h3><div class="pc-rosca-l"><div class="pc-rosca">' + rosca(STATUS.map(s => [s.nome, qt(s.id), CORES[s.id]]), (total ? Math.round(feitos / total * 100) : 0) + '%', 'concluído') + '<ul class="pc-st">' + STATUS.map(s => '<li><i style="background:' + CORES[s.id] + '"></i><span>' + esc(s.nome) + '</span><b>' + qt(s.id) + '</b><small>' + pct(qt(s.id), total) + '</small></li>').join('') + '</ul></div></section>' +
-      '<section class="pc-c"><h3>Linha do tempo · 14 dias<span>' + semana + (semana === 1 ? ' concluído' : ' concluídos') + ' na semana</span></h3><div class="pc-dias">' + dias.map((x, k) => '<div class="pc-dia' + (k === 13 ? ' hoje' : '') + (x.d.getDay() === 0 || x.d.getDay() === 6 ? ' fds' : '') + '" title="' + fmt(iso(x.d)) + ': ' + x.concl + ' concluídos, ' + x.outras + ' outras mudanças"><i class="o" style="height:' + (x.outras / maxD * 100) + '%"></i><i class="c" style="height:' + (x.concl / maxD * 100) + '%"></i></div>').join('') + '</div><div class="pc-eixo">' + dias.map((x, k) => '<span' + (k === 13 ? ' class="hoje"' : '') + '><b>' + 'DSTQQSS'[x.d.getDay()] + '</b>' + x.d.getDate() + '</span>').join('') + '</div><div class="pc-leg"><span><i style="background:#1E8E3E"></i>Concluídos</span><span><i style="background:#2563EB"></i>Outras mudanças</span></div></section>' +
+      '<section class="pc-c pc-st-c"><h3>Itens por status</h3><div class="pc-rosca-l"><div class="pc-rosca">' + rosca(STATUS.map(s => [s.nome, qt(s.id), CORES[s.id]]), (typeof progressoPct === 'function' ? progressoPct(lista) : (total ? Math.round(feitos / total * 100) : 0)) + '%', 'progresso') + '<ul class="pc-st">' + STATUS.map(s => '<li><i style="background:' + CORES[s.id] + '"></i><span>' + esc(s.nome) + '</span><b>' + qt(s.id) + '</b><small>' + pct(qt(s.id), total) + '</small></li>').join('') + '</ul></div></div>' + pcBarrasStatus(lista, CORES) + '</section>' +
+      '<section class="pc-c pc-st-c"><h3>Linha do tempo · 14 dias<span>' + semana + (semana === 1 ? ' concluído' : ' concluídos') + ' na semana</span></h3><div class="pc-dias">' + dias.map((x, k) => '<div class="pc-dia' + (k === 13 ? ' hoje' : '') + (x.d.getDay() === 0 || x.d.getDay() === 6 ? ' fds' : '') + '" title="' + fmt(iso(x.d)) + ': ' + x.concl + ' concluídos, ' + x.outras + ' outras mudanças"><i class="o" style="height:' + (x.outras / maxD * 100) + '%"></i><i class="c" style="height:' + (x.concl / maxD * 100) + '%"></i></div>').join('') + '</div><div class="pc-eixo">' + dias.map((x, k) => '<span' + (k === 13 ? ' class="hoje"' : '') + '><b>' + 'DSTQQSS'[x.d.getDay()] + '</b>' + x.d.getDate() + '</span>').join('') + '</div><div class="pc-leg"><span><i style="background:#1E8E3E"></i>Concluídos</span><span><i style="background:#2563EB"></i>Outras mudanças</span></div>' + (typeof pchParadosHTML === 'function' ? pchParadosHTML(lista) : '') + '</section>' +
     '</div>' +
     '<div class="pc-l4">' +
       '<section class="pc-c"><h3>Avisos<span>' + avisos.length + '</span></h3>' + (avisos.length ? '<ul class="pc-lista">' + avisos.map(([cor, t, it]) => '<li' + (it ? ' data-abrir-item="' + it + '" class="clicavel"' : '') + '><i style="background:' + cor + '"></i><span>' + esc(t) + '</span></li>').join('') + '</ul>' : '<p class="pc-vazio">Nenhum aviso. Está tudo em dia.</p>') + '</section>' +
@@ -6284,7 +6320,7 @@ abrirItem = function(id){
   const filhos = D.issues.filter(x => x.pai === i.id && !x.arquivado);
   const feitos = filhos.filter(x => x.status === 'done').length;
   const secFilhos = FILHO_DE[i.tipo] ? '<section class="g-sec"><h4>Child issues' + I('Child issues (itens filhos): as partes menores deste item. O progresso aqui soma quantos filhos já foram concluídos.') + (filhos.length ? '<span class="g-cont">' + feitos + ' de ' + filhos.length + '</span>' : '') + '</h4>' +
-    (filhos.length ? '<div class="progresso" style="margin-bottom:6px"><i style="width:' + (feitos / filhos.length * 100) + '%"></i></div><ul class="g-lista">' + filhos.map(x => '<li class="g-link">' + tipoHTML(x.tipo) + '<button class="g-lk-nome" type="button" data-abrir-item="' + x.id + '">' + esc(x.titulo) + '</button>' + statusItemHTML(x) + '</li>').join('') + '</ul>' : '<p class="sec" style="margin:0 0 6px;font-size:13px">Nenhum item dentro deste ainda.</p>') +
+    (filhos.length ? '<div class="progresso" style="margin-bottom:6px" title="' + progressoPct(filhos) + '% de progresso"><i style="width:' + progressoPct(filhos) + '%"></i></div><ul class="g-lista">' + filhos.map(x => '<li class="g-link">' + tipoHTML(x.tipo) + '<button class="g-lk-nome" type="button" data-abrir-item="' + x.id + '">' + esc(x.titulo) + '</button>' + statusItemHTML(x) + '</li>').join('') + '</ul>' : '<p class="sec" style="margin:0 0 6px;font-size:13px">Nenhum item dentro deste ainda.</p>') +
     (pode ? '<form class="g-add" data-rc-form="filho"><input class="campo" name="t" placeholder="Novo ' + esc(tipoNome(FILHO_DE[i.tipo])) + ' dentro deste"><button class="btn sec peq" type="submit">Criar</button></form>' : '') + '</section>' : '';
   // campos personalizados
   const campos = camposDoEscopo(chaveWs);
@@ -6430,7 +6466,7 @@ vTimeline = function(){
     '<div class="tabela-rolo"><table class="tabela"><thead><tr><th>Nome</th><th>Tipo</th><th>Data</th><th>Onde</th><th>Progresso</th><th>Cliente vê</th><th></th></tr></thead><tbody>' +
     (ms.length ? ms.map(m => { const its = itensDo(m), f = its.filter(i => i.status === 'done').length; const atr = !m.entregue && parse(m.data) < HOJE;
       return '<tr><th scope="row">' + esc(m.nome) + (m.desc ? '<div class="sec" style="font-family:var(--font-body);font-size:12px;font-weight:400">' + esc(m.desc) + '</div>' : '') + '</th><td>' + (m.tipo === 'release' ? 'Release' : 'Milestone') + '</td><td' + (atr ? ' class="atraso"' : '') + '>' + fmt(m.data) + (m.entregue ? '<div class="sec" style="font-size:11px">entregue em ' + fmt(m.entregue) + '</div>' : '') + '</td><td>' + esc(nomeDe(m.no)) + '</td>' +
-        '<td>' + (its.length ? '<div class="progresso"><i style="width:' + (f / its.length * 100) + '%"></i></div><span class="sec" style="font-size:12px">' + f + ' de ' + its.length + ' itens</span>' : '<span class="sec" style="font-size:12px">Nenhum item ligado</span>') + '</td><td>' + (m.vis ? 'Sim' : 'Não') + '</td>' +
+        '<td>' + (its.length ? '<div class="progresso"><i style="width:' + progressoPct(its) + '%"></i></div><span class="sec" style="font-size:12px">' + progressoPct(its) + '% · ' + f + ' de ' + its.length + ' aceitos</span>' : '<span class="sec" style="font-size:12px">Nenhum item ligado</span>') + '</td><td>' + (m.vis ? 'Sim' : 'Não') + '</td>' +
         '<td>' + (pode ? '<div class="acoes">' + (m.entregue ? '' : '<button class="btn sec peq" type="button" data-rc-marco-ok="' + m.id + '">Entregue</button>') + '<button class="btn fant peq" type="button" data-rc-marco-ed="' + m.id + '">Editar</button></div>' : '') + '</td></tr>'; }).join('') : '<tr><td colspan="7" class="sec">Nenhum marco ainda.</td></tr>') + '</tbody></table></div>';
   return _vTimeline() + tabela;
 };
@@ -6485,10 +6521,10 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-rc-s
 function quadroDe(chave){ return D.quadros[chave] || (D.quadros[chave] = {els:[]}); }
 function infoRegistro(ref){
   const [t, id] = ref.split(':');
-  if (t === 'issue'){ const i = byId('issues', id); return i ? {nome:i.titulo, sub:tipoNome(i.tipo) + ' · ' + stNome(i.status), pct: i.status === 'done' ? 100 : null, abrir:'data-abrir-item="' + i.id + '"', st:i.status} : null; }
+  if (t === 'issue'){ const i = byId('issues', id); return i ? {nome:i.titulo, sub:tipoNome(i.tipo) + ' · ' + stNome(i.status), pct: pg2Avanco(i) ? Math.round(pg2Avanco(i) * 100) : null, abrir:'data-abrir-item="' + i.id + '"', st:i.status} : null; }
   const nome = nomeDe(ref); if (!nome) return null;
   const its = issuesEm(ref), f = its.filter(i => i.status === 'done').length;
-  return {nome, sub:({app:'Application', product:'Product', project:'Project', ws:'Workstream', client:'Client'}[t] || '') + ' · ' + f + ' de ' + its.length + ' itens', pct: its.length ? Math.round(f / its.length * 100) : 0, abrir:'data-no-ir="' + ref + '"'};
+  return {nome, sub:({app:'Application', product:'Product', project:'Project', ws:'Workstream', client:'Client'}[t] || '') + ' · ' + f + ' de ' + its.length + ' itens', pct: progressoPct(its), abrir:'data-no-ir="' + ref + '"'};
 }
 vWhiteboard = function(){
   const q = quadroDe(UI.sel), pode = podeEditar();
@@ -7290,7 +7326,7 @@ function fcCardProjeto(p){
   const st = {active:'Ativo', on_hold:'Pausado', done:'Concluído', archived:'Arquivado'}[p.status] || p.status;
   return '<button type="button" class="fc-card" data-fc-ir="' + chave + '"><span class="fc-card-top"><b>' + esc(p.nome) + '</b><span class="fc-st fc-st-' + esc(p.status) + '">' + st + '</span></span>' +
     '<span class="fc-card-num"><span><b>' + prods + '</b> produto' + (prods === 1 ? '' : 's') + '</span><span><b>' + apps + '</b> aplicaç' + (apps === 1 ? 'ão' : 'ões') + '</span><span><b>' + m.n + '</b> ite' + (m.n === 1 ? 'm' : 'ns') + '</span></span>' +
-    '<span class="fc-barra"><i style="width:' + m.prog + '%"></i></span><span class="fc-card-rod"><span>' + m.prog + '% concluído</span>' + (m.atr ? '<span class="fc-atr">' + m.atr + ' atrasado' + (m.atr === 1 ? '' : 's') + '</span>' : '') + '</span>' +
+    '<span class="fc-barra"><i style="width:' + m.prog + '%"></i></span><span class="fc-card-rod"><span>' + m.prog + '% de progresso</span>' + (m.atr ? '<span class="fc-atr">' + m.atr + ' atrasado' + (m.atr === 1 ? '' : 's') + '</span>' : '') + '</span>' +
     '<span class="fc-card-datas">' + (p.inicio ? 'Início ' + fmtData(p.inicio) : 'Sem data de início') + (p.alvo ? ' · Meta ' + fmtData(p.alvo) : '') + '</span></button>';
 }
 function fcCorpoProjetos(c){
@@ -10991,7 +11027,7 @@ async function mtGravar(tabela, op, linha, filtro){
 function mtProgressoResultado(r, dados){
   if (r.medida === 'itens'){
     const its = dados.itens.filter(x => x.resultado_id === r.id).map(x => byId('issues', x.item_id)).filter(Boolean);
-    return {p:its.length ? its.filter(i => i.status === 'done').length / its.length : 0, txt:its.filter(i => i.status === 'done').length + ' de ' + its.length + ' itens', itens:its};
+    return {p:progressoPct(its) / 100, txt:progressoPct(its) + '% · ' + its.filter(i => i.status === 'done').length + ' de ' + its.length + ' aceitos', itens:its};
   }
   const den = (+r.alvo - +r.inicial) || 1;
   return {p:Math.max(0, Math.min(1, (+r.atual - +r.inicial) / den)), txt:(+r.atual).toLocaleString('pt-BR') + ' de ' + (+r.alvo).toLocaleString('pt-BR') + (r.unidade ? ' ' + r.unidade : '')};
@@ -11216,7 +11252,7 @@ function rlPortfolio(){
     return {p, ch, its, feitos, abertos, prox, cli, s, atr:abertos.filter(atrasado).length};
   }).sort((a, b) => ({risco:0, atencao:1, rumo:2, off:3}[a.s[0]] - {risco:0, atencao:1, rumo:2, off:3}[b.s[0]]) || a.p.nome.localeCompare(b.p.nome));
   return '<section class="pc-c rl-port"><h3>Portfólio<span>' + linhas.length + ' projetos</span>' + I('Portfólio: todos os projetos numa tabela só, os que precisam de atenção primeiro. Clique num projeto para abrir.') + '</h3><div class="tabela-rolo"><table class="tabela rl-port-t"><thead><tr><th>Projeto</th><th>Situação</th><th>Progresso</th><th class="num">Em aberto</th><th class="num">Atrasados</th><th>Próxima versão</th></tr></thead><tbody>' +
-    linhas.map(x => '<tr class="clicavel" data-rl-ir="' + esc(x.ch) + '" tabindex="0"><th scope="row">' + esc(x.p.nome) + (x.cli ? '<small>' + esc(x.cli.nome) + '</small>' : '') + '</th><td><span class="mt-selo rl-s-' + x.s[0] + '">' + x.s[1] + '</span></td><td>' + (x.its.length ? rlBarra(x.feitos / x.its.length, 'fina') + '<small>' + x.feitos + ' de ' + x.its.length + '</small>' : '<small>sem itens</small>') + '</td><td class="num">' + x.abertos.length + '</td><td class="num' + (x.atr ? ' rl-ruim' : '') + '">' + x.atr + '</td><td>' + (x.prox ? esc(x.prox.nome) + '<small' + (parse(x.prox.data) < HOJE ? ' class="rl-ruim"' : '') + '>' + fmt(x.prox.data) + '</small>' : '<small>nenhuma</small>') + '</td></tr>').join('') +
+    linhas.map(x => '<tr class="clicavel" data-rl-ir="' + esc(x.ch) + '" tabindex="0"><th scope="row">' + esc(x.p.nome) + (x.cli ? '<small>' + esc(x.cli.nome) + '</small>' : '') + '</th><td><span class="mt-selo rl-s-' + x.s[0] + '">' + x.s[1] + '</span></td><td>' + (x.its.length ? rlBarra(progressoPct(x.its) / 100, 'fina') + '<small>' + progressoPct(x.its) + '% · ' + x.feitos + ' de ' + x.its.length + ' aceitos</small>' : '<small>sem itens</small>') + '</td><td class="num">' + x.abertos.length + '</td><td class="num' + (x.atr ? ' rl-ruim' : '') + '">' + x.atr + '</td><td>' + (x.prox ? esc(x.prox.nome) + '<small' + (parse(x.prox.data) < HOJE ? ' class="rl-ruim"' : '') + '>' + fmt(x.prox.data) + '</small>' : '<small>nenhuma</small>') + '</td></tr>').join('') +
     '</tbody></table></div></section>';
 }
 const _rOverviewRl = rOverview;
@@ -11260,7 +11296,7 @@ function pnWidget(k){
     return ms.length ? '<ul class="pn-metas">' + ms.slice(0, 5).map(m => { const x = mtDaMeta(m, dados); return '<li><div><b>' + esc(m.titulo) + '</b><span class="mt-selo rl-s-' + x.sit[0] + '">' + x.sit[1] + '</span></div>' + rlBarra(x.p, 'fina') + '<small>' + rlPct(x.p) + '% · até ' + fmt(m.fim) + '</small></li>'; }).join('') + '</ul>' : '<p class="pn-vazio">Nenhuma meta ativa nos seus projetos. Crie na aba Metas de um projeto.</p>';
   }
   if (k === 'projetos'){ const ids = [...new Set(meus.map(i => (appDe(i) || {}).project).filter(Boolean))]; const pjs = ids.map(id => byId('projects', id)).filter(Boolean);
-    return pjs.length ? '<ul class="pn-proj">' + pjs.map(p => { const its = issuesEm('project:' + p.id), f = its.filter(i => i.status === 'done').length, s = rlSaude(its); return '<li class="clicavel" data-rl-ir="project:' + esc(p.id) + '" tabindex="0"><div><b>' + esc(p.nome) + '</b><span class="mt-selo rl-s-' + s[0] + '">' + s[1] + '</span></div>' + rlBarra(its.length ? f / its.length : 0, 'fina') + '<small>' + f + ' de ' + its.length + ' itens · ' + rlMeus().filter(i => i.status !== 'done' && (appDe(i) || {}).project === p.id).length + ' com você</small></li>'; }).join('') + '</ul>' : '<p class="pn-vazio">Você ainda não tem itens em nenhum projeto.</p>'; }
+    return pjs.length ? '<ul class="pn-proj">' + pjs.map(p => { const its = issuesEm('project:' + p.id), f = its.filter(i => i.status === 'done').length, s = rlSaude(its); return '<li class="clicavel" data-rl-ir="project:' + esc(p.id) + '" tabindex="0"><div><b>' + esc(p.nome) + '</b><span class="mt-selo rl-s-' + s[0] + '">' + s[1] + '</span></div>' + rlBarra(progressoPct(its) / 100, 'fina') + '<small>' + progressoPct(its) + '% · ' + f + ' de ' + its.length + ' aceitos · ' + rlMeus().filter(i => i.status !== 'done' && (appDe(i) || {}).project === p.id).length + ' com você</small></li>'; }).join('') + '</ul>' : '<p class="pn-vazio">Você ainda não tem itens em nenhum projeto.</p>'; }
   return '';
 }
 function pnContagem(k){
@@ -21026,7 +21062,8 @@ if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {no
    - Conta só itens de trabalho (história, tarefa, bug...), nunca épico: o épico é a soma dos filhos.
    - Pesa pelos pontos; item sem pontos vale a média de pontos da lista (ou 1, se ninguém tem pontos).
    - Cinco faixas: Aceito · Pronto, falta aceitar (em revisão) · Em andamento · Bloqueado · A fazer.
-   - Dois números: % aceito (entregue de verdade) e % construído (aceito + pronto, falta aceitar).
+   - Três números: % de progresso (conta o trabalho em andamento, ver pg2Avanco), % aceito (entregue de verdade)
+     e % construído (aceito + pronto, falta aceitar). O número grande é o progresso.
    A mesma conta vale no painel, na tabela "Por parte" e na saúde (metricas), para os números nunca brigarem.
    ===================================================================== */
 const PG2_FAIXAS = [
@@ -21037,6 +21074,32 @@ const PG2_FAIXAS = [
   {k:'afazer',  nome:'A fazer',                st:['backlog','todo']}
 ];
 const pg2Trabalho = l => l.filter(i => i.tipo !== 'epic');
+/* quanto de um item já foi feito (0 a 1):
+   aceito 1 · pronto, falta aceitar 0,9 · em andamento ou bloqueado: a parte feita dos subitens (ou da checklist
+   e dos critérios), entre 0,1 e 0,85; sem nada para medir, 0,5 · a fazer: 0, a não ser que já tenha subitens andando */
+function pg2Avanco(i, _vistos){
+  if (!i) return 0;
+  if (i.status === 'done') return 1;
+  if (i.status === 'review') return 0.9;
+  const vistos = _vistos || new Set(); vistos.add(i.id);
+  const filhos = (D.issues || []).filter(x => x.pai === i.id && !x.arquivado && !vistos.has(x.id));
+  let parte = null;
+  if (filhos.length) parte = filhos.reduce((s, x) => s + pg2Avanco(x, vistos), 0) / filhos.length;
+  else {
+    const ck = (i.check || []).filter(c => String(c.t || '').trim()), cr = (typeof poCrit === 'function' ? poCrit(i) : []).filter(c => String(c.t || '').trim());
+    const n = ck.length + cr.length; if (n) parte = (ck.filter(c => c.f).length + cr.filter(c => c.f).length) / n;
+  }
+  if (i.status === 'doing' || i.status === 'blocked') return parte === null ? 0.5 : Math.min(0.85, Math.max(0.1, parte));
+  return filhos.length && parte ? Math.min(0.85, parte) : 0;
+}
+// progresso (0 a 100) de uma lista qualquer, com a mesma regra: sem épicos quando há itens de trabalho, pesado pelos pontos
+function progressoPct(lista){
+  const l = (lista || []).filter(Boolean); if (!l.length) return 0;
+  const t = pg2Trabalho(l), base = t.length ? t : l;
+  const comPts = base.filter(i => +i.pontos > 0), media = comPts.length ? comPts.reduce((s, i) => s + +i.pontos, 0) / comPts.length : 1;
+  const peso = i => +i.pontos > 0 ? +i.pontos : media, total = base.reduce((s, i) => s + peso(i), 0);
+  return total ? Math.round(base.reduce((s, i) => s + peso(i) * pg2Avanco(i), 0) / total * 100) : 0;
+}
 function progressoDe(lista){
   const l = pg2Trabalho(lista || []);
   const comPts = l.filter(i => +i.pontos > 0), media = comPts.length ? comPts.reduce((s, i) => s + +i.pontos, 0) / comPts.length : 1;
@@ -21049,14 +21112,15 @@ function progressoDe(lista){
   const pc = k => total ? f[k].pts / total * 100 : 0;
   const crit = {t:0, f:0}; if (typeof poCrit === 'function') l.forEach(i => poCrit(i).forEach(c => { if (String(c.t || '').trim()){ crit.t++; if (c.f) crit.f++; } }));
   const limite = dAdd(HOJE, -14);
-  return {n:l.length, total, faixas:f, pc, aceito:Math.round(pc('done')), construido:Math.round(pc('done') + pc('review')),
+  const progresso = total ? Math.round(l.reduce((s, i) => s + peso(i) * pg2Avanco(i), 0) / total * 100) : 0;
+  return {n:l.length, total, faixas:f, pc, progresso, aceito:Math.round(pc('done')), construido:Math.round(pc('done') + pc('review')),
     atrasados:l.filter(atrasado).length, semPontos:l.length - comPts.length, crit, aceitos14:l.filter(i => i.status === 'done' && i.feito && parse(i.feito) > limite).length};
 }
 const pg2Num = v => (Math.round(v * 10) / 10).toLocaleString('pt-BR');
 // o que não cabe na linha vai no texto ao passar o mouse
 function pg2Detalhe(nome, p){
   if (!p.n) return nome + ': sem itens';
-  return nome + ' · ' + PG2_FAIXAS.map(x => x.nome + ' ' + p.faixas[x.k].n + ' (' + Math.round(p.pc(x.k)) + '%)').join(' · ') +
+  return nome + ' · Progresso ' + p.progresso + '% · ' + PG2_FAIXAS.map(x => x.nome + ' ' + p.faixas[x.k].n + ' (' + Math.round(p.pc(x.k)) + '%)').join(' · ') +
     (p.atrasados ? ' · ' + p.atrasados + ' atrasados' : '') + (p.semPontos ? ' · ' + p.semPontos + ' sem pontos' : '') +
     (p.crit.t ? ' · ' + p.crit.f + ' de ' + p.crit.t + ' critérios comprovados' : '') + ' · ' + (p.aceitos14 ? p.aceitos14 + ' aceitos em 14 dias' : 'nenhum aceito em 14 dias');
 }
@@ -21066,7 +21130,7 @@ function pg2Linha(no, nome, p){
   return '<button type="button" class="pp-lin pg2-lin' + (p.n ? '' : ' vazia') + '" data-ir="' + esc(no) + '" title="' + esc(pg2Detalhe(nome, p)) + '">' +
     '<span class="pp-nome">' + esc(nome) + (alerta ? '<small class="pg2-alerta">' + esc(alerta) + '</small>' : '') + '</span>' +
     '<span class="pp-bar pg2-bar">' + (p.n ? PG2_FAIXAS.filter(x => p.faixas[x.k].n).map(x => '<i class="pg2-' + x.k + '" style="flex:' + p.faixas[x.k].pts.toFixed(3) + ' 1 0" data-pg2-no="' + esc(no) + '" data-pg2-st="' + x.k + '" title="' + esc(x.nome + ': ' + p.faixas[x.k].n + (p.faixas[x.k].n === 1 ? ' item' : ' itens') + ' · ' + pg2Num(p.faixas[x.k].pts) + ' pontos (' + Math.round(p.pc(x.k)) + '%). Clique para ver a lista.') + '"></i>').join('') : '') + '</span>' +
-    '<b>' + (p.n ? p.aceito + '%<small>' + p.construido + '% constr.</small>' : '–<small>sem itens</small>') + '</b></button>';
+    '<b>' + (p.n ? p.progresso + '%<small>' + p.aceito + '% aceito</small>' : '–<small>sem itens</small>') + '</b></button>';
 }
 // o cartão: mesma estrutura do de antes (título, uma linha por parte, legenda); o total vai na legenda
 function progressoPartesHTML(chave, nos, rot, opts){
@@ -21076,13 +21140,13 @@ function progressoPartesHTML(chave, nos, rot, opts){
   return '<section class="pc-c pg2"><h3>Progresso por ' + esc(rot) + '<span>' + nos.length + '</span></h3>' +
     '<div class="pp">' + linhas.map(x => pg2Linha(x.f, nomeDe(x.f), x.p)).join('') + '</div>' +
     '<div class="pc-leg pg2-leg">' + PG2_FAIXAS.map(x => '<span><i class="pg2-' + x.k + '"></i>' + esc(x.nome) + '</span>').join('') +
-    '<span class="pg2-tot" title="' + esc(pg2Detalhe('Total', tudo)) + '">Total: <b>' + tudo.aceito + '%</b> aceito · <b>' + tudo.construido + '%</b> construído' + I('Conta só itens de trabalho (épico não conta: ele é a soma dos filhos), pesados pelos pontos; item sem pontos vale a média. Aceito: o P.O. aceitou. Construído: aceito mais o que está pronto e falta aceitar. Passe o mouse numa linha para ver o detalhe; clique numa cor para ver a lista.') + '</span></div></section>';
+    '<span class="pg2-tot" title="' + esc(pg2Detalhe('Total', tudo)) + '">Total: <b>' + tudo.progresso + '%</b> de progresso · <b>' + tudo.aceito + '%</b> aceito' + I('Conta só itens de trabalho (épico não conta: ele é a soma dos filhos), pesados pelos pontos; item sem pontos vale a média. Progresso: aceito vale 100%, pronto e faltando aceitar 90%, em andamento ou bloqueado a parte já feita dos subitens, da checklist e dos critérios (sem nada para medir, metade), a fazer 0%. Aceito: só o que o P.O. aceitou. Passe o mouse numa linha para ver o detalhe; clique numa cor para ver a lista.') + '</span></div></section>';
 }
 // a saúde e a tabela "Por parte" usam a mesma conta (sem épicos, pesada pelos pontos)
 const _metricasPg2 = metricas;
 metricas = function(lista){
   const m = _metricasPg2(pg2Trabalho(lista || [])), p = progressoDe(lista);
-  m.prog = p.aceito; m.construido = p.construido; m.and = p.faixas.doing.n + p.faixas.review.n;
+  m.prog = p.progresso; m.aceito = p.aceito; m.construido = p.construido; m.and = p.faixas.doing.n + p.faixas.review.n;
   return m;
 };
 // clique numa faixa: abre a lista daquela parte, já filtrada naquela situação
@@ -21095,7 +21159,71 @@ document.addEventListener('click', e => {
   salvarUI();
   if (UI.modulo !== 'operacoes') abrirModulo('operacoes'); else rOperacoes();
 }, true);
-if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {progressoDe, progressoPartesHTML});
+if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {progressoDe, progressoPartesHTML, pg2Avanco, progressoPct});
+
+/* =====================================================================
+   Painel: linha do tempo com o histórico de verdade e o indicador "parados há quanto tempo". Prefixo pch.
+   - Com o banco, as mudanças dos itens ficam em itens_historico (gravado pelos gatilhos do banco). A linha do tempo
+     lia só D.eventos (que existe só nos dados de exemplo), por isso ficava vazia. Aqui ela passa a ler o histórico.
+   - "Parados há quanto tempo": o que está em andamento, pronto para testar ou travado, separado pelos dias desde a
+     última mudança de situação. Mostra o trabalho esquecido antes que vire atraso.
+   ===================================================================== */
+const PCH = {hist:null, lendo:false, em:0};
+const PCH_DIAS = 60;
+
+async function pchLer(forcar){
+  const sb = window.ciclodevBanco;
+  if (!sb || typeof BANCO === 'undefined' || !BANCO.carregado || PCH.lendo) return;
+  if (PCH.hist && !forcar && Date.now() - PCH.em < 60000) return;
+  PCH.lendo = true;
+  try {
+    const desde = new Date(Date.now() - PCH_DIAS * 864e5).toISOString(), todas = [];
+    for (let de = 0; de < 20000; de += 1000){
+      const {data, error} = await sb.from('itens_historico').select('item_id,tipo,para,criado_em').gte('criado_em', desde).order('criado_em', {ascending:false}).range(de, de + 999);
+      if (error){ console.warn('Histórico do painel', error.message); break; }
+      todas.push(...(data || [])); if (!data || data.length < 1000) break;
+    }
+    PCH.hist = todas; PCH.em = Date.now();
+  } finally { PCH.lendo = false; }
+  if (UI.modulo === 'overview' && typeof rOverview === 'function') rOverview();
+}
+
+// a linha do tempo usa o histórico do banco quando ele existe; nos dados de exemplo continua com D.eventos
+const _eventosEmPch = eventosEm;
+eventosEm = function(chave, lista){
+  if (!PCH.hist) { pchLer(); return _eventosEmPch(chave, lista); }
+  const ids = new Set(lista.map(i => i.id));
+  return PCH.hist.filter(h => ids.has(h.item_id)).map(h => ({item:h.item_id, tipo:h.tipo === 'situacao' && h.para === 'done' ? 'concluiu' : h.tipo === 'situacao' ? 'status' : 'edicao', quando:new Date(h.criado_em).getTime()}));
+};
+
+// última mudança de situação de cada item (histórico do banco; sem ele, a data de início ou de criação)
+function pchUltimaMudanca(i){
+  if (PCH.hist){ const h = PCH.hist.find(x => x.item_id === i.id && x.tipo === 'situacao'); if (h) return new Date(h.criado_em); }
+  const ev = (D.eventos || []).filter(e => e.item === i.id && (e.tipo === 'status' || e.tipo === 'criou')).sort((a, b) => b.quando - a.quando)[0];
+  if (ev) return new Date(ev.quando);
+  const d = i.iniciado || i.ini || i.criado; return d ? parse(d) : null;
+}
+const PCH_FAIXAS = [
+  {nome:'até 2 dias', curto:'0-2 d', ate:2, cor:'#0E8A55'}, {nome:'3 a 7 dias', curto:'3-7 d', ate:7, cor:'#7FA83A'}, {nome:'8 a 14 dias', curto:'8-14 d', ate:14, cor:'#D4A300'},
+  {nome:'15 a 30 dias', curto:'15-30 d', ate:30, cor:'#E08600'}, {nome:'mais de 30 dias', curto:'+30 d', ate:Infinity, cor:'#E00000'}];
+
+function pchParadosHTML(lista){
+  const abertos = lista.filter(i => i.tipo !== 'epic' && ['doing', 'review', 'blocked'].includes(i.status));
+  if (!abertos.length) return '';
+  const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+  const dias = i => { const d = pchUltimaMudanca(i); if (!d) return Infinity; const x = new Date(d); x.setHours(0, 0, 0, 0); return Math.max(0, Math.round((hoje - x) / 864e5)); };
+  const cont = PCH_FAIXAS.map(() => 0); abertos.forEach(i => { const d = dias(i); cont[PCH_FAIXAS.findIndex(f => d <= f.ate)]++; });
+  const max = Math.max(1, ...cont), velhos = cont[3] + cont[4];
+  return '<div class="pc-bv pch" aria-label="Parados há quanto tempo"><div class="pc-bv-in pch-in">' +
+    '<div class="pch-tit"><b>Parados há quanto tempo</b><small>' + abertos.length + ' em andamento, prontos ou travados' + (velhos ? ' · <em>' + velhos + ' há mais de 2 semanas</em>' : '') + '</small></div>' +
+    PCH_FAIXAS.map((f, k) => '<div class="pc-bv-col" title="' + esc(cont[k] + (cont[k] === 1 ? ' item' : ' itens') + ' sem mudar de situação há ' + f.nome) + '">' +
+      '<span class="pc-bv-n">' + cont[k] + '</span><span class="pc-bv-trilho"><i style="height:' + (cont[k] / max * 100).toFixed(1) + '%;background:' + f.cor + '"></i></span>' +
+      '<span class="pc-bv-nome">' + esc(f.curto) + '</span></div>').join('') + '</div></div>';
+}
+
+// registra no ao vivo depois que o aovivo.js (carregado depois deste arquivo) existir
+setTimeout(() => { try { if (typeof avOuvir === 'function') avOuvir(['itens_historico'], () => pchLer(true)); } catch(e){} }, 0);
+if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {PCH, pchLer, pchParadosHTML, pchUltimaMudanca});
 
 /* ===== Estado de cada pessoa no banco (parte 52) =====
    O que antes ficava só neste navegador agora fica em pessoas_preferencias.estado (cada pessoa só lê e grava o seu):

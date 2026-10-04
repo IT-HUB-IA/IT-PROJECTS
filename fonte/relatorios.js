@@ -56,7 +56,7 @@ async function mtGravar(tabela, op, linha, filtro){
 function mtProgressoResultado(r, dados){
   if (r.medida === 'itens'){
     const its = dados.itens.filter(x => x.resultado_id === r.id).map(x => byId('issues', x.item_id)).filter(Boolean);
-    return {p:its.length ? its.filter(i => i.status === 'done').length / its.length : 0, txt:its.filter(i => i.status === 'done').length + ' de ' + its.length + ' itens', itens:its};
+    return {p:progressoPct(its) / 100, txt:progressoPct(its) + '% · ' + its.filter(i => i.status === 'done').length + ' de ' + its.length + ' aceitos', itens:its};
   }
   const den = (+r.alvo - +r.inicial) || 1;
   return {p:Math.max(0, Math.min(1, (+r.atual - +r.inicial) / den)), txt:(+r.atual).toLocaleString('pt-BR') + ' de ' + (+r.alvo).toLocaleString('pt-BR') + (r.unidade ? ' ' + r.unidade : '')};
@@ -281,7 +281,7 @@ function rlPortfolio(){
     return {p, ch, its, feitos, abertos, prox, cli, s, atr:abertos.filter(atrasado).length};
   }).sort((a, b) => ({risco:0, atencao:1, rumo:2, off:3}[a.s[0]] - {risco:0, atencao:1, rumo:2, off:3}[b.s[0]]) || a.p.nome.localeCompare(b.p.nome));
   return '<section class="pc-c rl-port"><h3>Portfólio<span>' + linhas.length + ' projetos</span>' + I('Portfólio: todos os projetos numa tabela só, os que precisam de atenção primeiro. Clique num projeto para abrir.') + '</h3><div class="tabela-rolo"><table class="tabela rl-port-t"><thead><tr><th>Projeto</th><th>Situação</th><th>Progresso</th><th class="num">Em aberto</th><th class="num">Atrasados</th><th>Próxima versão</th></tr></thead><tbody>' +
-    linhas.map(x => '<tr class="clicavel" data-rl-ir="' + esc(x.ch) + '" tabindex="0"><th scope="row">' + esc(x.p.nome) + (x.cli ? '<small>' + esc(x.cli.nome) + '</small>' : '') + '</th><td><span class="mt-selo rl-s-' + x.s[0] + '">' + x.s[1] + '</span></td><td>' + (x.its.length ? rlBarra(x.feitos / x.its.length, 'fina') + '<small>' + x.feitos + ' de ' + x.its.length + '</small>' : '<small>sem itens</small>') + '</td><td class="num">' + x.abertos.length + '</td><td class="num' + (x.atr ? ' rl-ruim' : '') + '">' + x.atr + '</td><td>' + (x.prox ? esc(x.prox.nome) + '<small' + (parse(x.prox.data) < HOJE ? ' class="rl-ruim"' : '') + '>' + fmt(x.prox.data) + '</small>' : '<small>nenhuma</small>') + '</td></tr>').join('') +
+    linhas.map(x => '<tr class="clicavel" data-rl-ir="' + esc(x.ch) + '" tabindex="0"><th scope="row">' + esc(x.p.nome) + (x.cli ? '<small>' + esc(x.cli.nome) + '</small>' : '') + '</th><td><span class="mt-selo rl-s-' + x.s[0] + '">' + x.s[1] + '</span></td><td>' + (x.its.length ? rlBarra(progressoPct(x.its) / 100, 'fina') + '<small>' + progressoPct(x.its) + '% · ' + x.feitos + ' de ' + x.its.length + ' aceitos</small>' : '<small>sem itens</small>') + '</td><td class="num">' + x.abertos.length + '</td><td class="num' + (x.atr ? ' rl-ruim' : '') + '">' + x.atr + '</td><td>' + (x.prox ? esc(x.prox.nome) + '<small' + (parse(x.prox.data) < HOJE ? ' class="rl-ruim"' : '') + '>' + fmt(x.prox.data) + '</small>' : '<small>nenhuma</small>') + '</td></tr>').join('') +
     '</tbody></table></div></section>';
 }
 const _rOverviewRl = rOverview;
@@ -325,7 +325,7 @@ function pnWidget(k){
     return ms.length ? '<ul class="pn-metas">' + ms.slice(0, 5).map(m => { const x = mtDaMeta(m, dados); return '<li><div><b>' + esc(m.titulo) + '</b><span class="mt-selo rl-s-' + x.sit[0] + '">' + x.sit[1] + '</span></div>' + rlBarra(x.p, 'fina') + '<small>' + rlPct(x.p) + '% · até ' + fmt(m.fim) + '</small></li>'; }).join('') + '</ul>' : '<p class="pn-vazio">Nenhuma meta ativa nos seus projetos. Crie na aba Metas de um projeto.</p>';
   }
   if (k === 'projetos'){ const ids = [...new Set(meus.map(i => (appDe(i) || {}).project).filter(Boolean))]; const pjs = ids.map(id => byId('projects', id)).filter(Boolean);
-    return pjs.length ? '<ul class="pn-proj">' + pjs.map(p => { const its = issuesEm('project:' + p.id), f = its.filter(i => i.status === 'done').length, s = rlSaude(its); return '<li class="clicavel" data-rl-ir="project:' + esc(p.id) + '" tabindex="0"><div><b>' + esc(p.nome) + '</b><span class="mt-selo rl-s-' + s[0] + '">' + s[1] + '</span></div>' + rlBarra(its.length ? f / its.length : 0, 'fina') + '<small>' + f + ' de ' + its.length + ' itens · ' + rlMeus().filter(i => i.status !== 'done' && (appDe(i) || {}).project === p.id).length + ' com você</small></li>'; }).join('') + '</ul>' : '<p class="pn-vazio">Você ainda não tem itens em nenhum projeto.</p>'; }
+    return pjs.length ? '<ul class="pn-proj">' + pjs.map(p => { const its = issuesEm('project:' + p.id), f = its.filter(i => i.status === 'done').length, s = rlSaude(its); return '<li class="clicavel" data-rl-ir="project:' + esc(p.id) + '" tabindex="0"><div><b>' + esc(p.nome) + '</b><span class="mt-selo rl-s-' + s[0] + '">' + s[1] + '</span></div>' + rlBarra(progressoPct(its) / 100, 'fina') + '<small>' + progressoPct(its) + '% · ' + f + ' de ' + its.length + ' aceitos · ' + rlMeus().filter(i => i.status !== 'done' && (appDe(i) || {}).project === p.id).length + ' com você</small></li>'; }).join('') + '</ul>' : '<p class="pn-vazio">Você ainda não tem itens em nenhum projeto.</p>'; }
   return '';
 }
 function pnContagem(k){

@@ -21,8 +21,16 @@ const { chromium } = require('/opt/node22/lib/node_modules/playwright');
       largura:Math.round(r.width), pai:Math.round(g.width), ocupaTudo:Math.abs(r.width - g.width) < 4}; });
   ok(t && t.linhas === t.ws && t.faixas > 0, 'o cartão mantém uma linha por frente, como antes (' + (t && t.linhas) + ' de ' + (t && t.ws) + '), com barras em faixas');
   ok(t && !t.ocupaTudo, 'o cartão continua do tamanho de antes, ao lado dos outros, sem ocupar a largura toda (' + (t && t.largura) + ' de ' + (t && t.pai) + ' px)');
-  ok(t && /%/.test(t.num) && /constr\./.test(t.num), 'cada frente mostra % aceito com % construído embaixo');
-  ok(t && /Aceito/.test(t.leg) && /Pronto, falta aceitar/.test(t.leg) && /Em andamento/.test(t.leg) && /Bloqueado/.test(t.leg) && /A fazer/.test(t.leg) && /Total: \d+% aceito · \d+% construído/.test(t.leg), 'a legenda tem as cinco faixas e o total');
+  ok(t && /%/.test(t.num) && /aceito/.test(t.num), 'cada frente mostra o % de progresso com o % aceito embaixo');
+  ok(t && /Aceito/.test(t.leg) && /Pronto, falta aceitar/.test(t.leg) && /Em andamento/.test(t.leg) && /Bloqueado/.test(t.leg) && /A fazer/.test(t.leg) && /Total: \d+% de progresso · \d+% aceito/.test(t.leg), 'a legenda tem as cinco faixas e o total');
+  // a conta: em andamento conta, pronto vale 90%, aceito 100%, a fazer 0%
+  const conta = await p.evaluate(() => { const f = window.__tf, D = window.ciclodevDados(), id = 'tst_' + Date.now();
+    const mk = (st, extra) => Object.assign({id:id + st, tipo:'task', status:st, pontos:1, pai:null, check:[]}, extra || {});
+    const r = {done:f.pg2Avanco(mk('done')), review:f.pg2Avanco(mk('review')), doing:f.pg2Avanco(mk('doing')), todo:f.pg2Avanco(mk('todo')),
+      doingCk:f.pg2Avanco(mk('doing', {check:[{t:'a', f:true}, {t:'b', f:false}]})), so_andamento:f.progressoPct([mk('doing'), mk('doing')]), vazio:f.progressoPct([])};
+    return r; });
+  ok(conta.done === 1 && conta.review === 0.9 && conta.doing === 0.5 && conta.todo === 0 && conta.doingCk === 0.5 && conta.so_andamento === 50 && conta.vazio === 0,
+    'a conta: aceito 100%, pronto 90%, em andamento conta (metade, ou a parte feita da checklist), a fazer 0%; só itens em andamento nunca dá 0% (' + JSON.stringify(conta) + ')');
   const F = process.env.FOTOS; if (F){ await p.locator('.pg2', {hasText:'Progresso por frente'}).screenshot({path: F + '/progresso.png'}); await p.locator('.pg2', {hasText:'Progresso por frente'}).evaluate(e => e.parentElement.scrollIntoView()); await p.screenshot({path: F + '/painel.png'}); }
   const alvo = await p.evaluate(() => { const i = [...document.querySelectorAll('.pg2')].find(x => /por frente/.test(x.textContent)).querySelector('.pg2-bar i'); return i ? {no:i.dataset.pg2No, st:i.dataset.pg2St} : null; });
   if (alvo){ await p.locator('.pg2', {hasText:'Progresso por frente'}).locator('.pg2-bar i[data-pg2-st="' + alvo.st + '"]').first().click(); await p.waitForTimeout(500);
