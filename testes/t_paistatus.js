@@ -34,6 +34,16 @@ const { chromium } = require('/opt/node22/lib/node_modules/playwright');
   const n = await p.evaluate(() => window.__tf.psAcertarTodos());
   ok(n >= 1 && await st('ep_v') === 'done', 'ao abrir, o épico com tudo feito é acertado para Feito (' + n + ' acertados)');
   ok(await p.evaluate(() => window.__tf.psAcertarTodos()) === 0, 'rodar de novo não muda mais nada');
+  // Aceito escolhido à mão no épico é respeitado, mesmo com subitens abertos (antes a conferência geral o voltava para Fazendo)
+  const man = await p.evaluate(() => { const T = window.__tf, D = window.ciclodevDados(), ws = D.issues.find(i => i.ws).ws;
+    D.issues.push({id:'ep_m', tipo:'epic', titulo:'Épico aceito à mão', status:'doing', ws, pai:null, check:[], links:[], coments:[], tempo:[], refs:[]},
+      {id:'sb_m1', tipo:'task', titulo:'M1', status:'doing', ws, pai:'ep_m', check:[], links:[], coments:[], tempo:[], refs:[]}, {id:'sb_m2', tipo:'task', titulo:'M2', status:'done', ws, pai:'ep_m', check:[], links:[], coments:[], tempo:[], refs:[]});
+    const ep = T.byId('issues', 'ep_m'); T.mudarStatus(ep, 'done'); const depois = ep.status; T.psAcertarTodos();
+    const conferido = ep.status; T.mudarStatus(T.byId('issues', 'sb_m1'), 'review'); const avancou = ep.status;
+    T.mudarStatus(T.byId('issues', 'sb_m2'), 'doing'); return {depois, conferido, avancou, reaberto:ep.status}; });
+  ok(man.depois === 'done' && man.conferido === 'done', 'épico posto em Aceito à mão, com subitens abertos, continua Aceito depois da conferência geral (' + JSON.stringify(man) + ')');
+  ok(man.avancou === 'done', 'um subitem que só avança (Fazendo para Pronto para testar) não tira o épico de Aceito');
+  ok(man.reaberto === 'doing', 'um subitem que estava Aceito e é reaberto ainda puxa o épico de volta para Fazendo');
   ok(!erros.length, 'sem erro na página ' + erros.join(' | '));
   await b.close(); console.log(falhas ? falhas + ' FALHA(S)' : 'TUDO OK');
 })();
