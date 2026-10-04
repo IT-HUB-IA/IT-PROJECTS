@@ -96,7 +96,9 @@ body.com-login.logado #entrada{display:none}
 .app.recolhido .menu-rodape.com-conta{height:auto;padding:10px 0;flex-direction:column;gap:8px}
 .app.recolhido .menu-rodape.com-conta .rodape-ico{display:none}
 .app.recolhido .menu-rodape.com-conta .rodape-txt{display:flex;flex-direction:column;gap:8px}
-.app.recolhido .menu-rodape.com-conta .mu-meu-id{display:flex;padding:0;flex:0 0 auto}
+.app.recolhido .menu-rodape.com-conta{align-items:center}
+.app.recolhido .menu-rodape.com-conta .rodape-txt{align-items:center}
+.app.recolhido .menu-rodape.com-conta .mu-meu-id{display:flex;padding:0;flex:0 0 auto;width:auto;margin:0;justify-content:center}
 .app.recolhido .menu-rodape.com-conta .mu-txt,.app.recolhido .menu-rodape.com-conta .rc-sino{display:none}
 
 /* coluna da marca: gestão de projetos de software */

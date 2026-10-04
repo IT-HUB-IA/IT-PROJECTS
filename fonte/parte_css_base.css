@@ -67,7 +67,9 @@
   .alternar svg{transition:transform var(--dur) var(--ease-out)}
   .app.recolhido .alternar svg{transform:scaleX(-1)}
 
-  .secao{padding:8px 0}
+  /* a lista rola quando falta altura, assim o rodapé (busca, tema, conta, sair) nunca fica cortado */
+  .secao{padding:8px 0;flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:none}
+  .secao::-webkit-scrollbar{display:none}
   .rotulo{display:flex;align-items:center;gap:14px;height:20px;padding-left:20px;font-size:11px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--nevoa);white-space:nowrap;transition:opacity var(--dur) var(--ease-out)}
   .app.recolhido .rotulo{opacity:0}
 

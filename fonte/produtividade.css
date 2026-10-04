@@ -36,7 +36,8 @@
   .pk-tema-b[aria-pressed="true"]{color:var(--branco);border-color:var(--vermelho)}
   .app.recolhido .pk-menu-botoes{flex-direction:column;padding:8px}
   .app.recolhido .pk-menu-b span,.app.recolhido .pk-menu-b kbd{display:none}
-  .app.recolhido .pk-menu-b{justify-content:center;padding:0}
+  .app.recolhido .pk-menu-botoes{align-items:center}
+  .app.recolhido .pk-menu-b,.app.recolhido .pk-menu-b[data-pk-abrir]{flex:0 0 36px;width:36px;height:36px;justify-content:center;padding:0}
 
   /* tema escuro: a área de trabalho e as janelas ganham cores invertidas; o menu já é escuro.
      Fotos, vídeos, avatares com foto e o cabeçalho (que já é escuro) voltam ao normal. */

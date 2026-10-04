@@ -1,6 +1,2 @@
-/* ===== Ao vivo: selo discreto no rodapé do menu e aviso na janela do item ===== */
-.av-selo{display:inline-flex;align-items:center;gap:5px;font-family:var(--font-mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--nevoa);white-space:nowrap;margin-left:6px}
-.av-selo::before{content:"";width:6px;height:6px;border-radius:50%;background:#2f9e5b;flex:none}
-.av-selo[data-av="religando"]::before{background:transparent;border:1px solid var(--vermelho)}
-.av-selo[data-av="off"]{display:none}
+/* ===== Ao vivo: aviso na janela do item (sem selo na tela) ===== */
 .av-aviso{margin:0 0 10px;padding:8px 10px;border-left:3px solid var(--vermelho);background:var(--preto-04);font-size:12.5px;line-height:1.4;color:var(--text-primary)}

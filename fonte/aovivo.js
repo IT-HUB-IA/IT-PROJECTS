@@ -292,17 +292,8 @@ function avRodarLivres(){
     Promise.resolve().then(f).then(() => avDevolverTela(tela)).catch(e => console.warn('Ao vivo (módulo):', e)); });
 }
 
-/* ---------- selo "ao vivo" ---------- */
-function avSelo(){
-  const chip = document.querySelector('.chip-exemplo'); if (!chip) return;
-  let s = document.querySelector('.av-selo');
-  if (!s){ s = document.createElement('span'); s.className = 'av-selo'; s.setAttribute('role', 'status'); chip.after(s); }
-  const on = AV.ligado, tentando = !on && AV.iniciado;
-  s.dataset.av = on ? 'on' : (tentando ? 'religando' : 'off');
-  s.textContent = on ? 'Ao vivo' : (tentando ? 'Reconectando' : '');
-  s.title = on ? 'As mudanças de outras pessoas aparecem sozinhas, sem recarregar.' : (tentando ? 'Sem conexão ao vivo agora. Tentando de novo; ao voltar, a tela busca o que mudou.' : '');
-  s.hidden = !AV.iniciado;
-}
+/* ---------- sem selo na tela: o estado fica só em AV.ligado ---------- */
+function avSelo(){ document.querySelectorAll('.av-selo').forEach(e => e.remove()); }
 
 /* ---------- ligações ---------- */
 if (typeof COM_BANCO !== 'undefined' && COM_BANCO){

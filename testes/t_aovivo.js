@@ -92,7 +92,7 @@ window.supabase = { createClient(){ let sess = {access_token:'x', user:{id:'u1',
   const canaisA = await A.evaluate(() => window.__canais.map(c => c.nome + (c.privado ? '' : ' (público!)')));
   const espW = conta("select espaco_id from public.nos where id = '" + app + "'");
   ok(canaisA.includes('ciclodev:' + espW) && canaisA.includes('ciclodev:p:' + will) && canaisA.every(c => !/público/.test(c)), 'William entra nos canais privados do espaço dele e no pessoal (' + canaisA.length + ' canais)');
-  ok(await A.evaluate(() => { const s = document.querySelector('.av-selo'); return !!s && s.dataset.av === 'on' && /Ao vivo/.test(s.textContent); }), 'selo "Ao vivo" aceso');
+  ok(await A.evaluate(() => window.__tf.AV ? window.__tf.AV.ligado === true && !document.querySelector('.av-selo') : !document.querySelector('.av-selo')), 'ao vivo ligado, sem selo na tela');
 
   // 2. Ana muda um item (direto no banco, como ela); a tela do William muda sozinha, sem recarregar
   await A.evaluate(a => { window.__tf.UI.sel = 'app:' + a; window.__tf.UI.view = 'table'; window.__tf.rOperacoes(); }, app); await A.waitForTimeout(400);
@@ -154,7 +154,7 @@ window.supabase = { createClient(){ let sess = {access_token:'x', user:{id:'u1',
 
   // 8. caiu e voltou: o que mudou enquanto estava fora aparece ao voltar
   await A.evaluate(() => window.__derrubar()); await A.waitForTimeout(300);
-  ok(await A.evaluate(() => document.querySelector('.av-selo').dataset.av === 'religando'), 'conexão caiu: o selo mostra "Reconectando"');
+  ok(await A.evaluate(() => !document.querySelector('.av-selo')), 'conexão caiu: nada aparece por cima do rodapé');
   psql(COMO[ana] + "update public.itens set titulo = 'Mudou enquanto estava fora' where id = '" + item + "'");
   vistos = new Set(JSON.parse(conta("select coalesce(json_agg(id), '[]') from realtime.messages")));   // estes avisos se perderam
   await A.waitForTimeout(5000);
