@@ -201,9 +201,16 @@ dialog.modal .ig{display:grid;gap:12px;max-width:640px}
 .ig h4{margin:6px 0 0;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-secondary)}
 .ig-onde{margin:0;padding:10px 12px;background:#F4F4F6;border-left:4px solid var(--vermelho);line-height:1.5}
 .ig-tipo{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-secondary);margin-left:4px}
-.ig-opcoes{display:grid;gap:6px;padding:10px 12px;border:1px solid #E6E6EA}
-.ig-opcoes label{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
-.ig-opcoes span{color:var(--text-secondary);font-size:13px}
+.ig-base{margin:0;font-size:13.5px;line-height:1.45}
+.ig-opcoes{display:grid;gap:0;border:1px solid #E6E6EA}
+.ig-opcoes label{display:grid;grid-template-columns:auto auto 1fr;gap:4px 8px;align-items:baseline;padding:8px 12px;border-top:1px solid #EFEFF2;cursor:pointer}
+.ig-opcoes label:first-child{border-top:0}
+.ig-opcoes label.ig-tudo{background:#F6F6F8}
+.ig-opcoes label span{grid-column:2 / -1;color:var(--text-secondary);font-size:13px;line-height:1.4}
+.ig-opcoes label.ig-tudo span{grid-column:auto}
+.ig-opcoes label.ig-off b{color:var(--text-secondary)}
+.ig-opcoes label.ig-off span{text-decoration:line-through}
+.ig-opcoes .ig-nota{padding:8px 12px;border-top:1px solid #EFEFF2}
 .ig-nota{margin:2px 0 0;font-size:12.5px;color:var(--text-secondary)}
 .ig-lista{margin:0;padding-left:18px;display:grid;gap:4px;line-height:1.45}
 .ig-lista li.ig-off{text-decoration:line-through;color:var(--text-secondary)}

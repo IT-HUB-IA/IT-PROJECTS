@@ -62,7 +62,8 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   const REPO = conta("insert into public.repositorios (no_id, provedor, nome) values ('" + app + "', 'github', 'dono/teste-chaves') returning id");
   // fonte_opcoes roda de verdade no banco local, como o usuário logado
   await p.exposeFunction('__rpc', s => { const {fn, args} = JSON.parse(s);
-    if (fn === 'fonte_opcoes'){ try { const r = psql(COMO + "select public.fonte_opcoes('" + args.p_tipo + "', '" + args.p_id + "'::uuid, " + args.p_desenhos + ", " + args.p_itens + ", " + !!args.p_lixeira + ")"); return JSON.stringify({data:JSON.parse(r), error:null}); }
+    if (fn === 'fonte_opcoes'){ try { const bo = v => typeof v === 'boolean' ? String(v) : 'null';
+      const r = psql(COMO + "select public.fonte_opcoes('" + args.p_tipo + "', '" + args.p_id + "'::uuid, " + bo(args.p_desenhos) + ", " + bo(args.p_itens) + ", " + !!args.p_lixeira + ", " + bo(args.p_ficha) + ", " + bo(args.p_analise) + ", " + bo(args.p_mapa) + ", " + bo(args.p_mover) + ")"); return JSON.stringify({data:JSON.parse(r), error:null}); }
       catch (e) { return JSON.stringify({data:null, error:{message:(String(e.stderr || e.message).split('\n').find(l => /ERROR/.test(l)) || 'erro').replace(/^.*ERROR:\s*/, '')}}); } }
     return JSON.stringify({data:null, error:null}); });
   await p.exposeFunction('__fn', s => JSON.stringify({data:{ok:true}, error:null}));
@@ -78,30 +79,50 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   await p.evaluate(a => { window.__res = undefined; window.__tf.integrarConfirmar({tipo:'repo', nome:'dono/outro-repo', noId:a, provedor:'github', mover:true}).then(r => { window.__res = r; }); }, app); await p.waitForTimeout(500);
   let t = await caixa();
   ok(/Ligar o repositório\?/.test(t) && /dono\/outro-repo/.test(t) && /vai ser ligado em .*Java BL/.test(t), 'a janela diz qual repositório e o caminho completo de onde vai ligar');
-  ok(/O que vai acontecer/.test(t) && /Software/.test(t) && /Ficha técnica/.test(t) && /Criar épicos e histórias/.test(t), 'e o que o robô vai fazer');
+  ok(/O que o robô vai fazer/.test(t) && /Software/.test(t) && /Ficha técnica/.test(t) && /Épicos e histórias/.test(t) && /Mapa do Sistema/.test(t) && /Mudar a situação dos itens/.test(t), 'e o que o robô vai fazer');
+  ok(await p.evaluate(() => ['tudo', 'desenhos', 'ficha', 'analise', 'itens', 'mover', 'mapa'].every(k => !!document.querySelector('dialog.modal[open] #ig-' + k))), 'repositório: uma caixa para cada coisa (Desenhos, Ficha, Análise, Épicos, Mudar a situação, Mapa) e a caixa Tudo');
   const n = await p.evaluate(a => window.__tf.igSituacao('app:' + a).n, app);
   ok(n > 0 && /já tem \d+ itens/.test(t) && /em andamento/.test(t) && /pode ficar repetido/.test(t), 'avisa o que já existe no ponto (' + n + ' itens) e o risco de repetir');
   const marc = await p.evaluate(() => ({ d:document.querySelector('#ig-desenhos').checked, i:document.querySelector('#ig-itens').checked }));
-  ok(marc.d && !marc.i && /Esta aplicação já tem/.test(t) && await p.evaluate(() => [...document.querySelectorAll('.ig-lista li[data-ig="itens"]')].every(x => x.classList.contains('ig-off'))), 'com trabalho já existente, Épicos e histórias vem desmarcado e já riscado (Desenhos marcado)');
+  ok(marc.d && !marc.i && /Esta aplicação já tem/.test(t) && await p.evaluate(() => document.querySelector('.ig-op[data-ig="itens"]').classList.contains('ig-off') && document.querySelector('#ig-tudo').indeterminate), 'com trabalho já existente, Épicos e histórias vem desmarcado e já riscado (Desenhos marcado); a caixa Tudo fica em "algumas"');
+  // a caixa Tudo desmarca e marca todas
+  await p.evaluate(() => { const t = document.querySelector('#ig-tudo'); t.checked = true; t.dispatchEvent(new Event('change', {bubbles:true})); t.checked = false; t.dispatchEvent(new Event('change', {bubbles:true})); }); await p.waitForTimeout(100);
+  ok(await p.evaluate(() => [...document.querySelectorAll('.ig-op input')].every(x => !x.checked) && document.querySelectorAll('.ig-op.ig-off').length === 6), 'Tudo desmarcado: todas desmarcadas e apagadas');
+  await p.evaluate(() => { const t = document.querySelector('#ig-tudo'); t.checked = true; t.dispatchEvent(new Event('change', {bubbles:true})); }); await p.waitForTimeout(100);
+  ok(await p.evaluate(() => [...document.querySelectorAll('.ig-op input')].every(x => x.checked) && !document.querySelector('#ig-tudo').indeterminate), 'Tudo marcado: todas marcadas');
+  await p.evaluate(() => { ['#ig-itens', '#ig-ficha', '#ig-mapa'].forEach(q => document.querySelector(q).click()); }); await p.waitForTimeout(100);
   if (F) await p.screenshot({path: F + 'integrar.png'});
   // confirmar sem marcar "Conferi" não deixa
   await p.evaluate(() => [...document.querySelectorAll('dialog.modal[open] .modal-rod .btn')].pop().click()); await p.waitForTimeout(300);
   ok(await p.evaluate(() => window.__res === undefined && !!document.querySelector('dialog.modal[open] #ig-conferi')), 'sem marcar Conferi, não liga');
   await p.evaluate(() => { document.querySelector('#ig-desenhos').click(); }); await p.waitForTimeout(100);
-  ok(await p.evaluate(() => [...document.querySelectorAll('.ig-lista li[data-ig="desenhos"]')].every(x => x.classList.contains('ig-off'))), 'desmarcar Desenhos risca o que não vai acontecer');
-  await p.evaluate(() => { document.querySelector('#ig-itens').click(); document.querySelector('#ig-desenhos').click(); document.querySelector('#ig-conferi').click(); [...document.querySelectorAll('dialog.modal[open] .modal-rod .btn')].pop().click(); }); await p.waitForTimeout(300);
-  ok(await p.evaluate(() => window.__res && window.__res.desenhos === true && window.__res.itens === true), 'confirmando, devolve as escolhas (os dois)');
+  ok(await p.evaluate(() => document.querySelector('.ig-op[data-ig="desenhos"]').classList.contains('ig-off')), 'desmarcar Desenhos risca o que não vai acontecer');
+  await p.evaluate(() => { document.querySelector('#ig-desenhos').click(); document.querySelector('#ig-conferi').click(); [...document.querySelectorAll('dialog.modal[open] .modal-rod .btn')].pop().click(); }); await p.waitForTimeout(300);
+  ok(await p.evaluate(() => JSON.stringify(window.__res) === JSON.stringify({desenhos:true, ficha:false, analise:true, itens:false, mover:true, mapa:false})), 'confirmando, devolve cada escolha separada (' + await p.evaluate(() => JSON.stringify(window.__res)) + ')');
+  // gravar as escolhas numa fonte de verdade
+  await p.evaluate(async r => { window.__g = await window.__tf.igGravarEscolhas('repo', r, {desenhos:true, ficha:false, analise:true, itens:false, mover:true, mapa:false}, {}); }, REPO); await p.waitForTimeout(800);
+  ok(conta("select concat_ws('|', gera_desenhos, gera_ficha, gera_analise, gera_itens, mover_status, gera_mapa) from repositorios where id = '" + REPO + "'") === 't|f|t|f|t|f', 'as escolhas ficam gravadas no repositório, cada uma no seu lugar');
+  conta("update repositorios set gera_ficha = true, gera_mapa = true, gera_itens = true where id = '" + REPO + "'");
   // cancelar pelo X
   await p.evaluate(a => { window.__res = 'x'; window.__tf.integrarConfirmar({tipo:'banco', nome:'Banco Y', noId:a}).then(r => { window.__res = r; }); }, app); await p.waitForTimeout(400);
   t = await caixa();
   ok(/Ligar o banco\?/.test(t) && /DER/.test(t) && /nunca os dados/.test(t), 'para banco a janela fala de DER e que nunca lê os dados');
+  ok(await p.evaluate(() => ['desenhos', 'ficha', 'analise', 'itens'].every(k => !!document.querySelector('dialog.modal[open] #ig-' + k)) && !document.querySelector('dialog.modal[open] #ig-mapa') && !document.querySelector('dialog.modal[open] #ig-mover')), 'banco: Desenhos, Ficha, Análise e Épicos (sem Mapa nem Mudar a situação)');
   await p.evaluate(() => [...document.querySelectorAll('dialog.modal[open] [data-fechar]')].pop().click()); await p.waitForTimeout(300);
   ok(await p.evaluate(() => window.__res === null), 'fechar no X cancela (não liga)');
 
   // 2. as chaves no painel Automático: mudam sem desligar
   await p.evaluate(([a, r]) => { const T = window.__tf; T.IFR.no = a; T.IFR_AUTO.no = a; T.IFR_AUTO.repos = [{id:r, no_id:a, provedor:'github', nome:'dono/teste-chaves', branch_principal:'main', ativo:true, gera_desenhos:true, gera_itens:true}]; T.IFR_AUTO.bancos = []; T.IFR_AUTO.pedidos = []; T.IFR_AUTO.carregado = true;
     const div = document.createElement('div'); div.id = 'teste-auto'; div.innerHTML = T.ifrAutoHTML(); document.body.appendChild(div); }, [app, REPO]);
-  ok(await p.evaluate(() => document.querySelectorAll('#teste-auto [data-ifr-chave]').length === 2 && /Desenhos/.test(document.querySelector('#teste-auto .ifr-chaves').textContent)), 'cada repositório mostra as chaves Desenhos e Épicos e histórias');
+  ok(await p.evaluate(() => document.querySelectorAll('#teste-auto [data-ifr-chave]').length === 6 && /Mapa do Sistema/.test(document.querySelector('#teste-auto .ifr-chaves').textContent)), 'cada repositório mostra as seis chaves em Ligações');
+  // desligar a Ficha técnica em Ligações: pergunta e grava só ela
+  await p.evaluate(() => document.querySelector('#teste-auto [data-ifr-chave="ficha"]').click()); await p.waitForTimeout(400);
+  t = await caixa();
+  ok(/Desligar Ficha técnica/.test(t) && /fica como está/.test(t), 'desligar a Ficha técnica explica que a ficha que existe fica como está');
+  await p.evaluate(() => [...document.querySelectorAll('dialog.modal[open] .modal-rod .btn')].find(x => x.textContent.trim() === 'Desligar').click()); await p.waitForTimeout(1500);
+  ok(conta("select concat_ws('|', gera_desenhos, gera_ficha, gera_itens) from repositorios where id = '" + REPO + "'") === 't|f|t', 'gravou só a Ficha técnica desligada');
+  conta("update repositorios set gera_ficha = true where id = '" + REPO + "'");
+  await p.evaluate(([a, r]) => { const T = window.__tf; T.IFR_AUTO.repos = [{id:r, no_id:a, provedor:'github', nome:'dono/teste-chaves', branch_principal:'main', ativo:true, gera_desenhos:true, gera_itens:true}]; document.querySelector('#teste-auto').innerHTML = T.ifrAutoHTML(); }, [app, REPO]);
   await p.evaluate(() => document.querySelector('#teste-auto [data-ifr-chave="itens"]').click()); await p.waitForTimeout(400);
   t = await caixa();
   ok(/Desligar épicos e histórias/.test(t) && /continua ligado/.test(t) && /ninguém mexeu/.test(t), 'desligar épicos e histórias pergunta o que fazer com os já criados');
@@ -122,8 +143,8 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   const BHER = conta("insert into public.infra_bancos (no_id, nome, provedor) values ('" + proj + "', 'Banco do projeto', 'supabase') returning id");
   await p.evaluate(async a => { const T = window.__tf; T.UI.sel = 'app:' + a; T.IFR.no = a; await T.ifrAutoCarregar(); document.querySelector('#teste-auto').innerHTML = T.ifrAutoHTML(); }, app);
   t = await p.evaluate(() => document.querySelector('#teste-auto').textContent);
-  ok(/Ligados acima deste ponto/.test(t) && /Banco do projeto/.test(t) && /\(projeto\)/.test(t) && await p.evaluate(b => document.querySelectorAll('#teste-auto [data-ifr-id="' + b + '"][data-ifr-chave]').length === 2, BHER),
-    'o banco ligado no projeto aparece na aplicação, dizendo onde está ligado, com as chaves Desenhos e Épicos e histórias');
+  ok(/Ligados acima deste ponto/.test(t) && /Banco do projeto/.test(t) && /\(projeto\)/.test(t) && await p.evaluate(b => document.querySelectorAll('#teste-auto [data-ifr-id="' + b + '"][data-ifr-chave]').length === 4, BHER),
+    'o banco ligado no projeto aparece na aplicação, dizendo onde está ligado, com as quatro chaves de banco');
   await p.evaluate(b => document.querySelector('#teste-auto [data-ifr-id="' + b + '"][data-ifr-chave="itens"]').click(), BHER); await p.waitForTimeout(400);
   t = await caixa();
   ok(/vale para tudo o que está dentro dele/.test(t), 'desligar uma fonte do projeto avisa que vale para o projeto inteiro');

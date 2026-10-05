@@ -102,7 +102,6 @@ function gcLigarRepo(){
   if (!COM_BANCO){ modal('Ligar repositório', '<p style="margin:0">No modo de exemplo não dá para conectar o GitHub ou o GitLab. Entre no CicloDev com login para ligar os repositórios.</p>', [{txt:'Entendi'}]); return; }
   const onde = gcOnde();
   const dlg = modal('Ligar repositório', '<div class="grade-form"><label class="lb largo">Ligar a<select class="sel" id="gc-onde">' + onde.map(([k, n]) => '<option value="' + k + '"' + (k === UI.sel ? ' selected' : '') + '>' + esc(n) + '</option>').join('') + '</select></label></div>' +
-    '<div class="tf-opcoes"><label><input type="checkbox" id="gc-mover" checked> Mudar o status dos itens sozinho (branch: Em andamento, PR: Em revisão, PR mesclado: Concluído)</label></div>' +
     '<div id="gc-corpo"><p class="sec">Lendo as contas conectadas…</p></div>', [{txt:'Fechar', cls:'sec'}]);
   dlg.classList.add('gc-modal');
   const pintar = async forcar => { await gcCarregar(forcar); if (dlg.isConnected) $('#gc-corpo', dlg).innerHTML = gcContasHTML(); };
@@ -117,21 +116,18 @@ function gcLigarRepo(){
       const [con, ext] = b.dataset.gcLigar.split('|'), no = $('#gc-onde', dlg).value.split(':')[1];
       // antes de ligar: onde, o que o robô vai fazer, o que já existe ali, e o que montar (desenhos / épicos e histórias)
       const conta = (GC.conexoes || []).find(c => c.id === con) || {};
-      const esc0 = typeof integrarConfirmar === 'function' ? await integrarConfirmar({tipo:'repo', nome:b.dataset.gcRepoNome || ext, noId:no, provedor:conta.provedor, mover:$('#gc-mover', dlg).checked}) : {desenhos:true, itens:true};
+      const esc0 = typeof integrarConfirmar === 'function' ? await integrarConfirmar({tipo:'repo', nome:b.dataset.gcRepoNome || ext, noId:no, provedor:conta.provedor}) : {desenhos:true, itens:true, ficha:true, analise:true, mover:true, mapa:true};
       if (!esc0) return;
       b.disabled = true; b.textContent = 'Ligando…';
-      const r = await gcFuncao({acao:'ligar', no_id:no, conexao_id:con, externo_id:ext, mover:$('#gc-mover', dlg).checked});
+      const r = await gcFuncao({acao:'ligar', no_id:no, conexao_id:con, externo_id:ext, mover:esc0.mover !== false});
       if (!r.ok){ b.disabled = false; b.textContent = 'Ligar'; toast('Não deu para ligar: ' + r.erro); return; }
-      if (!esc0.desenhos || !esc0.itens || r.repositorio.gera_desenhos === false || r.repositorio.gera_itens === false){
-        const {data:op, error:eo} = await window.ciclodevBanco.rpc('fonte_opcoes', {p_tipo:'repo', p_id:r.repositorio.id, p_desenhos:esc0.desenhos, p_itens:esc0.itens, p_lixeira:false});
-        if (eo) toast('Ligado, mas não deu para guardar o que montar: ' + tfErro(eo) + '. Ajuste no painel Automático.');
-        else if (op) Object.assign(r.repositorio, {gera_desenhos:op.desenhos, gera_itens:op.itens});
-      }
+      const {error:eo} = await igGravarEscolhas('repo', r.repositorio.id, esc0, r.repositorio);
+      if (eo) toast('Ligado, mas não deu para guardar as escolhas: ' + tfErro(eo) + '. Ajuste em Ligações.');
       EN.repos = (EN.repos || []).filter(x => x.id !== r.repositorio.id).concat(r.repositorio);
       b.textContent = 'Ligado'; b.classList.add('gc-ok');
       if (UI.view === 'entregas') rView();
       if (typeof ifrAutoCarregar === 'function' && UI.view === 'infra'){ await ifrAutoCarregar(); ifrLado(); }
-      tfAviso('Repositório ' + r.repositorio.nome + ' ligado. ' + (esc0.desenhos && esc0.itens ? 'Os desenhos e os épicos e histórias já foram pedidos.' : esc0.desenhos ? 'Só os desenhos (sem épicos e histórias) já foram pedidos.' : esc0.itens ? 'Só épicos e histórias (sem desenhos).' : 'Sem desenhos nem épicos e histórias: só Ficha técnica e Análise.') + ' Dá para mudar no painel Automático.', [], 6000);
+      tfAviso('Repositório ' + r.repositorio.nome + ' ligado. ' + igResumo(esc0) + ' Dá para mudar cada uma em Ligações.', [], 7000);
     }
   });
   dlg.addEventListener('input', e => { if (e.target.matches('[data-gc-busca]')) gcFiltrar(dlg, e.target.value); });

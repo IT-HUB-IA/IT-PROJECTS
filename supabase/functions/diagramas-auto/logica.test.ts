@@ -245,5 +245,19 @@ ok(limparErro(new Error('falhou em postgres://u:p@h/db agora')) === 'falhou em [
   ok(c.p_prefixos.join() === 'banco:b1:' && c.p_resumo[0].desenhos.length === 0, 'só a família do banco entra para arquivar o que sumiu; o resumo do repositório diz zero desenhos');
 }
 
+// ---------- parte 70: Ficha técnica e Análise também são escolhas de cada fonte ----------
+{
+  const t = montar({ fila: [[{ id: 'k2', no_id: 'app', origem: 'manual', referencia: null,
+    repositorios: [{ ...GH('it-hub/loja', 'main'), id: 'r1', gera_ficha: false, gera_analise: true }],
+    bancos: [{ ...BANCO, gera_ficha: true, gera_analise: false }] }]] });
+  await rodar(t.d);
+  const fi = t.de('infra_ficha_gravar'), an = t.de('analise_gravar');
+  ok(!fi.some(x => x.args.p_repositorio === 'r1') && fi.some(x => x.args.p_banco === 'b1'), 'Ficha técnica desligada no repositório: não grava; ligada no banco: grava');
+  ok(an.some(x => x.args.p_repositorio === 'r1') && !an.some(x => x.args.p_banco === 'b1'), 'Análise ligada no repositório: roda; desligada no banco: não roda');
+  const c = t.de('infra_auto_concluir')[0].args;
+  ok(c.p_status === 'pronto' && /desligada/.test(c.p_resumo[0].ficha) && /desligada/.test(c.p_resumo[1].seguranca) && t.de('infra_auto_gravar').length >= 1,
+    'o pedido termina pronto, os desenhos continuam e o resumo diz o que ficou desligado');
+}
+
 console.log(falhas ? falhas + ' FALHAS' : 'TUDO OK');
 if (falhas) process.exit(1);

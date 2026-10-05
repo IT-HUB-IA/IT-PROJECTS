@@ -3084,9 +3084,16 @@ dialog.modal .ig{display:grid;gap:12px;max-width:640px}
 .ig h4{margin:6px 0 0;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-secondary)}
 .ig-onde{margin:0;padding:10px 12px;background:#F4F4F6;border-left:4px solid var(--vermelho);line-height:1.5}
 .ig-tipo{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-secondary);margin-left:4px}
-.ig-opcoes{display:grid;gap:6px;padding:10px 12px;border:1px solid #E6E6EA}
-.ig-opcoes label{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
-.ig-opcoes span{color:var(--text-secondary);font-size:13px}
+.ig-base{margin:0;font-size:13.5px;line-height:1.45}
+.ig-opcoes{display:grid;gap:0;border:1px solid #E6E6EA}
+.ig-opcoes label{display:grid;grid-template-columns:auto auto 1fr;gap:4px 8px;align-items:baseline;padding:8px 12px;border-top:1px solid #EFEFF2;cursor:pointer}
+.ig-opcoes label:first-child{border-top:0}
+.ig-opcoes label.ig-tudo{background:#F6F6F8}
+.ig-opcoes label span{grid-column:2 / -1;color:var(--text-secondary);font-size:13px;line-height:1.4}
+.ig-opcoes label.ig-tudo span{grid-column:auto}
+.ig-opcoes label.ig-off b{color:var(--text-secondary)}
+.ig-opcoes label.ig-off span{text-decoration:line-through}
+.ig-opcoes .ig-nota{padding:8px 12px;border-top:1px solid #EFEFF2}
 .ig-nota{margin:2px 0 0;font-size:12.5px;color:var(--text-secondary)}
 .ig-lista{margin:0;padding-left:18px;display:grid;gap:4px;line-height:1.45}
 .ig-lista li.ig-off{text-decoration:line-through;color:var(--text-secondary)}
@@ -10369,7 +10376,6 @@ function gcLigarRepo(){
   if (!COM_BANCO){ modal('Ligar repositório', '<p style="margin:0">No modo de exemplo não dá para conectar o GitHub ou o GitLab. Entre no CicloDev com login para ligar os repositórios.</p>', [{txt:'Entendi'}]); return; }
   const onde = gcOnde();
   const dlg = modal('Ligar repositório', '<div class="grade-form"><label class="lb largo">Ligar a<select class="sel" id="gc-onde">' + onde.map(([k, n]) => '<option value="' + k + '"' + (k === UI.sel ? ' selected' : '') + '>' + esc(n) + '</option>').join('') + '</select></label></div>' +
-    '<div class="tf-opcoes"><label><input type="checkbox" id="gc-mover" checked> Mudar o status dos itens sozinho (branch: Em andamento, PR: Em revisão, PR mesclado: Concluído)</label></div>' +
     '<div id="gc-corpo"><p class="sec">Lendo as contas conectadas…</p></div>', [{txt:'Fechar', cls:'sec'}]);
   dlg.classList.add('gc-modal');
   const pintar = async forcar => { await gcCarregar(forcar); if (dlg.isConnected) $('#gc-corpo', dlg).innerHTML = gcContasHTML(); };
@@ -10384,21 +10390,18 @@ function gcLigarRepo(){
       const [con, ext] = b.dataset.gcLigar.split('|'), no = $('#gc-onde', dlg).value.split(':')[1];
       // antes de ligar: onde, o que o robô vai fazer, o que já existe ali, e o que montar (desenhos / épicos e histórias)
       const conta = (GC.conexoes || []).find(c => c.id === con) || {};
-      const esc0 = typeof integrarConfirmar === 'function' ? await integrarConfirmar({tipo:'repo', nome:b.dataset.gcRepoNome || ext, noId:no, provedor:conta.provedor, mover:$('#gc-mover', dlg).checked}) : {desenhos:true, itens:true};
+      const esc0 = typeof integrarConfirmar === 'function' ? await integrarConfirmar({tipo:'repo', nome:b.dataset.gcRepoNome || ext, noId:no, provedor:conta.provedor}) : {desenhos:true, itens:true, ficha:true, analise:true, mover:true, mapa:true};
       if (!esc0) return;
       b.disabled = true; b.textContent = 'Ligando…';
-      const r = await gcFuncao({acao:'ligar', no_id:no, conexao_id:con, externo_id:ext, mover:$('#gc-mover', dlg).checked});
+      const r = await gcFuncao({acao:'ligar', no_id:no, conexao_id:con, externo_id:ext, mover:esc0.mover !== false});
       if (!r.ok){ b.disabled = false; b.textContent = 'Ligar'; toast('Não deu para ligar: ' + r.erro); return; }
-      if (!esc0.desenhos || !esc0.itens || r.repositorio.gera_desenhos === false || r.repositorio.gera_itens === false){
-        const {data:op, error:eo} = await window.ciclodevBanco.rpc('fonte_opcoes', {p_tipo:'repo', p_id:r.repositorio.id, p_desenhos:esc0.desenhos, p_itens:esc0.itens, p_lixeira:false});
-        if (eo) toast('Ligado, mas não deu para guardar o que montar: ' + tfErro(eo) + '. Ajuste no painel Automático.');
-        else if (op) Object.assign(r.repositorio, {gera_desenhos:op.desenhos, gera_itens:op.itens});
-      }
+      const {error:eo} = await igGravarEscolhas('repo', r.repositorio.id, esc0, r.repositorio);
+      if (eo) toast('Ligado, mas não deu para guardar as escolhas: ' + tfErro(eo) + '. Ajuste em Ligações.');
       EN.repos = (EN.repos || []).filter(x => x.id !== r.repositorio.id).concat(r.repositorio);
       b.textContent = 'Ligado'; b.classList.add('gc-ok');
       if (UI.view === 'entregas') rView();
       if (typeof ifrAutoCarregar === 'function' && UI.view === 'infra'){ await ifrAutoCarregar(); ifrLado(); }
-      tfAviso('Repositório ' + r.repositorio.nome + ' ligado. ' + (esc0.desenhos && esc0.itens ? 'Os desenhos e os épicos e histórias já foram pedidos.' : esc0.desenhos ? 'Só os desenhos (sem épicos e histórias) já foram pedidos.' : esc0.itens ? 'Só épicos e histórias (sem desenhos).' : 'Sem desenhos nem épicos e histórias: só Ficha técnica e Análise.') + ' Dá para mudar no painel Automático.', [], 6000);
+      tfAviso('Repositório ' + r.repositorio.nome + ' ligado. ' + igResumo(esc0) + ' Dá para mudar cada uma em Ligações.', [], 7000);
     }
   });
   dlg.addEventListener('input', e => { if (e.target.matches('[data-gc-busca]')) gcFiltrar(dlg, e.target.value); });
@@ -14463,11 +14466,11 @@ async function ifrAutoCarregar(){
   const nos = ifrNosDoCodigo(UI.sel);
   const cd = cadeia(UI.sel || ''), acima = [cd.product, cd.project].filter(x => x && x.id !== no).map(x => x.id);
   const [rp, bc, pd, hr, hb] = await Promise.all([
-    sb.from('repositorios').select('id, no_id, provedor, nome, branch_principal, ativo, gera_desenhos, gera_itens').in('no_id', nos),
-    sb.from('infra_bancos').select('id, no_id, nome, provedor, motor, esquemas, servidor, ativo, gera_desenhos, gera_itens, ultima_leitura_em, ultima_mudanca_em, ultimo_erro, conexao_trocada_em, supa_conexao_id, supa_projeto, validado_em, validacao').eq('no_id', no),
+    sb.from('repositorios').select('id, no_id, provedor, nome, branch_principal, ativo, gera_desenhos, gera_itens, gera_ficha, gera_analise, gera_mapa, mover_status').in('no_id', nos),
+    sb.from('infra_bancos').select('id, no_id, nome, provedor, motor, esquemas, servidor, ativo, gera_desenhos, gera_itens, gera_ficha, gera_analise, ultima_leitura_em, ultima_mudanca_em, ultimo_erro, conexao_trocada_em, supa_conexao_id, supa_projeto, validado_em, validacao').eq('no_id', no),
     sb.from('infra_automacoes').select('id, origem, status, referencia, criado_em, concluido_em, erro, resumo, diagramas').eq('no_id', no).order('criado_em', {ascending:false}).limit(5),
-    acima.length ? sb.from('repositorios').select('id, no_id, provedor, nome, ativo, gera_desenhos, gera_itens').in('no_id', acima) : Promise.resolve({data:[]}),
-    acima.length ? sb.from('infra_bancos').select('id, no_id, nome, provedor, servidor, supa_projeto, ativo, gera_desenhos, gera_itens').in('no_id', acima) : Promise.resolve({data:[]})
+    acima.length ? sb.from('repositorios').select('id, no_id, provedor, nome, ativo, gera_desenhos, gera_itens, gera_ficha, gera_analise, gera_mapa, mover_status').in('no_id', acima) : Promise.resolve({data:[]}),
+    acima.length ? sb.from('infra_bancos').select('id, no_id, nome, provedor, servidor, supa_projeto, ativo, gera_desenhos, gera_itens, gera_ficha, gera_analise').in('no_id', acima) : Promise.resolve({data:[]})
   ]);
   if (IFR_AUTO.no !== no) return;
   IFR_AUTO.repos = (rp.data || []).filter(r => nos.includes(r.no_id) && r.ativo !== false);
@@ -14493,12 +14496,19 @@ function ifrErroAmigavel(m){
   return 'Não deu para ler o banco.';
 }
 const ifrSelo = (tipo, txt) => '<span class="ifr-selo ifr-selo-' + tipo + '">' + esc(txt) + '</span>';
-// as duas chaves de cada fonte (parte 65): desenhos / épicos e histórias; mudam sem desligar o repositório ou o banco
+// as chaves de cada fonte (partes 65 e 70): cada coisa que o robô faz liga e desliga sem desligar o repositório ou o banco
+const IFR_CHAVES = {
+  desenhos:['Desenhos', 'O robô monta os desenhos e os quadros desta fonte'],
+  ficha:['Ficha técnica', 'O robô preenche a Ficha técnica com esta fonte'],
+  analise:['Análise', 'O robô roda a Análise (segurança, qualidade, bibliotecas com falha) desta fonte'],
+  itens:['Épicos e histórias', 'O robô monta épicos e histórias com o que leu desta fonte'],
+  mover:['Mudar a situação dos itens', 'Commits e pull requests mudam a situação dos itens (branch: Em andamento, PR: Em revisão, mesclado: Concluído)'],
+  mapa:['Mapa do Sistema', 'Cada publicação monta o Como está (telas, botões, campos e para onde vão)']};
+const ifrChaveLigada = (x, k) => (k === 'mover' ? x.mover_status : x['gera_' + k]) !== false;
 function ifrChavesHTML(tipo, x, pode){
-  const ch = (k, rot, dica) => '<label class="ifr-chave" title="' + esc(dica) + '"><input type="checkbox" data-ifr-chave="' + k + '" data-ifr-tipo="' + tipo + '" data-ifr-id="' + esc(x.id) + '"' +
-    (x['gera_' + k] !== false ? ' checked' : '') + (pode ? '' : ' disabled') + '> ' + rot + '</label>';
-  return '<div class="ifr-chaves">' + ch('desenhos', 'Desenhos', 'O robô monta os desenhos e os quadros desta fonte') +
-    ch('itens', 'Épicos e histórias', 'O robô monta épicos e histórias com o que leu desta fonte') + '</div>';
+  const ks = tipo === 'repo' ? ['desenhos', 'ficha', 'analise', 'itens', 'mover', 'mapa'] : ['desenhos', 'ficha', 'analise', 'itens'];
+  return '<div class="ifr-chaves">' + ks.map(k => '<label class="ifr-chave" title="' + esc(IFR_CHAVES[k][1]) + '"><input type="checkbox" data-ifr-chave="' + k + '" data-ifr-tipo="' + tipo + '" data-ifr-id="' + esc(x.id) + '"' +
+    (ifrChaveLigada(x, k) ? ' checked' : '') + (pode ? '' : ' disabled') + '> ' + IFR_CHAVES[k][0] + '</label>').join('') + '</div>';
 }
 async function ifrMudarChave(inp){
   const tipo = inp.dataset.ifrTipo, id = inp.dataset.ifrId, k = inp.dataset.ifrChave, liga = inp.checked;
@@ -14509,23 +14519,34 @@ async function ifrMudarChave(inp){
   const nome = esc(x.nome), voltar = () => { inp.checked = !liga; };
   let decidiu = false; const d = f => () => { decidiu = true; f(); };   // fechar no X = cancelar
   const mandar = async (lixeira) => {
-    const args = {p_tipo:tipo, p_id:id, p_desenhos:k === 'desenhos' ? liga : x.gera_desenhos !== false, p_itens:k === 'itens' ? liga : x.gera_itens !== false, p_lixeira:!!lixeira};
+    const args = {p_tipo:tipo, p_id:id, p_desenhos:k === 'desenhos' ? liga : null, p_itens:k === 'itens' ? liga : null, p_lixeira:!!lixeira,
+      p_ficha:k === 'ficha' ? liga : null, p_analise:k === 'analise' ? liga : null, p_mapa:k === 'mapa' ? liga : null, p_mover:k === 'mover' ? liga : null};
     const {data, error} = await ifrBanco().rpc('fonte_opcoes', args);
     if (error){ voltar(); toast('Não deu: ' + tfErro(error)); return; }
-    x.gera_desenhos = data.desenhos; x.gera_itens = data.itens;
+    Object.entries({desenhos:'gera_desenhos', itens:'gera_itens', ficha:'gera_ficha', analise:'gera_analise', mapa:'gera_mapa', mover:'mover_status'}).forEach(([a, c]) => { if (typeof data[a] === 'boolean') x[c] = data[a]; });
     const extra = data.para_lixeira ? ' ' + data.para_lixeira + (data.para_lixeira === 1 ? ' item foi' : ' itens foram') + ' para a lixeira.' : data.voltaram ? ' ' + data.voltaram + (data.voltaram === 1 ? ' item voltou' : ' itens voltaram') + ' da lixeira.' : '';
-    toast((k === 'desenhos' ? 'Desenhos ' : 'Épicos e histórias ') + (liga ? 'ligados' : 'desligados') + ' para ' + x.nome + '.' + extra + (liga ? ' O robô já foi chamado para atualizar.' : ''));
+    toast(IFR_CHAVES[k][0] + (liga ? ': ligado' : ': desligado') + ' para ' + x.nome + '.' + extra + (liga && ['desenhos', 'itens', 'ficha', 'analise'].includes(k) ? ' O robô já foi chamado para atualizar.' : ''));
     if (typeof ifrCarregar === 'function'){ try { await ifrCarregar(); } catch(e){} }
     await ifrAutoCarregar(); ifrLado();
   };
   if (liga){ mandar(false); return; }
+  // Ficha, Análise, Mudar a situação e Mapa: desligar não apaga nada, só para de fazer; confirma numa frase
+  const SO_PARA = {ficha:'O robô para de preencher a Ficha técnica com ' + nome + '. A ficha que já existe fica como está.',
+    analise:'O robô para de rodar a Análise de ' + nome + '. Os alertas que já existem ficam como estão.',
+    mover:'Commits e pull requests de ' + nome + ' deixam de mudar a situação dos itens. Os itens ficam como estão.',
+    mapa:'As publicações de ' + nome + ' deixam de montar o Mapa do Sistema. O último mapa fica como está, e dá para pedir à mão.'};
+  if (SO_PARA[k]){
+    modal('Desligar ' + IFR_CHAVES[k][0] + ' de ' + nome + '?', aviso + '<p>' + SO_PARA[k] + '</p><p class="sec">Ligar de novo volta a fazer.</p>',
+      [{txt:'Cancelar', cls:'sec', acao:d(voltar)}, {txt:'Desligar', acao:d(() => mandar(false))}]).addEventListener('close', () => { if (!decidiu) voltar(); });
+    return;
+  }
   if (k === 'desenhos'){
     modal('Desligar os desenhos de ' + nome + '?', aviso + '<p>Os desenhos que o robô montou com <b>' + nome + '</b> vão para o <b>arquivo</b> (as versões ficam guardadas) e os quadros deles saem do canvas e do Desenho completo. ' +
-      (tipo === 'repo' ? 'O repositório' : 'O banco') + ' continua ligado: Ficha técnica, Análise e, se estiver ligado, Épicos e histórias continuam.</p><p class="sec">Ligar de novo traz os desenhos de volta.</p>',
+      (tipo === 'repo' ? 'O repositório' : 'O banco') + ' continua ligado, e as outras escolhas continuam como estão.</p><p class="sec">Ligar de novo traz os desenhos de volta.</p>',
       [{txt:'Cancelar', cls:'sec', acao:d(voltar)}, {txt:'Desligar desenhos', acao:d(() => mandar(false))}]).addEventListener('close', () => { if (!decidiu) voltar(); });
     return;
   }
-  modal('Desligar épicos e histórias de ' + nome + '?', aviso + '<p>O robô para de montar épicos e histórias com <b>' + nome + '</b>. ' + (tipo === 'repo' ? 'O repositório' : 'O banco') + ' continua ligado (desenhos, Ficha técnica e Análise seguem como estão).</p>' +
+  modal('Desligar épicos e histórias de ' + nome + '?', aviso + '<p>O robô para de montar épicos e histórias com <b>' + nome + '</b>. ' + (tipo === 'repo' ? 'O repositório' : 'O banco') + ' continua ligado, e as outras escolhas continuam como estão.</p>' +
     '<p>E os épicos e histórias que ele <b>já criou</b>?</p><ul class="ig-lista"><li><b>Deixar como estão</b>: nada muda no backlog.</li>' +
     '<li><b>Mandar para a lixeira</b>: só os que <b>ninguém mexeu</b> (sem comentário, anexo, subitem ou edição). O que alguém já trabalhou fica. Ligar de novo traz de volta os que foram para a lixeira.</li></ul>',
     [{txt:'Cancelar', cls:'sec', acao:d(voltar)}, {txt:'Deixar como estão', cls:'sec', acao:d(() => mandar(false))}, {txt:'Mandar para a lixeira', acao:d(() => mandar(true))}]).addEventListener('close', () => { if (!decidiu) voltar(); });
@@ -14760,14 +14781,12 @@ function ifrBancoModal(id, provInicial, soEndereco){
     if (!esq.length){ toast(motor === 'mysql' ? 'Diga qual banco (database) ler.' : 'Diga quais esquemas ler.'); return false; }
     const args = {p_no:IFR.no, p_id:b ? b.id : null, p_nome:$('#ifr-b-nome', dl).value.trim(), p_provedor:prov, p_motor:motor, p_esquemas:esq, p_conexao:url || null, p_ativo:true};
     const salvar = async (teste) => {
-      const esc0 = typeof integrarConfirmar === 'function' && (!b || url) ? await integrarConfirmar({tipo:'banco', nome:args.p_nome || (b && b.nome) || 'Banco de produção', noId:IFR.no, trocar:b ? b.id : null}) : {desenhos:b ? b.gera_desenhos !== false : true, itens:b ? b.gera_itens !== false : true};
+      const esc0 = typeof integrarConfirmar === 'function' && (!b || url) ? await integrarConfirmar({tipo:'banco', nome:args.p_nome || (b && b.nome) || 'Banco de produção', noId:IFR.no, trocar:b ? b.id : null}) : {};
       if (!esc0) return;
       return sb.rpc('infra_banco_salvar', args).then(async ({data, error}) => {
       if (error){ toast('Não deu para salvar o banco: ' + (error.message || error)); return; }
-      if (data && data.id && (!esc0.desenhos || !esc0.itens || data.gera_desenhos === false || data.gera_itens === false)){
-        const {error:eo} = await sb.rpc('fonte_opcoes', {p_tipo:'banco', p_id:data.id, p_desenhos:esc0.desenhos, p_itens:esc0.itens, p_lixeira:false});
-        if (eo) toast('Salvo, mas não deu para guardar o que montar: ' + tfErro(eo) + '. Ajuste no painel Automático.');
-      }
+      if (data && data.id){ const {error:eo} = await igGravarEscolhas('banco', data.id, esc0, data);
+        if (eo) toast('Salvo, mas não deu para guardar as escolhas: ' + tfErro(eo) + '. Ajuste em Ligações.'); }
       if (document.body.contains(dl)){ dl.close(); dl.remove(); }
       await ifrAutoCarregar(); ifrLado();
       toast('Banco salvo' + (teste ? ' e testado (' + teste.tabelas + ' tabelas, ' + teste.regras + ' regras de acesso)' : '') + '. Em alguns minutos o DER' + (motor === 'postgres' ? ' e o mapa de acesso aparecem nas sub-abas DER e Segurança.' : ' aparece na sub-aba DER.'));
@@ -22370,15 +22389,13 @@ async function scConferirLigar(dlg, st, b){
   st.resultado = r.erro && !r.falhas ? {ok:false, falhas:[r.erro]} : r;
   const s = $('[data-sc-saida]', dlg); if (s) s.innerHTML = scConferenciaHTML(st.resultado);
   if (!r.ok || !r.prova){ fim(); if (s && s.scrollIntoView) s.scrollIntoView({block:'nearest'}); return; }
-  const esc0 = typeof integrarConfirmar === 'function' ? await integrarConfirmar({tipo:'banco', nome:(nome || 'Banco de produção') + ' (' + st.projeto + ')', noId:IFR.no, trocar:b ? b.id : null}) : {desenhos:true, itens:true};
+  const esc0 = typeof integrarConfirmar === 'function' ? await integrarConfirmar({tipo:'banco', nome:(nome || 'Banco de produção') + ' (' + st.projeto + ')', noId:IFR.no, trocar:b ? b.id : null}) : {};
   if (!esc0){ fim(); return; }
   const {data, error} = await window.ciclodevBanco.rpc('infra_banco_supabase_ligar', {p_no:IFR.no, p_id:b ? b.id : null, p_nome:nome, p_prova:r.prova});
   fim();
   if (error || !data){ if (s) s.insertAdjacentHTML('beforeend', '<p class="ifr-fonte-erro">Conferiu, mas não deu para ligar: ' + esc(tfErro(error)) + '</p>'); return; }
-  if (!esc0.desenhos || !esc0.itens || data.gera_desenhos === false || data.gera_itens === false){
-    const {error:eo} = await window.ciclodevBanco.rpc('fonte_opcoes', {p_tipo:'banco', p_id:data.id, p_desenhos:esc0.desenhos, p_itens:esc0.itens, p_lixeira:false});
-    if (eo) toast('Ligado, mas não deu para guardar o que montar: ' + tfErro(eo) + '. Ajuste no painel Automático.');
-  }
+  { const {error:eo} = await igGravarEscolhas('banco', data.id, esc0, data);
+    if (eo) toast('Ligado, mas não deu para guardar as escolhas: ' + tfErro(eo) + '. Ajuste em Ligações.'); }
   dlg.close(); dlg.remove();
   await ifrAutoCarregar(); ifrLado();
   const c = r.conferencia;
@@ -22438,8 +22455,9 @@ if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {SC
    Antes de ligar um repositório ou um banco: uma janela que diz para ONDE vai ligar, o QUE o robô vai fazer
    e o que JÁ EXISTE ali, e pede a confirmação. Ligar no lugar errado monta desenhos, ficha técnica e épicos no
    ponto errado (foi o que aconteceu com o IT-PROJECTS na MK Cobranças); por isso a pessoa confere antes.
-   integrarConfirmar({tipo:'repo'|'banco', nome, noId, provedor, trocar, mover}) -> Promise<null | {desenhos, itens}>
-   As duas escolhas (desenhos / épicos e histórias) também mudam depois, no painel Automático, sem desligar a fonte.
+   integrarConfirmar({tipo:'repo'|'banco', nome, noId, provedor, trocar, mover}) -> Promise<null | {desenhos, ficha, analise, itens, mover?, mapa?}>
+   Cada coisa que o robô faz é uma escolha (parte 70): repositório tem Desenhos, Ficha técnica, Análise, Épicos e histórias,
+   Mudar a situação dos itens e Mapa do Sistema; banco tem as quatro primeiras. Todas mudam depois em Ligações.
    ===================================================================== */
 function igChave(noId){
   for (const [col, pre] of [['apps','app'], ['products','product'], ['projects','project'], ['clients','client'], ['ws','ws']])
@@ -22464,23 +22482,25 @@ function integrarConfirmar(o){
   const reposAqui = (typeof EN !== 'undefined' && EN.repos ? EN.repos : []).filter(r => r.no_id === o.noId && r.nome.toLowerCase() !== String(o.nome).toLowerCase()).map(r => r.nome);
   const emOutro = repo ? (typeof EN !== 'undefined' && EN.repos ? EN.repos : []).filter(r => r.nome.toLowerCase() === String(o.nome).toLowerCase() && r.no_id !== o.noId) : [];
   const bancosAqui = !repo && typeof IFR_AUTO !== 'undefined' && IFR_AUTO.no === o.noId ? IFR_AUTO.bancos.filter(b => !o.trocar || b.id !== o.trocar).map(b => b.nome + (b.supa_projeto ? ' (' + b.supa_projeto + ')' : b.servidor ? ' (' + b.servidor + ')' : '')) : [];
-  const li = t => Array.isArray(t) ? '<li data-ig="' + t[0] + '">' + t[1] + '</li>' : '<li>' + t + '</li>';
-  const vai = repo ? [
-      'Ler o código de <b>' + esc(o.nome) + '</b> a cada publicação (só leitura: nada é mudado no ' + (o.provedor === 'gitlab' ? 'GitLab' : 'GitHub') + ').',
-      ['desenhos', 'Montar os desenhos de <b>Software</b>, <b>Infraestrutura</b> e <b>Telas e rotas</b> na aba Infraestrutura de ' + aqui + '.'],
-      'Preencher a <b>Ficha técnica</b> (linguagens, versões, ambientes, integrações).',
-      'Rodar a <b>Análise</b>: segurança, qualidade e bibliotecas com falha conhecida, com alertas no sininho.',
-      ['itens', '<b>Criar épicos e histórias</b> com o que já existe no código (APIs, telas, funções, versões) nas frentes de ' + aqui + '. Ao abrir a aba Análise eles são montados sozinhos.'],
-      o.mover ? 'Mudar a situação dos itens pelos commits e pull requests (branch: Em andamento, PR: Em revisão, PR mesclado: Concluído).' : ''
+  // cada coisa que o robô faz é uma escolha própria (parte 70): só acontece o que ficar marcado
+  const prov = o.provedor === 'gitlab' ? 'GitLab' : 'GitHub';
+  const opcoes = repo ? [
+      ['desenhos', true, 'Desenhos', 'Montar os desenhos de <b>Software</b>, <b>Infraestrutura</b> e <b>Telas e rotas</b>, com os quadros no canvas, na aba Infraestrutura de ' + aqui + '.'],
+      ['ficha', true, 'Ficha técnica', 'Preencher a <b>Ficha técnica</b> (linguagens, versões, ambientes, integrações).'],
+      ['analise', true, 'Análise', 'Rodar a <b>Análise</b>: segurança, qualidade e bibliotecas com falha conhecida, com alertas no sininho.'],
+      ['itens', o.itensPadrao ?? !s.n, 'Épicos e histórias', 'Criar o backlog com o que já existe no código (APIs, telas, funções, versões) nas frentes de ' + aqui + '.'],
+      ['mover', o.mover !== false, 'Mudar a situação dos itens', 'Pelos commits e pull requests: branch vira Em andamento, PR aberto vira Em revisão, PR mesclado vira Concluído.'],
+      ['mapa', true, 'Mapa do Sistema', 'A cada publicação, montar o <b>Como está</b> (telas, botões, campos e para onde vão), com alertas.']
     ] : [
-      'Ler só a <b>estrutura</b> de <b>' + esc(o.nome) + '</b> (tabelas, colunas, chaves, regras de acesso), nunca os dados, em modo somente leitura, de hora em hora.',
-      ['desenhos', 'Montar o <b>DER</b> e o mapa de <b>Acesso ao banco</b> na aba Infraestrutura de ' + aqui + '.'],
-      'Preencher a seção <b>Database</b> da Ficha técnica.',
-      'Rodar a <b>Análise</b> de segurança e de arquitetura do banco.',
-      ['itens', '<b>Criar épicos e histórias</b> com as tabelas do banco ("Banco: …" e "Tabela …") nas frentes de ' + aqui + '. Ao abrir a aba Análise eles são montados sozinhos.']
+      ['desenhos', true, 'Desenhos', 'Montar o <b>DER</b> e o mapa de <b>Acesso ao banco</b> na aba Infraestrutura de ' + aqui + '.'],
+      ['ficha', true, 'Ficha técnica', 'Preencher a seção <b>Database</b> da Ficha técnica.'],
+      ['analise', true, 'Análise', 'Rodar a <b>Análise</b> de segurança e de arquitetura do banco.'],
+      ['itens', o.itensPadrao ?? !s.n, 'Épicos e histórias', 'Criar o backlog com as tabelas do banco ("Banco: …" e "Tabela …") nas frentes de ' + aqui + '.']
     ];
+  const base = repo ? 'O robô lê o código de <b>' + esc(o.nome) + '</b> a cada publicação, só para leitura: nada é mudado no ' + prov + '.'
+    : 'O robô lê só a <b>estrutura</b> de <b>' + esc(o.nome) + '</b> (tabelas, colunas, chaves, regras de acesso), nunca os dados, em modo somente leitura, de hora em hora.';
   const cuidado = [];
-  if (s.n) cuidado.push((['aplicação','frente'].includes(tipoNo) ? 'Esta ' : 'Este ') + tipoNo + ' já tem <b>' + s.n + (s.n === 1 ? ' item' : ' itens') + '</b> (' + s.ep + (s.ep === 1 ? ' épico' : ' épicos') + ', ' + s.and + ' em andamento, ' + s.feitos + ' concluídos). Nada disso é apagado nem mudado, mas com <b>Épicos e histórias</b> marcado os novos entram ao lado: se o que já existe foi feito à mão, pode ficar repetido. Para ter só os desenhos, desmarque Épicos e histórias.');
+  if (s.n) cuidado.push((['aplicação','frente'].includes(tipoNo) ? 'Esta ' : 'Este ') + tipoNo + ' já tem <b>' + s.n + (s.n === 1 ? ' item' : ' itens') + '</b> (' + s.ep + (s.ep === 1 ? ' épico' : ' épicos') + ', ' + s.and + ' em andamento, ' + s.feitos + ' concluídos). Nada disso é apagado nem mudado, mas com <b>Épicos e histórias</b> marcado os novos entram ao lado: se o que já existe foi feito à mão, pode ficar repetido. Para não repetir, desmarque Épicos e histórias.');
   if (reposAqui.length) cuidado.push('Já ' + (reposAqui.length === 1 ? 'está ligado aqui o repositório ' : 'estão ligados aqui os repositórios ') + '<b>' + reposAqui.map(esc).join(', ') + '</b>. Os desenhos dos dois ficam lado a lado.');
   if (bancosAqui.length) cuidado.push('Já ' + (bancosAqui.length === 1 ? 'está ligado aqui o banco ' : 'estão ligados aqui os bancos ') + '<b>' + bancosAqui.map(esc).join(', ') + '</b>. Os desenhos de cada um ficam separados.');
   if (o.trocar && !repo) cuidado.push('Você está <b>trocando</b> um banco já ligado: os desenhos do banco antigo vão para o arquivo e a ficha dele é refeita com o novo.');
@@ -22490,28 +22510,49 @@ function integrarConfirmar(o){
     const dlg = modal(repo ? 'Ligar o repositório?' : (o.trocar ? 'Trocar o banco?' : 'Ligar o banco?'),
       '<div class="ig">' +
       '<p class="ig-onde">' + (repo ? 'Repositório' : 'Banco') + ' <b>' + esc(o.nome) + '</b><br>vai ser ligado em <b>' + caminho.map(esc).join(' › ') + '</b> <span class="ig-tipo">' + tipoNo + '</span></p>' +
-      '<h4>O que o robô vai montar</h4><div class="ig-opcoes">' +
-        '<label><input type="checkbox" id="ig-desenhos" checked> <b>Desenhos</b> <span>' + (repo ? 'Software, Infraestrutura, Telas e rotas' : 'DER e Acesso ao banco') + ', com os quadros no canvas</span></label>' +
-        '<label><input type="checkbox" id="ig-itens"' + ((o.itensPadrao ?? !s.n) ? ' checked' : '') + '> <b>Épicos e histórias</b> <span>o backlog com ' + (repo ? 'o que já existe no código' : 'as tabelas do banco') + ', nas frentes de ' + aqui + '</span></label>' +
-        '<p class="ig-nota">Dá para ter os dois, um só ou nenhum, e mudar depois no painel Automático sem desligar ' + (repo ? 'o repositório' : 'o banco') + '. Ficha técnica e Análise de segurança vêm sempre.</p></div>' +
-      '<h4>O que vai acontecer</h4><ul class="ig-lista">' + vai.filter(Boolean).map(li).join('') + '</ul>' +
-      (cuidado.length ? '<h4>Antes de confirmar</h4><ul class="ig-lista ig-cuidado">' + cuidado.map(li).join('') + '</ul>' : '') +
+      '<h4>O que o robô vai fazer</h4><p class="ig-base">' + base + '</p>' +
+      '<div class="ig-opcoes"><label class="ig-tudo"><input type="checkbox" id="ig-tudo"> <b>Tudo</b> <span>marca ou desmarca todas as opções abaixo</span></label>' +
+        opcoes.map(([k, liga, rot, txt]) => '<label class="ig-op" data-ig="' + k + '"><input type="checkbox" id="ig-' + k + '"' + (liga ? ' checked' : '') + '> <b>' + rot + '</b><span>' + txt + '</span></label>').join('') +
+        '<p class="ig-nota">Só acontece o que estiver marcado. Dá para mudar cada uma depois, em Ligações, sem desligar ' + (repo ? 'o repositório' : 'o banco') + '.</p></div>' +
+      (cuidado.length ? '<h4>Antes de confirmar</h4><ul class="ig-lista ig-cuidado">' + cuidado.map(t => '<li>' + t + '</li>').join('') + '</ul>' : '') +
       '<p class="ig-volta">Se ligar no lugar errado: troque pelo botão Trocar ou Desligar. Os desenhos e a ficha saem sozinhos daqui; os épicos e histórias criados vão para a Lixeira pela própria lixeira.</p>' +
       '<label class="ig-ok"><input type="checkbox" id="ig-conferi"> Conferi: <b>' + esc(o.nome) + '</b> é d' + (repo ? 'o código' : 'o banco') + ' de <b>' + esc(caminho[caminho.length - 1]) + '</b></label></div>',
       [{txt:'Cancelar', cls:'sec', acao:() => { decidido = true; res(null); }},
        {txt:repo ? 'Sim, ligar' : (o.trocar ? 'Sim, trocar' : 'Sim, ligar'), acao:d => {
          if (!$('#ig-conferi', d).checked){ toast('Marque que conferiu o lugar antes de ligar.'); return false; }
-         decidido = true; res({desenhos:$('#ig-desenhos', d).checked, itens:$('#ig-itens', d).checked}); }}]);
+         decidido = true; res(Object.fromEntries(opcoes.map(([k]) => [k, $('#ig-' + k, d).checked]))); }}]);
     dlg.classList.add('ig-dlg');
     dlg.addEventListener('close', () => { if (!decidido){ decidido = true; res(null); } });
-    // o que vai acontecer acompanha as escolhas: o que fica desligado aparece riscado
-    const marcar = () => { const de = $('#ig-desenhos', dlg).checked, it = $('#ig-itens', dlg).checked;
-      $$('.ig-lista li[data-ig]', dlg).forEach(x => x.classList.toggle('ig-off', (x.dataset.ig === 'desenhos' && !de) || (x.dataset.ig === 'itens' && !it))); };
-    dlg.addEventListener('change', e => { if (e.target.id === 'ig-desenhos' || e.target.id === 'ig-itens') marcar(); });
+    // a caixa Tudo acompanha as outras (marcada, desmarcada ou "algumas"); o que fica desmarcado aparece apagado
+    const marcar = () => { const cx = opcoes.map(([k]) => $('#ig-' + k, dlg)), n = cx.filter(x => x.checked).length, t = $('#ig-tudo', dlg);
+      t.checked = n === cx.length; t.indeterminate = n > 0 && n < cx.length;
+      cx.forEach(x => x.closest('.ig-op').classList.toggle('ig-off', !x.checked)); };
+    dlg.addEventListener('change', e => {
+      if (e.target.id === 'ig-tudo') opcoes.forEach(([k]) => { $('#ig-' + k, dlg).checked = e.target.checked; });
+      if (e.target.id && e.target.id.startsWith('ig-') && e.target.id !== 'ig-conferi') marcar(); });
     marcar();
   });
 }
-if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {integrarConfirmar, igSituacao, igChave});
+// guarda as escolhas da janela na fonte recém-ligada (parte 70). Só chama o banco se algo ficou desmarcado ou se a fonte
+// já tinha algo desligado; o que não veio na escolha (null) fica como está.
+const IG_COLUNA = {desenhos:'gera_desenhos', itens:'gera_itens', ficha:'gera_ficha', analise:'gera_analise', mapa:'gera_mapa', mover:'mover_status'};
+async function igGravarEscolhas(tipo, id, esc0, atual){
+  if (!id || !esc0) return {data:null, error:null};
+  const algoDesligado = Object.values(esc0).some(v => v === false) || Object.values(IG_COLUNA).some(c => atual && atual[c] === false);
+  if (!algoDesligado) return {data:null, error:null};
+  const v = k => typeof esc0[k] === 'boolean' ? esc0[k] : null;
+  const {data, error} = await window.ciclodevBanco.rpc('fonte_opcoes', {p_tipo:tipo, p_id:id, p_desenhos:v('desenhos'), p_itens:v('itens'), p_lixeira:false,
+    p_ficha:v('ficha'), p_analise:v('analise'), p_mapa:tipo === 'repo' ? v('mapa') : null, p_mover:tipo === 'repo' ? v('mover') : null});
+  if (data && atual) Object.entries(IG_COLUNA).forEach(([k, c]) => { if (typeof data[k] === 'boolean') atual[c] = data[k]; });
+  return {data, error};
+}
+// o que ficou ligado, numa frase, para o aviso depois de ligar
+function igResumo(esc0){
+  const nomes = {desenhos:'Desenhos', ficha:'Ficha técnica', analise:'Análise', itens:'Épicos e histórias', mover:'Mudar a situação dos itens', mapa:'Mapa do Sistema'};
+  const sim = Object.keys(nomes).filter(k => esc0[k] === true).map(k => nomes[k]);
+  return sim.length ? 'Ligado: ' + sim.join(', ') + '.' : 'Nada marcado: a fonte fica ligada, mas o robô não faz nada com ela até você marcar algo em Ligações.';
+}
+if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {integrarConfirmar, igSituacao, igChave, igGravarEscolhas, igResumo});
 
 /* =====================================================================
    Ao vivo (parte 67 do banco): o que outra pessoa (ou o robô) muda aparece aqui sem recarregar a página.

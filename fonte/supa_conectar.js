@@ -135,15 +135,13 @@ async function scConferirLigar(dlg, st, b){
   st.resultado = r.erro && !r.falhas ? {ok:false, falhas:[r.erro]} : r;
   const s = $('[data-sc-saida]', dlg); if (s) s.innerHTML = scConferenciaHTML(st.resultado);
   if (!r.ok || !r.prova){ fim(); if (s && s.scrollIntoView) s.scrollIntoView({block:'nearest'}); return; }
-  const esc0 = typeof integrarConfirmar === 'function' ? await integrarConfirmar({tipo:'banco', nome:(nome || 'Banco de produção') + ' (' + st.projeto + ')', noId:IFR.no, trocar:b ? b.id : null}) : {desenhos:true, itens:true};
+  const esc0 = typeof integrarConfirmar === 'function' ? await integrarConfirmar({tipo:'banco', nome:(nome || 'Banco de produção') + ' (' + st.projeto + ')', noId:IFR.no, trocar:b ? b.id : null}) : {};
   if (!esc0){ fim(); return; }
   const {data, error} = await window.ciclodevBanco.rpc('infra_banco_supabase_ligar', {p_no:IFR.no, p_id:b ? b.id : null, p_nome:nome, p_prova:r.prova});
   fim();
   if (error || !data){ if (s) s.insertAdjacentHTML('beforeend', '<p class="ifr-fonte-erro">Conferiu, mas não deu para ligar: ' + esc(tfErro(error)) + '</p>'); return; }
-  if (!esc0.desenhos || !esc0.itens || data.gera_desenhos === false || data.gera_itens === false){
-    const {error:eo} = await window.ciclodevBanco.rpc('fonte_opcoes', {p_tipo:'banco', p_id:data.id, p_desenhos:esc0.desenhos, p_itens:esc0.itens, p_lixeira:false});
-    if (eo) toast('Ligado, mas não deu para guardar o que montar: ' + tfErro(eo) + '. Ajuste no painel Automático.');
-  }
+  { const {error:eo} = await igGravarEscolhas('banco', data.id, esc0, data);
+    if (eo) toast('Ligado, mas não deu para guardar as escolhas: ' + tfErro(eo) + '. Ajuste em Ligações.'); }
   dlg.close(); dlg.remove();
   await ifrAutoCarregar(); ifrLado();
   const c = r.conferencia;
