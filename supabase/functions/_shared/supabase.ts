@@ -3,8 +3,8 @@
 // Só roda as consultas FIXAS daqui e de gerar.ts, todas no catálogo do Postgres (a estrutura). Nunca lê o conteúdo das tabelas.
 // A leitura vai pelo modo "só leitura" do próprio Supabase (usuário supabase_read_only_user, transação read only),
 // e cada leitura confere antes que está mesmo em só leitura.
-import { CONSULTA_BANCO, CONSULTA_MIGRACOES, datasDasMigracoes } from '../diagramas-auto/gerar.ts';
-import type { Estrutura } from '../diagramas-auto/gerar.ts';
+import { CONSULTA_BANCO, CONSULTA_MIGRACOES, datasDasMigracoes } from './estrutura.ts';
+import type { Estrutura } from './estrutura.ts';
 
 export const SB_API = 'https://api.supabase.com';
 export type Rpc = (nome: string, args: Record<string, unknown>) => Promise<{ data: any; error: { message?: string } | null }>;

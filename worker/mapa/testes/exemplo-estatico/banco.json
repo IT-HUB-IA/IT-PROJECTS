@@ -1,0 +1,15 @@
+[{ "nome": "Banco da loja", "motor": "postgres", "esquemas": ["public"],
+  "estrutura": { "papeis": [], "tabelas": [
+    { "esquema": "public", "nome": "clientes", "tipo": "r", "colunas": [
+      { "nome": "id", "tipo": "uuid", "nao_nulo": true }, { "nome": "nome", "tipo": "text", "nao_nulo": true }, { "nome": "email", "tipo": "text" }, { "nome": "telefone", "tipo": "text" }, { "nome": "criado_em", "tipo": "timestamp with time zone" } ],
+      "restricoes": [{ "nome": "clientes_pkey", "tipo": "p", "cols": ["id"] }], "permissoes": [], "regras": [] },
+    { "esquema": "public", "nome": "pedidos", "tipo": "r", "colunas": [
+      { "nome": "id", "tipo": "uuid", "nao_nulo": true }, { "nome": "cliente_id", "tipo": "uuid" }, { "nome": "total", "tipo": "numeric" }, { "nome": "status", "tipo": "text" }, { "nome": "cupom", "tipo": "text" } ],
+      "restricoes": [{ "nome": "pedidos_pkey", "tipo": "p", "cols": ["id"] }, { "nome": "pedidos_cliente_fkey", "tipo": "f", "cols": ["cliente_id"], "ref_tabela": "clientes", "ref_cols": ["id"] }], "permissoes": [], "regras": [] },
+    { "esquema": "public", "nome": "pessoas", "tipo": "r", "colunas": [
+      { "nome": "id", "tipo": "uuid", "nao_nulo": true }, { "nome": "auth_user_id", "tipo": "uuid" }, { "nome": "nivel", "tipo": "text", "nao_nulo": true } ],
+      "restricoes": [{ "nome": "pessoas_pkey", "tipo": "p", "cols": ["id"] }], "permissoes": [], "regras": [] },
+    { "esquema": "public", "nome": "tabela_esquecida", "tipo": "r", "colunas": [ { "nome": "id", "tipo": "uuid" }, { "nome": "coisa", "tipo": "text" } ], "restricoes": [], "permissoes": [], "regras": [] }
+  ] },
+  "checagens": [{ "esquema": "public", "tabela": "pessoas", "regra": "CHECK ((nivel = ANY (ARRAY['atendente'::text, 'gerente'::text])))" }],
+  "palavras": ["calcular_total", "pedidos", "status"] }]

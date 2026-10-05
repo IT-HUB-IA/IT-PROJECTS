@@ -1,0 +1,8 @@
+{
+  "name": "ciclodev-mapa-trabalhador",
+  "private": true,
+  "type": "module",
+  "description": "Trabalhador do Mapa do Sistema do CicloDev: constrói uma cópia do sistema, percorre com dados de exemplo e devolve o mapa.",
+  "scripts": { "start": "node trabalhador.mjs", "test": "node testes/rodar.mjs" },
+  "dependencies": { "playwright": "1.56.1" }
+}

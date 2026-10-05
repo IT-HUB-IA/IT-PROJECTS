@@ -75,7 +75,7 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   const pj = conta("select id from public.nos where tipo = 'projeto' and nome = 'BL'");
   const abrir = async () => { await p.goto('file://' + process.cwd() + '/vercel/index.html'); await p.waitForTimeout(2500);
     await p.evaluate(() => document.querySelector('[data-tela="operacoes"]').click()); await p.waitForTimeout(400);
-    await p.evaluate(k => { const U = window.__tf.UI; U.sel = 'project:' + k; U.view = 'infra'; U.semArvore = true; window.__tf.rOperacoes(); }, pj); await p.waitForTimeout(3000); };
+    await p.evaluate(k => { const U = window.__tf.UI; U.sel = 'project:' + k; U.view = 'infra'; U.infraModo = 'desenhos'; U.semArvore = true; window.__tf.rOperacoes(); }, pj); await p.waitForTimeout(3000); };
   psql("insert into public.repositorios (no_id, provedor, nome, branch_principal) values ('" + pj + "', 'github', 'it-hub/teste-ligacoes', 'main')");
   psql("insert into public.infra_bancos (no_id, nome, provedor, motor, esquemas, servidor, ativo, ultimo_erro) values ('" + pj + "', 'Banco de produção', 'supabase', 'postgres', array['public'], 'db.exemplo', true, 'password authentication failed for user \"leitura\"')");
   await abrir();
@@ -133,7 +133,7 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   await p.evaluate(() => { const v = [...document.querySelectorAll('.view-b')].find(b => b.dataset.view !== 'infra'); v.click(); }); await p.waitForTimeout(600);
   ok(await p.evaluate(() => !document.getElementById('ifr-lig')), 'trocar de aba (sair da Infraestrutura) fecha a janela');
   // 6. no celular a janela ocupa a largura toda, sem passar da tela
-  await p.setViewportSize({width:390, height:800}); await p.evaluate(k => { const U = window.__tf.UI; U.view = 'infra'; window.__tf.rOperacoes(); }); await p.waitForTimeout(1500);
+  await p.setViewportSize({width:390, height:800}); await p.evaluate(k => { const U = window.__tf.UI; U.view = 'infra'; U.infraModo = 'desenhos'; window.__tf.rOperacoes(); }); await p.waitForTimeout(1500);
   await p.evaluate(() => document.querySelector('#ops-corpo [data-ifr-lig]').click()); await p.waitForTimeout(400);
   ok(await p.evaluate(() => { const r = document.getElementById('ifr-lig').getBoundingClientRect(); return r.left >= 8 && r.right <= innerWidth - 8 && document.documentElement.scrollWidth <= innerWidth; }), 'no celular a janela cabe na tela, sem rolagem para o lado');
   if (FOTOS) await p.screenshot({path: FOTOS + '/ligacoes_cel.png'});

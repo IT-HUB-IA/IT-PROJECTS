@@ -75,9 +75,9 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   const pj = conta("select id from public.nos where tipo = 'projeto' and nome = 'BL'");
   const abrir = async () => { await p.goto('file://' + process.cwd() + '/vercel/index.html'); await p.waitForTimeout(2500);
     await p.evaluate(() => document.querySelector('[data-tela="operacoes"]').click()); await p.waitForTimeout(400);
-    await p.evaluate(k => { const U = window.__tf.UI; U.sel = 'project:' + k; U.view = 'infra'; U.semArvore = true; window.__tf.rOperacoes(); }, pj); await p.waitForTimeout(3000); };
+    await p.evaluate(k => { const U = window.__tf.UI; U.sel = 'project:' + k; U.view = 'infra'; U.infraModo = 'desenhos'; U.semArvore = true; window.__tf.rOperacoes(); }, pj); await p.waitForTimeout(3000); };
   await abrir();
-  ok(await p.evaluate(() => document.querySelectorAll('.ifr-aba').length === 10 && !!document.querySelector('.view-b[data-view="infra"]')), 'o projeto tem a aba Infraestrutura com as 10 sub-abas');
+  ok(await p.evaluate(() => document.querySelectorAll('.ifr-vis-b').length === 10 && !!document.querySelector('.view-b[data-view="infra"]')), 'o projeto tem a aba Infraestrutura com as 10 sub-abas');
   const fr = () => p.frames().find(f => f !== p.mainFrame());
   ok(!!fr() && await fr().evaluate(() => !!window.__PONTE && document.querySelectorAll('#barra [data-criar]').length === 12 && !!document.querySelector('#barra [data-criar="tabela"]') && !!document.querySelector('#barra [data-criar="fluxo"]')), 'o canvas abre dentro da aba, com a barra de criar (inclusive tabela e passo de processo)');
   ok(await fr().evaluate(() => !!document.querySelector('#barra [data-criar="diagrama"]')), 'a barra do canvas tem o card "Desenho do sistema"');

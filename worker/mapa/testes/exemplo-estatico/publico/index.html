@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Loja Exemplo</title>
+<style>body{font-family:sans-serif;margin:0;display:flex}nav{width:180px;background:#eee;padding:12px}main{padding:16px;flex:1}
+.modal{position:fixed;inset:20% 30%;background:#fff;border:1px solid #999;padding:16px;width:420px}[hidden]{display:none!important}button{margin:4px}</style></head>
+<body>
+<nav aria-label="Menu principal">
+  <button data-tela="clientes">Clientes</button>
+  <button data-tela="pedidos">Pedidos</button>
+  <button data-tela="financeiro" id="m-fin" hidden>Financeiro</button>
+  <button data-tela="ajustes">Ajustes</button>
+  <button id="sair">Sair</button>
+</nav>
+<main id="tela"></main>
+<div class="modal" role="dialog" id="j-cliente" hidden>
+  <h2>Novo cliente</h2>
+  <label>Nome <input id="c-nome"></label><br>
+  <label>Apelido <input id="c-apelido"></label><br>
+  <label>Observação <input id="c-obs"></label><br>
+  <button id="c-salvar">Salvar</button><button id="c-fechar">Cancelar</button>
+</div>
+<script>
+const API = 'https://demo123.supabase.co';
+const sessao = JSON.parse(localStorage.getItem('sb-demo123-auth-token') || 'null');
+const H = () => ({ apikey: 'publica', authorization: 'Bearer ' + (sessao ? sessao.access_token : ''), 'content-type': 'application/json' });
+const tela = document.getElementById('tela');
+async function ler(t, q) { const r = await fetch(API + '/rest/v1/' + t + '?' + q, { headers: H() }); return r.ok ? r.json() : []; }
+async function abrir(nome) {
+  if (!sessao) { tela.innerHTML = '<h1>Entrar</h1><p>Faça o login para usar a loja.</p>'; return; }
+  if (nome === 'clientes') {
+    const l = await ler('clientes', 'select=id,nome,email&order=nome');
+    tela.innerHTML = '<h1>Clientes</h1><button id="novo">Novo cliente</button><a href="/relatorio-antigo">Relatório antigo</a><table>' + l.map(c => '<tr><td>' + c.nome + '</td><td>' + c.email + '</td></tr>').join('') + '</table>';
+    document.getElementById('novo').onclick = () => { document.getElementById('j-cliente').hidden = false; };
+  } else if (nome === 'pedidos') {
+    const l = await ler('pedidos', 'select=*');
+    tela.innerHTML = '<h1>Pedidos</h1><ul>' + l.map(p => '<li>' + p.status + ' ' + p.total + '</li>').join('') + '</ul>';
+  } else if (nome === 'financeiro') {
+    tela.innerHTML = '<h1>Financeiro</h1><p>Só para gerentes.</p><button id="exp">Exportar</button>';
+    document.getElementById('exp').onclick = () => fetch(API + '/rest/v1/rpc/exportar_financeiro', { method: 'POST', headers: H(), body: '{}' });
+  } else if (nome === 'ajustes') {
+    tela.innerHTML = '<h1>Ajustes</h1><label>Tema da tela <input id="tema"></label><button id="guardar">Guardar</button>';
+    document.getElementById('guardar').onclick = () => localStorage.setItem('loja-tema', document.getElementById('tema').value);
+  }
+}
+document.querySelectorAll('nav [data-tela]').forEach(b => b.onclick = () => abrir(b.dataset.tela));
+document.getElementById('sair').onclick = () => { localStorage.clear(); location.reload(); };
+document.getElementById('c-fechar').onclick = () => { document.getElementById('j-cliente').hidden = true; };
+document.getElementById('c-salvar').onclick = async () => {
+  await fetch(API + '/rest/v1/clientes', { method: 'POST', headers: H(), body: JSON.stringify({ nome: document.getElementById('c-nome').value, apelido: document.getElementById('c-apelido').value }) });
+  document.getElementById('j-cliente').hidden = true;
+};
+(async () => {
+  if (sessao) { const eu = await ler('pessoas', 'select=nivel&auth_user_id=eq.' + sessao.user.id); if (eu[0] && eu[0].nivel === 'gerente') document.getElementById('m-fin').hidden = false; }
+  abrir('clientes');
+})();
+</script>
+</body></html>

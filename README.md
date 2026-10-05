@@ -9,6 +9,8 @@ Gestão de projetos, entregas e custos da IT.IA, feita no CicloDev. Cliente atua
 | `banco/` | O banco no Supabase (`tfcvoszeewmpghgxztuy`): SQL em partes, testes e o `LEIA-ME.md` com as decisões |
 | `testes/` | Testes da tela (Playwright) |
 | `emails/` | Os e-mails do login em português (esqueci a senha, convite, confirmação), para colar no Supabase |
+| `supabase/functions/` | As funções do Supabase (Deno), com os testes ao lado |
+| `worker/mapa/` | O trabalhador do Mapa do Sistema (Infraestrutura > Como está): roda num servidor com Docker, veja o `LEIA-ME.md` dele |
 
 ## Regra de tela: usar toda a largura
 
