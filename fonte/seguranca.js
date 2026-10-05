@@ -73,8 +73,11 @@ function sgTelaHTML(){
   h += '<div class="sg-filtros" role="group" aria-label="Filtrar achados">' + [['aberto','Abertos'],['corrigido','Corrigidos'],['ignorado','Ignorados']].map(([k, r]) => '<button type="button" class="sg-f' + (SG.filtro === k ? ' sel' : '') + '" data-sg-filtro="' + k + '" aria-pressed="' + (SG.filtro === k) + '">' + r + ' <b>' + n2(k) + '</b></button>').join('') +
     '<span class="espaco"></span><select class="sel peq" data-sg-tipo aria-label="Tipo"><option value="">Todos os tipos</option>' + Object.entries(SG_TIPOS).map(([k, r]) => '<option value="' + k + '"' + (SG.tipo === k ? ' selected' : '') + '>' + r + '</option>').join('') + '</select><select class="sel peq" data-sg-area aria-label="Onde"><option value="">Código e banco</option><option value="codigo"' + (SG.area === 'codigo' ? ' selected' : '') + '>Só código</option><option value="banco"' + (SG.area === 'banco' ? ' selected' : '') + '>Só banco</option></select></div>';
   if (!lista.length) h += '<p class="sg-vazio">' + (SG.filtro === 'aberto' ? (fontes.length ? 'Nenhum achado aberto. Bom trabalho!' : 'Nada para mostrar ainda.') : SG.filtro === 'corrigido' ? 'Nenhum achado corrigido ainda. Quando um achado some do código ou do banco, ele aparece aqui.' : 'Nenhum achado ignorado.') + '</p>';
+  // o que foi achado no banco vai numa planilha (uma linha por tabela e achado); o do código continua em cartões
+  const doBanco = lista.filter(a => a.origem.startsWith('banco:')), doCodigo = lista.filter(a => !a.origem.startsWith('banco:'));
+  if (doBanco.length) h += sgPlanilhaBancoHTML(doBanco.slice(0, 500), pode, podeVer) + (doBanco.length > 500 ? '<p class="sg-vazio">E mais ' + (doBanco.length - 500) + ' achados do banco.</p>' : '') + (doCodigo.length ? '<h3 class="sg-pl-tit">No código</h3>' : '');
   let grav = null;
-  lista.slice(0, 300).forEach(a => {
+  doCodigo.slice(0, 300).forEach(a => {
     if (a.gravidade !== grav){ grav = a.gravidade; h += '<h4 class="sg-sec sg-g-' + grav + '">' + SG_GRAV[grav][0] + ' <small>' + SG_GRAV[grav][1] + '</small></h4>'; }
     const r = sgRegra(a.regra), it = a.item_id && byId('issues', a.item_id);
     h += '<article class="sg-ach sg-g-' + a.gravidade + '" data-sg-id="' + esc(a.id) + '"><header><span class="sg-reg">' + esc(a.regra) + '</span>' + (sgTipo(a.regra) !== 'seguranca' ? '<span class="sg-selo">' + SG_TIPOS[sgTipo(a.regra)] + '</span>' : '') + '<b>' + esc(a.titulo) + '</b>' +
@@ -86,8 +89,23 @@ function sgTelaHTML(){
         (a.status === 'aberto' && a.visto_em ? '<span class="sg-visto">Visto' + (a.visto_por && byId('people', a.visto_por) ? ' por ' + esc(byId('people', a.visto_por).nome.split(' ')[0]) : '') + ' ' + esc(sgQuando(a.visto_em)) + '</span>' : '') + (it ? '<button type="button" class="btn sec peq" data-abrir-item="' + esc(it.id) + '">Abrir ' + esc((typeof chaveDe === 'function' && chaveDe(it)) || 'o item') + '</button>' : (pode && a.status === 'aberto' ? '<button type="button" class="btn peq" data-sg-item="' + esc(a.id) + '">Criar item para corrigir</button>' : '')) +
         (pode && a.status === 'aberto' ? '<button type="button" class="btn fant peq" data-sg-ignorar="' + esc(a.id) + '">Ignorar com motivo</button>' : '') + (pode && a.status === 'ignorado' ? '<button type="button" class="btn fant peq" data-sg-reabrir="' + esc(a.id) + '">Voltar a considerar</button>' : '') + '</div></article>';
   });
-  if (lista.length > 300) h += '<p class="sg-vazio">E mais ' + (lista.length - 300) + ' achados.</p>';
+  if (doCodigo.length > 300) h += '<p class="sg-vazio">E mais ' + (doCodigo.length - 300) + ' achados do código.</p>';
   return h + '</div>';
+}
+// achados do banco em planilha: as mesmas informações e os mesmos botões dos cartões, em linhas e colunas
+function sgPlanilhaBancoHTML(l, pode, podeVer){
+  const abertos = SG.detAbertos || {};
+  const situacao = a => a.status === 'corrigido' ? 'Corrigido ' + sgQuando(a.corrigido_em) : a.status === 'ignorado' ? 'Ignorado' + (a.motivo ? ': ' + a.motivo : '') : !a.visto_em ? 'Alerta (não visto)' : 'Visto' + (a.visto_por && byId('people', a.visto_por) ? ' por ' + byId('people', a.visto_por).nome.split(' ')[0] : '') + ' ' + sgQuando(a.visto_em);
+  const linhas = l.map((a, i) => { const r = sgRegra(a.regra), it = a.item_id && byId('issues', a.item_id), [esq, ...resto] = String(a.onde).split('.'), tab = resto.join('.') || esq, det = abertos[a.id] ?? (a.gravidade === 'critica' && a.status === 'aberto');
+    return '<tr class="sg-pl-l sg-g-' + a.gravidade + '" data-sg-id="' + esc(a.id) + '"><td class="pl-n">' + (i + 1) + '</td><td><code>' + esc(resto.length ? esq : '') + '</code></td><td><code><b>' + esc(tab) + '</b></code></td>' +
+      '<td><span class="sg-pl-grav sg-g-' + a.gravidade + '">' + esc(SG_GRAV[a.gravidade][0]) + '</span></td><td><span class="sg-reg">' + esc(a.regra) + '</span> ' + esc(SG_TIPOS[sgTipo(a.regra)] || '') + '</td>' +
+      '<td class="pl-texto"><b>' + esc(a.titulo) + '</b>' + (a.trecho ? '<br><code>' + esc(a.trecho) + '</code>' : '') + '<br><button type="button" class="ifr-lnk" data-sg-det="' + esc(a.id) + '" aria-expanded="' + det + '">' + (det ? 'Esconder' : 'Por que importa e como corrigir') + '</button></td>' +
+      '<td>' + esc(situacao(a)) + '</td>' +
+      '<td class="pl-acoes">' + (a.status === 'aberto' && !a.visto_em && podeVer ? '<button type="button" class="ifr-lnk" data-sg-visto="' + esc(a.id) + '">Marcar como visto</button>' : '') +
+        (it ? '<button type="button" class="ifr-lnk" data-abrir-item="' + esc(it.id) + '">Abrir ' + esc((typeof chaveDe === 'function' && chaveDe(it)) || 'o item') + '</button>' : (pode && a.status === 'aberto' ? '<button type="button" class="ifr-lnk" data-sg-item="' + esc(a.id) + '">Criar item</button>' : '')) +
+        (pode && a.status === 'aberto' ? '<button type="button" class="ifr-lnk" data-sg-ignorar="' + esc(a.id) + '">Ignorar</button>' : '') + (pode && a.status === 'ignorado' ? '<button type="button" class="ifr-lnk" data-sg-reabrir="' + esc(a.id) + '">Voltar a considerar</button>' : '') + '</td></tr>' +
+      (det ? '<tr class="sg-pl-det"><td class="pl-n"></td><td colspan="7"><p><b>Por que importa.</b> ' + esc(r.porque) + '</p><p><b>Como corrigir.</b> ' + esc(r.correcao) + '</p><p class="sg-fontetxt">Fonte: ' + esc(r.fonte) + '</p></td></tr>' : ''); }).join('');
+  return '<h3 class="sg-pl-tit">No banco <small>' + l.length + (l.length === 1 ? ' achado' : ' achados') + '</small></h3><div class="tabela-rolo sg-pl"><table class="tabela planilha"><thead><tr><th class="pl-n">#</th><th>Esquema</th><th>Tabela</th><th>Gravidade</th><th>Regra</th><th class="pl-texto">O que foi achado</th><th>Situação</th><th>Ações</th></tr></thead><tbody>' + linhas + '</tbody></table></div>';
 }
 // ---------- o que já existe: importar como épicos e itens ----------
 // ainda falta montar: não virou item (a versão conta como montada quando já existe em Entregas)
@@ -269,6 +287,7 @@ if (typeof SM_EXTRAS_PADRAO !== 'undefined' && !SM_EXTRAS_PADRAO.includes('segur
 
 document.addEventListener('click', async e => {
   if (!e.target.closest || UI.view !== 'seguranca') return;
+  const dt = e.target.closest('[data-sg-det]'); if (dt){ const k = dt.dataset.sgDet; SG.detAbertos = Object.assign({}, SG.detAbertos, {[k]:dt.getAttribute('aria-expanded') !== 'true'}); rView(); return; }
   const f = e.target.closest('[data-sg-filtro]'); if (f){ SG.filtro = f.dataset.sgFiltro; rView(); return; }
   if (e.target.closest('[data-sg-analisar]')){
     const sb = sgBanco(); if (!sb) return;

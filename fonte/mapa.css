@@ -157,3 +157,15 @@
   .mp-al-acoes{grid-column:2;justify-content:flex-start}
   .mp-st-acoes{margin-left:0}
 }
+/* Colunas sem tela em planilha: cada tabela é uma linha que abre e fecha as colunas dela */
+.mp-cst-pl tr.mp-cst-tab{cursor:pointer}
+.mp-cst-pl tr.mp-cst-tab > td{background:var(--preto-04);border-top:2px solid var(--linha-forte, #CFCFD4)}
+.mp-cst-pl tr.mp-cst-tab:hover > td{background:var(--preto-08, #EBEBEE)}
+.mp-cst-pl tr.mp-cst-tab:focus-visible{outline:2px solid var(--vermelho, #E10600);outline-offset:-2px}
+.mp-cst-seta{display:inline-block;width:14px;color:var(--tinta-3)}
+.mp-cst-pl tbody tr.mp-cst-col > td{background:var(--branco, #fff)}
+.mp-cst-pl tr.mp-cst-col.proposito > td{color:var(--tinta-3)}
+.mp-cst-pl tr.mp-cst-col > td:nth-child(2){border-right-color:transparent;width:12px}
+.mp-cst-pl .pl-nome{white-space:nowrap}
+.mp-cst-pl td:nth-child(4){white-space:nowrap}
+.mp-cst .tabela-rolo{max-height:70vh;overflow:auto}

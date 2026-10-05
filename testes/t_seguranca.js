@@ -138,6 +138,22 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   ok(conta("select count(*) from analise_inventario where item_id is not null") === '3', 'e marca no inventário o que já virou item (não importa de novo)');
   ok(conta("select count(*) from itens_criterios c join itens i on i.id = c.item_id where i.titulo = 'POST /clientes/{id}/bloquear' and c.texto like 'Conferir o que falta: 1 marca TODO%'") === '1', 'o item que precisa de análise leva o motivo como critério');
   ok(await p.evaluate(a => { const U = window.__tf.UI; U.sel = 'ws:' + window.__tf.D.ws.find(w => w.app === a).id; window.__tf.rOperacoes(); return !document.querySelector('.view-b[data-view="seguranca"]'); }, app), 'numa frente a aba Segurança não aparece (fica no projeto, produto e aplicação)');
+  // achados do banco: em planilha (esquema, tabela, gravidade, regra, o que foi achado, situação, ações)
+  { psql("insert into public.infra_bancos (id, no_id, nome, provedor) values ('aaaaaaaa-0000-0000-0000-0000000000b1', '" + app + "', 'Banco BL', 'supabase') on conflict do nothing");
+    const achB = [{regra:'BD-01', gravidade:'critica', titulo:'Tabela aberta para quem não entrou', onde:'public.clientes', trecho:'anon pode: select · RLS desligada', impressao:'0000b001'},
+      {regra:'ARQ-02', gravidade:'baixa', titulo:'Coluna de data guardada como texto', onde:'public.pedidos', trecho:'coluna criado (text)', impressao:'0000b002'}];
+    psql("select public.analise_gravar('" + app + "', null, 'aaaaaaaa-0000-0000-0000-0000000000b1', 'Banco BL', 'h1', 2, $j$" + JSON.stringify(achB) + "$j$::jsonb)");
+    await ver();
+    const pl = await p.evaluate(() => { const t = document.querySelector('.sg-pl table.planilha'); if (!t) return null;
+      return { cab:[...t.querySelectorAll('thead th')].map(x => x.textContent.trim()).join('|'), linhas:t.querySelectorAll('tr.sg-pl-l').length, txt:t.textContent,
+        det:t.querySelectorAll('tr.sg-pl-det').length, visto:t.querySelectorAll('[data-sg-visto]').length, cartoesBanco:[...document.querySelectorAll('.sg-ach')].filter(x => /public\.(clientes|pedidos)/.test(x.textContent)).length }; });
+    ok(pl && pl.cab === '#|Esquema|Tabela|Gravidade|Regra|O que foi achado|Situação|Ações' && pl.linhas === 2 && /clientes/.test(pl.txt) && /pedidos/.test(pl.txt) && pl.cartoesBanco === 0,
+      'achados do banco aparecem numa planilha (uma linha por tabela e achado), não em cartões');
+    ok(pl && pl.det === 1 && pl.visto === 2, 'o crítico já vem com "por que importa" aberto; cada linha tem Marcar como visto');
+    await p.evaluate(() => document.querySelector('.sg-pl [data-sg-det][aria-expanded="false"]').click()); await p.waitForTimeout(300);
+    ok(await p.evaluate(() => document.querySelectorAll('.sg-pl tr.sg-pl-det').length === 2), '"Por que importa e como corrigir" abre na própria planilha');
+    if (F) await p.locator('.sg-pl').screenshot({path: F + 'analise_banco.png'});
+  }
   ok(!erros.length, 'sem erro na página' + (erros.length ? ': ' + erros.join(' | ') : ''));
   await b.close(); console.log(falhas ? falhas + ' FALHA(S)' : 'TUDO OK'); process.exit(falhas ? 1 : 0);
 })();

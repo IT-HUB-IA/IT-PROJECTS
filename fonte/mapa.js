@@ -223,9 +223,14 @@ function mpProjMeso(){
     (mpFilhos(a, ['modulo']).map(m => '<li><button type="button" data-mp-focar="' + esc(mpId(m)) + '">' + esc(m.nome) + '</button><small>' + esc(mpPl(mpDescendentes(m).filter(x => x.tipo === 'tela').length, 'tela', 'telas')) + '</small>' + mpPapeisHTML(m) + '</li>').join('') ||
       '<li class="mp-sem">Sem menu: ' + esc(mpPl(mpFilhos(a, ['tela']).length, 'tela solta', 'telas soltas')) + '</li>') + '</ul></section>').join('') + '</div>';
   if (pares.length || fora.length){
-    h += '<section class="mp-entre"><h4>Ligações entre as aplicações</h4><ul>' +
-      pares.map(p => '<li><b>' + esc(p.a.nome) + '</b> e <b>' + esc(p.b.nome) + '</b> usam os mesmos dados: ' + esc(p.tabelas.slice(0, 12).join(', ')) + (p.tabelas.length > 12 ? '…' : '') + '</li>').join('') +
-      [...new Map(fora.map(f => [mpId(f.app) + f.para, f])).values()].map(f => '<li><b>' + esc(f.app.nome) + '</b> leva para <b>' + esc(f.para) + '</b> (em "' + esc(f.de.nome) + '")</li>').join('') + '</ul></section>';
+    // tabelas do banco usadas por mais de uma aplicação: em planilha (uma linha por tabela, quais aplicações usam)
+    const usoTab = new Map(); pares.forEach(p => p.tabelas.forEach(t => { const u = usoTab.get(t) || usoTab.set(t, new Set()).get(t); u.add(p.a.nome); u.add(p.b.nome); }));
+    const linhasTab = [...usoTab.entries()].sort((x, y) => y[1].size - x[1].size || x[0].localeCompare(y[0]));
+    const foraL = [...new Map(fora.map(f => [mpId(f.app) + f.para, f])).values()];
+    h += '<section class="mp-entre"><h4>Ligações entre as aplicações</h4>' +
+      (linhasTab.length ? '<p class="ifr-vazio">Tabelas do banco que mais de uma aplicação usa.</p><div class="tabela-rolo"><table class="tabela planilha mp-entre-pl"><thead><tr><th class="pl-n">#</th><th>Tabela</th><th class="pl-num">Aplicações</th><th>Quais aplicações usam</th></tr></thead><tbody>' +
+        linhasTab.map(([t, u], i) => '<tr><td class="pl-n">' + (i + 1) + '</td><td><code><b>' + esc(t) + '</b></code></td><td class="pl-num">' + u.size + '</td><td>' + [...u].sort().map(esc).join(', ') + '</td></tr>').join('') + '</tbody></table></div>' : '') +
+      (foraL.length ? '<ul>' + foraL.map(f => '<li><b>' + esc(f.app.nome) + '</b> leva para <b>' + esc(f.para) + '</b> (em "' + esc(f.de.nome) + '")</li>').join('') + '</ul>' : '') + '</section>';
   }
   return h;
 }
@@ -285,15 +290,32 @@ function mpEscolherAppHTML(){
   const at = mpAppAtual();
   return '<div class="mp-apps" role="tablist" aria-label="Aplicação do código">' + l.map(a => '<button type="button" role="tab" class="mp-app-b" data-mp-app="' + esc(mpId(a)) + '" aria-selected="' + (a === at) + '">' + esc(a.nome) + '<small>' + esc((a.dados || {}).pasta || '') + '</small></button>').join('') + '</div>';
 }
-// "Colunas sem tela": agrupadas por tabela, conferidas com as funções e gatilhos do banco e com as outras aplicações
+// "Colunas sem tela": numa planilha (uma linha por coluna, agrupada por tabela, cada tabela abre e fecha), conferidas com
+// as funções e gatilhos do banco e com as outras aplicações
 function mpColunasSemTelaHTML(app){
   const l = mpAlertasDaApp(app).filter(a => a.tipo === 'coluna_sem_tela');
   if (!l.length) return '';
   const por = new Map(); l.forEach(a => { (por.get(a.tabela) || por.set(a.tabela, []).get(a.tabela)).push(a); });
-  const abertas = [...por.entries()].sort((a, b) => a[0].localeCompare(b[0]));
-  return '<section class="mp-cst"><h4>Colunas sem tela <small>' + esc(mpPl(mpAbertos(l).length, 'aberta', 'abertas')) + '</small></h4><p class="ifr-vazio">Colunas que nenhuma tela mostra ou grava, que nenhuma função ou gatilho do banco cita e que nenhuma outra aplicação usa.</p>' +
-    abertas.map(([t, as]) => { const todaTabela = as.find(a => !a.coluna);
-      return '<details class="mp-cst-t"' + (abertas.length <= 4 ? ' open' : '') + '><summary><b>' + esc(t) + '</b><span>' + (todaTabela ? 'a tabela inteira' : esc(mpPl(as.length, 'coluna', 'colunas'))) + '</span>' + mpContaHTML(as) + '</summary>' + as.map(a => mpAlertaHTML(a)).join('') + '</details>'; }).join('') + '</section>';
+  const grupos = [...por.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  const abertos = UI.mapaCstAbertas || {}, pode = podeEditar();
+  const linha = (a, n) => { const pp = mpDeProposito(a), t = MP_ALERTA[a.tipo] || [a.tipo, a.gravidade];
+    return '<tr class="mp-cst-col' + (pp ? ' proposito' : '') + '" data-mp-alerta="' + esc(a.id) + '"><td class="pl-n">' + n + '</td><td></td>' +
+      '<td><code>' + esc(a.coluna || '(a tabela inteira)') + '</code></td>' +
+      '<td><span class="mp-al-ico g-' + esc(a.gravidade) + '" title="' + esc(MP_GRAV[a.gravidade][0]) + '">' + MP_GRAV[a.gravidade][1] + '</span> ' + esc(MP_GRAV[a.gravidade][0]) + '</td>' +
+      '<td class="pl-texto">' + esc(a.texto) + (pp ? '<small class="mp-al-prop">É de propósito: ' + esc(pp.motivo) + ' · ' + esc(nomePessoa(pp.por)) + ', ' + esc(mpQuando(pp.em)) + '</small>' : '') + '</td>' +
+      '<td>' + (a.prova && a.prova.arquivo ? '<code>' + esc(a.prova.arquivo + (a.prova.linha ? ':' + a.prova.linha : '')) + '</code>' : '') + '</td>' +
+      '<td>' + (pp ? 'É de propósito' : 'Aberta') + '</td>' +
+      '<td class="pl-acoes">' + (pode ? (pp ? '<button type="button" class="ifr-lnk" data-mp-desmarcar="' + esc(a.id) + '">Desmarcar</button>' : '<button type="button" class="ifr-lnk" data-mp-proposito="' + esc(a.id) + '">É de propósito</button><button type="button" class="ifr-lnk" data-mp-item="' + esc(a.id) + '">Criar item</button>') : '') + '</td></tr>'; };
+  let n = 0;
+  return '<section class="mp-cst"><h4>Colunas sem tela <small>' + esc(mpPl(mpAbertos(l).length, 'aberta', 'abertas')) + ' em ' + esc(mpPl(grupos.length, 'tabela', 'tabelas')) + '</small></h4><p class="ifr-vazio">Colunas que nenhuma tela mostra ou grava, que nenhuma função ou gatilho do banco cita e que nenhuma outra aplicação usa. Clique numa tabela para abrir as colunas dela.</p>' +
+    '<div class="tabela-rolo"><table class="tabela planilha mp-cst-pl"><thead><tr><th class="pl-n">#</th><th>Tabela</th><th>Coluna</th><th>Gravidade</th><th class="pl-texto">O que foi achado</th><th>Onde no código</th><th>Situação</th><th>Ações</th></tr></thead>' +
+    grupos.map(([t, as]) => { const toda = as.some(a => !a.coluna), aberto = abertos[t] ?? grupos.length <= 4, ab = mpAbertos(as).length;
+      return '<tbody class="mp-cst-g' + (aberto ? ' aberto' : '') + '"><tr class="mp-cst-tab" data-mp-cst="' + esc(t) + '" tabindex="0" aria-expanded="' + aberto + '"><td class="pl-n">' + (++n) + '</td>' +
+        '<td colspan="2" class="pl-nome"><span class="mp-cst-seta" aria-hidden="true">' + (aberto ? '▾' : '▸') + '</span><b>' + esc(t) + '</b></td>' +
+        '<td>' + mpContaHTML(as) + '</td><td>' + (toda ? 'A tabela inteira não aparece em nenhuma tela' : esc(mpPl(as.length, 'coluna sem tela', 'colunas sem tela'))) + '</td><td></td>' +
+        '<td>' + (ab ? esc(mpPl(ab, 'aberta', 'abertas')) : 'Tudo de propósito') + '</td><td></td></tr>' +
+        (aberto ? as.map((a, k) => linha(a, n + '.' + (k + 1))).join('') : '') + '</tbody>'; }).join('') +
+    '</table></div></section>';
 }
 function mpAppMacro(){
   const app = mpAppAtual(); if (!app) return mpVazioHTML();
@@ -459,6 +481,7 @@ document.addEventListener('click', e => {
   const v = t.closest('[data-mp-visao]'); if (v){ UI.mapaVisao = Object.assign({}, UI.mapaVisao, {[mpEscopo()]:v.dataset.mpVisao}); salvarUI(); mpRender(); return; }
   const ap = t.closest('[data-mp-app]'); if (ap){ UI.mapaApp = Object.assign({}, UI.mapaApp, {[UI.sel]:ap.dataset.mpApp}); salvarUI(); mpRender(); return; }
   if (t.closest('[data-mp-pedir]')) return mpPedir();
+  const cs = t.closest('[data-mp-cst]'); if (cs && !t.closest('button')){ const k = cs.dataset.mpCst, ja = (UI.mapaCstAbertas || {})[k]; UI.mapaCstAbertas = Object.assign({}, UI.mapaCstAbertas, {[k]:!(ja ?? cs.getAttribute('aria-expanded') === 'true')}); mpRender(); return; }
   const ab = t.closest('[data-mp-abrir]'); if (ab){ const k = ab.dataset.mpAbrir; UI.mapaAbertos = Object.assign({}, UI.mapaAbertos, {[k]:!(UI.mapaAbertos || {})[k]}); mpRender(); return; }
   const fc = t.closest('[data-mp-focar]'); if (fc){ MP.foco = fc.dataset.mpFocar; if (mpVisao() !== 'micro'){ UI.mapaVisao = Object.assign({}, UI.mapaVisao, {[mpEscopo()]:'micro'}); salvarUI(); }
     const p = mpIndice().por.get(MP.foco); if (p) for (let x = p.pai ? mpPeca(p.analise_id, p.pai) : null; x; x = x.pai ? mpPeca(x.analise_id, x.pai) : null) UI.mapaAbertos = Object.assign({}, UI.mapaAbertos, {[mpId(x)]:true});
@@ -478,3 +501,5 @@ document.addEventListener('input', e => {
 // ao vivo: quando a análise muda (fila, rodando, pronta) ou alguém marca "é de propósito", a tela relê sozinha
 setTimeout(() => { try { if (typeof avOuvir === 'function') avOuvir(['mapa_analises', 'mapa_proposito'], () => { if (UI.view === 'infra' && mpModo() === 'mapa') mpAbrir(true); }); } catch(e){} }, 0);
 if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {MP, mpCarregar, mpRender, mpTelaHTML, mpAlertasDaApp, mpEntreApps, mpApps, mpModo, mpCriarItem, mpProposito});
+// abrir e fechar uma tabela da planilha pelo teclado (Enter ou espaço)
+document.addEventListener('keydown', e => { const cs = e.target.closest && e.target.closest('[data-mp-cst]'); if (cs && (e.key === 'Enter' || e.key === ' ')){ e.preventDefault(); cs.click(); } });

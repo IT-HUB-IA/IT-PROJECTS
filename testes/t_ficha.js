@@ -71,7 +71,8 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   const banco = conta("insert into public.infra_bancos (no_id, nome, provedor, motor, esquemas) values ('" + app + "', 'Produção', 'supabase', 'postgres', '{public}') returning id");
   const grava = (de, campos, ref) => psql("set role service_role; select public.infra_ficha_gravar('" + app + "', " + (de.repo ? "'" + de.repo + "'" : 'null') + ", " + (de.banco ? "'" + de.banco + "'" : 'null') + ", '" + (de.repo ? 'Blanco-Lisboa/B-L' : 'Produção') + "', '" + ref + "', $j$" + JSON.stringify(campos) + "$j$)");
   grava({repo}, [{secao:'Stack', campo:'Frameworks', valor:'Spring Boot 3.3.2'}, {secao:'Stack', campo:'Linguagens e versões', valor:'Java 21 (40 arquivos)'}, {secao:'Secrets catalog', campo:'Nome de cada segredo e onde fica', valor:'DB_URL (.env.example)\nJWT_SECRET (bl-sistema-java)'}], 'abc1234def');
-  grava({banco}, [{secao:'Database', campo:'Banco e schema', valor:'Supabase · PostgreSQL · esquemas public · 12 tabelas'}], 'h1');
+  grava({banco}, [{secao:'Database', campo:'Banco e schema', valor:'Supabase · PostgreSQL · esquemas public · 12 tabelas'},
+    {secao:'Database', campo:'Tabelas principais', valor:'clientes (12 colunas, 3 tabelas apontam para ela), pedidos (8 colunas, 1 tabela aponta para ela), log (4 colunas) e mais 9'}], 'h1');
   // uma coisa escrita à mão no mesmo campo que o código também preenche
   psql(COMO + "insert into public.ficha_campos (no_id, secao, campo, valor) values ('" + app + "', 'Stack', 'Linguagens e versões', 'Java (escrito à mão)')");
   await p.goto('file://' + process.cwd() + '/vercel/index.html'); await p.waitForTimeout(2500);
@@ -85,6 +86,10 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   const db = await campo('Database|Banco e schema');
   ok(db && /do banco Produção/.test(db.auto) && /12 tabelas/.test(db.auto), 'o banco preenche o campo dele');
   ok(/DB_URL/.test((await campo('Secrets catalog|Nome de cada segredo e onde fica')).auto), 'o catálogo de segredos mostra os nomes');
+  ok(await p.evaluate(() => { const t = document.querySelector('textarea[data-ficha="Database|Tabelas principais"]'); const pl = t && t.parentElement.querySelector('.fa-auto table.planilha'); if (!pl) return false;
+      const cab = [...pl.querySelectorAll('thead th')].map(x => x.textContent.trim()).join('|'), ls = [...pl.querySelectorAll('tbody tr')].map(r => [...r.children].map(c => c.textContent.trim()).join('|'));
+      return cab === '#|Tabela|Colunas|Tabelas que apontam para ela' && ls.join(';') === '1|clientes|12|3;2|pedidos|8|1;3|log|4|0' && /E mais 9 tabelas/.test(t.parentElement.querySelector('.fa-auto').textContent); }),
+    'Tabelas principais do banco aparecem em planilha (tabela, colunas, quantas apontam para ela) e diz quantas faltam');
   ok(await p.evaluate(() => /Preenchida sozinha:/.test(document.querySelector('.fa-faixa').textContent) && /do código \(Blanco-Lisboa\/B-L\)/.test(document.querySelector('.fa-faixa').textContent) && /do banco \(Produção\)/.test(document.querySelector('.fa-faixa').textContent)), 'a faixa do alto diz de onde a ficha se preenche');
   if (process.env.FOTOS) await p.screenshot({path: process.env.FOTOS + '/ficha_auto.png', fullPage: false});
   if (process.env.FOTOS){ await p.evaluate(() => document.querySelector('textarea[data-ficha="Stack|Frameworks"]').closest('.ficha-sec').scrollIntoView()); await p.waitForTimeout(200); await p.screenshot({path: process.env.FOTOS + '/ficha_stack.png'}); }

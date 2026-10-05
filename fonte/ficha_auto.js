@@ -23,11 +23,21 @@ async function faCarregar(){
 const faDe = r => r.fonte === 'banco' ? 'do banco ' + r.rotulo : 'do repositório ' + r.rotulo;
 const faQuando = s => { try { return new Date(s).toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}); } catch(e){ return ''; } };
 const faRecente = r => r.anterior && Date.now() - Date.parse(r.mudou_em) < 7 * 86400000;
+// "Tabelas principais" do banco aparece como planilha (tabela, colunas, quantas apontam para ela) no lugar do texto corrido
+function faPlanilha(r){
+  if (r.fonte !== 'banco' || r.campo !== 'Tabelas principais') return '';
+  const linhas = [...String(r.valor).matchAll(/(?:^|, )([^,()]+?) \((\d+) colunas?(?:, (\d+) tabelas? apont\w+ para ela)?\)/g)];
+  if (!linhas.length) return '';
+  const mais = (String(r.valor).match(/ e mais (\d+)$/) || [])[1];
+  return '<div class="tabela-rolo fa-pl"><table class="tabela planilha"><thead><tr><th class="pl-n">#</th><th>Tabela</th><th class="pl-num">Colunas</th><th class="pl-num">Tabelas que apontam para ela</th></tr></thead><tbody>' +
+    linhas.map((m, i) => '<tr><td class="pl-n">' + (i + 1) + '</td><td><code><b>' + esc(m[1].trim()) + '</b></code></td><td class="pl-num">' + m[2] + '</td><td class="pl-num">' + (m[3] || '0') + '</td></tr>').join('') +
+    '</tbody></table></div>' + (mais ? '<p class="fa-pl-mais">E mais ' + mais + (mais === '1' ? ' tabela.' : ' tabelas.') + '</p>' : '');
+}
 function faBlocoCampo(rs, temManual, novoDesde){
   return '<div class="fa-auto' + (temManual ? ' fa-sob' : '') + '">' + rs.map(r => '<div class="fa-orig">' +
     '<div class="fa-cab"><span class="fa-selo">' + (temManual ? 'O ' + (r.fonte === 'banco' ? 'banco' : 'código') + ' diz agora' : 'Automático') + '</span><span class="fa-de">' + esc(faDe(r)) + (r.fonte === 'codigo' && r.referencia ? ' · commit ' + esc(String(r.referencia).slice(0, 7)) : '') + ' · ' + esc(faQuando(r.atualizado_em)) + '</span>' +
       (novoDesde && r.mudou_em > novoDesde ? '<span class="fa-novo">mudou</span>' : '') + '</div>' +
-    '<div class="fa-valor">' + esc(r.valor) + '</div>' +
+    (faPlanilha(r) || '<div class="fa-valor">' + esc(r.valor) + '</div>') +
     (faRecente(r) ? '<div class="fa-mudou">Mudou em ' + esc(faQuando(r.mudou_em)) + '. Antes: <span>' + esc(String(r.anterior).slice(0, 300)) + (String(r.anterior).length > 300 ? '…' : '') + '</span></div>' : '') + '</div>').join('') + '</div>';
 }
 function faDecorar(){

@@ -96,6 +96,16 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   ok(await cartaoClientes.locator('.mp-al-ico.g-erro').count() >= 1 && await cartaoClientes.locator('.mp-al-ico.g-atencao').count() >= 1, 'o cartão de Clientes mostra a contagem: erro (coluna que não existe) e atenção (campo sem destino)');
   const cst = await txt('#ops-corpo .mp-cst');
   ok(/Colunas sem tela/i.test(cst) && /clientes/.test(cst) && /pedidos/.test(cst) && /tabela_esquecida/.test(cst) && /a tabela inteira/.test(cst), 'painel "Colunas sem tela", agrupado por tabela (clientes, pedidos e a tabela que ninguém usa)');
+  ok(await p.evaluate(() => { const t = document.querySelector('#ops-corpo .mp-cst table.planilha'); if (!t) return false;
+      const cab = [...t.querySelectorAll('thead th')].map(x => x.textContent.trim()).join('|');
+      return cab === '#|Tabela|Coluna|Gravidade|O que foi achado|Onde no código|Situação|Ações' && t.querySelectorAll('tr.mp-cst-tab').length >= 3 && t.querySelectorAll('tr.mp-cst-col [data-mp-proposito]').length > 0; }),
+    'Colunas sem tela em planilha: cabeçalho de colunas, uma linha por tabela e uma por coluna, com É de propósito e Criar item em cada linha');
+  { const antes = await p.locator('#ops-corpo tr.mp-cst-col').count();
+    await p.evaluate(() => document.querySelector('#ops-corpo tr.mp-cst-tab').click()); await p.waitForTimeout(300);
+    const fechou = await p.locator('#ops-corpo tr.mp-cst-col').count();
+    await p.evaluate(() => document.querySelector('#ops-corpo tr.mp-cst-tab').click()); await p.waitForTimeout(300);
+    if (process.env.FOTOS) await p.locator('#ops-corpo .mp-cst').screenshot({ path: process.env.FOTOS + '/colunas_sem_tela.png' });
+    ok(fechou < antes && await p.locator('#ops-corpo tr.mp-cst-col').count() === antes, 'clicar na linha da tabela fecha e abre as colunas dela (' + antes + ' → ' + fechou + ' → ' + antes + ')'); }
   ok(!(await txt('#ops-corpo .mp-tela')).includes('Ligue o banco desta aplicação'), 'com o banco ligado, sem a linha de "ligue o banco"');
   await foto('1_app_macro');
   // 3. meso: módulos e janelas

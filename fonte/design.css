@@ -743,3 +743,17 @@ dialog.modal.modal-larga{max-width:min(960px,calc(100% - 32px))}
 .pg2-leg i.pg2-afazer{background:var(--papel);box-shadow:inset 0 0 0 1px var(--linha,#DCDCE0)}
 .pg2-tot{margin-left:auto;color:var(--tinta-3)}
 .pg2-tot b{color:var(--preto);font-variant-numeric:tabular-nums}
+
+/* ---------- Planilha: toda lista de tabelas e colunas do banco aparece assim (linhas, colunas, cabeçalho, número da linha) ---------- */
+.tabela.planilha{font-size:12.5px;border-collapse:collapse;width:100%;table-layout:auto;min-width:0}
+.tabela.planilha th,.tabela.planilha td{min-width:0}
+.tabela.planilha thead th{position:sticky;top:0;z-index:1;padding:7px 10px;font-size:10.5px;letter-spacing:.1em;white-space:nowrap}
+.tabela.planilha thead th.pl-n{background:var(--preto);color:var(--branco)}
+.tabela.planilha .pl-texto{min-width:280px}
+.tabela.planilha tbody th,.tabela.planilha td{padding:6px 10px;vertical-align:top;border:1px solid var(--linha);font-variant-numeric:tabular-nums}
+.tabela.planilha tbody tr:nth-child(even) > td{background:var(--preto-04)}
+.tabela.planilha .pl-n{width:1%;white-space:nowrap;color:var(--tinta-3);font-family:var(--font-mono);font-size:11px;text-align:right;background:var(--preto-04)}
+.tabela.planilha td code{font-family:var(--font-mono);font-size:11.5px;overflow-wrap:anywhere}
+.tabela.planilha .pl-acoes{white-space:nowrap}
+.tabela.planilha .pl-acoes .ifr-lnk + .ifr-lnk{margin-left:10px}
+.tabela.planilha .pl-num{text-align:right;white-space:nowrap}
