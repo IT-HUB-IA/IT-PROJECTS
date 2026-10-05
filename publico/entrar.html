@@ -23137,14 +23137,24 @@ function cfAbrir(id){
     timer = setTimeout(() => { esquecer(); if (dlg.isConnected) mascarar(); }, CF_VIVE_MS);
     return seg;
   };
-  const campos = () => { const s = seg || {}; const base = tipo[1].map(c => c.concat([])); Object.keys(s).filter(k => k !== 'extras' && !base.some(c => c[0] === k)).forEach(k => base.push([k, k, 1, 0]));
-    (Array.isArray(s.extras) ? s.extras : []).forEach((x, n) => base.push(['extras.' + n, String(x && x.nome || 'Campo extra'), 1, 0])); return base; };
+  // só os campos que têm algo guardado, mais os campos a mais (Token, nome livre). Antes de revelar, os nomes vêm de
+  // cofre_campos (parte 71: só nomes, nunca valores); depois de revelar, do próprio valor. Enquanto não chega, mostra os do tipo.
+  let info = null;
+  const cheio = v => v != null && String(v).trim() !== '';
+  const campos = () => {
+    const nomes = seg ? Object.keys(seg).filter(k => k !== 'extras' && cheio(seg[k])) : info ? info.campos : null;
+    const extras = seg ? (Array.isArray(seg.extras) ? seg.extras.map(x => String(x && x.nome || '').trim() || 'Campo extra') : []) : info ? info.extras : [];
+    if (!nomes) return tipo[1].map(c => c.concat([]));
+    const base = tipo[1].filter(c => nomes.includes(c[0])).map(c => c.concat([]));
+    nomes.filter(k => !tipo[1].some(c => c[0] === k)).forEach(k => base.push([k, k, 1, 0]));
+    extras.forEach((nm, n) => base.push(['extras.' + n, nm, 1, 0]));
+    return base; };
   const valorDe = k => { if (!seg) return ''; if (k.startsWith('extras.')){ const x = (seg.extras || [])[+k.split('.')[1]]; return x ? String(x.valor || '') : ''; } return seg[k] == null ? '' : String(seg[k]); };
   const linha = ([k, rot, oculto, multi]) => '<div class="cf-campo" data-cf-campo="' + esc(k) + '"><span class="cf-rot">' + esc(rot) + '</span>' +
     '<span class="cf-val' + (multi ? ' cf-multi' : '') + '" data-cf-val>' + (seg ? (oculto ? '••••••••••' : esc(valorDe(k)) || '<span class="sec">(vazio)</span>') : '••••••••••') + '</span>' +
     '<span class="cf-bts">' + (oculto || !seg ? '<button type="button" class="btn peq sec" data-cf-mostrar="' + esc(k) + '">Mostrar</button>' : '') +
     '<button type="button" class="btn peq sec" data-cf-copiar="' + esc(k) + '">Copiar</button></span></div>';
-  const corpoSegredo = () => '<div class="cf-segredo">' + campos().map(linha).join('') + '</div>';
+  const corpoSegredo = () => { const l = campos(); return '<div class="cf-segredo">' + (l.length ? l.map(linha).join('') : '<p class="sec cf-nada">Nada guardado neste item. Use Editar para pôr o valor.</p>') + '</div>'; };
   const ac = CF.acessos.filter(a => a.item_id === id);
   const corpo = '<div class="cf-ver">' +
     '<p class="cf-meta">' + esc(tipo[0]) + (it.url ? ' · <a href="' + esc(/^https?:\/\//i.test(it.url) ? it.url : 'https://' + it.url) + '" target="_blank" rel="noopener noreferrer">' + esc(it.url) + '</a>' : '') +
@@ -23168,6 +23178,8 @@ function cfAbrir(id){
   const area = () => dlg.querySelector('[data-cf-area]');
   const mascarar = () => { const a = area(); if (a) a.innerHTML = corpoSegredo(); };
   dlg.addEventListener('close', esquecer);
+  // os nomes dos campos preenchidos (sem valores): a janela se ajusta assim que chegam
+  if (sb) sb.rpc('cofre_campos', {p_id:id}).then(({data}) => { if (data && Array.isArray(data.campos) && dlg.isConnected && !seg){ info = {campos:data.campos, extras:Array.isArray(data.extras) ? data.extras : []}; mascarar(); } }, () => {});
   dlg.addEventListener('click', e => {
     const m = e.target.closest('[data-cf-mostrar]'), c = e.target.closest('[data-cf-copiar]');
     if (m){ (async () => { try { const k = m.dataset.cfMostrar, eraAntes = !seg; await revelar();
@@ -23255,12 +23267,18 @@ function cfForm(it, segAtual){
     (multi ? '<textarea class="campo cf-in" data-cf-seg="' + k + '" rows="4" spellcheck="false" autocomplete="off"' + (oculto ? ' data-cf-oculto' : '') + '>' + esc(v || '') + '</textarea>'
            : '<span class="cf-in-linha"><input class="campo cf-in" data-cf-seg="' + k + '" type="' + (oculto ? 'password' : 'text') + '" value="' + esc(v || '') + '" autocomplete="' + (oculto ? 'new-password' : 'off') + '" spellcheck="false">' +
              (oculto ? '<button type="button" class="btn peq sec" data-cf-ver-in>Mostrar</button>' + (/senha|frase/.test(k) ? '<button type="button" class="btn peq sec" data-cf-gerar>Gerar</button>' : '') : '') + '</span>') + '</label>';
-  const blocoSeg = tipo => (CF_TIPOS[tipo] || CF_TIPOS.outro)[1].map(c => campoSeg(c, segAtual ? segAtual[c[0]] : '')).join('') +
+  // Notas só abre se tiver algo ou se a pessoa pedir (botão "+ Notas"); os campos a mais entram logo depois dos campos do tipo
+  let comNotas = !!(segAtual && String(segAtual.notas || '').trim());
+  const blocoSeg = tipo => { const cs = (CF_TIPOS[tipo] || CF_TIPOS.outro)[1], cNotas = cs.find(c => c[0] === 'notas');
+    return cs.filter(c => c[0] !== 'notas').map(c => campoSeg(c, segAtual ? segAtual[c[0]] : '')).join('') + blocoExtras(cNotas); };
+  const blocoExtras = cNotas =>
     // campos a mais (token ou qualquer outro, com nome livre): o nome e o valor vão juntos, criptografados no Vault
     '<div class="cf-extras" data-cf-extras>' + extras.map((x, n) => '<div class="cf-extra"><input class="campo" data-cf-ex-n="' + n + '" placeholder="Nome do campo (ex.: Token, Client ID)" value="' + esc(x.nome) + '" autocomplete="off" aria-label="Nome do campo">' +
       '<span class="cf-in-linha"><input class="campo" data-cf-ex-v="' + n + '" type="password" placeholder="Valor" value="' + esc(x.valor) + '" autocomplete="new-password" spellcheck="false" aria-label="Valor do campo"><button type="button" class="btn peq sec" data-cf-ver-in>Mostrar</button></span>' +
       '<button type="button" class="btn peq sec" data-cf-ex-tirar="' + n + '">Tirar</button></div>').join('') + '</div>' +
-    '<div class="cf-ex-bts"><button type="button" class="btn peq sec" data-cf-ex-mais="Token">' + ICO.mais + 'Token</button><button type="button" class="btn peq sec" data-cf-ex-mais="">' + ICO.mais + 'Campo com nome livre</button></div>' +
+    (cNotas && comNotas ? campoSeg(cNotas, segAtual ? segAtual.notas : '') : '') +
+    '<div class="cf-ex-bts"><button type="button" class="btn peq sec" data-cf-ex-mais="Token">' + ICO.mais + 'Token</button><button type="button" class="btn peq sec" data-cf-ex-mais="">' + ICO.mais + 'Campo com nome livre</button>' +
+      (cNotas && !comNotas ? '<button type="button" class="btn peq sec" data-cf-notas>' + ICO.mais + 'Notas</button>' : '') + '</div>' +
     '<p class="cf-ex-nota">Token, Client ID, chave secundária ou o que precisar: o nome e o valor ficam criptografados no Vault, como os outros campos.</p>';
   const opcoesTipo = Object.entries(CF_TIPOS).map(([k, [n]]) => '<option value="' + k + '"' + (k === tipoIni ? ' selected' : '') + '>' + esc(n) + '</option>').join('');
   const corpo = '<form class="cf-form" autocomplete="off" onsubmit="return false"><div class="grade-form">' +
@@ -23300,10 +23318,12 @@ function cfForm(it, segAtual){
       return false; }}]);
   dlg.classList.add('cf-dlg');
   dlg.addEventListener('close', () => { $$('input, textarea', dlg).forEach(x => { x.value = ''; }); segAtual = null; extras = []; });   // não deixa o valor para trás
-  dlg.addEventListener('change', e => { if (e.target.matches('[data-cf-m="tipo"]')){ const {s} = ler(dlg); segAtual = Object.assign({}, segAtual || {}, s); $('[data-cf-segs]', dlg).innerHTML = blocoSeg(e.target.value); } });
+  dlg.addEventListener('change', e => { if (e.target.matches('[data-cf-m="tipo"]')){ const {s} = ler(dlg); extras = s.extras || []; segAtual = Object.assign({}, segAtual || {}, s, {extras}); $('[data-cf-segs]', dlg).innerHTML = blocoSeg(e.target.value); } });
   dlg.addEventListener('click', e => {
     const v = e.target.closest('[data-cf-ver-in]'); if (v){ const i = v.parentElement.querySelector('input'); i.type = i.type === 'password' ? 'text' : 'password'; v.textContent = i.type === 'password' ? 'Mostrar' : 'Esconder'; return; }
     const g = e.target.closest('[data-cf-gerar]'); if (g){ const i = g.parentElement.querySelector('input'); i.value = cfSenhaForte(20); i.type = 'text'; const vv = g.parentElement.querySelector('[data-cf-ver-in]'); if (vv) vv.textContent = 'Esconder'; return; }
+    if (e.target.closest('[data-cf-notas]')){ const {s} = ler(dlg); extras = s.extras || []; segAtual = Object.assign({}, segAtual || {}, s, {extras}); comNotas = true; $('[data-cf-segs]', dlg).innerHTML = blocoSeg($('[data-cf-m="tipo"]', dlg).value);
+      const n = $('[data-cf-seg="notas"]', dlg); if (n) n.focus(); return; }
     const exm = e.target.closest('[data-cf-ex-mais]'); if (exm){ const {s} = ler(dlg); const nome = exm.dataset.cfExMais || ''; extras = (s.extras || []).concat([{nome, valor:''}]); segAtual = Object.assign({}, segAtual || {}, s, {extras}); $('[data-cf-segs]', dlg).innerHTML = blocoSeg($('[data-cf-m="tipo"]', dlg).value);
       const ult = $$('[data-cf-ex-' + (nome ? 'v' : 'n') + ']', dlg).pop(); if (ult) ult.focus(); return; }
     const t = e.target.closest('[data-cf-ex-tirar]'); if (t){ const {s} = ler(dlg); extras = (s.extras || []).filter((_, n) => n !== +t.dataset.cfExTirar); segAtual = Object.assign({}, segAtual || {}, s, {extras}); $('[data-cf-segs]', dlg).innerHTML = blocoSeg($('[data-cf-m="tipo"]', dlg).value); }

@@ -115,6 +115,7 @@ window.supabase = { createClient(){ let sess = {access_token:'x', user:{id:'u1',
   // 3. ver: aparece mascarada; "Mostrar" busca no Vault (e registra)
   await A.evaluate(id => document.querySelector('[data-cf-abrir="' + id + '"]').click(), itemId); await A.waitForTimeout(500);
   ok(await A.evaluate(s => !document.body.innerHTML.includes(s) && /••••/.test(document.querySelector('dialog.modal[open]').textContent), senha), 'ao abrir, o valor vem escondido (nem foi buscado ainda)');
+  ok(await A.evaluate(() => [...document.querySelectorAll('dialog.modal[open] .cf-campo .cf-rot')].map(x => x.textContent).join('|') === 'Usuário ou e-mail|Senha'), 'campos vazios (Notas) não aparecem na janela do item');
   ok(conta("select count(*) from public.cofre_registros where item_id = '" + itemId + "' and acao = 'revelou'") === '0', 'abrir não revela nada sozinho');
   await A.evaluate(() => document.querySelector('dialog.modal[open] [data-cf-mostrar="senha"]').click()); await A.waitForTimeout(800);
   ok(await A.evaluate(s => document.querySelector('dialog.modal[open] [data-cf-campo="senha"]').textContent.includes(s), senha), '"Mostrar" mostra a senha');
@@ -222,7 +223,10 @@ window.supabase = { createClient(){ let sess = {access_token:'x', user:{id:'u1',
   // 10c. campo Token e campo com nome livre: nome e valor vão para o Vault, nunca para a tabela
   { await A.evaluate(() => document.querySelector('[data-cf-novo]').click()); await A.waitForTimeout(400);
     await A.fill('dialog.modal[open] [data-cf-m="nome"]', 'API do Parceiro');
+    ok(await A.evaluate(() => !document.querySelector('dialog.modal[open] [data-cf-seg="notas"]') && !!document.querySelector('dialog.modal[open] [data-cf-notas]')), 'Notas começa fechada: só um botão "+ Notas"');
     await A.evaluate(() => document.querySelector('dialog.modal[open] [data-cf-ex-mais="Token"]').click()); await A.waitForTimeout(150);
+    ok(await A.evaluate(() => { const f = [...document.querySelectorAll('dialog.modal[open] [data-cf-segs] [data-cf-seg], dialog.modal[open] [data-cf-segs] [data-cf-ex-n]')].map(x => x.dataset.cfSeg || 'extra'); return f.join('|') === 'usuario|senha|extra'; }),
+      'o campo novo entra logo depois do último campo do tipo, sem uma Notas vazia no meio');
     ok(await A.evaluate(() => { const n = document.querySelector('dialog.modal[open] [data-cf-ex-n="0"]'), v = document.querySelector('dialog.modal[open] [data-cf-ex-v="0"]'); return n && n.value === 'Token' && v.type === 'password' && document.activeElement === v; }),
       '"+ Token" cria um campo com o nome Token (dá para mudar), valor escondido, e já põe o cursor no valor');
     await A.fill('dialog.modal[open] [data-cf-ex-v="0"]', 'tok-Secreto-123');
@@ -230,6 +234,10 @@ window.supabase = { createClient(){ let sess = {access_token:'x', user:{id:'u1',
     await A.fill('dialog.modal[open] [data-cf-ex-n="1"]', 'Client ID do app');
     await A.fill('dialog.modal[open] [data-cf-ex-v="1"]', 'cli-Valor-456');
     ok(await A.evaluate(() => document.querySelector('dialog.modal[open] [data-cf-ex-v="0"]').value === 'tok-Secreto-123'), 'adicionar outro campo não perde o token já digitado');
+    await A.evaluate(() => document.querySelector('dialog.modal[open] [data-cf-notas]').click()); await A.waitForTimeout(150);
+    ok(await A.evaluate(() => { const n = document.querySelector('dialog.modal[open] [data-cf-seg="notas"]'); return n && document.activeElement === n && !document.querySelector('dialog.modal[open] [data-cf-notas]') && document.querySelector('dialog.modal[open] [data-cf-ex-v="1"]').value === 'cli-Valor-456'; }),
+      '"+ Notas" abre a nota (no fim, depois dos campos a mais), põe o cursor nela e não perde o que já foi digitado');
+    await A.fill('dialog.modal[open] [data-cf-seg="notas"]', 'usar só no ambiente de teste');
     if (process.env.FOTOS) await A.locator('dialog.modal[open]').screenshot({path: process.env.FOTOS + '/cofre_token.png'});
     await botao(A, 'Guardar'); await A.waitForTimeout(1500);
     const idT = conta("select id from public.cofre_itens where nome = 'API do Parceiro'");
@@ -237,14 +245,19 @@ window.supabase = { createClient(){ let sess = {access_token:'x', user:{id:'u1',
       'o token e o campo de nome livre (nome e valor) ficaram no Vault');
     ok(conta("select count(*) from public.cofre_itens where id = '" + idT + "' and (to_jsonb(cofre_itens)::text like '%tok-Secreto%' or to_jsonb(cofre_itens)::text like '%Client ID%')") === '0', 'e nada deles fica na tabela do cofre (nem o nome do campo)');
     await A.evaluate(id => document.querySelector('[data-cf-abrir="' + id + '"]').click(), idT); await A.waitForTimeout(500);
-    ok(await A.evaluate(() => !/Client ID do app|tok-Secreto-123/.test(document.body.innerHTML)), 'ao abrir, nem o nome nem o valor dos campos a mais aparecem antes de pedir (estão trancados no Vault)');
-    await A.evaluate(() => document.querySelector('dialog.modal[open] [data-cf-mostrar]').click()); await A.waitForTimeout(800);
+    ok(await A.evaluate(() => { const rot = [...document.querySelectorAll('dialog.modal[open] .cf-campo .cf-rot')].map(x => x.textContent).join('|');
+        return rot === 'Notas|Token|Client ID do app' && !/tok-Secreto-123|cli-Valor-456|ambiente de teste/.test(document.body.innerHTML); }),
+      'ao abrir, aparecem só os campos que têm algo (Notas, Token e Client ID do app; Usuário e Senha vazios não aparecem), sem nenhum valor');
+    ok(conta("select count(*) from public.cofre_registros where item_id = '" + idT + "' and acao = 'revelou'") === '0', 'saber os nomes dos campos não conta como revelar');
+    await A.evaluate(() => document.querySelector('dialog.modal[open] [data-cf-mostrar="extras.0"]').click()); await A.waitForTimeout(800);
     ok(await A.evaluate(() => { const t = document.querySelector('dialog.modal[open]').textContent; return /Token/.test(t) && /Client ID do app/.test(t); }), 'depois de Mostrar, os campos Token e "Client ID do app" aparecem, cada um com Mostrar e Copiar');
-    await A.evaluate(() => document.querySelector('dialog.modal[open] [data-cf-mostrar="extras.0"]').click()); await A.waitForTimeout(400);
     ok(await A.evaluate(() => document.querySelector('dialog.modal[open] [data-cf-campo="extras.0"] [data-cf-val]').textContent === 'tok-Secreto-123'), 'Mostrar no Token mostra o valor');
     await A.evaluate(() => document.querySelector('dialog.modal[open] [data-cf-copiar="extras.1"]').click()); await A.waitForTimeout(600);
     ok(await A.evaluate(() => navigator.clipboard.readText()) === 'cli-Valor-456', 'Copiar no campo de nome livre copia o valor dele');
-    await botao(A, 'Fechar'); await A.waitForTimeout(300);
+    await botao(A, 'Editar'); await A.waitForTimeout(800);
+    ok(await A.evaluate(() => { const n = document.querySelector('dialog.modal[open] [data-cf-seg="notas"]'); return n && n.value === 'usar só no ambiente de teste' && !document.querySelector('dialog.modal[open] [data-cf-notas]'); }), 'no Editar, a nota que já existe vem aberta');
+    await botao(A, 'Cancelar'); await A.waitForTimeout(300);
+    if (await A.evaluate(() => !!document.querySelector('dialog.modal[open]'))) { await botao(A, 'Fechar'); await A.waitForTimeout(300); }
   }
 
   // 11. recarregar a página já no Cofre: a lista não pode vir vazia (antes ela era lida antes da conexão com o banco ficar pronta)
