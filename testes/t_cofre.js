@@ -189,6 +189,11 @@ window.supabase = { createClient(){ let sess = {access_token:'x', user:{id:'u1',
   ok(antes10 && await A.evaluate(() => !document.body.innerHTML.includes('Valor-Que-Some-77') && !!document.querySelector('dialog.modal[open]')), 'com a janela aberta, o valor some sozinho depois de 60 segundos');
   await botao(A, 'Fechar');
 
+  // 11. recarregar a página já no Cofre: a lista não pode vir vazia (antes ela era lida antes da conexão com o banco ficar pronta)
+  psql("insert into public.cofre_itens (espaco_id, dono_id, tipo, nome, atualizado_por) values ((select espaco_id from public.espaco_membros where pessoa_id = '" + will + "' limit 1), '" + will + "', 'chave_api', 'Item Depois Do F5', '" + will + "')");
+  await A.reload(); await A.waitForTimeout(3000);
+  ok(await A.evaluate(() => /Item Depois Do F5/.test((document.querySelector('#m-cofre') || {}).textContent || '')), 'recarregando a página já no Cofre, a lista vem do banco (não aparece vazia)');
+
   ok(!erros.length, 'sem erro nas páginas' + (erros.length ? ': ' + erros.join(' | ') : ''));
   await b.close(); console.log(falhas ? falhas + ' FALHA(S)' : 'TUDO OK'); process.exit(falhas ? 1 : 0);
 })();

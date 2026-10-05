@@ -22914,7 +22914,7 @@ const cfNivel = it => it.dono_id === cfEu() ? 'dono' : ((CF.acessos.find(a => a.
 const cfErro = e => { const m = (e && (e.message || e)) || ''; return /não encontrado/i.test(m) ? 'Item não encontrado ou sem permissão.' : m; };
 
 async function cfCarregar(){
-  const sb = cfBanco(); if (!sb){ CF.lido = true; return; }
+  const sb = cfBanco(); if (!sb){ if (typeof COM_BANCO === 'undefined' || !COM_BANCO) CF.lido = true; return; }   // com login, o banco ainda está conectando: não marca como lido
   if (CF.carregando) return CF.carregando;
   CF.carregando = (async () => {
     try {
@@ -22932,7 +22932,10 @@ async function cfCarregar(){
 /* ---------- lista ---------- */
 function rCofre(){
   const el = $('#m-cofre'); if (!el) return;
-  if (!CF.lido){ el.innerHTML = '<p class="vazio-linha">Abrindo o cofre…</p>'; cfCarregar().then(() => { if (UI.modulo === 'cofre') rCofre(); }); return; }
+  if (!CF.lido){ el.innerHTML = '<p class="vazio-linha">Abrindo o cofre…</p>';
+    // a página pode abrir direto no Cofre antes da conexão com o banco ficar pronta: espera e tenta de novo
+    if (!cfBanco()){ clearTimeout(CF.espera); CF.espera = setTimeout(() => { if (UI.modulo === 'cofre') rCofre(); }, 300); return; }
+    cfCarregar().then(() => { if (UI.modulo === 'cofre') rCofre(); }); return; }
   const q = CF.busca.trim().toLowerCase(), hoje = iso(new Date());
   const lista = CF.itens.filter(i => CF.lixeira ? i.excluido_em : !i.excluido_em)
     .filter(i => !CF.tipo || i.tipo === CF.tipo)
@@ -23150,7 +23153,12 @@ document.addEventListener('click', e => {
 document.addEventListener('input', e => { if (e.target.matches && e.target.matches('#m-cofre [data-cf-busca]')){ CF.busca = e.target.value; const pos = e.target.selectionStart; rCofre(); const b = $('#m-cofre [data-cf-busca]'); if (b){ b.focus(); b.setSelectionRange(pos, pos); } } });
 document.addEventListener('change', e => { if (e.target.matches && e.target.matches('#m-cofre [data-cf-lixeira]')){ CF.lixeira = e.target.checked; rCofre(); } });
 const _renderCf = render;
-render = function(){ if (UI.modulo === 'cofre'){ rCofre(); return; } return _renderCf.apply(this, arguments); };
+let cfUltimaTela = '';
+render = function(){
+  // ao entrar na tela do Cofre vindo de outra, relê do banco: a lista nunca fica presa numa leitura antiga
+  if (UI.modulo === 'cofre'){ const entrou = cfUltimaTela !== 'cofre'; cfUltimaTela = 'cofre'; rCofre();
+    if (entrou && CF.lido) cfCarregar().then(() => { if (UI.modulo === 'cofre') rCofre(); }); return; }
+  cfUltimaTela = UI.modulo; return _renderCf.apply(this, arguments); };
 // ao vivo: alguém compartilhou com você, ou mudou um item seu (o aviso vem pelo canal pessoal, só com o id)
 if (typeof avOuvir === 'function') avOuvir(['cofre_itens', 'cofre_acessos'], () => { if (!CF.lido) return; avQuandoLivre('cofre', async () => { await cfCarregar(); if (UI.modulo === 'cofre') rCofre(); }); });
 if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {CF, rCofre, cfCarregar, cfAbrir, cfForm, cfSenhaForte, cfCompartilhar});
