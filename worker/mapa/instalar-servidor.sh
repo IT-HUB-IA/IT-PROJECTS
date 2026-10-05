@@ -9,7 +9,7 @@ URL=https://tfcvoszeewmpghgxztuy.supabase.co/functions/v1/mapa-trabalho
 ARQ=/etc/ciclodev-mapa.env
 if [ ! -f "$ARQ" ]; then
   echo ""
-  echo "Cole o segredo do Cofre (item 'Trabalhador do Mapa do Sistema', campo MAPA_SEGREDO) e aperte Enter."
+  echo "Cole o segredo do Cofre (item 'Trabalhador do Mapa do Sistema', linha 'Chave') e aperte Enter."
   echo "(Ele não aparece na tela enquanto você cola. Isso é normal.)"
   stty -echo < /dev/tty; read -r SEG < /dev/tty; stty echo < /dev/tty; echo ""
   if [ ${#SEG} -lt 32 ]; then echo "O segredo parece incompleto. Copie de novo do Cofre e rode o comando outra vez."; exit 1; fi
