@@ -189,6 +189,64 @@ window.supabase = { createClient(){ let sess = {access_token:'x', user:{id:'u1',
   ok(antes10 && await A.evaluate(() => !document.body.innerHTML.includes('Valor-Que-Some-77') && !!document.querySelector('dialog.modal[open]')), 'com a janela aberta, o valor some sozinho depois de 60 segundos');
   await botao(A, 'Fechar');
 
+  // 10b. Gerar senha: janela que só gera, com tamanho e tipos de caractere; nada é salvo
+  { const antesBD = conta("select (select count(*) from public.cofre_itens) || '|' || (select count(*) from vault.secrets) || '|' || (select count(*) from public.cofre_registros)");
+    const lsAntes = await A.evaluate(() => JSON.stringify(Object.assign({}, localStorage)));
+    await A.evaluate(() => document.querySelector('[data-cf-gerar-senha]').click()); await A.waitForTimeout(400);
+    const g = () => A.evaluate(() => { const d = document.querySelector('dialog.cfg-dlg[open]'); return d ? {s:d.querySelector('[data-cfg-senha]').value, forca:d.querySelector('[data-cfg-forca]').textContent, tam:d.querySelector('[data-cfg-tam-txt]').textContent} : null; });
+    if (process.env.FOTOS) await A.locator('dialog.cfg-dlg').screenshot({path: process.env.FOTOS + '/gerar_senha.png'});
+    let r = await g();
+    ok(r && r.s.length === 16 && /[A-Z]/.test(r.s) && /[a-z]/.test(r.s) && /[0-9]/.test(r.s) && /[^A-Za-z0-9]/.test(r.s) && r.forca === 'Forte', 'o botão Gerar senha abre a janela com uma senha de 16 caracteres, com os 4 tipos, Forte (' + (r && r.forca) + ')');
+    await A.evaluate(() => { const i = document.querySelector('dialog.cfg-dlg [data-cfg-tam]'); i.value = 32; i.dispatchEvent(new Event('input', {bubbles:true})); }); await A.waitForTimeout(100);
+    r = await g(); ok(r.s.length === 32 && r.tam === '32', 'mudar o número de caracteres gera na hora com o tamanho novo');
+    await A.evaluate(() => ['mai', 'sim'].forEach(k => document.querySelector('dialog.cfg-dlg [data-cfg-usar="' + k + '"]').click())); await A.waitForTimeout(100);
+    r = await g(); ok(/^[a-z0-9]{32}$/.test(r.s) && /[a-z]/.test(r.s) && /[0-9]/.test(r.s), 'desmarcar maiúscula e símbolos: só minúsculas e números');
+    await A.evaluate(() => document.querySelector('dialog.cfg-dlg [data-cfg-usar="min"]').click()); await A.waitForTimeout(100);
+    await A.evaluate(() => document.querySelector('dialog.cfg-dlg [data-cfg-usar="num"]').click()); await A.waitForTimeout(100);
+    r = await g(); ok(/^[0-9]{32}$/.test(r.s) && await A.evaluate(() => document.querySelector('dialog.cfg-dlg [data-cfg-usar="num"]').checked), 'o último tipo marcado não pode ser desmarcado (fica só números)');
+    await A.evaluate(() => { const i = document.querySelector('dialog.cfg-dlg [data-cfg-tam]'); i.value = 6; i.dispatchEvent(new Event('input', {bubbles:true})); }); await A.waitForTimeout(100);
+    r = await g(); ok(r.s.length === 6 && r.forca === 'Fraca', 'senha curta só de números aparece como Fraca');
+    const s1 = r.s; await A.evaluate(() => document.querySelector('dialog.cfg-dlg [data-cfg-nova]').click()); await A.waitForTimeout(100);
+    const s2 = (await g()).s; await A.evaluate(() => document.querySelector('dialog.cfg-dlg [data-cfg-nova]').click()); await A.waitForTimeout(100);
+    ok(s2.length === 6 && (s1 !== s2 || s2 !== (await g()).s), 'o botão de girar gera outra');
+    await A.evaluate(() => document.querySelector('dialog.cfg-dlg [data-cfg-copiar]').click()); await A.waitForTimeout(400);
+    ok(await A.evaluate(() => navigator.clipboard.readText()) === (await g()).s, '"Copiar senha" põe a senha na área de transferência');
+    ok(await A.evaluate(() => new Set(Array.from({length:300}, () => window.__tf.cfgGerar(20, {mai:true, min:true, num:true, sim:true}))).size === 300), '300 senhas geradas, nenhuma repetida');
+    const ult = (await g()).s;
+    await A.evaluate(() => [...document.querySelectorAll('dialog.cfg-dlg .modal-rod .btn')].pop().click()); await A.waitForTimeout(300);
+    ok(!(await A.evaluate(() => !!document.querySelector('dialog.cfg-dlg'))) && conta("select (select count(*) from public.cofre_itens) || '|' || (select count(*) from vault.secrets) || '|' || (select count(*) from public.cofre_registros)") === antesBD &&
+      await A.evaluate(([l, s]) => JSON.stringify(Object.assign({}, localStorage)) === l && !document.body.innerHTML.includes(s) && !JSON.stringify(window.__tf.CF).includes(s), [lsAntes, ult]),
+      'fechou: nada foi salvo (nem no banco, nem no Vault, nem no histórico, nem no navegador) e a senha sumiu da página');
+  }
+
+  // 10c. campo Token e campo com nome livre: nome e valor vão para o Vault, nunca para a tabela
+  { await A.evaluate(() => document.querySelector('[data-cf-novo]').click()); await A.waitForTimeout(400);
+    await A.fill('dialog.modal[open] [data-cf-m="nome"]', 'API do Parceiro');
+    await A.evaluate(() => document.querySelector('dialog.modal[open] [data-cf-ex-mais="Token"]').click()); await A.waitForTimeout(150);
+    ok(await A.evaluate(() => { const n = document.querySelector('dialog.modal[open] [data-cf-ex-n="0"]'), v = document.querySelector('dialog.modal[open] [data-cf-ex-v="0"]'); return n && n.value === 'Token' && v.type === 'password' && document.activeElement === v; }),
+      '"+ Token" cria um campo com o nome Token (dá para mudar), valor escondido, e já põe o cursor no valor');
+    await A.fill('dialog.modal[open] [data-cf-ex-v="0"]', 'tok-Secreto-123');
+    await A.evaluate(() => document.querySelector('dialog.modal[open] [data-cf-ex-mais=""]').click()); await A.waitForTimeout(150);
+    await A.fill('dialog.modal[open] [data-cf-ex-n="1"]', 'Client ID do app');
+    await A.fill('dialog.modal[open] [data-cf-ex-v="1"]', 'cli-Valor-456');
+    ok(await A.evaluate(() => document.querySelector('dialog.modal[open] [data-cf-ex-v="0"]').value === 'tok-Secreto-123'), 'adicionar outro campo não perde o token já digitado');
+    if (process.env.FOTOS) await A.locator('dialog.modal[open]').screenshot({path: process.env.FOTOS + '/cofre_token.png'});
+    await botao(A, 'Guardar'); await A.waitForTimeout(1500);
+    const idT = conta("select id from public.cofre_itens where nome = 'API do Parceiro'");
+    ok(!!idT && conta("select count(*) from vault.secrets where secret like '%tok-Secreto-123%' and secret like '%cli-Valor-456%' and secret like '%Client ID do app%' and secret like '%\"Token\"%'") === '1',
+      'o token e o campo de nome livre (nome e valor) ficaram no Vault');
+    ok(conta("select count(*) from public.cofre_itens where id = '" + idT + "' and (to_jsonb(cofre_itens)::text like '%tok-Secreto%' or to_jsonb(cofre_itens)::text like '%Client ID%')") === '0', 'e nada deles fica na tabela do cofre (nem o nome do campo)');
+    await A.evaluate(id => document.querySelector('[data-cf-abrir="' + id + '"]').click(), idT); await A.waitForTimeout(500);
+    ok(await A.evaluate(() => !/Client ID do app|tok-Secreto-123/.test(document.body.innerHTML)), 'ao abrir, nem o nome nem o valor dos campos a mais aparecem antes de pedir (estão trancados no Vault)');
+    await A.evaluate(() => document.querySelector('dialog.modal[open] [data-cf-mostrar]').click()); await A.waitForTimeout(800);
+    ok(await A.evaluate(() => { const t = document.querySelector('dialog.modal[open]').textContent; return /Token/.test(t) && /Client ID do app/.test(t); }), 'depois de Mostrar, os campos Token e "Client ID do app" aparecem, cada um com Mostrar e Copiar');
+    await A.evaluate(() => document.querySelector('dialog.modal[open] [data-cf-mostrar="extras.0"]').click()); await A.waitForTimeout(400);
+    ok(await A.evaluate(() => document.querySelector('dialog.modal[open] [data-cf-campo="extras.0"] [data-cf-val]').textContent === 'tok-Secreto-123'), 'Mostrar no Token mostra o valor');
+    await A.evaluate(() => document.querySelector('dialog.modal[open] [data-cf-copiar="extras.1"]').click()); await A.waitForTimeout(600);
+    ok(await A.evaluate(() => navigator.clipboard.readText()) === 'cli-Valor-456', 'Copiar no campo de nome livre copia o valor dele');
+    await botao(A, 'Fechar'); await A.waitForTimeout(300);
+  }
+
   // 11. recarregar a página já no Cofre: a lista não pode vir vazia (antes ela era lida antes da conexão com o banco ficar pronta)
   psql("insert into public.cofre_itens (espaco_id, dono_id, tipo, nome, atualizado_por) values ((select espaco_id from public.espaco_membros where pessoa_id = '" + will + "' limit 1), '" + will + "', 'chave_api', 'Item Depois Do F5', '" + will + "')");
   await A.reload(); await A.waitForTimeout(3000);

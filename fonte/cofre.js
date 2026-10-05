@@ -57,7 +57,7 @@ function rCofre(){
   const tipos = Object.entries(CF_TIPOS).filter(([k]) => CF.itens.some(i => i.tipo === k && !i.excluido_em));
   el.innerHTML = '<div class="topo-tela"><div><h1><span>Cofre</span></h1>' +
       '<p class="lead">Senhas, credenciais, chaves de API e chaves de acesso. O valor fica criptografado no Vault do banco e só aparece quando você pede, para você e para quem você escolher. Cada vez que alguém vê ou copia, fica registrado.</p></div>' +
-      '<div class="cf-acoes-topo"><button class="btn acento" type="button" data-cf-novo>' + ICO.mais + 'Guardar novo</button></div></div>' +
+      '<div class="cf-acoes-topo"><button class="btn sec" type="button" data-cf-gerar-senha>Gerar senha</button><button class="btn acento" type="button" data-cf-novo>' + ICO.mais + 'Guardar novo</button></div></div>' +
     (CF.erro ? '<p class="entrada-erro">Não foi possível abrir o cofre: ' + esc(CF.erro) + '</p>' : '') +
     '<div class="cf-barra"><input class="campo cf-busca" type="search" data-cf-busca placeholder="Buscar por nome, endereço ou etiqueta" value="' + esc(CF.busca) + '" autocomplete="off">' +
       '<div class="cf-chips"><button type="button" class="cf-chip' + (!CF.tipo ? ' ativo' : '') + '" data-cf-tipo="">Todos</button>' +
@@ -123,14 +123,16 @@ function cfAbrir(id){
   dlg.addEventListener('close', esquecer);
   dlg.addEventListener('click', e => {
     const m = e.target.closest('[data-cf-mostrar]'), c = e.target.closest('[data-cf-copiar]');
-    if (m){ (async () => { try { await revelar(); const k = m.dataset.cfMostrar, box = m.closest('.cf-campo');
-        if (!box) return; const multi = (campos().find(x => x[0] === k) || [])[3];
+    if (m){ (async () => { try { const k = m.dataset.cfMostrar, eraAntes = !seg; await revelar();
+        // na primeira vez que o valor chega do Vault, a janela passa a mostrar também os campos a mais (Token, nome livre), escondidos
+        if (eraAntes) mascarar();
+        const box = [...area().querySelectorAll('.cf-campo')].find(x => x.dataset.cfCampo === k); if (!box) return;
+        const bt = box.querySelector('[data-cf-mostrar]');
         box.querySelector('[data-cf-val]').innerHTML = esc(valorDe(k)) || '<span class="sec">(vazio)</span>';
-        m.textContent = 'Esconder'; m.dataset.cfEsconder = k; delete m.dataset.cfMostrar;
-        if (!box.isConnected) mascarar(); void multi; } catch(err){ toast(err.message); } })(); return; }
+        if (bt){ bt.textContent = 'Esconder'; bt.dataset.cfEsconder = k; delete bt.dataset.cfMostrar; } } catch(err){ toast(err.message); } })(); return; }
     const h = e.target.closest('[data-cf-esconder]');
     if (h){ const box = h.closest('.cf-campo'); box.querySelector('[data-cf-val]').textContent = '••••••••••'; h.textContent = 'Mostrar'; h.dataset.cfMostrar = h.dataset.cfEsconder; delete h.dataset.cfEsconder; return; }
-    if (c){ (async () => { try { await revelar(); const k = c.dataset.cfCopiar, v = valorDe(k);
+    if (c){ (async () => { try { const eraAntes = !seg; await revelar(); if (eraAntes) mascarar(); const k = c.dataset.cfCopiar, v = valorDe(k);
         if (!v){ toast('Este campo está vazio.'); return; }
         await navigator.clipboard.writeText(v);
         sb.rpc('cofre_copiou', {p_id:id, p_campo:k.startsWith('extras.') ? 'extra' : k}).then(() => {}, () => {});
@@ -147,6 +149,58 @@ function cfSenhaForte(n){
   while (out.length < (n || 20)){ crypto.getRandomValues(buf); if (buf[0] < lim) out.push(conj[buf[0] % conj.length]); }
   return out.join('');
 }
+/* ---------- Gerar senha: só gera na hora, na janela. Nada é salvo (nem no banco, nem no navegador, nem no histórico) ---------- */
+const CFG_CONJ = {mai:'ABCDEFGHIJKLMNOPQRSTUVWXYZ', min:'abcdefghijklmnopqrstuvwxyz', num:'0123456789', sim:'!@#$%&*()-_=+[]{};:,.?/~^`|<>'};
+const cfgSorteio = n => { const buf = new Uint32Array(1), lim = Math.floor(4294967296 / n) * n; for (;;){ crypto.getRandomValues(buf); if (buf[0] < lim) return buf[0] % n; } };   // sem viés
+function cfgGerar(tam, usar){
+  const conjs = Object.keys(CFG_CONJ).filter(k => usar[k]).map(k => CFG_CONJ[k]); if (!conjs.length) return '';
+  const todos = conjs.join(''), out = conjs.map(c => c[cfgSorteio(c.length)]);   // pelo menos um de cada tipo marcado
+  while (out.length < tam) out.push(todos[cfgSorteio(todos.length)]);
+  for (let i = out.length - 1; i > 0; i--){ const j = cfgSorteio(i + 1); [out[i], out[j]] = [out[j], out[i]]; }   // embaralha
+  return out.slice(0, tam).join('');
+}
+// força pela quantidade de combinações possíveis (bits): quanto maior e mais variada, mais forte
+function cfgForca(tam, usar){
+  const n = Object.keys(CFG_CONJ).filter(k => usar[k]).reduce((s, k) => s + CFG_CONJ[k].length, 0), bits = n ? tam * Math.log2(n) : 0;
+  return bits >= 80 ? ['Forte', 'forte', 100] : bits >= 60 ? ['Boa', 'boa', 75] : bits >= 40 ? ['Média', 'media', 50] : ['Fraca', 'fraca', 25];
+}
+function cfGerador(){
+  const st = {tam:16, usar:{mai:true, min:true, num:true, sim:true}, senha:''};   // só na memória desta janela
+  const rot = {mai:'Letra maiúscula', min:'Letra minúscula', num:'Números', sim:'Símbolos'};
+  const dlg = modal('Gerar senha',
+    '<div class="cfg">' +
+      '<div class="cfg-saida"><input class="cfg-senha" type="text" readonly spellcheck="false" autocomplete="off" aria-label="Senha gerada" data-cfg-senha>' +
+        '<button type="button" class="ico-btn cfg-nova" data-cfg-nova title="Gerar outra" aria-label="Gerar outra senha"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8"/><path d="M4 3v5h5"/><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16"/><path d="M20 21v-5h-5"/></svg></button>' +
+        '<button type="button" class="btn acento" data-cfg-copiar>Copiar senha</button></div>' +
+      '<div class="cfg-forca"><span class="cfg-barra"><span data-cfg-barra></span></span><b data-cfg-forca></b></div>' +
+      '<div class="cfg-opcoes">' +
+        '<label class="cfg-linha"><span class="cfg-rot">Número de caracteres da senha</span><b class="cfg-tam" data-cfg-tam-txt>16</b><input type="range" min="4" max="64" value="16" data-cfg-tam aria-label="Número de caracteres"></label>' +
+        '<div class="cfg-linha"><span class="cfg-rot">Caracteres utilizados</span><div class="cfg-tipos">' + Object.keys(rot).map(k => '<label><input type="checkbox" checked data-cfg-usar="' + k + '"> ' + rot[k] + '</label>').join('') + '</div></div>' +
+      '</div><p class="cfg-nota">A senha é gerada aqui no seu computador e não é salva em lugar nenhum. Para guardar, copie e use "Guardar novo".</p></div>',
+    [{txt:'Fechar', cls:'sec'}]);
+  dlg.classList.add('cfg-dlg');
+  const pintar = () => {
+    $('[data-cfg-senha]', dlg).value = st.senha; $('[data-cfg-tam-txt]', dlg).textContent = st.tam;
+    const [txt, cls, w] = cfgForca(st.tam, st.usar), b = $('[data-cfg-barra]', dlg), f = $('[data-cfg-forca]', dlg);
+    b.style.width = w + '%'; b.className = 'cfg-' + cls; f.textContent = txt; f.className = 'cfg-' + cls;
+    const r = $('[data-cfg-tam]', dlg); r.style.setProperty('--cfg-p', ((st.tam - 4) / 60 * 100) + '%');
+  };
+  const nova = () => { st.senha = cfgGerar(st.tam, st.usar); pintar(); };
+  dlg.addEventListener('input', e => { if (e.target.matches('[data-cfg-tam]')){ st.tam = +e.target.value; nova(); } });
+  dlg.addEventListener('change', e => { const k = e.target.dataset.cfgUsar; if (!k) return;
+    if (!e.target.checked && Object.values(st.usar).filter(Boolean).length === 1){ e.target.checked = true; toast('Deixe pelo menos um tipo de caractere marcado.'); return; }
+    st.usar[k] = e.target.checked; nova(); });
+  dlg.addEventListener('click', e => {
+    if (e.target.closest('[data-cfg-nova]')){ nova(); return; }
+    if (e.target.closest('[data-cfg-copiar]')){ const i = $('[data-cfg-senha]', dlg);
+      const feito = () => toast('Senha copiada.'), manual = () => { i.focus(); i.select(); toast('Selecionei a senha: aperte Ctrl+C para copiar.'); };
+      try { navigator.clipboard.writeText(st.senha).then(feito, manual); } catch(x){ manual(); } }
+  });
+  dlg.addEventListener('close', () => { st.senha = ''; });   // fechou: a senha some da memória da janela
+  nova();
+  const r = $('[data-cfg-tam]', dlg); if (r) r.focus();
+  return dlg;
+}
 function cfForm(it, segAtual){
   const novo = !it, tipoIni = (it && it.tipo) || 'senha';
   let extras = segAtual && Array.isArray(segAtual.extras) ? segAtual.extras.map(x => ({nome:String(x.nome || ''), valor:String(x.valor || '')})) : [];
@@ -155,9 +209,12 @@ function cfForm(it, segAtual){
            : '<span class="cf-in-linha"><input class="campo cf-in" data-cf-seg="' + k + '" type="' + (oculto ? 'password' : 'text') + '" value="' + esc(v || '') + '" autocomplete="' + (oculto ? 'new-password' : 'off') + '" spellcheck="false">' +
              (oculto ? '<button type="button" class="btn peq sec" data-cf-ver-in>Mostrar</button>' + (/senha|frase/.test(k) ? '<button type="button" class="btn peq sec" data-cf-gerar>Gerar</button>' : '') : '') + '</span>') + '</label>';
   const blocoSeg = tipo => (CF_TIPOS[tipo] || CF_TIPOS.outro)[1].map(c => campoSeg(c, segAtual ? segAtual[c[0]] : '')).join('') +
-    '<div class="cf-extras" data-cf-extras>' + extras.map((x, n) => '<div class="cf-extra"><input class="campo" data-cf-ex-n="' + n + '" placeholder="Nome do campo" value="' + esc(x.nome) + '" autocomplete="off">' +
-      '<input class="campo" data-cf-ex-v="' + n + '" type="password" placeholder="Valor" value="' + esc(x.valor) + '" autocomplete="new-password"><button type="button" class="btn peq sec" data-cf-ex-tirar="' + n + '">Tirar</button></div>').join('') + '</div>' +
-    '<button type="button" class="btn peq sec" data-cf-ex-mais>' + ICO.mais + 'Campo extra</button>';
+    // campos a mais (token ou qualquer outro, com nome livre): o nome e o valor vão juntos, criptografados no Vault
+    '<div class="cf-extras" data-cf-extras>' + extras.map((x, n) => '<div class="cf-extra"><input class="campo" data-cf-ex-n="' + n + '" placeholder="Nome do campo (ex.: Token, Client ID)" value="' + esc(x.nome) + '" autocomplete="off" aria-label="Nome do campo">' +
+      '<span class="cf-in-linha"><input class="campo" data-cf-ex-v="' + n + '" type="password" placeholder="Valor" value="' + esc(x.valor) + '" autocomplete="new-password" spellcheck="false" aria-label="Valor do campo"><button type="button" class="btn peq sec" data-cf-ver-in>Mostrar</button></span>' +
+      '<button type="button" class="btn peq sec" data-cf-ex-tirar="' + n + '">Tirar</button></div>').join('') + '</div>' +
+    '<div class="cf-ex-bts"><button type="button" class="btn peq sec" data-cf-ex-mais="Token">' + ICO.mais + 'Token</button><button type="button" class="btn peq sec" data-cf-ex-mais="">' + ICO.mais + 'Campo com nome livre</button></div>' +
+    '<p class="cf-ex-nota">Token, Client ID, chave secundária ou o que precisar: o nome e o valor ficam criptografados no Vault, como os outros campos.</p>';
   const opcoesTipo = Object.entries(CF_TIPOS).map(([k, [n]]) => '<option value="' + k + '"' + (k === tipoIni ? ' selected' : '') + '>' + esc(n) + '</option>').join('');
   const corpo = '<form class="cf-form" autocomplete="off" onsubmit="return false"><div class="grade-form">' +
     '<label class="lb">Tipo<select class="sel" data-cf-m="tipo">' + opcoesTipo + '</select></label>' +
@@ -200,7 +257,8 @@ function cfForm(it, segAtual){
   dlg.addEventListener('click', e => {
     const v = e.target.closest('[data-cf-ver-in]'); if (v){ const i = v.parentElement.querySelector('input'); i.type = i.type === 'password' ? 'text' : 'password'; v.textContent = i.type === 'password' ? 'Mostrar' : 'Esconder'; return; }
     const g = e.target.closest('[data-cf-gerar]'); if (g){ const i = g.parentElement.querySelector('input'); i.value = cfSenhaForte(20); i.type = 'text'; const vv = g.parentElement.querySelector('[data-cf-ver-in]'); if (vv) vv.textContent = 'Esconder'; return; }
-    if (e.target.closest('[data-cf-ex-mais]')){ const {s} = ler(dlg); extras = (s.extras || []).concat([{nome:'', valor:''}]); segAtual = Object.assign({}, segAtual || {}, s, {extras}); $('[data-cf-segs]', dlg).innerHTML = blocoSeg($('[data-cf-m="tipo"]', dlg).value); return; }
+    const exm = e.target.closest('[data-cf-ex-mais]'); if (exm){ const {s} = ler(dlg); const nome = exm.dataset.cfExMais || ''; extras = (s.extras || []).concat([{nome, valor:''}]); segAtual = Object.assign({}, segAtual || {}, s, {extras}); $('[data-cf-segs]', dlg).innerHTML = blocoSeg($('[data-cf-m="tipo"]', dlg).value);
+      const ult = $$('[data-cf-ex-' + (nome ? 'v' : 'n') + ']', dlg).pop(); if (ult) ult.focus(); return; }
     const t = e.target.closest('[data-cf-ex-tirar]'); if (t){ const {s} = ler(dlg); extras = (s.extras || []).filter((_, n) => n !== +t.dataset.cfExTirar); segAtual = Object.assign({}, segAtual || {}, s, {extras}); $('[data-cf-segs]', dlg).innerHTML = blocoSeg($('[data-cf-m="tipo"]', dlg).value); }
   });
 }
@@ -259,6 +317,7 @@ function cfApagarDeVez(it){
 /* ---------- ligações ---------- */
 document.addEventListener('click', e => {
   if (UI.modulo !== 'cofre' || !e.target.closest('#m-cofre')) return;
+  if (e.target.closest('[data-cf-gerar-senha]')){ cfGerador(); return; }
   if (e.target.closest('[data-cf-novo]')){ cfForm(null, null); return; }
   const a = e.target.closest('[data-cf-abrir]'); if (a){ cfAbrir(a.dataset.cfAbrir); return; }
   const t = e.target.closest('[data-cf-tipo]'); if (t){ CF.tipo = t.dataset.cfTipo; rCofre(); }
@@ -274,4 +333,4 @@ render = function(){
   cfUltimaTela = UI.modulo; return _renderCf.apply(this, arguments); };
 // ao vivo: alguém compartilhou com você, ou mudou um item seu (o aviso vem pelo canal pessoal, só com o id)
 if (typeof avOuvir === 'function') avOuvir(['cofre_itens', 'cofre_acessos'], () => { if (!CF.lido) return; avQuandoLivre('cofre', async () => { await cfCarregar(); if (UI.modulo === 'cofre') rCofre(); }); });
-if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {CF, rCofre, cfCarregar, cfAbrir, cfForm, cfSenhaForte, cfCompartilhar});
+if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {CF, rCofre, cfCarregar, cfAbrir, cfForm, cfSenhaForte, cfCompartilhar, cfGerador, cfgGerar, cfgForca});
