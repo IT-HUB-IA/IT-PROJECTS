@@ -757,3 +757,8 @@ dialog.modal.modal-larga{max-width:min(960px,calc(100% - 32px))}
 .tabela.planilha .pl-acoes{white-space:nowrap}
 .tabela.planilha .pl-acoes .ifr-lnk + .ifr-lnk{margin-left:10px}
 .tabela.planilha .pl-num{text-align:right;white-space:nowrap}
+.mu-achado:empty{display:none}
+.mu-achado-cartao{display:flex;flex-wrap:wrap;align-items:center;gap:10px 12px;padding:12px;border:1px solid var(--linha);border-left:3px solid var(--vermelho);background:var(--preto-04);margin:0 0 8px}
+.mu-achado-cartao .mu-p-nome{flex:1;min-width:160px}
+.mu-achado-cartao .mu-p-nome small{display:block;color:var(--tinta-3)}
+.mu-achado-bts{display:flex;gap:8px;flex-wrap:wrap}

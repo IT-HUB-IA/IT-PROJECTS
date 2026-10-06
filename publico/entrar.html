@@ -1749,6 +1749,11 @@ dialog.modal.modal-larga{max-width:min(960px,calc(100% - 32px))}
 .tabela.planilha .pl-acoes{white-space:nowrap}
 .tabela.planilha .pl-acoes .ifr-lnk + .ifr-lnk{margin-left:10px}
 .tabela.planilha .pl-num{text-align:right;white-space:nowrap}
+.mu-achado:empty{display:none}
+.mu-achado-cartao{display:flex;flex-wrap:wrap;align-items:center;gap:10px 12px;padding:12px;border:1px solid var(--linha);border-left:3px solid var(--vermelho);background:var(--preto-04);margin:0 0 8px}
+.mu-achado-cartao .mu-p-nome{flex:1;min-width:160px}
+.mu-achado-cartao .mu-p-nome small{display:block;color:var(--tinta-3)}
+.mu-achado-bts{display:flex;gap:8px;flex-wrap:wrap}
 /* ---------- Itens: menu ⋯, lembrete, repetição, descrição formatada, modelos e lixeira ---------- */
   /* menu ⋯ */
   .tf-menu{position:fixed;z-index:60;min-width:260px;max-width:min(340px,calc(100vw - 16px));background:var(--branco);border:1px solid var(--nevoa);border-top:2px solid var(--preto);box-shadow:0 16px 40px -12px rgba(5,5,6,.35);padding:6px 0;display:grid}
@@ -8605,7 +8610,12 @@ function botaoCompartilhar(){
 /* ---------- janela Compartilhar (como a do Google Drive, do Trello e do Notion) ---------- */
 async function abrirCompartilhar(chave){
   const nome = nomeDe(chave), tipoTxt = ({client:'o cliente', project:'o projeto', product:'o produto', app:'a aplicação', ws:'a frente'})[chave.split(':')[0]] || 'isto';
-  const dl = modal('Compartilhar ' + esc(nome), '', [{txt:'Pronto'}]);
+  const tipoEm = ({client:'no cliente', project:'no projeto', product:'no produto', app:'na aplicação', ws:'na frente'})[chave.split(':')[0]] || 'nisto';
+  // achado: quem a busca encontrou e ainda não foi confirmado (só compartilha depois do clique em "Compartilhar com ...")
+  let achado = null, buscaN = 0;
+  const dl = modal('Compartilhar ' + esc(nome), '', [{txt:'Pronto', acao:() => {
+    if (!achado) return;
+    msg('Você ainda não confirmou: clique em "' + (achado.p ? 'Compartilhar com ' + achado.p.nome : 'Enviar convite') + '" ou em Cancelar.', true); return false; }}]);
   dl.classList.add('mu-modal');
   const desenhar = () => {
     const acima = caminho(chave).map(p => p[0]);
@@ -8614,48 +8624,77 @@ async function abrirCompartilhar(chave){
     const equipes = (D.equipes || []).filter(q => q.ativa !== false && q.nos.some(n => acima.includes(n.no)));
     const conv = (D.convites || []).filter(c => c.no === chave);
     const dono = donoDoNo(chave) || (MU.eu ? {nome:MU.eu.nome, numero:MU.eu.numero, id:MU.eu.pessoa_id} : null);
+    const semDono = l => l.filter(c => !dono || c.pessoa !== dono.id);   // o dono aparece uma vez só, como Dono
     const lin = (p, papel, extra) => '<li class="mu-pessoa">' + (p && p.id ? avatar(p.id) : '<span class="avatar">?</span>') + '<div class="mu-p-nome"><b>' + esc((p && p.nome) || 'Pessoa') + '</b>' + (p && p.numero ? '<small>ID ' + esc(p.numero) + (p.usuario ? ' · @' + esc(p.usuario) : '') + '</small>' : '') + '</div><span class="mu-papel">' + papel + '</span>' + (extra || '') + '</li>';
     $('.modal-corpo', dl).innerHTML =
-      '<p class="sec" style="margin:0">Quem recebe trabalha junto em ' + tipoTxt + ' e em tudo o que está dentro dele, no próprio sistema. O resto do seu espaço continua só seu.</p>' +
-      (COM_BANCO ? '<form class="mu-add" data-mu-add><input class="campo" name="q" placeholder="Número de ID (ex.: 100002), @usuário ou e-mail" autocomplete="off" aria-label="Com quem compartilhar"><button class="btn" type="submit">Compartilhar</button></form><p class="mu-msg" data-mu-msg hidden></p>'
+      '<p class="sec" style="margin:0">Quem recebe trabalha junto ' + tipoEm + ' e em tudo o que está dentro, no próprio sistema. O resto do seu espaço continua só seu.</p>' +
+      (COM_BANCO ? '<form class="mu-add" data-mu-add><input class="campo" name="q" placeholder="Número de ID (ex.: 100002), @usuário ou e-mail" autocomplete="off" aria-label="Com quem compartilhar"><button class="btn sec" type="submit">Buscar</button></form>' +
+          '<div class="mu-achado" data-mu-achado>' + achadoHTML() + '</div><p class="mu-msg" data-mu-msg hidden></p>'
         : '<p class="mu-msg">Na demonstração não há outros usuários. Entre no sistema publicado para compartilhar pelo número de ID.</p>') +
       '<h3 class="mu-tit">Quem tem acesso</h3><ul class="mu-lista">' +
         (dono ? lin(dono, 'Dono') : '') +
-        diretos.map(c => lin(pessoa(c.pessoa), 'Pode trabalhar', '<button type="button" class="ico-btn perigo" data-mu-tirar="' + c.pessoa + '" aria-label="Tirar o acesso">' + ICO.fechar + '</button>')).join('') +
-        herdados.map(c => lin(pessoa(c.pessoa), 'Pelo ' + esc(nomeDe(c.no)))).join('') +
+        semDono(diretos).map(c => lin(pessoa(c.pessoa), 'Pode trabalhar', '<button type="button" class="ico-btn perigo" data-mu-tirar="' + c.pessoa + '" aria-label="Tirar o acesso">' + ICO.fechar + '</button>')).join('') +
+        semDono(herdados).map(c => lin(pessoa(c.pessoa), 'Pelo ' + esc(nomeDe(c.no)))).join('') +
         equipes.map(q => '<li class="mu-pessoa"><span class="avatar" style="background:' + esc(q.cor) + '">' + esc(ini(q.nome)) + '</span><div class="mu-p-nome"><b>Equipe ' + esc(q.nome) + '</b><small>' + q.membros.length + ' pessoa' + (q.membros.length === 1 ? '' : 's') + '</small></div><span class="mu-papel">Pela equipe</span></li>').join('') +
         conv.map(c => '<li class="mu-pessoa"><span class="avatar">@</span><div class="mu-p-nome"><b>' + esc(c.email) + '</b><small>Convite enviado: vira acesso quando a pessoa criar a conta</small></div><span class="mu-papel">Convidado</span><button type="button" class="ico-btn perigo" data-mu-tirar-convite="' + c.id + '" aria-label="Cancelar o convite">' + ICO.fechar + '</button></li>').join('') +
       '</ul>' + (MU.eu ? '<p class="sec mu-meu">Seu número de ID é <b>' + esc(MU.eu.numero) + '</b>. Passe para quem for compartilhar algo com você.</p>' : '');
   };
+  function achadoHTML(){
+    if (!achado) return '';
+    if (achado.p){ const p = achado.p;
+      return '<div class="mu-achado-cartao"><span class="avatar">' + esc(ini(p.nome || '?')) + '</span><div class="mu-p-nome"><b>' + esc(p.nome || 'Pessoa') + '</b><small>ID ' + esc(p.numero || '') + (p.usuario ? ' · @' + esc(p.usuario) : '') + '</small></div>' +
+        '<div class="mu-achado-bts"><button type="button" class="btn" data-mu-confirmar>Compartilhar com ' + esc(String(p.nome || 'esta pessoa').split(' ')[0]) + '</button><button type="button" class="btn sec" data-mu-cancelar>Cancelar</button></div></div>'; }
+    return '<div class="mu-achado-cartao"><span class="avatar">@</span><div class="mu-p-nome"><b>' + esc(achado.email) + '</b><small>Ainda não tem conta no CicloDev. Dá para deixar um convite: quando criar a conta com este e-mail, o acesso aparece sozinho.</small></div>' +
+      '<div class="mu-achado-bts"><button type="button" class="btn" data-mu-confirmar>Enviar convite</button><button type="button" class="btn sec" data-mu-cancelar>Cancelar</button></div></div>';
+  }
+  const pintarAchado = () => { const a = $('[data-mu-achado]', dl); if (a) a.innerHTML = achadoHTML(); };
   const msg = (t, erro) => { const m = $('[data-mu-msg]', dl); if (!m) return; m.hidden = !t; m.textContent = t || ''; m.classList.toggle('erro', !!erro); };
   const noId = chave.split(':')[1];
-  dl.addEventListener('submit', async e => {
-    const f = e.target.closest('[data-mu-add]'); if (!f) return; e.preventDefault();
-    const q = f.q.value.trim(); if (!q) return; const sb = window.ciclodevBanco; if (!sb) return;
-    const btn = f.querySelector('button'); btn.disabled = true; msg('');
+  // 1) buscar: mostra quem é antes de compartilhar
+  const buscar = async q => {
+    q = String(q || '').trim(); const n = ++buscaN; achado = null; pintarAchado(); msg('');
+    if (!q) return; const sb = window.ciclodevBanco; if (!sb) return;
     try {
-      const {data:achou, error:e1} = await sb.rpc('buscar_pessoa', {p_busca:q});
-      if (e1) throw e1;
-      const p = achou && achou[0];
+      const {data, error} = await sb.rpc('buscar_pessoa', {p_busca:q});
+      if (n !== buscaN) return;   // chegou a resposta de uma busca antiga
+      if (error) throw error;
+      const p = data && data[0];
       if (p){
         if (MU.eu && p.id === MU.eu.pessoa_id){ msg('Esse é o seu próprio ID.', true); return; }
         if ((D.compartilhamentos || []).some(c => c.no === chave && c.pessoa === p.id)){ msg(p.nome + ' já tem acesso.', true); return; }
+        achado = {p}; pintarAchado(); const b = $('[data-mu-confirmar]', dl); if (b) b.focus();
+      } else if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(q)){ achado = {email:q.toLowerCase()}; pintarAchado(); }
+      else msg('Nenhuma conta com esse número de ID ou @usuário. Confira o número. Para quem ainda não tem conta, use o e-mail.', true);
+    } catch (err){ msg('Não deu para buscar: ' + (err.message || err), true); }
+  };
+  // 2) confirmar: só aqui grava
+  const confirmar = async btn => {
+    const sb = window.ciclodevBanco; if (!sb || !achado) return; btn.disabled = true; msg('');
+    try {
+      if (achado.p){ const p = achado.p;
         const {data, error} = await sb.from('participacoes').insert({pessoa_id:p.id, no_id:noId, papel:'owner', criado_por:MU.eu && MU.eu.pessoa_id}).select('pessoa_id');
         if (error) throw error; if (!data || !data.length) throw new Error('o banco não deixou compartilhar');
         if (!pessoa(p.id)) D.people.push({id:p.id, nome:p.nome, numero:p.numero, usuario:p.usuario, funcao:'', skills:[], cap:0, acesso:'dev', _externa:true});
         else Object.assign(pessoa(p.id), {numero:p.numero, usuario:p.usuario});
         D.compartilhamentos.push({pessoa:p.id, no:chave, papel:'owner', por:MU.eu && MU.eu.pessoa_id});
-        f.q.value = ''; desenhar(); toast('Compartilhado com ' + p.nome);
-      } else if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(q)){
-        const {data, error} = await sb.from('convites').insert({no_id:noId, email:q.toLowerCase(), criado_por:MU.eu && MU.eu.pessoa_id}).select('id');
+        achado = null; desenhar(); toast('Compartilhado com ' + p.nome + '. Já aparece para essa pessoa ' + tipoTxt + ' e tudo o que está dentro.');
+      } else {
+        const email = achado.email;
+        const {data, error} = await sb.from('convites').insert({no_id:noId, email, criado_por:MU.eu && MU.eu.pessoa_id}).select('id');
         if (error) throw /duplicate|unique/i.test(error.message) ? new Error('esse e-mail já foi convidado') : error;
-        D.convites.push({id:data[0].id, no:chave, email:q.toLowerCase()}); f.q.value = ''; desenhar();
-        toast('Convite guardado. Quando ' + q + ' criar a conta, o acesso aparece sozinho.');
-      } else msg('Nenhuma conta com esse número de ID ou @usuário. Para quem ainda não tem conta, use o e-mail.', true);
-    } catch (err){ msg('Não deu para compartilhar: ' + (err.message || err), true); }
-    finally { btn.disabled = false; }
-  });
+        D.convites.push({id:data[0].id, no:chave, email}); achado = null; desenhar();
+        toast('Convite guardado. Quando ' + email + ' criar a conta, o acesso aparece sozinho.');
+      }
+    } catch (err){ btn.disabled = false; msg('Não deu para compartilhar: ' + (err.message || err), true); }
+  };
+  dl.addEventListener('submit', e => { const f = e.target.closest('[data-mu-add]'); if (!f) return; e.preventDefault(); buscar(f.q.value); });
+  // busca sozinha enquanto digita (número de ID com 6 dígitos ou mais, @usuário ou e-mail completo)
+  let tBusca = 0;
+  dl.addEventListener('input', e => { if (!e.target.matches('[data-mu-add] input')) return; const q = e.target.value.trim(); clearTimeout(tBusca);
+    if (/^\d{6,}$/.test(q) || /^@\w{2,}$/.test(q) || /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(q)) tBusca = setTimeout(() => buscar(q), 400); else { achado = null; buscaN++; pintarAchado(); msg(''); } });
   dl.addEventListener('click', async e => {
+    const cf = e.target.closest('[data-mu-confirmar]'); if (cf){ confirmar(cf); return; }
+    if (e.target.closest('[data-mu-cancelar]')){ achado = null; pintarAchado(); msg(''); const i = $('[data-mu-add] input', dl); if (i){ i.value = ''; i.focus(); } return; }
     const x = e.target.closest('[data-mu-tirar],[data-mu-tirar-convite]'); if (!x) return; const sb = window.ciclodevBanco; if (!sb) return;
     if (x.dataset.muTirar){
       const {error} = await sb.from('participacoes').delete().match({pessoa_id:x.dataset.muTirar, no_id:noId});
