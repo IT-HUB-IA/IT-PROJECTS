@@ -81,6 +81,8 @@ window.supabase = { createClient(){ let sess = {user:{id:'u1', email:'admin@it-i
     D.statusCustom.push({id:u(), no:'project:' + pj.id, nome:'Aguardando teste', cor:'#123456', grupo:'blocked'});
     D.camposItem.push({id:u(), no:'project:' + pj.id, nome:'Ambiente teste', tipo:'lista', opcoes:['A','B']});
     D.custos.push({id:u(), cliente:c.id, app:ap.id, fornecedor:'Vercel', cat:'Hospedagem', desc:'Plano Pro', rec:'Mensal', moeda:'USD', valor:20, uso:null, repasse:true, markup:10, inicio:'2026-10-01', fim:''});
+    // custo "Por uso" sem limite e sem unidade (o caso que travava o salvamento): grava com a unidade padrão
+    D.custos.push({id:u(), cliente:c.id, app:ap.id, fornecedor:'Meta', cat:'Mensageria', desc:'WhatsApp por conversa', rec:'Por uso', moeda:'BRL', valor:0, uso:null, repasse:true, markup:0, inicio:'2026-10-01', fim:''});
     D.opCustos.push({id:u(), nome:'Notebook', cat:'Equipamento', valor:8000, moeda:'BRL', rec:'Depreciação', meses:36});
     D.receitas.push({id:u(), cliente:c.id, project:pj.id, app:'', servico:'', desc:'Implantação', modelo:'fixo', valor:5000, rec:'Parcelado', parcelas:3, inicio:'2026-10-01', fim:''});
     D.people.push({id:u(), nome:'Pessoa Teste', funcao:'Dev', skills:['JS'], cap:30, acesso:'dev', custo:{vinculo:'PJ', salario:0, valorPJ:7000, beneficios:0}});
@@ -90,6 +92,7 @@ window.supabase = { createClient(){ let sess = {user:{id:'u1', email:'admin@it-i
   ok(conta("select titulo || '|' || coalesce(sprint_id::text,'') from public.itens where id='" + ids.it + "'") === 'História teste|' + ids.sp, 'item gravado com o sprint');
   ok(conta("select count(*) from public.comentarios where item_id='" + ids.it + "'") === '1' && conta("select count(*) from public.itens_checklist where item_id='" + ids.it + "'") === '1' && conta("select count(*) from public.anexos where item_id='" + ids.it + "'") === '1', 'comentário, checklist e link gravados');
   ok(conta("select count(*) from public.pessoas_custos c join public.pessoas p on p.id=c.pessoa_id where p.nome='Pessoa Teste' and c.valor_pj=7000") === '1', 'pessoa e custo dela gravados');
+  ok(conta("select recorrencia || '|' || unidade from public.custos_tecnicos where descricao = 'WhatsApp por conversa'") === 'uso|unidade', 'custo Por uso sem unidade não trava o salvamento (grava com a unidade padrão)');
 
   // 3) alterar só o que mudou
   // antes, deixa terminar o acerto automático do status dos épicos ao abrir (paistatus.js), que grava sozinho

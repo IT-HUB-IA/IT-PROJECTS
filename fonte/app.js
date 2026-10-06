@@ -1590,10 +1590,13 @@ function editarOp(o){
     [{txt:'Cancelar', cls:'sec'},{txt:'Salvar', acao:d => { const n = $('#op-n', d).value.trim(); if (!n){ toast('Escreva o item'); return false; } const y = o || {id:uid('oc')}; y.nome = n; y.cat = $('#op-c', d).value; y.valor = +$('#op-v', d).value || 0; y.moeda = $('#op-m', d).value; y.rec = $('#op-r', d).value; y.meses = +$('#op-me', d).value || 36; if (!o) D.opCustos.push(y); salvar(); rCustos(); toast('Custo salvo'); }}]);
 }
 function salvarCusto(dlg, c){
+  // custo "Por uso" precisa dizer a unidade (o banco recusa sem ela): avisa antes, em vez de deixar o salvamento falhar
+  if ($('#fc2-rec', dlg).value === 'Por uso' && !$('#fc2-un', dlg).value.trim()){ toast('Custo por uso: preencha a Unidade (ex.: mil mensagens, GB, chamadas).'); const u = $('#fc2-un', dlg); if (u){ u.focus(); u.scrollIntoView({block:'center'}); } return false; }
   const novo = !c; c = c || {id:uid('ct')};
   c.cliente = $('#fc2-cli', dlg).value; c.app = $('#fc2-app', dlg).value; c.fornecedor = $('#fc2-for', dlg).value.trim() || 'Fornecedor'; c.cat = $('#fc2-cat', dlg).value.trim() || 'Outros'; c.desc = $('#fc2-desc', dlg).value; c.rec = $('#fc2-rec', dlg).value; c.moeda = $('#fc2-moeda', dlg).value; c.valor = +$('#fc2-valor', dlg).value || 0; c.repasse = $('#fc2-rep', dlg).value === '1'; c.markup = +$('#fc2-mk', dlg).value || 0; c.inicio = $('#fc2-ini', dlg).value || iso(HOJE); c.fim = $('#fc2-fim', dlg).value;
   const lim = +$('#fc2-lim', dlg).value || 0, atual = +$('#fc2-atual', dlg).value || 0;
-  if (lim > 0){ const h = (c.uso && c.uso.hist) ? c.uso.hist.slice() : [atual]; h[h.length - 1] = atual; c.uso = {unidade:$('#fc2-un', dlg).value, hist:h, limite:lim, plano:$('#fc2-plano', dlg).value, prox:{nome:$('#fc2-pn', dlg).value, valor:+$('#fc2-pv', dlg).value || 0, obs:$('#fc2-po', dlg).value}}; } else c.uso = null;
+  // com limite, ou sendo "Por uso" (mesmo sem limite), guarda a unidade e o uso
+  if (lim > 0 || c.rec === 'Por uso'){ const h = (c.uso && c.uso.hist) ? c.uso.hist.slice() : [atual]; h[h.length - 1] = atual; c.uso = {unidade:$('#fc2-un', dlg).value.trim(), hist:h, limite:lim, plano:$('#fc2-plano', dlg).value, prox:{nome:$('#fc2-pn', dlg).value, valor:+$('#fc2-pv', dlg).value || 0, obs:$('#fc2-po', dlg).value}}; } else c.uso = null;
   if (novo) D.custos.push(c); salvar(); render(); toast(novo ? 'Custo registrado. Já gasto até hoje: ' + brl(gastoAteHoje(c)) : 'Custo salvo');
 }
 

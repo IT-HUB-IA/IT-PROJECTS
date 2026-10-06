@@ -1430,7 +1430,7 @@ function linhasDaTela(d){
     L.custos_operacao.push({id:o.id, nome:o.nome, categoria:o.cat || 'Outros', valor:+o.valor || 0, moeda:o.moeda || 'BRL', recorrencia:rec === 'uso' ? 'mensal' : rec, meses_depreciacao:rec === 'depreciacao' ? (+o.meses || 12) : null, inicio:o.inicio || (o.inicio = iso(HOJE)), fim:semVazio(o.fim)}); });
   d.custos.forEach(c => { const u = c.uso || null, rec = PARA_REC[c.rec] || 'mensal';
     L.custos_tecnicos.push({id:c.id, no_id:c.app || c.cliente, fornecedor:c.fornecedor, categoria:c.cat || 'Outros', descricao:semVazio(c.desc), recorrencia:rec === 'depreciacao' ? 'mensal' : rec, moeda:c.moeda || 'BRL', valor:+c.valor || 0,
-      unidade:u ? semVazio(u.unidade) : null, limite:u && +u.limite > 0 ? +u.limite : null, plano:u ? semVazio(u.plano) : null, proximo_plano:u && u.prox ? semVazio(u.prox.nome) : null, proximo_valor:u && u.prox && u.prox.valor != null ? +u.prox.valor : null,
+      unidade:(u ? semVazio(u.unidade) : null) || (rec === 'uso' ? 'unidade' : null), limite:u && +u.limite > 0 ? +u.limite : null, plano:u ? semVazio(u.plano) : null, proximo_plano:u && u.prox ? semVazio(u.prox.nome) : null, proximo_valor:u && u.prox && u.prox.valor != null ? +u.prox.valor : null,
       extra_por_unidade:u && u.prox && u.prox.extraUnidade != null ? +u.prox.extraUnidade : null, repasse:!!c.repasse, taxa_repasse_pct:+c.markup || 0, inicio:c.inicio || (c.inicio = iso(HOJE)), fim:semVazio(c.fim)});
     if (u && u.hist) u.hist.forEach((q, k) => { const mes = (u._meses && u._meses.length === u.hist.length) ? u._meses[k] : mesUm(k - u.hist.length + 1); L.custos_uso.push({custo_id:c.id, mes, quantidade:+q || 0}); }); });
   d.receitas.forEach(r => { const forma = PARA_FORMA[r.rec] || 'unica';
