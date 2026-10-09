@@ -192,7 +192,8 @@ function gcDesligarRepo(id, trocar){
   tfExcluirPerguntaSimples((trocar ? 'Trocar o repositório ' : 'Desligar o repositório ') + esc(r.nome) + '?',
     (trocar ? 'Ele é desligado e em seguida abre a janela para escolher o novo. ' : 'O ponto fica sem este repositório (dá para ligar outro quando quiser). ') +
     'Os branches, commits e pull requests que vieram dele saem dos itens. As publicações e os desenhos que já saíram ficam; os desenhos automáticos param de ser atualizados por ele.' +
-    (r.provedor === 'gitlab' ? ' O aviso que o CicloDev criou no projeto do GitLab sai junto.' : ''), async () => {
+    (r.provedor === 'gitlab' ? ' O aviso que o CicloDev criou no projeto do GitLab sai junto.' : '') +
+    ' Os épicos e histórias que ele montou ficam no backlog; depois eles aparecem em Ligações, em Sobras de ligações que saíram, para mandar para a lixeira se quiser.', async () => {
     const res = COM_BANCO ? await gcFuncao({acao:'desligar', repo_id:id}) : {ok:await enApagar('repositorios', id)};
     if (!res.ok){ toast('Não deu para desligar: ' + (res.erro || 'sem permissão')); return; }
     EN.repos = (EN.repos || []).filter(x => x.id !== id);

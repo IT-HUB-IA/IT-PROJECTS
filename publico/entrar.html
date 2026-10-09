@@ -3204,6 +3204,9 @@ dialog.modal .ig{display:grid;gap:12px;max-width:640px}
 .sg-pl td:nth-child(7){min-width:110px}
 .fa-pl{margin:4px 0;max-height:360px;overflow:auto}
 .fa-pl-mais{margin:2px 0 0;font-size:12px;color:var(--text-secondary)}
+.ifr-sobras{display:grid;gap:10px;padding:14px;border:1px solid var(--linha)}
+.ifr-sobras .ifr-fonte{min-width:0}
+.ifr-sobras-acoes{display:flex;flex-wrap:wrap;gap:8px;padding-top:6px}
 /* Mapa do Sistema (mapa.js): "Como está" | "Desenhos", as 6 visões, alertas e "é de propósito" */
 .mp-troca{display:inline-flex;border:1px solid var(--preto);margin:0 0 14px;max-width:100%}
 .mp-troca button{border:0;background:var(--branco);color:var(--preto);font:inherit;font-size:13px;font-weight:600;padding:8px 16px;cursor:pointer;min-width:0}
@@ -10575,7 +10578,8 @@ function gcDesligarRepo(id, trocar){
   tfExcluirPerguntaSimples((trocar ? 'Trocar o repositório ' : 'Desligar o repositório ') + esc(r.nome) + '?',
     (trocar ? 'Ele é desligado e em seguida abre a janela para escolher o novo. ' : 'O ponto fica sem este repositório (dá para ligar outro quando quiser). ') +
     'Os branches, commits e pull requests que vieram dele saem dos itens. As publicações e os desenhos que já saíram ficam; os desenhos automáticos param de ser atualizados por ele.' +
-    (r.provedor === 'gitlab' ? ' O aviso que o CicloDev criou no projeto do GitLab sai junto.' : ''), async () => {
+    (r.provedor === 'gitlab' ? ' O aviso que o CicloDev criou no projeto do GitLab sai junto.' : '') +
+    ' Os épicos e histórias que ele montou ficam no backlog; depois eles aparecem em Ligações, em Sobras de ligações que saíram, para mandar para a lixeira se quiser.', async () => {
     const res = COM_BANCO ? await gcFuncao({acao:'desligar', repo_id:id}) : {ok:await enApagar('repositorios', id)};
     if (!res.ok){ toast('Não deu para desligar: ' + (res.erro || 'sem permissão')); return; }
     EN.repos = (EN.repos || []).filter(x => x.id !== id);
@@ -14564,7 +14568,8 @@ if (location.protocol === 'file:' && window.__tf) Object.assign(window.__tf, {IF
    Aqui ficam a seção "Automático" do lado, ligar o banco, "Atualizar agora" e abrir o quadro de um desenho. */
 const IFR_AUTO_FONTE = {software:'codigo', infra:'codigo', ux:'codigo', der:'banco', seguranca:'banco'};
 // herdados: repositórios e bancos ligados ACIMA deste ponto (produto/projeto), que também montam coisas aqui
-const IFR_AUTO = {no:null, repos:[], bancos:[], herdados:[], pedidos:[], carregado:false, atualizando:null};
+// sobras: fontes que já saíram (desligadas de vez) e deixaram épicos e histórias aqui
+const IFR_AUTO = {no:null, repos:[], bancos:[], herdados:[], sobras:[], pedidos:[], carregado:false, atualizando:null};
 
 // os nós cujos repositórios alimentam este ponto: a aplicação, só ela; o produto e as aplicações dele; o projeto e as aplicações soltas nele
 function ifrNosDoCodigo(sel){
@@ -14575,21 +14580,23 @@ function ifrNosDoCodigo(sel){
 async function ifrAutoCarregar(){
   const sb = ifrBanco(), no = IFR.no;
   IFR_AUTO.no = no;
-  if (!sb){ IFR_AUTO.repos = []; IFR_AUTO.bancos = []; IFR_AUTO.herdados = []; IFR_AUTO.pedidos = []; IFR_AUTO.carregado = true; return; }
+  if (!sb){ IFR_AUTO.repos = []; IFR_AUTO.bancos = []; IFR_AUTO.herdados = []; IFR_AUTO.sobras = []; IFR_AUTO.pedidos = []; IFR_AUTO.carregado = true; return; }
   const nos = ifrNosDoCodigo(UI.sel);
   const cd = cadeia(UI.sel || ''), acima = [cd.product, cd.project].filter(x => x && x.id !== no).map(x => x.id);
-  const [rp, bc, pd, hr, hb] = await Promise.all([
+  const [rp, bc, pd, hr, hb, so] = await Promise.all([
     sb.from('repositorios').select('id, no_id, provedor, nome, branch_principal, ativo, gera_desenhos, gera_itens, gera_ficha, gera_analise, gera_mapa, mover_status').in('no_id', nos),
     sb.from('infra_bancos').select('id, no_id, nome, provedor, motor, esquemas, servidor, ativo, gera_desenhos, gera_itens, gera_ficha, gera_analise, ultima_leitura_em, ultima_mudanca_em, ultimo_erro, conexao_trocada_em, supa_conexao_id, supa_projeto, validado_em, validacao').eq('no_id', no),
     sb.from('infra_automacoes').select('id, origem, status, referencia, criado_em, concluido_em, erro, resumo, diagramas').eq('no_id', no).order('criado_em', {ascending:false}).limit(5),
     acima.length ? sb.from('repositorios').select('id, no_id, provedor, nome, ativo, gera_desenhos, gera_itens, gera_ficha, gera_analise, gera_mapa, mover_status').in('no_id', acima) : Promise.resolve({data:[]}),
-    acima.length ? sb.from('infra_bancos').select('id, no_id, nome, provedor, servidor, supa_projeto, ativo, gera_desenhos, gera_itens, gera_ficha, gera_analise').in('no_id', acima) : Promise.resolve({data:[]})
+    acima.length ? sb.from('infra_bancos').select('id, no_id, nome, provedor, servidor, supa_projeto, ativo, gera_desenhos, gera_itens, gera_ficha, gera_analise').in('no_id', acima) : Promise.resolve({data:[]}),
+    podeEditar() ? sb.rpc('fonte_sobras', {p_no:no}) : Promise.resolve({data:[]})
   ]);
   if (IFR_AUTO.no !== no) return;
   IFR_AUTO.repos = (rp.data || []).filter(r => nos.includes(r.no_id) && r.ativo !== false);
   IFR_AUTO.bancos = (bc.data || []).filter(b => b.no_id === no).sort((a, b) => String(a.nome).localeCompare(String(b.nome)));
   IFR_AUTO.pedidos = (pd.data || []).filter(p => !p.no_id || p.no_id === no).sort((a, b) => String(b.criado_em).localeCompare(String(a.criado_em)));
   IFR_AUTO.herdados = [...(hr.data || []).filter(r => acima.includes(r.no_id) && r.ativo !== false).map(x => ({tipo:'repo', x})), ...(hb.data || []).filter(b => acima.includes(b.no_id)).map(x => ({tipo:'banco', x}))];
+  IFR_AUTO.sobras = Array.isArray(so && so.data) ? so.data : [];
   IFR_AUTO.carregado = true;
 }
 const ifrQuando = ts => { if (!ts) return ''; const m = Math.round((Date.now() - new Date(ts).getTime()) / 60000); if (m < 1) return 'agora'; if (m < 60) return 'há ' + m + ' min'; const h = Math.round(m / 60); if (h < 24) return 'há ' + h + ' h'; const d = Math.round(h / 24); return d === 1 ? 'ontem' : 'há ' + d + ' dias'; };
@@ -14730,6 +14737,7 @@ function ifrAutoHTML(){
     hd.map(({tipo, x}) => { const ch = igChave(x.no_id); return '<div class="ifr-fonte"><div class="ifr-fonte-cab"><b>' + esc(x.nome) + '</b>' + ifrSelo('cinza', tipo === 'repo' ? 'Código' : 'Banco') + '</div>' +
       '<p class="ifr-fonte-meta">Ligado em <b>' + esc(ch ? nomeDe(ch) : '?') + '</b> (' + esc(ch ? ({product:'produto', project:'projeto'}[ch.split(':')[0]] || '') : '') + ')' + (x.supa_projeto ? ' · ' + esc(x.supa_projeto) : x.servidor ? ' · ' + esc(x.servidor) : '') + '</p>' +
       '<div class="ifr-lig-usa"><span>Usar para</span>' + ifrChavesHTML(tipo, x, pode) + '</div></div>'; }).join('') + '</div></details>';
+  h += ifrSobrasHTML(pode);
   return h + '</div>';
 }
 // o botão da barra de cima: "Ligações" com o resumo (quantos códigos e bancos, e se algum tem problema)
@@ -14940,12 +14948,41 @@ function ifrBancoModal(id, provInicial, soEndereco){
 }
 function ifrBancoTirar(id){
   const b = IFR_AUTO.bancos.find(x => x.id === id); if (!b) return;
-  modal('Desligar o banco ' + esc(b.nome), '<p style="margin:0">O robô para de ler este banco e o endereço guardado é apagado. Os desenhos que já saíram continuam; os outros bancos seguem ligados.</p>', [{txt:'Cancelar', cls:'sec'}, {txt:'Desligar', cls:'perigo', acao:() => {
+  modal('Desligar o banco ' + esc(b.nome), '<p style="margin:0">O robô para de ler este banco e o endereço guardado é apagado. Os desenhos que já saíram continuam; os outros bancos seguem ligados.</p><p class="sec">Os épicos e histórias que ele montou ficam no backlog. Depois de desligar, eles aparecem em <b>Sobras de ligações que saíram</b>, nesta janela, para mandar para a lixeira se quiser.</p>', [{txt:'Cancelar', cls:'sec'}, {txt:'Desligar', cls:'perigo', acao:() => {
     ifrBanco().rpc('infra_banco_remover', {p_id:id}).then(async ({error}) => {
       if (error){ toast('Não deu para desligar: ' + (error.message || error)); return; }
       await ifrAutoCarregar(); ifrLado(); toast('Banco ' + b.nome + ' desligado.');
     });
   }}]);
+}
+
+/* ---------- Sobras: épicos e histórias de fontes que já saíram ----------
+   Desligar um repositório ou banco de vez não apaga o que o robô montou com ele, e a chave "Épicos e histórias" some
+   junto com a fonte. Aqui aparece cada fonte que saiu e ainda deixou itens neste ponto (ou abaixo), com a opção de
+   mandar para a lixeira só os que ninguém mexeu ou todos. Sempre para a lixeira: dá para voltar por lá. */
+function ifrSobrasHTML(pode){
+  const ss = IFR_AUTO.sobras || []; if (!pode || !ss.length) return '';
+  return '<section class="ifr-sobras ifr-auto-bloco"><div class="ifr-lig-col-cab"><h3 class="ifr-auto-tit">Sobras de ligações que saíram</h3><small>Épicos e histórias que o robô montou com um código ou banco que já foi desligado. Eles continuam no backlog até você decidir.</small></div>' +
+    ss.map(s => { const ch = igChave(s.no_id), mex = s.itens - s.intactos;
+      return '<div class="ifr-fonte"><div class="ifr-fonte-cab"><b>' + esc(s.nome || 'Fonte sem nome') + '</b>' + ifrSelo('cinza', s.tipo === 'repo' ? 'Código desligado' : 'Banco desligado') + '</div>' +
+        '<p class="ifr-fonte-meta"><b>' + s.itens + '</b> ' + (s.itens === 1 ? 'item' : 'itens') + (ch ? ' em ' + esc(nomeDe(ch)) : '') + ' · ' + s.intactos + ' que ninguém mexeu' + (mex ? ' · ' + mex + ' com comentário, anexo, subitem ou edição' : '') + '</p>' +
+        '<div class="ifr-sobras-acoes">' + (s.intactos ? '<button type="button" class="btn sec peq" data-ifr-sobra="' + esc(s.origem) + '" data-ifr-tudo="0">Lixeira: só os que ninguém mexeu (' + s.intactos + ')</button>' : '') +
+        '<button type="button" class="btn ' + (s.intactos ? 'sec ' : '') + 'peq" data-ifr-sobra="' + esc(s.origem) + '" data-ifr-tudo="1">Lixeira: todos (' + s.itens + ')</button></div></div>'; }).join('') + '</section>';
+}
+function ifrSobraLixeira(origem, tudo){
+  const s = (IFR_AUTO.sobras || []).find(x => x.origem === origem); if (!s) return;
+  const qtos = tudo ? s.itens : s.intactos;
+  modal('Mandar para a lixeira o que ' + esc(s.nome || 'a fonte') + ' deixou?',
+    '<p>' + (tudo ? '<b>Todos</b> os ' + qtos + ' épicos e histórias que o robô montou com esta fonte vão para a lixeira, inclusive os que alguém já comentou ou editou.'
+      : 'Vão para a lixeira só os <b>' + qtos + '</b> que ninguém mexeu (sem comentário, anexo, subitem ou edição). O que alguém já trabalhou fica.') +
+    ' O épico só vai junto quando todas as histórias dele vão.</p><p class="sec">Nada é apagado de vez: dá para trazer de volta pela Lixeira.</p>',
+    [{txt:'Cancelar', cls:'sec'}, {txt:'Mandar para a lixeira', cls:'perigo', acao:async () => {
+      const {data, error} = await ifrBanco().rpc('fonte_sobras_lixeira', {p_no:IFR_AUTO.no, p_origem:origem, p_tudo:!!tudo});
+      if (error){ toast('Não deu: ' + tfErro(error)); return; }
+      toast(data ? data + (data === 1 ? ' item foi' : ' itens foram') + ' para a lixeira.' : 'Nenhum item precisou ir para a lixeira.');
+      if (typeof ifrCarregar === 'function'){ try { await ifrCarregar(); } catch(e){} }
+      await ifrAutoCarregar(); ifrLado();
+    }}]);
 }
 
 /* ---------- abrir o quadro de um desenho no canvas ---------- */
@@ -14963,6 +15000,7 @@ document.addEventListener('click', e => {
   { const bb = e.target.closest('[data-ifr-banco]'); if (bb) return ifrBancoModal(bb.dataset.ifrBanco || null); }
   { if (e.target.closest('[data-ifr-guia]')) return ifrGuiar(null); }
   { const bt = e.target.closest('[data-ifr-banco-tirar]'); if (bt) return ifrBancoTirar(bt.dataset.ifrBancoTirar); }
+  { const so = e.target.closest('[data-ifr-sobra]'); if (so) return ifrSobraLixeira(so.dataset.ifrSobra, so.dataset.ifrTudo === '1'); }
   if (e.target.closest('[data-ifr-repo]')){ if (typeof gcLigarRepo === 'function') gcLigarRepo(); return; }
   let rb = e.target.closest('[data-ifr-repo-tirar]'); if (rb){ gcDesligarRepo(rb.dataset.ifrRepoTirar); return; }
   if (e.target.matches && e.target.matches('[data-ifr-chave]')) return;   // as chaves mudam pelo change

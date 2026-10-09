@@ -45,7 +45,7 @@ function q(t){ const st = {t, op:'select', filtro:{}, de:0, ate:998};
 window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1', email:'admin@it-ia.tec.br'}}; return { auth:{ async getSession(){ return {data:{session:sess}}; }, onAuthStateChange(){ return {data:{subscription:{unsubscribe(){}}}}; }, async signOut(){} },
   storage:{ from(){ return { async upload(caminho, blob){ window.__deposito = window.__deposito || {}; window.__deposito[caminho] = blob.size; return {data:{path:caminho}, error:null}; }, async createSignedUrls(ps){ return {data:ps.map(p => ({path:p, signedUrl:'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'})), error:null}; }, async createSignedUrl(p, s, o){ window.__baixou = (window.__baixou || []).concat(p + '|' + ((o || {}).download || '')); return {data:{signedUrl:'data:application/octet-stream;base64,SGVsbG8='}, error:null}; } }; } },
   functions:{ async invoke(nome, o){ return JSON.parse(await window.__fn(JSON.stringify(o.body || {}))); } },
-  from:q, async rpc(fn, args){ if (/^(ia_|admin_ia_|admin_usuarios|infra_)/.test(fn)) return JSON.parse(await window.__rpc(JSON.stringify({fn, args:args || {}}))); if (fn === 'sou_dono_sistema') return {data:true, error:null}; if (/^admin_/.test(fn)) return {data:fn === 'admin_resumo' ? {gerado_em:new Date().toISOString()} : [], error:null}; if (fn !== 'vincular_meu_login') return {data:null, error:null}; return {data:[{pessoa_id:window.__eu, nome:'William', papel:'master', numero:100001, espaco_id:window.__esp || null}], error:null}; } }; } };`;
+  from:q, async rpc(fn, args){ if (/^(ia_|admin_ia_|admin_usuarios|infra_|fonte_sobras)/.test(fn)) return JSON.parse(await window.__rpc(JSON.stringify({fn, args:args || {}}))); if (fn === 'sou_dono_sistema') return {data:true, error:null}; if (/^admin_/.test(fn)) return {data:fn === 'admin_resumo' ? {gerado_em:new Date().toISOString()} : [], error:null}; if (fn !== 'vincular_meu_login') return {data:null, error:null}; return {data:[{pessoa_id:window.__eu, nome:'William', papel:'master', numero:100001, espaco_id:window.__esp || null}], error:null}; } }; } };`;
 (async () => {
   prepararLogin();
   const eu = COMO ? 'd148fdc5-eef3-5398-bf89-f49b55b5cd28' : psql("select id from public.pessoas where papel='master' order by nome limit 1").trim();
@@ -56,7 +56,7 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   // as funções infra_* rodam de verdade no Postgres local, como a pessoa logada
   const litSql = v => v === null || v === undefined ? 'null' : typeof v === 'number' || typeof v === 'boolean' ? String(v) : Array.isArray(v) ? '$l$' + '{' + v.map(x => '"' + String(x).replace(/"/g, '') + '"').join(',') + '}' + '$l$' : typeof v === 'object' ? '$l$' + JSON.stringify(v) + '$l$' : '$l$' + v + '$l$';
   await p.exposeFunction('__rpc', s => { const {fn, args} = JSON.parse(s);
-    if (!/^infra_/.test(fn)) return JSON.stringify({data:null, error:null});
+    if (!/^(infra_|fonte_sobras)/.test(fn)) return JSON.stringify({data:null, error:null});
     try { const out = psql(COMO + 'select to_json(public.' + fn + '(' + Object.entries(args).map(([k, v]) => k + ' => ' + litSql(v)).join(', ') + '))').trim(); return JSON.stringify({data:out ? JSON.parse(out) : null, error:null}); }
     catch (e) { const m = String(e.stderr || e.message).split('\n').find(l => /ERROR/.test(l)) || String(e.message); return JSON.stringify({data:null, error:{message:m.replace(/^.*ERROR:\s*/, '')}}); } });
   const conta = sql => psql(sql).trim();
@@ -137,6 +137,24 @@ window.supabase = { createClient(){ let sess = {user:{id:window.__login || 'u1',
   await p.evaluate(() => document.querySelector('#ops-corpo [data-ifr-lig]').click()); await p.waitForTimeout(400);
   ok(await p.evaluate(() => { const r = document.getElementById('ifr-lig').getBoundingClientRect(); return r.left >= 8 && r.right <= innerWidth - 8 && document.documentElement.scrollWidth <= innerWidth; }), 'no celular a janela cabe na tela, sem rolagem para o lado');
   if (FOTOS) await p.screenshot({path: FOTOS + '/ligacoes_cel.png'});
+  // 7. sobras: um banco que já saiu deixou um épico com duas histórias (numa alguém comentou); a janela mostra e manda para a lixeira
+  if (conta("select to_regprocedure('public.fonte_sobras(uuid)') is not null") === 't'){
+    const fr = conta("select n.id from public.nos n join public.nos_ancestrais a on a.no_id = n.id and a.ancestral_id = '" + pj + "' where n.tipo = 'frente' limit 1"), st = conta("select status_id from public.itens where status_id is not null limit 1");
+    psql("insert into public.itens (id, frente_id, titulo, tipo, status_id, descricao) values ('72000000-0000-0000-0000-0000000000e1', '" + fr + "', 'Banco: Sobra', 'epic', '" + st + "', 'Épico montado pelo CicloDev a partir do que já existe')");
+    psql("insert into public.itens (id, frente_id, titulo, tipo, status_id, pai_id) select ('72000000-0000-0000-0000-0000000000e' || n)::uuid, '" + fr + "', 'Tabela sobra ' || n, 'story', '" + st + "', '72000000-0000-0000-0000-0000000000e1' from generate_series(2, 3) n");
+    psql("insert into public.comentarios (item_id, texto) values ('72000000-0000-0000-0000-0000000000e3', 'mexendo')");
+    psql("insert into public.analise_inventario (no_id, origem, rotulo, tipo, chave, grupo, nome, onde, sinais, item_id) select '" + pj + "', 'banco:72000000-0000-0000-0000-0000000000ff', 'Banco que saiu', 'tabela', 't' || n, 'Banco: Sobra', 'Tabela sobra ' || n, 'x', '{}', ('72000000-0000-0000-0000-0000000000e' || n)::uuid from generate_series(2, 3) n");
+    await p.setViewportSize({width:1400, height:900}); await abrir();
+    await p.evaluate(() => document.querySelector('#ops-corpo [data-ifr-lig]').click()); await p.waitForTimeout(1200);
+    const so = await p.evaluate(() => { const s = document.querySelector('#ifr-lig .ifr-sobras'); return s ? s.textContent : ''; });
+    ok(/Sobras de ligações que saíram/.test(so) && /Banco que saiu/.test(so) && /3 itens/.test(so) && /1 que ninguém mexeu/.test(so), 'Ligações mostra a sobra do banco que saiu, com quantos itens e quantos ninguém mexeu (' + so.slice(0, 160) + ')');
+    await p.click('#ifr-lig [data-ifr-sobra][data-ifr-tudo="0"]'); await p.waitForTimeout(400);
+    await p.click('dialog:last-of-type .modal-rod .btn:last-child'); await p.waitForTimeout(1800);
+    ok(conta("select string_agg(right(id::text, 2) || ':' || (excluido_em is not null), ',' order by id) from public.itens where id::text like '72000000-0000-0000-0000-0000000000e_'") === 'e1:false,e2:true,e3:false', 'só os que ninguém mexeu: a história intacta vai para a lixeira, a comentada e o épico ficam');
+    await p.click('#ifr-lig [data-ifr-sobra][data-ifr-tudo="1"]'); await p.waitForTimeout(400);
+    await p.click('dialog:last-of-type .modal-rod .btn:last-child'); await p.waitForTimeout(1800);
+    ok(conta("select count(*) from public.itens where id::text like '72000000-0000-0000-0000-0000000000e_' and excluido_em is null") === '0' && await p.evaluate(() => !document.querySelector('#ifr-lig .ifr-sobras')), 'Todos: o resto vai para a lixeira e a sobra some da janela');
+  }
   ok(!erros.length, 'sem erro na página' + (erros.length ? ': ' + erros.join(' | ') : ''));
   await b.close();
   console.log(falhas ? falhas + ' FALHA(S)' : 'TUDO OK'); process.exit(falhas ? 1 : 0);

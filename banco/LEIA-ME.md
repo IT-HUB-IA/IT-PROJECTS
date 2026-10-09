@@ -551,3 +551,10 @@ Regras que valem daqui em diante:
 - `cofre_campos(p_id)` devolve só os NOMES dos campos que têm algo guardado e dos campos a mais (Token, nome livre), nunca os valores. Mesma regra de acesso do `cofre_revelar`; não vai para o histórico porque nenhum valor sai do Vault.
 - Na tela: a janela do item mostra só os campos preenchidos (Notas vazia não aparece) e os campos a mais com o nome deles, cada um com Mostrar e Copiar. No formulário, Notas fica num botão "+ Notas" (abre sozinha se já tiver nota) e os campos novos entram logo depois dos campos do tipo. Botão "Gerar senha" abre uma janela que só gera (não salva nada).
 - Teste local: `99_teste_cofre_campos_LOCAL.sql` (6 OK). Tela: `testes/t_cofre.js`. Volta: `71_cofre_campos_VOLTA.sql`.
+
+## Parte 72: sobras de fonte que saiu (aplicada no Supabase em 09/10/2026)
+- Problema: desligar de vez (remover) um repositório ou banco deixava no backlog os épicos e histórias que o robô montou com ele, e a chave "Épicos e histórias" sumia junto com a fonte. Caso real: a Java Fiscal ficou com 2 épicos e 26 histórias de um banco removido.
+- `fonte_sobras(p_no)`: lista as fontes que já saíram e ainda têm épicos e histórias vivos neste ponto ou abaixo (nome, quantos itens, quantos ninguém mexeu). Só para quem pode editar o ponto.
+- `fonte_sobras_lixeira(p_no, p_origem, p_tudo)`: manda para a LIXEIRA só os que ninguém mexeu (`p_tudo = false`) ou todos (`p_tudo = true`). O épico do robô só vai quando todas as histórias vivas dele vão. Recusa fonte que ainda está ligada (ela tem a chave). Nada é apagado de vez.
+- Na tela: janela Ligações, bloco "Sobras de ligações que saíram", com os botões "Lixeira: só os que ninguém mexeu" e "Lixeira: todos". Desligar banco ou repositório avisa que os itens ficam e aparecem ali.
+- Teste local: `99_teste_sobras_de_fonte_LOCAL.sql` (13 OK). Tela: `testes/t_ligacoes.js` (passo 7). Volta: `72_sobras_de_fonte_VOLTA.sql`.
