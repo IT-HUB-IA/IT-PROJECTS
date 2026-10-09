@@ -161,11 +161,15 @@ async function gcMostrarRepos(dlg, conexao){
   if (!r.ok){ alvo.innerHTML = '<p class="entrada-erro">' + esc(r.erro) + '</p>'; return; }
   alvo.dataset.cheio = '1';
   const lista = r.repos || [];
-  alvo.innerHTML = lista.length
+  // repositórios liberados no GitHub depois da conexão (ou de outra pessoa): a lista só muda conferindo de novo com a conta de quem conectou
+  const aviso = r.ocultos > 0 ? '<div class="gc-ocultos"><p>' + (r.ocultos === 1 ? 'Há <b>1 repositório</b> liberado' : 'Há <b>' + r.ocultos + ' repositórios</b> liberados') + ' para o CicloDev no GitHub que ainda não ' + (r.ocultos === 1 ? 'aparece' : 'aparecem') + ' aqui. Isso acontece quando você libera repositórios no GitHub depois de conectar a conta.</p>' +
+    '<button type="button" class="btn peq" data-gc-autorizar>Atualizar acesso</button></div>' : '';
+  alvo.innerHTML = aviso + (lista.length
     ? (lista.length > 6 ? '<input class="campo" data-gc-busca placeholder="Procurar repositório" aria-label="Procurar repositório">' : '') +
       '<ul class="gc-lista" data-gc-lista>' + lista.map(x => '<li data-gc-nome="' + esc(x.nome.toLowerCase()) + '"><span><b>' + esc(x.nome) + '</b><small>' + (x.privado ? 'privado · ' : '') + 'branch ' + esc(x.branch) + '</small></span>' +
         '<button type="button" class="btn sec peq" data-gc-ligar="' + conexao + '|' + esc(x.externo_id) + '" data-gc-repo-nome="' + esc(x.nome) + '">Ligar</button></li>').join('') + '</ul>'
-    : '<p class="sec">Esta conta não deixou o CicloDev ver nenhum repositório.' + ((GC.conexoes || []).find(c => c.id === conexao && c.provedor === 'github') ? ' Use "Mudar acesso no GitHub" para escolher quais.' : ' No GitLab, a conta precisa ser Maintainer do projeto.') + '</p>';
+    : '<p class="sec">Esta conta não deixou o CicloDev ver nenhum repositório.' + ((GC.conexoes || []).find(c => c.id === conexao && c.provedor === 'github') ? ' Use "Mudar acesso no GitHub" para escolher quais.' : ' No GitLab, a conta precisa ser Maintainer do projeto.') + '</p>'
+  );
   $$('[data-gc-ligar]', alvo).forEach(x => gcMarcarLigado(x, dlg));
 }
 function gcMarcarLigado(b, dlg){

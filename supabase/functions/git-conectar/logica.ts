@@ -103,7 +103,10 @@ const permitido = (con: any, externo: string) => con.provedor !== 'github' || (A
 async function repos(d: DepsCon, c: any) {
   const con = await conexaoMinha(d, c.conexao_id);
   const a = await acessoDaConexao(deps(d), c.conexao_id);
-  return { ok: true, repos: (await listarRepos(deps(d), a)).filter(r => permitido(con, r.externo_id)) };
+  const todos = await listarRepos(deps(d), a), meus = todos.filter(r => permitido(con, r.externo_id));
+  // ocultos: liberados para o CicloDev no GitHub depois que esta pessoa conectou (ou que ela não acessa). Só o número, nunca os nomes:
+  // a tela oferece "Atualizar acesso", que confere de novo com a conta da pessoa e mostra os que ela pode ver.
+  return { ok: true, repos: meus, ocultos: todos.length - meus.length };
 }
 
 async function ligar(d: DepsCon, c: any) {

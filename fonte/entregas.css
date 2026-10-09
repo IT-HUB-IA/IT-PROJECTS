@@ -193,3 +193,5 @@
 .ifr-guia{margin:6px 0 10px;padding-left:20px;font-size:13px;line-height:1.55}
 .ifr-guia li{margin-bottom:6px}
 .ifr-guia code{font-family:var(--font-mono);font-size:12px;overflow-wrap:anywhere}
+.gc-ocultos{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;padding:10px 12px;margin:0 0 8px;border-left:3px solid #E08600;background:var(--preto-04);font-size:13px}
+.gc-ocultos p{margin:0;flex:1;min-width:220px}

@@ -113,6 +113,7 @@ ok(r.st === 200 && gravadas[0].p_externo === "77" && gravadas[0].p_tokens.acesso
 // ---------- escolher o repositório ----------
 r = await pedir({ acao: "repos", conexao_id: C_GH });
 ok(r.st === 200 && r.j.repos.length === 1 && r.j.repos[0].externo_id === "555" && r.j.repos[0].nome === "it-hub-ia/portal", "GitHub: lista só os repositórios da instalação que quem conectou pode acessar (o 556 do dono não aparece)");
+ok(r.j.ocultos === 1 && !JSON.stringify(r.j).includes("outra-pessoa/privado"), "GitHub: diz quantos ficaram de fora (1), sem mostrar o nome deles (para a tela oferecer Atualizar acesso)");
 r = await pedir({ acao: "repos", conexao_id: C_GL });
 ok(r.st === 200 && r.j.repos[0].externo_id === "888" && tokensGravados?.p_acesso === "nova" && tokensGravados?.p_renovacao === "renova2", "GitLab: chave vencida é renovada e a nova fica guardada");
 visiveis.delete(C_GH);
